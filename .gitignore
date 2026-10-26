@@ -1,0 +1,20 @@
+**/raw/**
+.agents/skills/**
+.local
+
+# Local environments, caches and generated output
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.quarto/
+_site/
+_book/
+/dist/
+/cache/
+/.pi/
+*.pdf
+.env
+.env.*
+!.env.example

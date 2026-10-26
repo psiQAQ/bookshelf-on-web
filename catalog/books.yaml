@@ -1,0 +1,2 @@
+# Registry only; never discover publishable books by scanning books/.
+books: []

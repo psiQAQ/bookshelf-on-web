@@ -1,0 +1,9 @@
+[project]
+name = "bookshelf-on-web"
+version = "0.1.0"
+description = "A Quarto publishing workspace for authorized scientific books"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv]
+package = false

@@ -1,0 +1,26 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Science Bookshelf"
+  navbar:
+    left:
+      - href: index.qmd
+        text: 图书馆
+      - href: about.qmd
+        text: 关于
+
+format:
+  html:
+    lang: zh-CN
+    theme:
+      light: cosmo
+      dark: darkly
+    toc: true
+    html-math-method: mathjax
+    code-copy: true
+    code-overflow: scroll
+
+execute:
+  eval: false

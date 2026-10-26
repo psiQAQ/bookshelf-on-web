@@ -1,9 +1,14 @@
 [project]
 name = "bookshelf-on-web"
 version = "0.1.0"
-description = "A Quarto publishing workspace for authorized scientific books"
+description = "Registry-driven Quarto publishing for bookshelf-on-web"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "jsonschema==4.26.0",
+    "pyyaml==6.0.3",
+    "rfc3339-validator==0.1.4",
+    "rfc3986-validator==0.1.1",
+]
 
 [tool.uv]
 package = false

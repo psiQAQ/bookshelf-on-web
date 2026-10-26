@@ -1,0 +1,25 @@
+project:
+  type: book
+  output-dir: _book
+book:
+  title: A Tiny Vector Notebook
+  chapters:
+  - index.qmd
+  - chapters/01-length.qmd
+  page-navigation: true
+  reader-mode: true
+  search: true
+format:
+  html:
+    lang: en
+    theme:
+      light: cosmo
+      dark: darkly
+    html-math-method: mathjax
+    toc: true
+    number-sections: true
+    code-copy: true
+    code-overflow: scroll
+execute:
+  enabled: false
+  eval: false

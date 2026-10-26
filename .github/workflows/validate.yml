@@ -1,0 +1,42 @@
+name: Validate bookshelf-on-web
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: '0.11.19'
+          enable-cache: false
+      - uses: quarto-dev/quarto-actions/setup@8a96df13519ee81fd526f2dfca5962811136661b # v2
+        with:
+          version: '1.10.19'
+      - name: Locked Python environment
+        run: |
+          uv python install 3.12
+          uv sync --frozen --python 3.12
+          uv lock --check
+      - name: Tests including real Quarto rendering
+        env:
+          QUARTO_TEST_EXECUTABLE: quarto
+        run: uv run python -m unittest discover -s tests -v
+      - name: Validate and build the public registry
+        run: |
+          uv run python scripts/validate.py --strict
+          uv run python scripts/build.py
+          uv run python scripts/check_site.py dist
+      - name: Verify local-only preview (never uploaded)
+        run: |
+          uv run python scripts/validate.py --preview --report reports/preview-validation.json
+          uv run python scripts/build.py --preview
+          uv run python scripts/check_site.py .preview --book sample-linear-algebra --book sample-waves --report reports/preview-links.json

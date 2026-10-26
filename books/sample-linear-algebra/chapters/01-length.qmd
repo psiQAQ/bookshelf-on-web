@@ -1,0 +1,22 @@
+# Length and scaling {#sec-vector-length}
+
+For a real two-component vector $v=(a,b)$, its Euclidean length is
+
+$$
+\lVert v\rVert_2=\sqrt{a^2+b^2}.
+$$ {#eq-vector-length}
+
+Scaling both components by a real number $c$ multiplies the length by $|c|$.
+For $v=(3,4)$, the length is $5$.
+
+## Static Python illustration {#sec-static-vector}
+
+This listing is displayed, never executed during publication.
+
+```python
+from math import sqrt
+vector = (3.0, 4.0)
+length = sqrt(sum(component**2 for component in vector))
+```
+
+Return to the [introduction](../index.qmd#sec-vector-notebook).

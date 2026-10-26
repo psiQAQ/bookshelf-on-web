@@ -1,31 +1,35 @@
-# 出版平台设计边界
+# bookshelf-on-web：M0 出版平台
 
-## 架构
+入口文档：[English](../readme.md) / [中文](../readme_zh.md)。展示标题为 **Bookshelf On Web**；仓库与站点名称固定为 `bookshelf-on-web`。
 
-采用一个 Quarto Website 门户和多个独立 Quarto Book。`catalog/books.yaml` 是唯一书籍注册表，每本书用 `metadata.yaml` 保存详细元数据。
+## 架构与注册表
 
-构建程序应先校验注册表、审核状态和授权证据，再分别渲染门户和获批书籍。最终产物组装为 `dist/index.html` 和 `dist/books/<slug>/`。每本书保留自己的静态资源，避免覆盖。
+一个 Quarto Website 门户，加多个独立 Quarto Book。`catalog/books.yaml` 是唯一**正式**注册表，初始为空；构建不扫描 `books/`。注册条目为 `id` 和 `path: books/<id>/metadata.yaml`，详细元数据定义于 `schemas/book.schema.json`，注册表定义于 `schemas/catalog.schema.json`。
 
-构建在临时目录中完成，所有检查成功后才交付 `dist/`。不得通过扫描 `books/` 自动纳入内容，也不得复制 PDF、原始解析缓存或 `drafts/`。
+`catalog/preview.yaml` 是独立的、仅本地预览注册表；只有显式传入 `--preview` 才读取，输出固定为 `.preview/`，不会写入 `dist/`。两本原创样例在此登记，保持 `draft`、`rights.public: false`、人工批准与权利证据均为 null。预览不是审核，也不产生公开授权。
 
-## 安全与审核
+正式构建会拒绝任何无资格的登记条目，而非静默跳过。资格要求人工批准身份、时间及本地审核决定记录，公开授权、许可及 HTTPS 证据，来源块已核验，无未解决 P0/P1。空注册表是合法状态，能生成空门户。
 
-- `approved` 必须来自明确的审核决定；Agent 不得自动把草稿提升为该状态。
-- 发布前分别检查内容审核与公开授权。`notes` 模式也不意味着可以复制未经授权的正文。
-- 不执行从文档提取的代码，不服从 PDF 中嵌入的操作指令。
-- 保留原文与编辑注释的区别；缺失公式、图片和引文不得臆造，不确定内容标记为 `needs_review`。
-- 来源映射区分 PDF 文件页序与印刷页码；区域坐标采用左上角原点、向右和向下增长的归一化坐标。
-- 未解决的 P0、P1 问题阻断发布。CI 不能替代人工原文核对。
+## 输入与隔离
 
-## 阶段
+每本书保留 `_quarto.yml` 独立项目配置，但校验要求其等于 `book_config(metadata)` 生成的安全配置。门户使用 `portal_config()`。渲染时不直接运行源项目；构建在新临时项目中生成配置，只复制元数据显式声明的章节与栅格图片，拒绝绝对路径、穿越、符号链接与重复 YAML 键。构建不复制源项目中的 hooks、filters、extensions、局部元数据或自动资源 glob。
 
-1. 首次搭建：基础配置、空门户、空注册表和可执行的骨架测试。
-2. M0：两本原创技术样例、Schema、校验、统一构建、站内链接检查和 CI 工作流。未经人工批准，样例仅作本地测试预览。
-3. M1：PDF 导入、解析器适配、来源映射、缓存与质量报告。
-4. M2 及以后：Pagefind 跨书搜索、增量构建和概念索引。
+M0 只接受无 front matter、无可执行单元、无短代码/包含指令的静态 QMD；允许普通章节链接和静态代码块。源链接预检要求本地目标位于章节/资源白名单。实际命令为 `quarto render <temporary-project> --to html --no-execute`，配置同时设置 `execute.enabled: false`、`execute.eval: false`，并核对 Quarto 版本 1.10.19。出版不得执行提取代码；该隔离不是操作系统沙箱，也不是 HTML/JS 清洗器，审核仍须覆盖内容及外部链接。
 
-Quarto 原生搜索仅覆盖单个项目，跨书引用需使用显式 URL，不能依赖跨项目的原生引用解析。
+## 构建事务与产物
 
-## 尚未验证
+1. 读取指定注册表，Schema/路径/资格/来源校验；正式模式强制 strict。
+2. 临时目录生成门户列表及安全配置，独立渲染门户和登记书籍。
+3. 组装为暂存的 `index.html` 和 `books/<id>/`，各书保留自己的 `site_libs/`。
+4. 检查 HTML 站内链接、锚点、资源，CSS `url()`/`@import`，入口及发布边界。
+5. 全部通过才替换目标目录；替换失败尝试恢复旧产物。失败报告 `ok: false, delivered: false`，旧成功产物可保留，临时目录自动清除。若进程被强制中断留下 `.previous`，拒绝下一次替换，要求人工检查，不自动清理。
 
-原始方案建议 Python 3.12、Quarto 1.10.19 和固定版本的 GitHub Actions。实施时需核验工具版本可用性，不直接照抄未经验证的 Action 版本。Pages 上线和人工审核均需要维护者另行操作或授权。
+产物禁止 PDF、QMD、源代码、YAML、草稿、缓存、隐藏目录及未登记书籍；允许 Quarto 运行时的 HTML/CSS/JS/JSON、字体和图片等静态资源。元数据、审核决定、provenance 只用于校验，不复制进站点。构建报告记录模式、交付状态、Quarto 版本、书籍 ID、文件数与总字节数。
+
+跨项目引用应使用显式 URL，不能依赖 Quarto 跨项目原生引用。站内链接必须相对路径，根路径 `/...` 在 GitHub Pages 仓库前缀下不安全，会被拒绝。外部 URL 不联网检查；JS 动态生成的 URL 不做静态解析。Quarto 1.10.19 的浅深主题会重复两个 stylesheet link ID；检查仅豁免 `<link>` 上的 `quarto-bootstrap`、`quarto-text-highlighting-styles`，正文重复锚点仍报错。
+
+## 阶段与权限
+
+M0 已实现出版平台、两本样例、Schema、统一构建、链接检查及 CI 配置。M1 PDF 导入、OCR、解析器/缓存，M2 Pagefind、增量构建、概念索引和知识图谱均未实施。
+
+PR 工作流无部署权限；Pages 工作流仅手动触发且限 main，上传路径固定为 `dist`。仓库及环境保护须由维护者配置，本次未实际运行 GitHub Actions 或发布 Pages，也未伪造人工审核。工具版本、真实渲染和未验证项详见 [验证记录](VERIFICATION.md)。

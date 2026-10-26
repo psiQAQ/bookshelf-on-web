@@ -1,0 +1,6 @@
+# LOCAL PREVIEW ONLY. Never consumed by the publishing build.
+books:
+- id: sample-linear-algebra
+  path: books/sample-linear-algebra/metadata.yaml
+- id: sample-waves
+  path: books/sample-waves/metadata.yaml

@@ -1,0 +1,15 @@
+{
+  "book_id": "sample-linear-algebra",
+  "blocks": [
+    {
+      "block_id": "example-definition",
+      "qmd": "chapters/01-length.qmd",
+      "qmd_anchor": "sec-vector-length",
+      "source": {
+        "type": "original",
+        "description": "Authored specifically for the M0 rendering example; no PDF page or hash exists."
+      },
+      "review_state": "needs_review"
+    }
+  ]
+}

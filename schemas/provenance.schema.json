@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "book_id",
+    "blocks"
+  ],
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "blocks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "block_id",
+          "qmd",
+          "qmd_anchor",
+          "source",
+          "review_state"
+        ],
+        "properties": {
+          "block_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          },
+          "qmd": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "qmd_anchor": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_:.-]*$"
+          },
+          "source": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "type",
+                  "description"
+                ],
+                "properties": {
+                  "type": {
+                    "const": "original"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "type",
+                  "pdf_sha256",
+                  "pdf_page",
+                  "printed_page",
+                  "bbox"
+                ],
+                "properties": {
+                  "type": {
+                    "const": "pdf"
+                  },
+                  "pdf_sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "pdf_page": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "printed_page": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "bbox": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "description": "Normalized [x1,y1,x2,y2]; top-left origin; x right, y down."
+                  }
+                }
+              }
+            ]
+          },
+          "review_state": {
+            "enum": [
+              "needs_review",
+              "verified"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+# M0 验证记录（2026-10-27）
+
+## 环境与真实渲染
+
+Windows + Git Bash；系统 Python 3.13.12，项目通过 uv 0.11.19 使用 Python 3.12.13。Quarto 不在系统 PATH；从 GitHub 官方 v1.10.19 发布下载 Windows ZIP 到忽略目录 `.local/`，解压为 `.local/tools/bin/quarto.exe`。`--version` 输出 `1.10.19`。
+
+ZIP 的 SHA-256 与 GitHub 发布资产 digest 相符：`a9c62e4fef34ea05d4dd9175d905f80f0542414a1ae17a9d45698f6646c01173`。uv 0.11.19 发布 API 可访问，已确认不是照抄原始规划的 uv/Actions 版本。
+
+已执行：
+
+```sh
+uv sync --frozen --python 3.12
+uv lock --check
+QUARTO_TEST_EXECUTABLE="$(pwd)/.local/tools/bin/quarto.exe" uv run python -m unittest discover -s tests -v
+uv run python scripts/validate.py --strict
+uv run python scripts/validate.py --preview --report reports/preview-validation.json
+uv run python scripts/build.py --quarto .local/tools/bin/quarto.exe
+uv run python scripts/build.py --preview --quarto .local/tools/bin/quarto.exe
+uv run python scripts/check_site.py dist
+uv run python scripts/check_site.py .preview --book sample-linear-algebra --book sample-waves --report reports/preview-links.json
+.local/actionlint/actionlint.exe -color=false
+```
+
+- 锁定依赖同步与 lock 检查通过。除 PyYAML/jsonschema，明确锁定 RFC3339/URI 格式校验器，避免 JSON Schema 对未安装格式校验器静默跳过；非法日期及授权 URI 有回归测试。
+- 45 项测试：44 通过、1 跳过。真实渲染集成测试已启用并通过，不是仅模拟 renderer；检查空正式门户、两个独立书籍、数学显示标记、公式锚点、语法高亮、主题样式与侧栏。静态代码中加入临时哨兵写文件语句，验证文件未被创建。跳过项是实际符号链接测试：Windows 当前没有创建符号链接权限。Linux PR 工作流配置执行该项，但未实际远端运行。
+- 正式严格校验：0 问题；正式空门户构建 `ok: true, delivered: true`，23 文件、1,700,166 字节，书籍列表为空。
+- 本地预览：两本书，67 文件、5,120,159 字节；6 条预期警告（每本书均缺人工批准、公开权利、来源待核验）。没有为消除警告而改动审核状态。
+- 正式与预览站点检查均为 0 问题。临时构建目录均在交付后清除。失败处理测试证明渲染/断链/禁止文件会阻断交付，保留旧成功产物且不残留新半成品。
+- 用 Python `ThreadingHTTPServer` 仅绑定 127.0.0.1、根目录 `.preview/`、随机端口验证 `/`、两个 `/books/<id>/` 及两个章节 HTML，共 5 个请求均 HTTP 200；验证后关闭服务。
+- 真实渲染揭示 Quarto 1.10.19 浅深主题重复两个 stylesheet `<link>` ID。仅对此模板行为作窄豁免；正文重复 ID 仍失败，且有回归测试。
+- `readme.md`/`readme_zh.md` 大小写文件名、开头互链、文档链接及两版命令一致性有自动测试。站点配置和首页名称均测试为 `bookshelf-on-web`，展示标题为 Bookshelf On Web。
+
+以上体积是本次工具版本的输出快照，不是稳定哈希或容量阈值。
+
+## 工作流版本核验
+
+对下列 GitHub tag ref 解析为提交 SHA，并确认相应 SHA 下的 `action.yml` 可获取（Quarto 为 `setup/action.yml`）。本地 actionlint **1.7.12** 验证两个工作流通过。未触发 GitHub Actions、未访问凭据、未发布 Pages。
+
+| Action | 已核验 tag | 配置中固定 SHA |
+| --- | --- | --- |
+| actions/checkout | v4 | `11d5960a326750d5838078e36cf38b85af677262` |
+| astral-sh/setup-uv | v6 | `d0cc045d04ccac9d8b7881df0226f9e82c39688e` |
+| quarto-dev/quarto-actions/setup | v2 | `8a96df13519ee81fd526f2dfca5962811136661b` |
+| actions/configure-pages | v5 | `983d7736d9b0ae728b81ab479565c72886d7745b` |
+| actions/upload-pages-artifact | v4 | `7b1f4a764d45c48632c6b24a0339c27f5614fb0b` |
+| actions/deploy-pages | v4 | `d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e` |
+
+只核验引用存在和本地配置合法性，不声称完成供应链审计或托管 runner 执行。Pages 工作流仅手动触发、限 main，上传 `dist/`，不上传 `.preview/`。维护者仍须配置环境保护及真实发布权限。
+
+## 安全边界与未验证项目
+
+- 两本原创样例保持草稿，未取得公开许可。没有真实 PDF 导入、OCR、全文覆盖或人工原文核验；不伪造 PDF 哈希/页码/许可。
+- 既有 `books/Python for Quantum Chemistry A Full Stack Programming Guide/` 未修改、未登记、未暂存或复制；`skills-lock.json`、`.agents/`、`.local/` 原始规划和既有 Agent 规则保持原样。下载工具仅新增到忽略的 `.local/`。
+- 外部 URL、MathJax CDN、主题切换/搜索交互、视觉布局与 390/768/1440 px 响应式行为未作浏览器验证。HTML 已真实渲染不等于浏览器效果已验收。
+- GitHub 托管 runner、Pages 环境保护和公开站点 URL 尚未验证；本地 HTTP 200 不等于上线。
+- M0 的静态输入限制不是 OS 沙箱或 HTML/JS 净化器，正式审批须审查内容。来源 Schema 仅定义 PDF 数据契约，不代表 M1 实现。
+- 当前实现留在 `feat/m0-publishing` 的未提交工作区；未执行暂存、提交、合并、推送或部署。文件系统已用中间文件名完成 `README.md` → `readme.md`；遵守不暂存约束，索引中的初始路径要在将来获准暂存时显式记录大小写更名。

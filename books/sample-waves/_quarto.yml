@@ -1,0 +1,25 @@
+project:
+  type: book
+  output-dir: _book
+book:
+  title: 波动小札
+  chapters:
+  - index.qmd
+  - chapters/01-phase.qmd
+  page-navigation: true
+  reader-mode: true
+  search: true
+format:
+  html:
+    lang: zh-CN
+    theme:
+      light: cosmo
+      dark: darkly
+    html-math-method: mathjax
+    toc: true
+    number-sections: true
+    code-copy: true
+    code-overflow: scroll
+execute:
+  enabled: false
+  eval: false

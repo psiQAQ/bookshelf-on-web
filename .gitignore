@@ -18,3 +18,10 @@ _book/
 .env
 .env.*
 !.env.example
+
+# Isolated M0 reports, local-only preview and staging
+/reports/
+/.preview/
+/.preview.previous/
+/dist.previous/
+/.build-*/

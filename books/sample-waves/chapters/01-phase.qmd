@@ -1,0 +1,22 @@
+# 相位与周期 {#sec-wave-phase}
+
+设时间为 $t$，振幅为 $A$，频率为 $f>0$，初相位为 $\phi$，一个标量信号可写成
+
+$$
+s(t)=A\cos(2\pi f t+\phi).
+$$ {#eq-wave-signal}
+
+周期为 $T=1/f$。当 $t$ 增加 $T$ 时，余弦的自变量增加 $2\pi$，信号数值相同。
+这里仅描述随时间的周期变化，不声称建立完整空间波动模型。
+
+## 静态代码 {#sec-static-wave}
+
+下列 Python 代码仅展示表达式，不在出版时执行。
+
+```python
+from math import cos, pi
+amplitude, frequency, phase = 2.0, 0.5, 0.0
+signal = amplitude * cos(2 * pi * frequency * 1.0 + phase)
+```
+
+返回[引言](../index.qmd#sec-wave-notebook)。

@@ -1,0 +1,24 @@
+id: sample-waves
+title: 波动小札
+language: zh-CN
+categories:
+- physics
+- programming
+chapters:
+- index.qmd
+- chapters/01-phase.qmd
+assets: []
+source:
+  type: original
+  description: Original M0 sample written for this repository; no source PDF.
+rights:
+  publication_mode: full
+  public: false
+  license: null
+  evidence_url: null
+review:
+  status: draft
+  approved_by: null
+  approved_at: null
+  evidence_path: null
+  issues: []

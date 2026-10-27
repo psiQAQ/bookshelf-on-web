@@ -10,7 +10,7 @@
 1. 文本用 pypdf 提取（PyMuPDF 的文本层会把 3013 个字形替换为 U+00AD，pypdf 干净）。
 2. 版面几何用 PyMuPDF 读取：`CropBox` 与 `MediaBox` 的偏移在裁剪前换算，图、表、公式按版面坐标裁剪后栅格化（图 220 DPI，公式 300 DPI），不使用 OCR。
 3. 代码缩进由等宽字体的 x 坐标反推（正文左边距按页奇偶分别为 119.8 / 83.8，步长 4.475pt）。
-4. 逐段直译由 `gpt-6.1-terra`（thinking=low）完成，润色由 `gemini-3.8-flash-low` 在不比对原文的前提下完成，只改措辞。
+4. 逐段直译由 `gpt-6.1-terra`（thinking=low）完成；本版**不做润色**，正文即直译稿，理由见下节「润色核对」。
 5. 参考文献按原书英文条目照录，不译；图注、表注单独翻译。
 
 ## 覆盖核对
@@ -40,34 +40,20 @@
 
 ## 润色核对
 
-润色前后对比用 `.local/check_qmd.py`：代码块内容、图片列表、标题数、图注数必须完全一致，段落数差 ≤2，汉字数比例须落在 0.85–1.20。任何一章不通过就回滚到润色前副本并重试。
+曾尝试用 `gemini-3.8-flash-low`（经 `agy`）按 humanizer-zh 的规则润色中文措辞，只改句式与填充词，并用 `.local/check_qmd.py` 做结构闸门：代码块内容、图片与公式锚点、标题、图注必须逐条一致，段落数差 ≤2，汉字数比例落在 0.85–1.20。
 
-| 章 | 结构校验 |
-| --- | --- |
-| 00-preface.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/00-preface.qmd`） |
-| 01-environment.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/01-environment.qmd`） |
-| 02-data.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/02-data.qmd`） |
-| 03-visualization.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/03-visualization.qmd`） |
-| 04-scientific-tools.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/04-scientific-tools.qmd`） |
-| 05-metaprogramming.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/05-metaprogramming.qmd`） |
-| 06-io.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/06-io.qmd`） |
-| 07-cloud.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/07-cloud.qmd`） |
-| 08-ffi.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/08-ffi.qmd`） |
-| 09-performance.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/09-performance.qmd`） |
-| 10-parallel.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/10-parallel.qmd`） |
-| 11-gpu.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/11-gpu.qmd`） |
-| 12-integrals.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/12-integrals.qmd`） |
-| 13-mean-field.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/13-mean-field.qmd`） |
-| 14-fci.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/14-fci.qmd`） |
-| 15-coupled-cluster.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/15-coupled-cluster.qmd`） |
-| 16-properties.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/16-properties.qmd`） |
+闸门结果显示改写并不可靠：多数章节出现丢标题、并段、压缩正文（有一章段落数从 124 涨到 1329，汉字数比例 6.25），甚至一度把整章替换成旧稿内容。最终只有 `00-preface`、`05-metaprogramming`、`11-gpu` 三章经受住校验，其余章节全部回退。
+
+为了让全书风格一致、且不让记录里出现无法复核的「已润色」声明，最终决定**放弃润色，三章也一并回退**。当前 17 个章节文件全部是未经润色的直译稿，`provenance.json` 中没有任何 `polished_by` 字段，`metadata.yaml` 也不再声明 `polisher_model`。
+
+历史尝试记录保留在 `.local/quantum-source/polish-ledger.jsonl` 与 `.local/logs/polish-*.log`（不入库）。
 
 ## 已知限制
 
 - 公式以原版面图片呈现，不参与网页换色与字号缩放；行内公式的行高由图片宽度控制。
 - PDF 文本层里的数学残片（上下标散开）不再单独输出，避免出现乱码，其内容由同位置的公式图片承载。
 - 代码块内的弯引号折回 ASCII 引号，其余字符逐字节保持原样；PDF 断词残留（如 `Elec- tronic`）不作修正。
-- 机器直译加机器润色，未做人工通读校对。
+- 全书为机器直译稿，未做润色，也未做人工通读校对。
 
 ## 批准
 

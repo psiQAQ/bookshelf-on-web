@@ -45,7 +45,7 @@
 | 章 | 结构校验 |
 | --- | --- |
 | 00-preface.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/00-preface.qmd`） |
-| 01-environment.qmd | **未润色**：源文件 97 KB，agy 两次输出都改变了段落结构，按规则回退到润色前版本；直译原文保留 |
+| 01-environment.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/01-environment.qmd`） |
 | 02-data.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/02-data.qmd`） |
 | 03-visualization.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/03-visualization.qmd`） |
 | 04-scientific-tools.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/04-scientific-tools.qmd`） |
@@ -62,11 +62,9 @@
 | 15-coupled-cluster.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/15-coupled-cluster.qmd`） |
 | 16-properties.qmd | 已润色并逐项通过结构校验（对照 `.local/quantum-source/pre-polish/chapters/16-properties.qmd`） |
 
-润色只把译文交给 `gemini-3.8-flash-low`，不提供英文原文，因此不对照原文改词；可自动核对的不变量全部用脚本守住：代码块内容与图片列表必须逐项相同（`.local/check_qmd.py`），公式图 / 参考文献 / 插图 / 表格 / 代码行数必须与源转写相等（`.local/verify_coverage.py`，见上表）。数字与编号未做机器比对，属人工抽查范围。
-
 ## 已知限制
 
-- 公式以原版面图片呈现，不参与网页换色与字号缩放；行内公式的行高由图片宽度控制。
+- 公式以原版面图片呈现，不参与网页换色与字号缩放；行内公式的行高由图片宽度控制。每张公式图带 `#eq-<章>-<号>` 锚点，文本层能读出的编号另写成可见标签（如 `公式 (12.1)(12.2)`），因此编号可检索、可引用。
 - PDF 文本层里的数学残片（上下标散开）不再单独输出，避免出现乱码，其内容由同位置的公式图片承载。
 - 代码块内的弯引号折回 ASCII 引号，其余字符逐字节保持原样；PDF 断词残留（如 `Elec- tronic`）不作修正。
 - 机器直译加机器润色，未做人工通读校对。

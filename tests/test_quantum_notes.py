@@ -58,13 +58,19 @@ class QuantumNotesTests(unittest.TestCase):
         referenced = set()
         for chapter in self.metadata["chapters"][1:]:
             text = (self.book / chapter).read_text(encoding="utf-8")
-            for match in re.finditer(r"!\[\]\(\.\./(assets/(figures|tables|math)/([^/)]+\.png))\)[^\n]*", text):
+            for match in re.finditer(r"!\[[^\]]*\]\(\.\./(assets/(figures|tables|math)/([^/)]+\.png))\)[^\n]*", text):
                 asset, kind, filename = match.groups()
                 images[kind] += 1
                 self.assertNotIn(asset, referenced)
                 referenced.add(asset)
                 self.assertTrue((self.book / asset).is_file(), asset)
-                if kind != "math":
+                if kind == "math":
+                    # Every equation image carries a searchable anchor so a section can
+                    # cite #eq-<chapter>-<number> even though the printed number lives
+                    # inside the raster.
+                    anchor = "eq-" + filename.removesuffix(".png").split("-", 1)[1]
+                    self.assertRegex(text[match.end():], rf"^\s*(\*\*公式[^\n]*\*\*)?\[\]\{{#{re.escape(anchor)}\}}")
+                else:
                     label = "图" if kind == "figures" else "表"
                     number = filename.removesuffix(".png").split("-", 1)[1].replace("-", ".")
                     self.assertRegex(text[match.end():], rf"^\s*\*\*{label} {re.escape(number)}\*\*\s*\S")

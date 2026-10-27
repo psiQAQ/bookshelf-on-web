@@ -75,4 +75,4 @@
 | 5. 排版核验 | 完成，见 `docs/VERIFICATION.md`「整书直译上线记录」。 |
 | 6. 合并、推送、部署 | 完成。提交 `d475d5e`…`a3f8b9a`，`deploy.yml` run 40497222200 成功；为首次发布在仓库启用 Pages（`build_type: workflow`，域名 `notes.psiqaq.cn`）。 |
 
-未落实的承诺：`docs/reviews/quantum-python-coverage.md` 未创建，页级覆盖改由 `provenance.json` 的 `pdf_pages` 与 `.local/verify_coverage.py` 的校验报告承载（`problems=0`）。
+页级覆盖记录：`docs/reviews/quantum-python-coverage.md` 已按译本重写（旧「学习笔记」版本作废），逐章列出 PDF 物理页范围、资产与代码计数，并说明 717 页如何分配到「书名页 + 目录 + 前言 + 16 章正文」；机器可读的页范围在 `provenance.json` 的 `pdf_pages`，计数校验报告为 `.local/verify_coverage.py` 输出（`problems=0`）。

@@ -21,31 +21,47 @@
 
 在平均场方法中，波函数用单个 Slater 行列式（Slater determinant）表示。利用一组单粒子轨道 φi，我们可以构造 Slater 行列式，并推导出平均场方法的总能量表达式：
 
-![](../assets/math/eq-13-001.png){width=30%}
+![公式图](../assets/math/eq-13-001.png){width=30%}
 
-![](../assets/math/eq-13-002.png){width=30%}
+[]{#eq-13-001}
 
-![](../assets/math/eq-13-003.png){width=30%}
+![公式图](../assets/math/eq-13-002.png){width=30%}
+
+[]{#eq-13-002}
+
+![公式图](../assets/math/eq-13-003.png){width=30%}
+
+[]{#eq-13-003}
 
 Ecoul、Ex 和 Exc 分别对应与双电子相互作用相关的库仑能、精确交换能和交换相关（exchange-correlation，XC）能。Enn 表示核排斥能。
 将变分原理应用于总能量，可以得到轨道的本征值方程
 
-![](../assets/math/eq-13-004.png){width=40%}
+![公式图](../assets/math/eq-13-004.png){width=40%}
+
+[]{#eq-13-004}
 
 其中，F 是 Fock 矩阵，S 是重叠矩阵，C 是轨道系数，E 是轨道能量。Fock 矩阵由两项组成：一般来说，Veff 可以表示为若干分量的组合：
 
-![](../assets/math/eq-13-005.png){width=45%}
+![公式图](../assets/math/eq-13-005.png){width=45%}
+
+[]{#eq-13-005}
 
 J 矩阵源于库仑能 Ecoul，而 K 和 Vxc 分别由精确交换能 Ex 和交换相关能 Exc 导出。Veff 是区分不同平均场模型的关键量，例如闭壳层方法、开壳层方法和广义自旋轨道方法中的 Hartree-Fock（HF）和 Kohn-Sham（KS）模型。例如，在闭壳层 HF 方法中，Veff
 对应于 a = 1、b = 0。
 
-![](../assets/math/eq-13-006.png){width=30%}
+![公式图](../assets/math/eq-13-006.png){width=30%}
+
+[]{#eq-13-006}
 
 其中
 
-![](../assets/math/eq-13-007.png){width=45%}
+![公式 (13.8)(13.9)](../assets/math/eq-13-007.png){width=45%}
 
-![](../assets/math/eq-13-008.png){width=44%}
+**公式 (13.8)(13.9)**[]{#eq-13-007}
+
+![公式图](../assets/math/eq-13-008.png){width=44%}
+
+[]{#eq-13-008}
 
 平均场波函数本质上是一组正交归一轨道。为了计算这些平均场轨道，我们需要构造 Fock 矩阵。然而，Fock 矩阵的构造依赖于轨道本身，从而形成递归关系。为了解决这个问题，我们可以采用不动点迭代法来求解平均场问题。这种迭代方法提供了平均场计算最直接的算法，称为自洽场（self-consistent field，SCF）迭代。SCF 迭代从轨道（或密度矩阵）的初始猜测开始，利用它构造 Fock 矩阵。然后求解 Fock 矩阵的本征值问题，得到一组新的轨道。重复这一过程，直到解收敛到稳定点。
 使用 NumPy 和 SciPy 提供的 einsum 函数及对角化函数，结合第 12 章开发的积分程序，实现一个简单的限制性 HF 方法 SCF 迭代并不困难。然而，如果我们希望开发更通用的 SCF 程序以适应各种平均场方法，就需要将 SCF 程序设计得足够灵活。SCF 过程应分解为若干中间步骤，每一步对应一个独立的函数调用。这些函数应作为接口暴露，以便不同的平均场模型覆盖它们，从而方便复用 SCF 程序。这些接口可以组织成一个 SCF 类，其中包含以下功能：
@@ -357,7 +373,9 @@ Numba JIT 编译 for 循环代码。编译后的代码具有更小的
 你可能已经注意到，ERI 的值可能有很大差异。在中等大小的分子中，大多数 ERI 的值非常接近零，它们对 J/K 矩阵的贡献可以忽略不计。同样，如果密度矩阵元素的值非常小，就可以省略相关 ERI 和张量缩并的计算。根据 ERI 和密度矩阵元素的大小，我们可以加入筛选过程，排除对最终结果贡献不大的计算。
 为估计 ERI 的值，可以使用 Schwarz 不等式找到 ERI 的上界：
 
-![](../assets/math/eq-13-009.png){width=70%}
+![公式图](../assets/math/eq-13-009.png){width=70%}
+
+[]{#eq-13-009}
 
 ```python
 def schwarz_halfcond(gtos):
@@ -530,74 +548,108 @@ def reduced_cart_iter(n):
 Kohn-Sham 密度泛函理论（KS-DFT）方法需要在 get_veff 函数中计算交换关联（exchange-correlation，XC）势 Vxc。这涉及两项计算任务：计算 XC 泛函 ϵxc 的导数，以及进行数值积分以获得 XC 矩阵 Vxc。
 在一些文献中，XC 泛函定义为每个粒子的 XC 能量 exc[ρ]，由此得到 XC 能量的以下积分：
 
-![](../assets/math/eq-13-010.png){width=47%}
+![公式图](../assets/math/eq-13-010.png){width=47%}
+
+[]{#eq-13-010}
 
 Exc[ρ]= exc[ρ]ρ (r)d r.) 然而，为简单起见，本节将 XC 泛函 ϵxc[ρ] 定义为 Exc 的被积函数：
 
-![](../assets/math/eq-13-011.png){width=45%}
+![公式图](../assets/math/eq-13-011.png){width=45%}
+
+[]{#eq-13-011}
 
 的积分，其中
 
-![](../assets/math/eq-13-012.png){width=40%}
+![公式图](../assets/math/eq-13-012.png){width=40%}
+
+[]{#eq-13-012}
 
 LibXC [13] 和 XCFun [14] 等常用 XC 泛函库采用这一约定。该积分中的电子密度使用密度矩阵 γ 和原子轨道（AO）函数 χ (r) 计算。例如，自旋向上电子的密度可以表示为
 
-![](../assets/math/eq-13-013.png){width=46%}
+![公式图](../assets/math/eq-13-013.png){width=46%}
+
+[]{#eq-13-013}
 
 对于局域密度近似（Local Density Approximation，LDA）泛函 ϵxc[ρ↑,ρ ↓]，自旋向上轨道的 XC 矩阵可以表示为
 
-![](../assets/math/eq-13-014.png){width=50%}
+![公式图](../assets/math/eq-13-014.png){width=50%}
+
+[]{#eq-13-014}
 
 采用一组合适的积分网格 rn 和权重 ωn，可以通过数值方法计算 LDA 矩阵元素。
 
-![](../assets/math/eq-13-015.png){width=50%}
+![公式图](../assets/math/eq-13-015.png){width=50%}
+
+[]{#eq-13-015}
 
 对于广义梯度近似（Generalized Gradient Approximation，GGA）泛函 ϵxc[ρ,σ]，它还依赖于收缩后的密度梯度
 σ↑↑ =∇ ρ ↑ ·∇ ρ↑, σ ↑↓ =∇ ρ ↑ ·∇ ρ↓, σ ↓↓ =∇ ρ ↓ ·∇ ρ↓.) 自旋向上轨道的 XC 矩阵元素可以计算为
 
-![](../assets/math/eq-13-016.png){width=66%}
+![公式 (13.21)](../assets/math/eq-13-016.png){width=66%}
+
+**公式 (13.21)**[]{#eq-13-016}
 
 这一积分可以转换为如下数值积分程序：
 
-![](../assets/math/eq-13-017.png){width=65%}
+![公式图](../assets/math/eq-13-017.png){width=65%}
+
+[]{#eq-13-017}
 
 (V ↑)μν = ωn χμ(rn)χν (rn)vρ ↑ +∇ (χμ(rn)χν (rn)) · v ∇ ρ↑,) 其中
 
-![](../assets/math/eq-13-018.png){width=49%}
+![公式图](../assets/math/eq-13-018.png){width=49%}
+
+[]{#eq-13-018}
 
 对于 meta-GGA 泛函 ϵxc[ρ,σ,τ]，动能密度 τ 定义为
 
-![](../assets/math/eq-13-019.png){width=70%}
+![公式图](../assets/math/eq-13-019.png){width=70%}
+
+[]{#eq-13-019}
 
 τ = 1 ∇ χμ ·∇ χνγ) 我们可以对 XC 矩阵进行数值积分：
 
-![](../assets/math/eq-13-020.png){width=62%}
+![公式 (13.25)](../assets/math/eq-13-020.png){width=62%}
+
+**公式 (13.25)**[]{#eq-13-020}
 
 一些基于平均场的应用，例如稳定性分析和含时密度泛函理论，可能需要 XC 泛函的高阶导数。这些高阶 XC 导数的积分计算更为复杂。我们以 GGA 泛函的二阶导数为例。f ↑↑xc 的积分由下式给出：
 
-![](../assets/math/eq-13-021.png){width=50%}
+![公式 (13.26)](../assets/math/eq-13-021.png){width=50%}
+
+**公式 (13.26)**[]{#eq-13-021}
 
 其中被积函数 q 表示为：
 
-![](../assets/math/eq-13-022.png){width=63%}
+![公式 (13.27)](../assets/math/eq-13-022.png){width=63%}
+
+**公式 (13.27)**[]{#eq-13-022}
 
 如果使用这一公式计算积分，就需要生成各种中间量。这可能显著增加数值积分程序的复杂性，使其更容易出错。实际上，可以将这一公式转换为张量收缩过程，从而简化 XC 泛函的数值积分。
 我们把密度变量（ρ、∇ ρ 和 τ）视为一般变量 x
 
-![](../assets/math/eq-13-023.png){width=32%}
+![公式图](../assets/math/eq-13-023.png){width=32%}
+
+[]{#eq-13-023}
 
 ϵxc 对这些变量的偏导数可以写成 n 维张量 v
 
-![](../assets/math/eq-13-024.png){width=41%}
+![公式 (13.28)(13.29)](../assets/math/eq-13-024.png){width=41%}
+
+**公式 (13.28)(13.29)**[]{#eq-13-024}
 
 利用这些导数张量，交换关联（exchange-correlation，XC）矩阵的计算可以简化为张量收缩（tensor contraction）：
 
-![](../assets/math/eq-13-025.png){width=51%}
+![公式图](../assets/math/eq-13-025.png){width=51%}
+
+[]{#eq-13-025}
 
 (V ↑)μν = ωnxs [rn]v [rn].) 这里，对 s 的求和仅限于与 ↑ 相关的变量
 类似地，fxc 积分可以通过张量收缩计算
 
-![](../assets/math/eq-13-026.png){width=58%}
+![公式图](../assets/math/eq-13-026.png){width=58%}
+
+[]{#eq-13-026}
 
 利用成熟的积分网格（integration grids），例如 Becke 网格 [15] 或均匀网格，我们可以使用 XC 导数张量和 einsum 收缩函数计算 XC 矩阵：
 
@@ -625,7 +677,9 @@ xc_tensor = xc_deriv_tensor1(density , xc_code) # (3)
 第 (1) 行的 ao 张量存储高斯型轨道（Gaussian-type orbital，GTO）函数及其导数在网格上的值。第 (2) 行的 xc_code 是 XC 泛函的缩写，例如 ’PBE’ 或 ’B3LYP’。XC 导数张量由第 (3) 行的 xc_deriv_tensor1 函数生成，我们将在后面讨论该函数。
 ao 张量的第一维有四个分量，分别对应 GTO 值及其一阶导数的 x、y 和 z 分量。由于 GTO 函数形式简单，计算 ao 张量很直接。例如，笛卡尔 GTO 的导数可以按如下方式计算：
 
-![](../assets/math/eq-13-027.png){width=66%}
+![公式图](../assets/math/eq-13-027.png){width=66%}
+
+[]{#eq-13-027}
 
 下面的实现计算 GTO 的值及其一阶导数，这些结果足以计算 XC 矩阵。
 
@@ -658,21 +712,29 @@ def eval_gtos(gtos , grids):
 在上述张量收缩方案中，主要挑战是计算 XC 导数张量 v 和 v。通常，诸如
 LibXC 或 XCFun 的 XC 库只提供关于 ρ、σ 和 τ 的偏导数，例如
 
-![](../assets/math/eq-13-028.png){width=30%}
+![公式图](../assets/math/eq-13-028.png){width=30%}
+
+[]{#eq-13-028}
 
 此外，由于偏导数的对称性，这些库省略了某些导数
 
-![](../assets/math/eq-13-029.png){width=30%}
+![公式图](../assets/math/eq-13-029.png){width=30%}
+
+[]{#eq-13-029}
 
 以及 σ↑↓ 和 σ↓↑ 之间的对称性
 
-![](../assets/math/eq-13-030.png){width=30%}
+![公式图](../assets/math/eq-13-030.png){width=30%}
+
+[]{#eq-13-030}
 
 为构造式 (13.28) 和式 (13.29) 中的 XC 导数张量 v，我们需要恢复被省略的导数。这涉及两种转换：
 
 - I 型转换恢复二阶偏导数的对称性
 
-![](../assets/math/eq-13-031.png){width=52%}
+![公式图](../assets/math/eq-13-031.png){width=52%}
+
+[]{#eq-13-031}
 
 ```python
    def conversion_1(v , axis=0):
@@ -683,7 +745,9 @@ LibXC 或 XCFun 的 XC 库只提供关于 ρ、σ 和 τ 的偏导数，例如
 
 - II 型转换处理 σ 的不同自旋分量
 
-![](../assets/math/eq-13-032.png){width=52%}
+![公式图](../assets/math/eq-13-032.png){width=52%}
+
+[]{#eq-13-032}
 
 ```python
    def conversion_2(v , axis=0):
@@ -813,11 +877,17 @@ def xc_family(xc_code):
 DIIS（Direct Inversion in the Iterative Subspace，迭代子空间直接反演）外推方法最初由 Peter Pulay 开发，用于加速和稳定 Hartree-Fock 自洽场（self-consistent field，SCF）计算的收敛。DIIS 外推方法通常用于加速不动点迭代（fixed-point iteration）。DIIS 的基本思想是利用不动点
 迭代过程中生成的一组试探向量来近似求解。给定一组试探向量 t 及其对应的误差向量 e，解向量用试探向量的线性组合近似，系数为 c：
 
-![](../assets/math/eq-13-033.png){width=30%}
+![公式图](../assets/math/eq-13-033.png){width=30%}
 
-![](../assets/math/eq-13-034.png){width=30%}
+[]{#eq-13-033}
 
-![](../assets/math/eq-13-035.png){width=54%}
+![公式图](../assets/math/eq-13-034.png){width=30%}
+
+[]{#eq-13-034}
+
+![公式 (13.37)](../assets/math/eq-13-035.png){width=54%}
+
+**公式 (13.37)**[]{#eq-13-035}
 
 B21 B 22 ··· B 2n 1 ⎟⎟ c2 ⎟⎟
 ... ... .....
@@ -869,14 +939,18 @@ def extrapolate(errvecs , tvecs):
     for v ,x in zip (tvecs[1:] , c[1:]):
 ```
 
-![](../assets/math/eq-13-036.png){width=47%}
+![公式图](../assets/math/eq-13-036.png){width=47%}
+
+[]{#eq-13-036}
 
 ```python
     return sol
 ```
 在不动点迭代过程中，每次迭代的误差向量和试探...向量都会加入 DIIS 程序，以扩展误差向量和试探向量的⎜⎝空间 ⎜⎝
 
-![](../assets/math/eq-13-037.png){width=30%}
+![公式图](../assets/math/eq-13-037.png){width=30%}
+
+[]{#eq-13-037}
 
 这些向量被传递给 extrapolate 函数，以构造一个新的解，随后在不动点问题的下一次迭代中使用该解。
 如何在多次独立的函数调用之间记录这些状态？在 Python 中，通常有三种策略可以实现这一点：
@@ -1174,15 +1248,21 @@ compose 函数以对象列表为模板，使用 type 函数动态创建新类。
 除了优化积分算法，我们还可以使用 Cholesky 分解（Cholesky decomposition，CD）或恒等分辨（resolution of identity，RI）方法加速 ERI 计算。这些方法将 ERI 计算转换为张量收缩问题，通常计算效率更高。
 Cholesky 分解使我们能够将 ERI 张量分解为两个三维张量的乘积：
 
-![](../assets/math/eq-13-038.png){width=45%}
+![公式图](../assets/math/eq-13-038.png){width=45%}
+
+[]{#eq-13-038}
 
 (ij|kl) = Tpij Tpkl.) 在实践中，RI 方法也称为密度拟合（density fitting，DF）近似，经常用于分解 ERI 张量。在这种近似中，引入一组辅助基函数（auxiliary basis functions，ABF）φp 来展开张量：
 
-![](../assets/math/eq-13-039.png){width=46%}
+![公式图](../assets/math/eq-13-039.png){width=46%}
+
+[]{#eq-13-039}
 
 Tpij ≈ (M)pq(q|ij),) 其中，(q|ij) 表示三中心双电子（3c2e）排斥积分，矩阵 M 是双中心双电子（2c2e）积分张量的 CD：
 
-![](../assets/math/eq-13-040.png){width=44%}
+![公式图](../assets/math/eq-13-040.png){width=44%}
+
+[]{#eq-13-040}
 
 为计算 2c2e 和 3c2e 积分，我们可以改造第 12 章开发的四中心积分程序。方法是引入一个虚拟 s 型 GTO，替代壳层四元组中的某些 GTO 函数。虚拟 s 型 GTO 函数的指数设为 0，位置与壳层四元组中的一个 GTO 函数相同。下面是构建 3c2e 积分张量的示例代码。2c2e 积分张量可以用类似的方法构建。
 
@@ -1476,11 +1556,15 @@ class CDIIS(DIIS):
 
 我们可以用原子密度叠加形成的块对角矩阵表示 SCF 初始猜测。这些原子密度既可以从使用相同基组的原子计算中得到，也可以从原子计算数据库中获得。例如，ANO-RCC 基组就是这类数据库的一个选择，其中包含原子计算得到的自然轨道。通过指定 ANO-RCC 基函数的基态原子占据数，我们可以近似得到原子密度矩阵 γA,γB,... 随后，我们可以计算目标基函数（T）与参考基函数（A）之间的重叠矩阵 STA，以变换块对角密度矩阵。
 
-![](../assets/math/eq-13-041.png){width=52%}
+![公式 (13.41)](../assets/math/eq-13-041.png){width=52%}
+
+**公式 (13.41)**[]{#eq-13-041}
 
 经验模型，例如 Hückel 模型和 SAP（
 
-![](../assets/math/eq-13-042.png){width=30%}
+![公式图](../assets/math/eq-13-042.png){width=30%}
+
+[]{#eq-13-042}
 
 原子势叠加）模型 []，也可以通过叠加原子数据来生成初始猜测。
 

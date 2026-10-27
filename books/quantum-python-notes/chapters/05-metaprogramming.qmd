@@ -330,7 +330,9 @@ sympy.integrate(expr , (variable , lower_limit , upper_limit))
 - 方程。通用函数 sympy.solve 可用于求解多种方程，包括多项式方程、超越方程和线性方程。SymPy 还为每种类型的方程提供专用求解器。sympy.solveset 函数旨在求出不等式或方程的有限集合或区间。对于线性方程，sympy.linsolve 是以矩阵形式求解的专用函数。对于非线性方程，可以使用 sympy.nonlinsolve 以矩阵形式求解。此外，sympy.nsolve 可用于数值求解非线性方程。
 - 微分方程（ODE）。求解 ODE 时，sympy.dsolve 函数与 sympy.Eq 和 sympy.Function 类结合使用。例如，微分方程
 
-![](../assets/math/eq-05-001.png){width=41%}
+![公式图](../assets/math/eq-05-001.png){width=41%}
+
+[]{#eq-05-001}
 
 xf (x) = cos (x)) 可以转换为 SymPy 代码
 
@@ -406,7 +408,9 @@ AD 技术是机器学习和神经网络发展的基石。神经网络领域的�
 
 的学习门槛较低，因为它的运作方式与标准 Python 面向对象编程风格非常相似。让我们考虑一个计算库仑能的简单问题，以展示 PyTorch 的自动微分（AD）能力。给定一组坐标为 r、电荷为 Z 的点，库仑能可以计算为
 
-![](../assets/math/eq-05-002.png){width=70%}
+![公式图](../assets/math/eq-05-002.png){width=70%}
+
+[]{#eq-05-002}
 
 ∑ ZiZj
 E =.)
@@ -472,7 +476,9 @@ Out[6]: tensor(3.)
 ```
 如果需要自定义某些函数的梯度，我们可以继承 torch.autograd.Function 类来修改求导规则。在子类中，提供 forward 和 backward 方法来定义前向和反向过程。例如，假设我们打算对库仑能函数实现以下求导，
 
-![](../assets/math/eq-05-003.png){width=47%}
+![公式 (5.4)](../assets/math/eq-05-003.png){width=47%}
+
+**公式 (5.4)**[]{#eq-05-003}
 
 = − Zk) ∂xk |rk − r j |
 ∂E ∑ Zj

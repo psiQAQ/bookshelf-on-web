@@ -9,17 +9,27 @@
 
 在耦合簇理论中，波函数使用指数试探形式（exponential ansatz）描述。这一试探形式提供了一种系统的方法，用于描述超出平均场近似的电子相关效应，并逼近完全组态相互作用（Full Configuration Interaction）波函数，其表达式为
 
-![](../assets/math/eq-15-001.png){width=41%}
+![公式图](../assets/math/eq-15-001.png){width=41%}
 
-![](../assets/math/eq-15-002.png){width=46%}
+[]{#eq-15-001}
 
-![](../assets/math/eq-15-003.png){width=48%}
+![公式图](../assets/math/eq-15-002.png){width=46%}
+
+[]{#eq-15-002}
+
+![公式 (15.3)(15.4)(15.5)](../assets/math/eq-15-003.png){width=48%}
+
+**公式 (15.3)(15.4)(15.5)**[]{#eq-15-003}
 
 使用簇算符的指数对哈密顿量进行相似变换，可以得到有效哈密顿量：
 
-![](../assets/math/eq-15-004.png){width=42%}
+![公式图](../assets/math/eq-15-004.png){width=42%}
 
-![](../assets/math/eq-15-005.png){width=45%}
+[]{#eq-15-004}
+
+![公式 (15.7)(15.8)](../assets/math/eq-15-005.png){width=45%}
+
+**公式 (15.7)(15.8)**[]{#eq-15-005}
 
 如果从 CCSD 中排除单激发振幅 Tˆ，就得到 CCD（双激发耦合簇）方法。虽然 CCD 的计算成本与 CCSD 相近，但由于缺少 Tˆ 振幅，其精度较低。
 因此，CCD 方法在实际化学应用中并不像其他方法那样广泛使用。然而，从编程角度看，CCD 方法足以说明 CC 程序中遇到的技术挑战。为了简化问题并展示计算技术，下面我们将重点讨论 CCD 方法。
@@ -28,21 +38,35 @@
 
 CCD 和 CCSD 的方程已在文献 [4–6] [1,2] 中得到广泛讨论。鉴于现有资料十分丰富，我们将省略推导过程，直接列出下面的相关方程。CCD 相关能由下式给出：
 
-![](../assets/math/eq-15-006.png){width=30%}
+![公式图](../assets/math/eq-15-006.png){width=30%}
 
-![](../assets/math/eq-15-007.png){width=67%}
+[]{#eq-15-006}
 
-![](../assets/math/eq-15-008.png){width=48%}
+![公式 (15.10)](../assets/math/eq-15-007.png){width=67%}
 
-![](../assets/math/eq-15-009.png){width=46%}
+**公式 (15.10)**[]{#eq-15-007}
 
-![](../assets/math/eq-15-010.png){width=50%}
+![公式图](../assets/math/eq-15-008.png){width=48%}
+
+[]{#eq-15-008}
+
+![公式图](../assets/math/eq-15-009.png){width=46%}
+
+[]{#eq-15-009}
+
+![公式图](../assets/math/eq-15-010.png){width=50%}
+
+[]{#eq-15-010}
 
 T2 方程是一个非线性方程，可以通过不动点迭代（fixed-point iteration）求解：
 
-![](../assets/math/eq-15-011.png){width=60%}
+![公式图](../assets/math/eq-15-011.png){width=60%}
 
-![](../assets/math/eq-15-012.png){width=49%}
+[]{#eq-15-011}
+
+![公式图](../assets/math/eq-15-012.png){width=49%}
+
+[]{#eq-15-012}
 
 现在来看 CCD 的 Python 程序。首先，我们定义函数来计算 CCD 相关能，并根据式 (15.14) 更新 T2 振幅。
 
@@ -79,7 +103,9 @@ def update_CCD_amplitudes(H: h5py.Group ,t 2 , level_shift=0):
 ```
 CCD 方程涉及大量指标求和，可以使用张量收缩程序高效计算。这里我们使用 einsum 函数执行这些张量收缩。为了提高示例程序的可读性，我们利用 T2 振幅的反对称性质，省略这些张量中不同指标之间的约束（如 i >j 和 a >b）。这将受约束求和转换为无约束求和，例如：
 
-![](../assets/math/eq-15-013.png){width=50%}
+![公式图](../assets/math/eq-15-013.png){width=50%}
+
+[]{#eq-15-013}
 
 CCD 程序涉及五种分子轨道（MO）积分，分别记为 vvoo、oovv、vovo、oooo 和 vvvv。在这些记号中，o 和 v 分别表示 ⟨pq||rs⟩ 四个指标中的占据轨道和虚轨道指标。下面的函数展示了这些积分的计算方法。
 
@@ -115,11 +141,15 @@ def mo_integrals(mol: pyscf.gto.Mole , orbitals , Hfile=None):
 为了简化分子轨道（MO）积分的计算过程，我们使用 PySCF 软件包计算整个 MO 积分张量，然后提取所需的子块。利用原子轨道（AO）积分的置换对称性，并将 I/O 操作与计算重叠，可以提高积分计算程序的效率。我们已在第 12 章介绍过这些技术主题，这里不再重复。
 PySCF 中的 ao2mo 模块只生成空间轨道上的 MO 积分，采用化学记号 (pr|qs)。上面给出的 mo_integrals 函数将 MO 积分从 PySCF 的约定转换为自旋轨道基组中的物理学记号：
 
-![](../assets/math/eq-15-014.png){width=37%}
+![公式图](../assets/math/eq-15-014.png){width=37%}
+
+[]{#eq-15-014}
 
 在这一转换中，每个空间轨道映射到两个自旋轨道（spin-orbitals）
 
-![](../assets/math/eq-15-015.png){width=32%}
+![公式图](../assets/math/eq-15-015.png){width=32%}
+
+[]{#eq-15-015}
 
 数组索引 0::2 和 1::2 分别用于访问积分张量中的 α 轨道和 β 轨道。
 最后，我们可以实现不动点迭代（fixed-point iteration）来求解 T2
@@ -518,11 +548,15 @@ class Tensor:
 
 二次量子化算符遵守以下对易关系（commutation relations）：
 
-![](../assets/math/eq-15-016.png){width=47%}
+![公式 (15.17)(15.18)(15.19)](../assets/math/eq-15-016.png){width=47%}
+
+**公式 (15.17)(15.18)(15.19)**[]{#eq-15-016}
 
 这些关系为收缩（contraction）运算提供了基础，收缩运算将时间排序的算符转换为其正规排序表示：
 
-![](../assets/math/eq-15-017.png){width=46%}
+![公式图](../assets/math/eq-15-017.png){width=46%}
+
+[]{#eq-15-017}
 
 如果 FieldOperator 可对易，则 C( ˆf1, ˆf2) 的值为零；在以下任一条件下会出现这种情况：
 
@@ -571,7 +605,9 @@ __slots__ = [ 'operators', 'factor', 'deltas', 'remaining'] # (1)
 我们来看看第 (1) 行中的属性。operators、deltas 和 factor 属性的含义很明确。它们分别表示一组 FieldOperator、由收缩生成的一组克罗内克 δ，以及与整个字符串关联的系数。那么，remaining 属性有什么用途呢？
 remaining 属性用于存储收缩之后任何尚未处理的算符。考虑一个 FieldOperator fˆ 与一列算符之间的收缩：
 
-![](../assets/math/eq-15-018.png){width=52%}
+![公式图](../assets/math/eq-15-018.png){width=52%}
+
+[]{#eq-15-018}
 
 如式 (15.20) 所示，将乘积 fˆf 转换为正规排序形式之后，可以继续对 fˆ 与后续算符进行收缩。remaining 属性记录仍可用于进一步收缩的算符。利用 remaining 属性，我们可以用以下递归函数实现式 (15.21) 中描述的正规排序过程。
 
@@ -624,14 +660,20 @@ def contract(string1 , string2):
 ```
 到目前为止，我们已经完成了 FieldOperator 和 String 类所需的代数运算。接下来，我们将使用这些基础元素定义 CCD 理论中的哈密顿算符（Hamiltonian operator）和 Tˆ 算符。二次量子化的哈密顿量表示如下：
 
-![](../assets/math/eq-15-019.png){width=30%}
+![公式图](../assets/math/eq-15-019.png){width=30%}
+
+[]{#eq-15-019}
 
 请注意，我们采用的是反对称化形式的双电子积分张量（two-electron integral tensor）。使用反对称张量的原因将在后续讨论中变得更加清楚。利用 String 类和 Tensor 类，可以轻松构造哈密顿量的符号表示。
 类似的方法可用于构造 Tˆ
 
-![](../assets/math/eq-15-020.png){width=45%}
+![公式图](../assets/math/eq-15-020.png){width=45%}
 
-![](../assets/math/eq-15-021.png){width=45%}
+[]{#eq-15-020}
+
+![公式图](../assets/math/eq-15-021.png){width=45%}
+
+[]{#eq-15-021}
 
 ```python
 def _make_operator(factor , indices , label=None):
@@ -658,7 +700,9 @@ def bra_projector(n):
 在这些算符中，我们对张量指标和算符串使用同一组 FieldOperator 对象。为了建立 FieldOperator 与张量指标之间的对应关系，每个 FieldOperator 都需要一个唯一标识符。随后用这些标识符来识别张量指标。由于 Python 本身会为每个不同的 FieldOperator 对象生成唯一 ID，为简单起见，我们使用 FieldOperator 对象本身作为张量指标的标识符。这种方法意味着每个 FieldOperator 对象都是唯一的，不能被克隆，因为任何 copy() 方法都会产生一个具有不同 ID 的新 FieldOperator 对象。
 得到哈密顿量和 Tˆ 算符的符号表示后，我们现在可以计算 Hˆ。这个有效哈密顿量（effective Hamiltonian）可以通过 Baker-Campbell-Hausdorff 展开求得：
 
-![](../assets/math/eq-15-022.png){width=57%}
+![公式图](../assets/math/eq-15-022.png){width=57%}
+
+[]{#eq-15-022}
 
 在耦合簇理论（coupled cluster theory）框架中，BCH 展开可以在四阶截断。下面的 Python 代码模拟了 BCH 展开：
 
@@ -750,7 +794,9 @@ for delta in deltas: # (1)
 
 - string 可能包含源自哈密顿算符的 Creation(’*’) 和 Annihilation(’*’) 算符。这些算符只能出现在收缩后串的最右端。作用于 HF 参考态时，它们会产生对积分中占据指标的求和。如果串中包含四个标记为 ’*’ 的 FieldOperator 对象，它们一定都源自哈密顿量的双电子部分。这一项对应 HF 行列式的双电子能量，由下式给出：
 
-![](../assets/math/eq-15-023.png){width=30%}
+![公式图](../assets/math/eq-15-023.png){width=30%}
+
+[]{#eq-15-023}
 
 - 如果串中还留有任何 Annihilation(’O’) 或 Creation(’V’) 算符，则该串的值为零。这是因为这些算符作用于左矢 ⟨Ψ 0| 上的 HF 参考态会得到零态。
 - 第 (1) 行附近的代码块识别给定 String 对象中与 Delta 对象关联的张量指标。
@@ -877,7 +923,9 @@ def _contract_fgroup_fop(fgroup: FOpGroup , fop: FieldOperator) -> List[
 ```
 _contract_fgroup_fgroup 函数更复杂。由于两个 FOpGroup 中各有多个 FieldOperator 对象，它可能产生多种收缩串。然而，我们可以通过直接考虑收缩输出的最终状态来简化实现。由于 FOpGroup 内部的置换对称性，收缩输出最多可以包含 t 个不同的收缩串，其中 t 是不超过输入 FOpGroup 对象大小的最大整数。这 t 个不同的收缩串可以通过 Delta 对象的数量加以区分，数量从一个到 t 个不等。对于每个收缩串，我们可以使用最简单的收缩模式构造它，然后赋予适当的乘数以计入简并度（degeneracy）。简并度等于形成 Delta 对象的不同可能组合的数量。例如，包含 k 个 Delta 对象的收缩串可以涉及
 
-![](../assets/math/eq-15-024.png){width=30%}
+![公式图](../assets/math/eq-15-024.png){width=30%}
+
+[]{#eq-15-024}
 
 种从第一个 FOpGroup 中选择算符的方式，以及从第二个 FOpGroup 中选择算符的方式，每次选择各有 k! 种组合。这得到的简并度为
 n
@@ -928,7 +976,9 @@ def _contract_fop_string(fop: Union[FieldOperator , FOpGroup] , string:
 ```
 接下来构造哈密顿量（Hamiltonian）、Tˆ 算符和左矢投影算符时，我们也需要利用 FOpGroup 类纳入有关置换对称性的信息。需要注意的是，CCD 方程中的投影算符 μ 具有反对称的置换对称性。它也可以表示为反对称形式。
 
-![](../assets/math/eq-15-025.png){width=50%}
+![公式图](../assets/math/eq-15-025.png){width=50%}
+
+[]{#eq-15-025}
 
 ```python
 def _make_operator(factor , indices , label=None , symmetric=False):
@@ -996,13 +1046,19 @@ F2 += -0.5 * einsum("klli ,abjk ->baji", h2_oooo , t2)
 
 - 使用自旋求迹激发算符（spin-traced excitation operators）定义哈密顿量
 
-![](../assets/math/eq-15-026.png){width=48%}
+![公式 (15.28)](../assets/math/eq-15-026.png){width=48%}
 
-![](../assets/math/eq-15-027.png){width=49%}
+**公式 (15.28)**[]{#eq-15-026}
+
+![公式 (15.29)(15.30)](../assets/math/eq-15-027.png){width=49%}
+
+**公式 (15.29)(15.30)**[]{#eq-15-027}
 
 并添加自旋求迹激发算符的对易子规则
 
-![](../assets/math/eq-15-028.png){width=46%}
+![公式图](../assets/math/eq-15-028.png){width=46%}
+
+[]{#eq-15-028}
 
 这个符号程序就可以适用于无自旋CC理论（spin-free CC theory）。
 
@@ -1012,7 +1068,9 @@ F2 += -0.5 * einsum("klli ,abjk ->baji", h2_oooo , t2)
 
 有效哈密顿量（effective Hamiltonian）
 
-![](../assets/math/eq-15-029.png){width=45%}
+![公式图](../assets/math/eq-15-029.png){width=45%}
+
+[]{#eq-15-029}
 
 就可以利用符号代码推导幺正耦合簇展开（unitary coupled cluster expansions）。
 

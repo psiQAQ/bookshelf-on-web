@@ -163,7 +163,9 @@ index -url = https://pypi.tuna.tsinghua.edu.cn/simple
 
 1. 输入脚本所在的目录；
 
-![](../assets/math/eq-01-001.png){width=30%}
+![公式图](../assets/math/eq-01-001.png){width=30%}
+
+[]{#eq-01-001}
 
 4. .pth 文件中列出的目录。
 

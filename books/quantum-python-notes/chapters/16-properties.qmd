@@ -11,11 +11,15 @@
 计算与单电子算符（single-electron operators）的期望值相关的分子性质很直接。这些性质可以表示为原子轨道（atomic orbital，AO）积分与单粒子约化密度矩阵的乘积。例如，偶极矩、实空间中的电子密度和分子静电势（Molecular Electrostatic Potential，MEP）等性质都属于这一类。
 MEP 是研究分子反应性的有用工具。我们用 MEP 来展示如何根据积分和密度矩阵计算这些性质。特定位置处的 MEP 可以通过张量收缩计算：
 
-![](../assets/math/eq-16-001.png){width=53%}
+![公式图](../assets/math/eq-16-001.png){width=53%}
+
+[]{#eq-16-001}
 
 其中
 
-![](../assets/math/eq-16-002.png){width=47%}
+![公式图](../assets/math/eq-16-002.png){width=47%}
+
+[]{#eq-16-002}
 
 这个积分可以使用第 12 章介绍的单电子库仑积分函数 coulomb_1e_MD 计算。MEP 的计算代码可以实现如下。
 
@@ -66,40 +70,58 @@ with open ('mep.cub', 'w') as f:
 
 可以使用微扰理论解析地计算 Hartree-Fock 方法的核梯度。限制性 HF（restricted HF，RHF）能量可以用占据的 HF 轨道表示：其中 HF 轨道满足正交归一性约束
 
-![](../assets/math/eq-16-003.png){width=42%}
+![公式图](../assets/math/eq-16-003.png){width=42%}
+
+[]{#eq-16-003}
 
 为了优化 HF 轨道，可以使用拉格朗日函数（Lagrangian）纳入归一性约束
 
-![](../assets/math/eq-16-004.png){width=49%}
+![公式图](../assets/math/eq-16-004.png){width=49%}
+
+[]{#eq-16-004}
 
 分子轨道的驻定条件为
 
-![](../assets/math/eq-16-005.png){width=39%}
+![公式图](../assets/math/eq-16-005.png){width=39%}
+
+[]{#eq-16-005}
 
 由此得到 Hartree-Fock-Roothaan 方程
 
-![](../assets/math/eq-16-006.png){width=40%}
+![公式图](../assets/math/eq-16-006.png){width=40%}
+
+[]{#eq-16-006}
 
 对于正则 HF 轨道，拉格朗日乘子 e 是一个对角矩阵。
 计算能量对核坐标的导数时，我们可以用拉格朗日函数代替能量 E。这得到以下能量导数方程：
 
-![](../assets/math/eq-16-007.png){width=50%}
+![公式图](../assets/math/eq-16-007.png){width=50%}
+
+[]{#eq-16-007}
 
 应用驻定条件 (16.6) 和 RHF 能量 (16.3)，可以按如下方式计算能量导数：
 
-![](../assets/math/eq-16-008.png){width=63%}
+![公式 (16.9)](../assets/math/eq-16-008.png){width=63%}
+
+**公式 (16.9)**[]{#eq-16-008}
 
 然后我们利用密度矩阵 D
 
-![](../assets/math/eq-16-009.png){width=44%}
+![公式图](../assets/math/eq-16-009.png){width=44%}
+
+[]{#eq-16-009}
 
 以及能量加权密度矩阵（energy-weighted density matrix）D
 
-![](../assets/math/eq-16-010.png){width=45%}
+![公式图](../assets/math/eq-16-010.png){width=45%}
+
+[]{#eq-16-010}
 
 将能量导数的表达式改写为式 (16.9) 所示的形式：
 
-![](../assets/math/eq-16-011.png){width=56%}
+![公式 (16.12)(16.13)(16.14)(16.15)](../assets/math/eq-16-011.png){width=56%}
+
+**公式 (16.12)(16.13)(16.14)(16.15)**[]{#eq-16-011}
 
 有关 Hartree-Fock 方法核梯度的详细推导，请参阅 Szabo 所著 *Modern Quantum Chemistry* 的附录 C。
 
@@ -107,11 +129,15 @@ with open ('mep.cub', 'w') as f:
 
 积分的导数与基函数对电子坐标的导数有关。考虑一个以原子 A 为中心的笛卡尔高斯函数：这个基函数对核坐标的导数可以转换为对电子坐标的导数
 
-![](../assets/math/eq-16-012.png){width=37%}
+![公式图](../assets/math/eq-16-012.png){width=37%}
+
+[]{#eq-16-012}
 
 这些导数可以表示为两个笛卡尔高斯函数的组合（s 型函数除外）：
 
-![](../assets/math/eq-16-013.png){width=30%}
+![公式图](../assets/math/eq-16-013.png){width=30%}
+
+[]{#eq-16-013}
 
 利用这个方程，我们可以根据两个标准积分计算积分的导数。
 使用第 12 章开发的积分程序，实现积分导数的代码并不困难。为简单起见，本章不再重复积分程序，而是使用 PySCF 软件包计算这些积分导数。
@@ -123,7 +149,9 @@ PySCF 软件包在其 Mole 类中提供了通用积分求值方法 intor()。通
 
 **表 16.1** 核梯度积分的 PySCF 积分名称代码。
 
-![](../assets/math/eq-16-014.png){width=51%}
+![公式图](../assets/math/eq-16-014.png){width=51%}
+
+[]{#eq-16-014}
 
 对应的 Python 代码为：
 
@@ -147,11 +175,15 @@ eri_A = eri_A + eri_A.transpose(0 ,3 ,4 ,1 ,2)
 ```
 h 由动能算符（kinetic operator）和核吸引算符（nuclear attraction operator）组成。动能积分的导数与重叠积分的导数类似。对于核吸引算符 Vnuc，计算既需要作用于基函数的导数，也需要算符自身的导数：
 
-![](../assets/math/eq-16-015.png){width=52%}
+![公式图](../assets/math/eq-16-015.png){width=52%}
+
+[]{#eq-16-015}
 
 然后利用分部积分公式（integration-by-parts formula）将式 (16.20) 转换为基函数的导数：
 
-![](../assets/math/eq-16-016.png){width=65%}
+![公式图](../assets/math/eq-16-016.png){width=65%}
+
+[]{#eq-16-016}
 
 h 的积分程序可以实现为：
 
@@ -170,7 +202,9 @@ def grad_hcore(mol , atom_id):
 
 计算式 (16.9) 中的 HF 核梯度（nuclear gradients）时，可以利用积分中的置换对称性（permutation symmetry）简化计算。例如，K 项可简化为：
 
-![](../assets/math/eq-16-017.png){width=70%}
+![公式 (16.22)](../assets/math/eq-16-017.png){width=70%}
+
+**公式 (16.22)**[]{#eq-16-017}
 
 类似的变换也可应用于 J 项和重叠项。将这些简化与前面介绍的积分函数结合起来，就可以得到计算 RHF 核梯度的程序。
 
@@ -245,7 +279,9 @@ for i in range (mol.natm):
 
 在量子化学中，用于计算解析核梯度（analytical nuclear gradients）的程序通常很复杂。通过与有限差分法得到的结果比较，验证这些程序的正确性至关重要。有限差分梯度应使用两点差分格式（two-point stencil）计算，因为该公式只引入二次误差：
 
-![](../assets/math/eq-16-018.png){width=51%}
+![公式图](../assets/math/eq-16-018.png){width=51%}
+
+[]{#eq-16-018}
 
 应为两点差分格式选择合适的步长 h。虽然较小的步长有助于减小高阶项的影响，但过小的步长可能放大式 (16.23) 中减法造成的误差，从而导致数值误差增大。
 有限差分梯度和解析梯度的结果很接近，但仍有细微差异。在这种情况下，我们如何确保解析梯度的正确性？
@@ -265,15 +301,21 @@ for i in range (mol.natm):
 一阶轨道的系数可以由 Hartree-Fock-Roothaan 方程的一阶展开导出：
 作为求解该方程的一种标准方法，我们可以将零阶分子轨道（molecular orbitals，MO）作为基函数来变换方程。这会得到一阶轨道的虚轨道-占据轨道块的方程：占据轨道-占据轨道块和虚轨道-虚轨道块可以由正交约束导出的一阶方程确定：
 
-![](../assets/math/eq-16-019.png){width=62%}
+![公式图](../assets/math/eq-16-019.png){width=62%}
+
+[]{#eq-16-019}
 
 将式 (16.25) 和式 (16.26) 结合，可以导出闭壳层 RHF 模型的耦合微扰 Hartree-Fock（coupled perturbed Hartree-Fock，CPHF）方程：
 
-![](../assets/math/eq-16-020.png){width=67%}
+![公式图](../assets/math/eq-16-020.png){width=67%}
+
+[]{#eq-16-020}
 
 其中
 
-![](../assets/math/eq-16-021.png){width=57%}
+![公式 (16.28)](../assets/math/eq-16-021.png){width=57%}
+
+**公式 (16.28)**[]{#eq-16-021}
 
 尽管式 (16.28) 中的四指标积分以分子轨道（MO）基表示，但没有必要显式构造这些分子轨道积分。可以采用一种更高效的方法：
 
@@ -287,7 +329,9 @@ for i in range (mol.natm):
 在此过程中，我们可以利用积分和密度矩阵中的置换对称性（permutation symmetry）进一步降低计算成本。例如，式 (16.28) 中的项
 可以改写为：
 
-![](../assets/math/eq-16-022.png){width=65%}
+![公式 (16.29)](../assets/math/eq-16-022.png){width=65%}
+
+**公式 (16.29)**[]{#eq-16-022}
 
 以类似方式改写式 (16.28) 的其他项之后，我们就可以着手实现式 (16.28) 的计算程序。
 
@@ -331,7 +375,9 @@ def get_vhf(eri , dm):
 ```
 耦合微扰 Hartree–Fock（CPHF）方程 (16.27) 本质上是一个线性方程
 
-![](../assets/math/eq-16-023.png){width=41%}
+![公式图](../assets/math/eq-16-023.png){width=41%}
+
+[]{#eq-16-023}
 
 这个方程可以用 Krylov 线性方程求解器求解，我们将在第 16.3 节讨论该求解器。为了求解 CPHF 方程，我们实现一个自定义矩阵-向量函数，其中包含式 (16.27) 中的因子 (ea − ei)。计算一阶分子轨道的程序如下所示。
 
@@ -382,22 +428,30 @@ d m=d m+d m . T
 
 许多量子化学问题可以表述为涉及方阵 A 和向量 b 的线性方程，
 
-![](../assets/math/eq-16-024.png){width=41%}
+![公式图](../assets/math/eq-16-024.png){width=41%}
+
+[]{#eq-16-024}
 
 矩阵 A 往往计算成本过高，或者太大而无法完整存储在内存中。在这种情况下，直接构造矩阵 A，然后使用针对稠密矩阵的常规线性代数技术求解线性方程，并不现实。取而代之的是，用一个计算 A 与 x 乘积的函数来表示矩阵 A。为了求解线性方程 (16.31)，我们必须依靠迭代方法。
 一种方法是将问题改写为不动点迭代（fixed-point iteration）问题：
 
-![](../assets/math/eq-16-025.png){width=41%}
+![公式图](../assets/math/eq-16-025.png){width=41%}
+
+[]{#eq-16-025}
 
 不动点迭代可以使用 DIIS 方法加速。另一种选择是采用 Krylov 子空间（Krylov subspace）方法迭代求解方程 [3,4]。
 矩阵 A 和向量 b 的 Krylov 空间 {v0,v 1,..,v n− 1} 通过递归的矩阵-向量乘法生成
 
-![](../assets/math/eq-16-026.png){width=40%}
+![公式 (16.33)(16.34)](../assets/math/eq-16-026.png){width=40%}
+
+**公式 (16.33)(16.34)**[]{#eq-16-026}
 
 解 x 可以用基向量表示
 用基向量 v 表示 A 和 b，可以推导出系数 c 的线性方程：
 
-![](../assets/math/eq-16-027.png){width=50%}
+![公式图](../assets/math/eq-16-027.png){width=50%}
+
+[]{#eq-16-027}
 
 可以高效地求解这个线性方程，从而确定解 x。
 从数学上看，这个方法相当直接。然而，在实际应用中必须考虑几个技术问题：
@@ -405,7 +459,9 @@ d m=d m+d m . T
 - 反复进行矩阵-向量乘法的过程可能导致基向量中出现极大的数值。此外，生成的基向量可能接近线性相关，这可能导致后续线性代数计算出现数值问题。为解决这个问题，每次生成新向量时，都需要检查已有基向量之间是否存在线性相关性。如果检测到线性相关，就应停止生成 Krylov 空间。
 - 在求解子空间线性方程 (16.36) 之前，没有必要生成所有线性无关的基向量 v。通常，较小的 Krylov 子空间就足以达到所需精度。为了高效截断 Krylov 子空间，我们可以求解子空间方程 (16.36) 并计算残差（residual）
 
-![](../assets/math/eq-16-028.png){width=39%}
+![公式 (16.37)](../assets/math/eq-16-028.png){width=39%}
+
+**公式 (16.37)**[]{#eq-16-028}
 
 每次生成新基向量时都进行上述计算。如果残差的大小低于收敛阈值，就可以停止生成基向量的迭代。函数 solve_krylov 可以实现如下：
 
@@ -450,7 +506,9 @@ return x
 ```
 我们来考虑如何将初始猜测（initial guess）纳入线性方程求解器。给定初始猜测 x0，原线性方程的解可以写为 x = x 0 + x。然后我们可以将线性方程 (16.31) 改写为
 
-![](../assets/math/eq-16-029.png){width=46%}
+![公式图](../assets/math/eq-16-029.png){width=46%}
+
+[]{#eq-16-029}
 
 通过调整向量 b，我们可以对 x 使用同一个 Krylov 子空间求解器，得到修订后的函数：
 
@@ -464,7 +522,9 @@ def solve_krylov(A ,b , x0=None , tol=1e -5 , maxiter=50):
 Krylov 子空间迭代方法可能遇到收敛问题。在有限的迭代次数内，生成的 Krylov 空间可能无法充分表示线性方程的解。为解决收敛问题，一种方法是将未收敛的结果作为初始猜测，然后再次应用求解器。另一种方法是将未收敛的结果作为不动点迭代方程 (16.32) 的初始猜测，并使用 DIIS 求解。
 式 (16.31) 的基本假设是矩阵 A 相对于单位矩阵较「小」，本质上充当单位矩阵的扰动。然而，这一假设在实践中未必总是成立，Krylov 求解器也未必总能得到收敛解。为了调整扰动矩阵 A 的强度，我们可以引入对角矩阵 d 并改写线性方程
 
-![](../assets/math/eq-16-030.png){width=70%}
+![公式图](../assets/math/eq-16-030.png){width=70%}
+
+[]{#eq-16-030}
 
 通过选择合适的对角矩阵 d，可以加快 Krylov 子空间迭代的收敛。
 对于难以求解的线性方程，可能需要结合前述技术以及第 4 章讨论的其他稀疏矩阵求解器，才能达到收敛。
@@ -883,23 +943,33 @@ print(dmf.mol.coords)
 我们前面开发的 CCD_solve 函数使用不动点迭代（fixed-point iteration）求解 t2 张量。在这一迭代过程中，JAX AD 为每次迭代生成追踪器（tracer）。每个追踪器负责存储该次迭代的 t2 中间状态，导致内存占用显著增加。可以使用隐式微分（implicit differentiation）技术优化这段 AD 代码 [15,16]。
 考虑一个关于可微变量 a（例如核坐标）和某些自由变量 x（例如 CCD 程序中的 t2 张量）的方程：
 
-![](../assets/math/eq-16-031.png){width=42%}
+![公式图](../assets/math/eq-16-031.png){width=42%}
+
+[]{#eq-16-031}
 
 利用不动点迭代可以得到该方程的解 x，CCD_solve 函数中实现的就是这种方法。所得的 x 随后用于计算另一个量，例如 CCD 能量。可以用拉格朗日乘子（Lagrange multiplier）Λ 构造 CCD 能量的拉格朗日函数（Lagrangian），以纳入约束条件 (16.40)：
 
-![](../assets/math/eq-16-032.png){width=52%}
+![公式图](../assets/math/eq-16-032.png){width=52%}
+
+[]{#eq-16-032}
 
 随后，我们可以继续寻找拉格朗日函数的极大值或极小值。拉格朗日函数的驻定条件给出两个方程：
 
-![](../assets/math/eq-16-033.png){width=45%}
+![公式 (16.42)(16.43)](../assets/math/eq-16-033.png){width=45%}
+
+**公式 (16.42)(16.43)**[]{#eq-16-033}
 
 第一个方程对应于约束条件 (16.40)。第二个方程定义了 Λ。简化后，它可以写成以下形式：
 
-![](../assets/math/eq-16-034.png){width=48%}
+![公式图](../assets/math/eq-16-034.png){width=48%}
+
+[]{#eq-16-034}
 
 利用式 (16.41) 中定义的拉格朗日函数，就可以计算能量导数：
 
-![](../assets/math/eq-16-035.png){width=51%}
+![公式图](../assets/math/eq-16-035.png){width=51%}
+
+[]{#eq-16-035}
 
 线性方程 (16.44) 可以使用 Krylov 子空间求解器（Krylov subspace solver）高效求解。在 CCD 不动点迭代的背景下，这个线性方程的函数可以实现如下：
 

@@ -132,11 +132,15 @@ Ufunc 使我们能够用一条命令操作整个数组对象，从而不需要�
 
 下面通过一个例子说明使用 out 关键字存储输出的好处。考虑对于分布函数，寻找正 x 轴上满足 P (x) = ϵ 的点这一任务
 
-![](../assets/math/eq-02-001.png){width=44%}
+![公式图](../assets/math/eq-02-001.png){width=44%}
+
+[]{#eq-02-001}
 
 P (x) = x exp(− ax).) 这个问题可以用不动点迭代求解：
 
-![](../assets/math/eq-02-002.png){width=44%}
+![公式图](../assets/math/eq-02-002.png){width=44%}
+
+[]{#eq-02-002}
 
 xi+1 = log(xi).)
 a ϵ
@@ -509,11 +513,15 @@ NumPy 核心库使用 strides 属性计算数组中各个元素的内存地址�
 在上述例子中，strides 属性的值由数组的其他属性推导而来。乍看之下，strides 属性似乎是多余的。实际上，这是 NumPy 的一种精妙设计，为表示多维数组提供了灵活而高效的方式。strides 属性允许我们复用内存并在不同数组之间共享数据，从而有效减少内存消耗和数组间复制数据的成本。
 为了说明这一优势，我们来考虑 Hankel 矩阵（Hankel matrix）
 
-![](../assets/math/eq-02-003.png){width=32%}
+![公式图](../assets/math/eq-02-003.png){width=32%}
+
+[]{#eq-02-003}
 
 ⎟⎟
 
-![](../assets/math/eq-02-004.png){width=31%}
+![公式图](../assets/math/eq-02-004.png){width=31%}
+
+[]{#eq-02-004}
 
 ⎟
 Hankel 矩阵是一个方阵，其元素由向量得出。每个元素由公式 Hij = ai +j 定义。要构造 Hankel 矩阵，可以用嵌套循环实现代码
@@ -1029,15 +1037,23 @@ array([mpf('0.0'), mpf( '1.0'), mpf( '1.414213562373095048801688713')] , dtype
 结合 mpf 数组和 np.vectorize 生成的 ufunc，我们可以使用更复杂的 NumPy 功能。例如，NumPy 有一个用于执行离散傅里叶变换（discrete Fourier transform，DFT）操作的模块 np.fft。其核心函数包括
 np.fft.fft，用于 DFT 公式
 
-![](../assets/math/eq-02-005.png){width=45%}
+![公式图](../assets/math/eq-02-005.png){width=45%}
 
-![](../assets/math/eq-02-006.png){width=45%}
+[]{#eq-02-005}
+
+![公式图](../assets/math/eq-02-006.png){width=45%}
+
+[]{#eq-02-006}
 
 其中，由 np.fft.fftfreq 函数生成的采样频率 km 在一个周期内居中。
 
-![](../assets/math/eq-02-007.png){width=30%}
+![公式图](../assets/math/eq-02-007.png){width=30%}
 
-![](../assets/math/eq-02-008.png){width=57%}
+[]{#eq-02-007}
+
+![公式 (2.7)](../assets/math/eq-02-008.png){width=57%}
+
+**公式 (2.7)**[]{#eq-02-008}
 
 任意精度的 DFT 及其逆变换可以实现如下：
 

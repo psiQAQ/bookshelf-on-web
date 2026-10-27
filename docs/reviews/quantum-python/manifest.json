@@ -91,13 +91,13 @@
     },
     {
       "path": "books/quantum-python-notes/index.qmd",
-      "bytes_lf": 4689,
-      "sha256": "ccc7492d92fde7fc8492cbc0cd69db8177b0ecc91341de3b8dc25a898f9f9eb1"
+      "bytes_lf": 4656,
+      "sha256": "6615f7874e3dd1cec37d43d9893d59e5d8ca86c0a3a96443d5f5d020103d0d37"
     },
     {
       "path": "books/quantum-python-notes/metadata.yaml",
-      "bytes_lf": 1216,
-      "sha256": "7586e8dd33e334baaa7156d87bdc0400ae202b90c1e5a9d91dd127cdf8ec3978"
+      "bytes_lf": 1129,
+      "sha256": "16338dd75a3b6a022c791b4736ed40e86bfe5329047407f798a63a515b04f646"
     },
     {
       "path": "books/quantum-python-notes/provenance.json",
@@ -121,8 +121,8 @@
     },
     {
       "path": "docs/reviews/quantum-python/integration-review.md",
-      "bytes_lf": 3616,
-      "sha256": "8cf66fb24abd965ef3e76ea5643e625b1ca626f83b12e8e787e4effb0ec0d7f5"
+      "bytes_lf": 3610,
+      "sha256": "7e38c05e8412953f7e644515fcf917a9e49f383bd33ec44c0c1eb2eb268377a5"
     },
     {
       "path": "docs/reviews/quantum-python/notes-browser.json",
@@ -151,8 +151,8 @@
     },
     {
       "path": "docs/reviews/quantum-python/review-a.md",
-      "bytes_lf": 4501,
-      "sha256": "d2cbdb7922dbe0d4fc2380a816a845f5c15793422e684553746d0c8a98bdd29d"
+      "bytes_lf": 4465,
+      "sha256": "e630fdfe8d2886016093c32a4e0a9f8593fece537197db08639244ec7e500b9f"
     },
     {
       "path": "docs/reviews/quantum-python/review-b.md",
@@ -166,8 +166,8 @@
     },
     {
       "path": "docs/reviews/quantum-python/review-d.md",
-      "bytes_lf": 4631,
-      "sha256": "7cc3057794562e20336b00e76910ad4d9123c284f3a1760b5e87b818c35bc11a"
+      "bytes_lf": 4616,
+      "sha256": "d545cd78dd6eb1a05855f121743c7d8db9641d392d6f7838a6718e885fd9f494"
     },
     {
       "path": "docs/reviews/quantum-python/tests.txt",
@@ -181,13 +181,13 @@
     },
     {
       "path": "docs/reviews/quantum-python-verification.md",
-      "bytes_lf": 8506,
-      "sha256": "40079b577c63c63148f1301fa3328130ad9ba328ce3069cd174a102de54a1a46"
+      "bytes_lf": 8376,
+      "sha256": "c68e59a3c40144abafc9a423b33bb9eab619cb08f3064b3890dd30d75aa31889"
     },
     {
       "path": "scripts/publishing.py",
-      "bytes_lf": 13380,
-      "sha256": "27b9bca6b40016fdb28d3e25f229b16f1e7bb34602deffafbb293639d676684b"
+      "bytes_lf": 13163,
+      "sha256": "1aa8101a9028b9c76fe62608a62bd876afcb3c3817c73e55bac5b63e20f85600"
     },
     {
       "path": "scripts/verify_notes.py",
@@ -201,8 +201,8 @@
     },
     {
       "path": "tests/test_publishing.py",
-      "bytes_lf": 21041,
-      "sha256": "103346e65e88fe4c6d9e821f5a117280603e6acc94d74c2b97ec8a9f5c46c8aa"
+      "bytes_lf": 20221,
+      "sha256": "a922019a8da4c04e7d969095cf75bad9c6a56b033fdf3660b722bc0699157332"
     },
     {
       "path": "tests/test_quantum_notes.py",

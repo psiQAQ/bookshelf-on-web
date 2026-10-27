@@ -29,4 +29,4 @@ No issues found.
 
 ### Merge verdict
 
-**OK with notes**：集成实现静态复审未发现实际缺陷；浏览器总验收尚未通过。此结论不构成公开发布、合并 main 或部署许可。
+**OK with notes**：集成实现静态复审未发现实际缺陷；浏览器总验收尚未通过。此结论不构成公开发布、合并 main 或部署。

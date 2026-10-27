@@ -8,12 +8,6 @@
       "severity": "warning"
     },
     {
-      "code": "ineligible",
-      "path": "books/sample-linear-algebra/metadata.yaml",
-      "message": "Public rights clearance, license and evidence URL are required",
-      "severity": "warning"
-    },
-    {
       "code": "unreviewed-provenance",
       "path": "books/sample-linear-algebra/metadata.yaml",
       "message": "Source mappings still need review",
@@ -26,12 +20,6 @@
       "severity": "warning"
     },
     {
-      "code": "ineligible",
-      "path": "books/sample-waves/metadata.yaml",
-      "message": "Public rights clearance, license and evidence URL are required",
-      "severity": "warning"
-    },
-    {
       "code": "unreviewed-provenance",
       "path": "books/sample-waves/metadata.yaml",
       "message": "Source mappings still need review",
@@ -41,12 +29,6 @@
       "code": "ineligible",
       "path": "books/quantum-python-notes/metadata.yaml",
       "message": "Explicit human approval and its evidence are required",
-      "severity": "warning"
-    },
-    {
-      "code": "ineligible",
-      "path": "books/quantum-python-notes/metadata.yaml",
-      "message": "Public rights clearance, license and evidence URL are required",
       "severity": "warning"
     },
     {
@@ -66,5 +48,5 @@
   ],
   "quarto_version": "1.10.19",
   "file_count": 104,
-  "size_bytes": 8211961
+  "size_bytes": 8211823
 }

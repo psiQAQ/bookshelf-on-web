@@ -1966,7 +1966,7 @@ Name: Q, dtype: float64
 所有输出都有一致的索引，apply 方法就会返回一个 DataFrame。这就是为什么我们在前一个例子的自定义函数中调用 set_index(’symbol’) 方法，以得到一致的索引。
 虽然 apply 方法为 GroupBy 对象提供了一种通用解决方案，但 Pandas 为常见用例专门实现了几种 groupby-apply 模式 [22]。这些功能包括：
 
-- 。GroupBy.agg 方法用于对每个组中的每一列应用聚合函数。聚合函数可以将一列归约为一个标量。例如，
+GroupBy.agg 方法用于对每个组中的每一列应用聚合函数。聚合函数可以将一列归约为一个标量。例如，
 
 ```text
    cluster.groupby(cluster['monomer']).apply(lambda x: x. sum(axis=0))
@@ -1983,8 +1983,8 @@ Name: Q, dtype: float64
 ```
 某些聚合函数，如 max、sum、mean 和 std，经过了高度优化，并实现为 GroupBy 类的方法。
 
-- 。GroupBy.transform 方法可以用采用相同索引的 DataFrame 替换每个组的 DataFrame。
-- 。GroupBy.filter 方法可以根据指定的筛选规则排除某些组。
+GroupBy.transform 方法可以用采用相同索引的 DataFrame 替换每个组的 DataFrame。
+GroupBy.filter 方法可以根据指定的筛选规则排除某些组。
 
 ### 2.3.9 和副本
 

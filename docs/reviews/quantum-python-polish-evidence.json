@@ -4,7 +4,7 @@
  "prompt": ".local/polish_prompt.md",
  "gate": ".local/check_qmd.py",
  "before_revision": "fe35636",
- "after_tree": "6b32f9fce59a19b82af1e87f379d51d8a11488aa",
+ "after_tree": "9cb7b5f6f65a68017b67610b3fd36215d0a10c89",
  "chapters": [
   {
    "chapter": "00-preface",
@@ -74,9 +74,9 @@
    "paragraphs_after": 1329,
    "structure_identical": true,
    "sha256_before": "ef25b523b82aff52962b4220aba9e4ecc1a9d654957c961e4a39bac49d697ddd",
-   "sha256_after": "b87f2acc5d7883063c34a5305d530c0801b8267a06bfca4fcecbebb2d8c2a680",
-   "lines_added": 39,
-   "lines_removed": 39
+   "sha256_after": "a8b9e66075200dc5633a2f3627645408c8f143fc3bc5f2c26a151945ba7c0989",
+   "lines_added": 42,
+   "lines_removed": 42
   },
   {
    "chapter": "03-visualization",
@@ -98,9 +98,9 @@
    "paragraphs_after": 436,
    "structure_identical": true,
    "sha256_before": "2a1f3898fb539f0651a4dfd355c7a7be8de500b256bb75f657856d2119b3a73e",
-   "sha256_after": "846697fa85d10efddde31bd249b7f45175867f9b70ab6128226622b19d872a8f",
-   "lines_added": 37,
-   "lines_removed": 37
+   "sha256_after": "68698a24d841575505502467c201b8783d8f2f8f10aadb3f17f7240ea5e6e85c",
+   "lines_added": 40,
+   "lines_removed": 40
   },
   {
    "chapter": "04-scientific-tools",
@@ -146,9 +146,9 @@
    "paragraphs_after": 416,
    "structure_identical": true,
    "sha256_before": "fdcd172185c79b57d29ba5b41d9b76961d4ca8e3edb4e21db618f979cdad771d",
-   "sha256_after": "31a5e3f0959f5d9fdfb41ca8e6d51458135e85f4047c9d875e99d9e526e2b8d7",
-   "lines_added": 17,
-   "lines_removed": 17
+   "sha256_after": "5bcd080fbd25485fe3023568c396068a8c193fd98e37e0b6f7413425034a1ed2",
+   "lines_added": 18,
+   "lines_removed": 18
   },
   {
    "chapter": "06-io",
@@ -242,9 +242,9 @@
    "paragraphs_after": 1619,
    "structure_identical": true,
    "sha256_before": "49c1b98ae47935fd0fd92847d55725cf66d0d9446f2d7f074ee4fc973c0f6345",
-   "sha256_after": "6b4cf4f57ca65f868d0cd11cfc3cfd66cf2b394b98769997279d06e3868a355a",
-   "lines_added": 106,
-   "lines_removed": 106
+   "sha256_after": "06756d11304af8b6ffd110ef67ba27045076044f012623fd5411bc643b650800",
+   "lines_added": 108,
+   "lines_removed": 108
   },
   {
    "chapter": "10-parallel",
@@ -266,9 +266,9 @@
    "paragraphs_after": 1032,
    "structure_identical": true,
    "sha256_before": "ab49ae17bd624a8f7a00b30d75061735f5185fda6a7134c5612be59fff014981",
-   "sha256_after": "3448371843d1595230cd4d9247c1f8ec057887d15b3de7320ce463fb6286ccc8",
-   "lines_added": 14,
-   "lines_removed": 14
+   "sha256_after": "d13bfafe940f2b4f8f228144f738296ac2cefe1b0328871b5f7b64e3fd53f49f",
+   "lines_added": 18,
+   "lines_removed": 18
   },
   {
    "chapter": "11-gpu",

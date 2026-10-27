@@ -2,8 +2,8 @@
 
 可视化在数据处理和分析中起着至关重要的作用。与公式和理论分析相比，它可以帮助我们更直观地理解问题或思想。
 Python 提供了各种用于创建图形的开源工具。在科学数据领域，Matplotlib 是处理 NumPy 数组和 Pandas 数据对象中数据的主要工具。
-虽然 Matplotlib 非常适合创建二维图像，但它的三维可视化能力相当有限，而且性能较差。那么，我们有哪些三维可视化的选择？Mayavi 库就是其中一种选择。它专为科学数据可视化而设计。
-量子化学数据的可视化面临独特的挑战。除了使用 Matplotlib 和 Mayavi 等工具进行数据分析，我们还经常需要使用外部可视化软件来显示分子、晶体、波函数等对象的三维可视化结果。外部可视化软件包不能在 Python 中直接操作。我们必须通过特定的数据格式与它们交互，例如 Molden 和 Cube 文件。如何以编程方式生成这些文件？Python 中的 Jinja 模板技术提供了一些思路。
+虽然 Matplotlib 非常适合绘制二维图像，但其三维绘图能力相对有限且性能欠佳。那么，三维可视化有哪些备选方案？Mayavi 库就是其中一种不错的选择，它专为科学数据可视化量身设计。
+量子化学数据可视化面临独特的挑战。除了使用 Matplotlib 和 Mayavi 等工具分析数据外，我们经常需要借助外部可视化软件呈现分子、晶体与波函数等对象的三维渲染结果。外部可视化软件包无法在 Python 中直接操作，必须依赖特定的数据格式与其交互，例如 Molden 和 Cube 文件。如何以编程方式高效生成这些文件？Python 中的 Jinja 模板技术便提供了一条非常实用的解决思路。
 本章将讨论如何使用这些 Python 工具完成数据可视化任务。
 
 ## 3.1 Matplotlib
@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 ```text
 add_subplot(rows, cols, index)
 ```
-将图形划分为 rows × cols 个单元格。根据参数 index，将按从左上到右下的顺序选择其中一个单元格，并在那里创建一个 Axes 对象。图 3.1 add_subplot 命令的效果。
+将图形划分为 rows × cols 个单元格。根据参数 index，按从左上到右下的顺序选定对应单元格，并在该处创建一个 Axes 对象。图 3.1 展示了 add_subplot 命令的效果。
 
 ![](../assets/figures/fig-3-1.png)
 
@@ -86,7 +86,7 @@ r1 = (X+1.5) **2 + (Y+.5) **2
 Z = .32 *np.exp(-2*r0) - .65 *np.exp(-r1)
 ax.contour(X,Y ,Z )
 ```
-得到基本图形后，我们可以通过调整 Axes 对象的各种属性来改善视觉外观，包括颜色、线型和坐标轴样式等。下面概述绘图时经常调整的一些属性：
+得到基本图形后，我们可以通过调整 Axes 对象的各种属性来改善视觉外观，包括颜色、线型和坐标轴样式等。下面概述绘图时经常调整的若干关键属性：
 
 - 标记。在 ax.scatter 和 ax.plot 图中，我们可以自定义数据点标记的可视化效果，包括形状、大小、颜色和透明度。常见的形状标记包括： -’表示圆形标记， -’表示方形标记， -’表示朝下的三角形标记， -’表示朝上的三角形标记， -’表示加号形标记， -’表示 X 形标记。
 
@@ -97,7 +97,7 @@ ax.contour(X,Y ,Z )
 ```text
 - linels='-.'.
 ```
-可以使用 marker 关键字突出数据点、使用 color 关键字设置颜色，以及使用 linewidth 关键字调整线宽，从而改善线条的外观。除了这些关键字，Matplotlib 还支持简写字符串表示法，同时指定数据标记、线型和线条颜色。例如，简写表示法’s --r’表示带有方形标记的红色虚线。
+我们既能使用 marker 参数突出数据点、使用 color 参数设置颜色，也能使用 linewidth 调整线宽以改善线条外观。除这些关键字外，Matplotlib 还支持简写字符串表示法，可同时指定数据标记、线型与线条色彩。例如，简写表示法’s --r’便表示带有方形标记的红色虚线。
 
 - 表示法。除了前面提到的单字母表示法，颜色也可以通过预定义名称指定，例如
 
@@ -106,7 +106,7 @@ color='darkgreen' and color='tab:purple'.Furthermore,Matplotlibsupports
 ```
 通过 RGB 分量定义颜色，可以使用十六进制代码’#RRGGBB’，也可以使用三个浮点数的元组 (r, g, b)。Matplotlib 配色方案的详细说明可参见 Matplotlib 文档 [2–4]。
 
-- 坐标轴。可以使用 set_xlim、set_ylim、set_xticks 和 set_yticks 函数调整坐标轴。顾名思义，它们分别用于调整坐标轴的范围和坐标轴刻度的显示。可以使用 ax.set_xlabel 和 ax.set_ylabel 方法添加坐标轴标签。要启用对数坐标，
+- 坐标轴。可以使用 set_xlim、set_ylim、set_xticks 与 set_yticks 函数调整坐标轴。顾名思义，它们分别用于调节坐标轴的取值范围和刻度显示。可以使用 ax.set_xlabel 与 ax.set_ylabel 方法添加坐标轴标签。若要启用对数坐标，
 
 ```text
 ax.set_xscale('log')
@@ -130,7 +130,7 @@ include'upper center','upper right','center left','center right',etc.
 ```text
 ax.text(x, y, 'message')
 ```
-将’message’放在图中的坐标 (x, y) 处。此外，ax.annotate 方法提供了一种在文本旁插入更丰富信息元素的方法，例如箭头和其他注释符号。该方法需要指定文本和箭头的位置。例如，下面的语句将文本’message’放在坐标 (2, 2) 处，并绘制一个从 (2, 2) 指向 (1, 3) 的箭头。
+该命令将’message’置于图内坐标 (x, y) 处。此外，ax.annotate 方法支持在文本旁附带更丰富的指示元素，例如箭头与其他注释符号。该方法须指定文字与箭头的具体坐标。例如，下面的语句将文本’message’置于坐标 (2, 2) 处，并绘制从 (2, 2) 指向 (1, 3) 的箭头。
 
 ```text
    ax.annotate('message', xy=(1, 3), xytext=(2, 2), arrowprops=dict(arrowstyle='->'))
@@ -142,8 +142,8 @@ ax.text(x, y, 'message')
 例如，输入 Tex 风格的符号 r’$\mu_0$’可以显示 μ 0。请
 注意定义 Python 原始字符串的前缀 r。这确保原始字符串
 传递给 Matplotlib 函数时不会转换反斜杠字符。
-绘图工作流程的最后一步是显示或保存图像。通常调用 plt.show() 方法显示图像。然而，如果在 Jupyter Notebook 中启用了%matplotlib 魔法命令，就不必显式调用 plt.show() 函数。图像会自动显示。
-保存图像有两种常见方法。在显示图像的交互式窗口中，可以单击 Save 按钮并选择一种格式来保存图形。要在非交互式环境中保存图像，可以使用 Figure.savefig 函数，例如
+绘图工作流程的最后一步是展示或保存图像。通常调用 plt.show() 方法显示图形。如果在 Jupyter Notebook 中启用了%matplotlib 魔法命令，就不必显式调用 plt.show()，图像会自动显示出来。
+保存图像主要有两种途径。在交互式图形窗口中，单击 Save 按钮并选择对应格式即可保存图表。若在非交互式脚本环境下保存图像，可调用 Figure.savefig 函数，例如
 
 ```text
 fig.savefig('result.png')
@@ -153,18 +153,18 @@ fig.savefig('result.pdf')
 ```
 可以根据文件名的后缀自动选择合适的后端，以所需的图像格式渲染图形。
 为帮助你快速找到 Matplotlib 图形的基本配置，我们在图 3.3 中总结了 Matplotlib 的常用功能。
-到目前为止，我们概述了 Matplotlib 的使用方法。如果你正在寻找全面学习 Matplotlib 的指南，Jake Vanderplas 的 Python Data Science Handbook: Essential Tools for Working with Data, 2nd Edition 是一本出色的参考书。该书提供了使用 Matplotlib 的详细说明和示例。此外，浏览 Matplotlib 官方网站上的示例图库也是掌握 Matplotlib 的另一种有效方法。
+到目前为止，我们梳理了 Matplotlib 的基本用法。如果你正在寻找全面学习 Matplotlib 的系统指南，Jake Vanderplas 的 Python Data Science Handbook: Essential Tools for Working with Data, 2nd Edition 是一本出色的参考书。该书提供了详尽的使用说明与实例。此外，浏览官方网站上的示例图库也是掌握 Matplotlib 的另一条有效途径。
 
 ## 3.2 可视化
 
-中的几个绘图函数也支持 Pandas 数据对象的可视化。例如，ax.plot 函数可以识别 Series 和 DataFrame，自动选择索引和数据进行可视化。不过，可视化 Pandas 数据更常用的方法是 Series 和 DataFrame 对象的.plot() 方法。Pandas 的这一内置绘图功能扩展了
+中的几个绘图函数同样支持 Pandas 数据对象的可视化。例如，ax.plot 函数能自动识别 Series 和 DataFrame，选取索引与数据进行绘图。不过，呈现 Pandas 数据更常用的方法是调用 Series 和 DataFrame 对象的.plot() 方法。Pandas 内置的绘图功能扩展了
 
 ![](../assets/figures/fig-3-3.png)
 
 **图 3.3** Matplotlib 绘图功能速查表
 
 API 的功能。具体而言，对于 DataFrame 对象，它可以自动选择数据列，并配置图例、刻度标签和其他可视化元素。
-Pandas.plot 方法支持 Matplotlib 提供的大多数绘图类型，例如 area、barh、density、hist、line、scatter、bar、box、hexbin、kde 和 pie。这些绘图函数的用法很直接。只需访问 DataFrame 对象的特定绘图函数.plot.{function_name}。例如，通过此 API 执行以下代码，可以生成图 3.4 所示的图形。
+Pandas.plot 方法支持 Matplotlib 提供的大多数绘图类型，例如 area、barh、density、hist、line、scatter、bar、box、hexbin、kde 和 pie。这些绘图函数的用法十分直观，只需调用 DataFrame 对象的特定绘图方法.plot.{function_name}。例如，通过此 API 执行以下代码，即可生成图 3.4 所示的图形。
 
 ```python
 fig, axs = plt.subplots(3,3 , figsize=(9, 8))
@@ -182,32 +182,32 @@ df.plot.hexbin('x', 'y', 'z', ax=axs[2,2], title= 'scatter')
 
 **图 3.4** Pandas 绘图方法
 
-要自定义 Pandas 图形，可以为 Pandas.plot 方法指定一些关键字参数，包括 label、style、xticks、yticks、xlim、ylim、title、alpha、kind、figsize 等。此外，可以使用 ax 关键字参数将输出导向特定的 Axes 对象。此选项有助于进一步增强和自定义 Pandas 图形。例如，
+要自定义 Pandas 图形，可以为 Pandas.plot 方法指定一系列常用参数，包括 label、style、xticks、yticks、xlim、ylim、title、alpha、kind、figsize 等。此外，可以使用 ax 关键字参数将输出导向特定的 Axes 对象，该选项有助于进一步增强与定制所生成的图形。例如，
 
 ```python
 In [3]: ax = plt.subplot(111)
         df.plot.bar(ax=ax)
         ax.legend(loc='upper left' )
 ```
-除了 Pandas 内置的绘图函数，还有几个优秀的开源软件包可用于可视化 Pandas 数据。例如，Seaborn [5] 是一个基于 Matplotlib 的工具，专为 Pandas 数据可视化而设计。这个库专门用于 Pandas 数据的后处理和创建信息丰富的统计图形。
+除 Pandas 内置绘图功能外，社区还涌现了多个用于呈现 Pandas 数据的开源工具包。例如，基于 Matplotlib 开发的 Seaborn [5] 专为数据可视化而生，十分适于对 Pandas 数据作后续处理，并能轻松绘制内容详实的统计图表。
 
 ## 3.3 三维绘图
 
-提供三维绘图功能。然而，它的三维绘图功能有些有限。处理大型三维图形时，例如蛋白质分子，Matplotlib 可能会显著变慢。为了有效可视化三维对象，我们应当考虑专为三维绘图设计的其他工具。
-在 Python 中自定义三维可视化的常用工具包包括 Mayavi [6]、PyVista [7]、VisPy [8] 和 Scikit-image [9]。在这些工具包中，Mayavi 特别适合可视化科学数据。它提供了与 Matplotlib 的 pylab 模块相近的使用体验。如果你已经熟悉 Matplotlib，转而使用 Mayavi 进行三维可视化并不困难。
+提供了三维绘图能力，但相关功能仍有局限。当绘制蛋白质分子等大型三维模型时，Matplotlib 往往会出现明显的性能卡顿。为了高效呈现复杂的三维结构，我们应当转向专为三维绘图量身定制的工具。
+在 Python 中用于三维可视化的常见工具包包括 Mayavi [6]、PyVista [7]、VisPy [8] 和 Scikit-image [9]。在这些工具包中，Mayavi 特别适合呈现科学数据。它提供了与 Matplotlib 的 pylab 模块高度相近的操作体验。只要你熟悉了 Matplotlib，迁移到 Mayavi 进行三维绘图便十分自然。
 Mayavi 的安装过程比一般 Python 软件包更复杂。Mayavi 依赖 Python QT 库。根据官方安装说明，可以执行以下命令安装 Mayavi 和 PyQT5：
 
 ```bash
 $ pip install mayavi PyQT5
 ```
-然而，此命令只安装 QT 库的 Python 封装。要启用完整的可视化功能，还必须单独安装依赖库，包括 Visualization Toolkit（VTK）以及 GUI（图形用户界面）库 QtCore、QtGui、QtSvg 和 QtWidgets。这些库可以方便地通过操作系统提供的包管理器安装。例如，在 Ubuntu 发行版上，可以使用以下命令：
+不过，此命令仅安装了 QT 库的 Python 封装。要启用完整的可视化功能，还必须单独安装底层依赖库，包括 Visualization Toolkit（VTK）以及 GUI（图形用户界面）库 QtCore、QtGui、QtSvg 和 QtWidgets。这些库可以通过操作系统的包管理器轻松安装。例如，在 Ubuntu 发行版上可以使用以下命令：
 
 ```bash
 $ sudo apt install -y libqt5core5a libqt5gui5 libqt5svg5 libqt5widgets5 \
         vtk9
 ```
 如果运行的是 Conda 环境，应当通过 Conda 软件包安装 Mayavi、PyQT5 和依赖的 QT 库。
-要在 IPython 或 Jupyter Notebook 中使用 Mayavi，可能需要额外的配置步骤 [10]。在 IPython shell 中，可以使用 IPython 魔术命令 %gui qt 将 GUI 后端更改为 QT。要在 Jupyter Notebook 中使用 Mayavi，可能需要安装最新版本的 node.js，以及以下用于 Jupyter Notebook 的 IPython 扩展。
+要在 IPython 或 Jupyter Notebook 中使用 Mayavi，可能需要额外的配置步骤 [10]。在 IPython shell 中，可以使用魔术命令 %gui qt 将 GUI 后端更改为 QT。若在 Jupyter Notebook 中使用 Mayavi，可能需要安装最新版本的 node.js 以及用于 Notebook 的 IPython 扩展。
 
 ```bash
 $ jupyter-labextension enable widgetsnbextension
@@ -225,7 +225,7 @@ In [2]: from mayavi import mlab
 
 **图 3.5** 使用 mlab.surf 绘制曲面的示例
 
-mayavi.mlab 可以渲染各种三维图形，包括曲面、等值线、点、线、条形图和矢量场。我们先来考察使用 mlab.surf 函数进行的简单曲面可视化。mlab.surf 函数旨在用地毯图可视化二维数组的值，其中 z 轴上的每个值对应二维平面上的一个数据点。下面的脚本展示了数据准备和三维图像绘制的步骤。输出结果如图 3.5 所示。
+mayavi.mlab 能够渲染各种三维图形，包括曲面、等值线、散点、线条、条形图与矢量场。我们先考察用 mlab.surf 函数完成的简单曲面可视化。mlab.surf 函数旨在用地毯图展示二维数组的数值分布，其中 z 轴上的每个值对应二维平面上的一个数据点。下面的脚本展示了数据准备和三维绘图的步骤，输出结果如图 3.5 所示。
 
 ```python
 from mayavi import mlab
@@ -236,7 +236,7 @@ mlab.clf() # clear the current figure
 mlab.surf(x,y ,z , warp_scale= 'auto')
 mlab.show()
 ```
-np.mgrid 函数经常用于 Mayavi 三维可视化。它可以创建密集的多维网格。例如，第 (1) 行的语句生成一个由二维点组成的均匀 100 × 100 网格。这些点可以直接用于 Mayavi 函数。np.mgrid 使用索引语法（[]）和切片来指定均匀网格。切片 start:stop:step 定义起点和终点。step 参数可以是实数，表示点之间的间距；也可以是虚数，表示起点和终点之间的区间数。对于实数 step，切片的工作方式与 np.arange(start, stop, step) 相同。对于虚数 step，它等同于
+np.mgrid 函数经常用于 Mayavi 三维绘图，它能够方便地创建密集的多维空间网格。例如，第 (1) 行语句生成了一个由二维数据点组成的 100 × 100 均匀网格，这些点可直接传给 Mayavi 函数。np.mgrid 利用索引切片语法（[]）来指定网格范围，由切片 start:stop:step 规定起点与终点。step 参数若为实数，代表采样点间距；若为虚数，则代表起点与终点之间的区间划分数。对于实数 step，切片行为与 np.arange(start, stop, step) 相同；而对于虚数 step，它则完全等同于
 
 ```text
 tonp.linspace(start, stop, step.imag).
@@ -246,7 +246,7 @@ tonp.linspace(start, stop, step.imag).
 
 **图 3.6** 由 Mayavi 可视化的分子
 
-使用 Mayavi 可视化复杂的分子性质也是可行的，例如电子密度分布和静电势曲面。我们来看一个用 Pandas DataFrame 表示的分子，其中’Q’表示与每个原子关联的有效电荷：
+借助 Mayavi 同样能够出色展现复杂的分子性质，例如电子密度分布与静电势等值面。我们不妨以包含分子信息的 Pandas DataFrame 为例，其中’Q’字段记录各原子的有效电荷：
 
 ```python
 mole = pd.DataFrame({
@@ -287,10 +287,10 @@ plot_mole(mole)
 在这个绘图脚本中，我们使用了以下技术：
 
 - mlab.points3d 函数用于将球体绘制为原子。该函数可以处理多个点的坐标，并将它们作为单个对象进行渲染。
-- 使用不同的颜色和半径来区分不同类型的原子。与提供各种预定义配色方案的 Matplotlib 不同，Mayavi 没有颜色名称别名。颜色由一个三元素元组指定，每个元素表示对应颜色通道中 RGB 的比例。
+- 使用不同颜色与半径来区分不同种类的原子。与内置丰富预设配色方案的 Matplotlib 不同，Mayavi 并不支持色彩名称别名。其颜色必须传入一个三元元组，由各数值分别表示对应 RGB 颜色通道的比例。
 - 使用 mlab.plot3d 绘制原子之间的键。为了确定共价键，我们考虑原子之间的距离，并将其与相应共价半径之和进行比较。
 
-接下来可视化分子中静电势的等值线。精确计算静电势需要第 16 章开发的程序。为简单起见，我们采用简化模型表示三维空间中的静电势。在此模型中，原子的有效电荷近似为高斯分布，该分布随距原子中心的距离 s 衰减：
+接下来展示分子静电势等值线的绘制。精确计算静电势需要第 16 章编写的程序；为简明起见，我们在此采用简化物理模型来表示三维静电势。该模型将原子的有效电荷近似为高斯分布，且该分布随距原子中心的距离 s 发生衰减：
 
 ![公式图](../assets/math/eq-03-001.png){width=45%}
 
@@ -317,7 +317,7 @@ def eval_potential(mole, grids):
     v = np.einsum( 'q,qv->v', mole.Q, erf(r/radii[:,None]) / r)
     return v.reshape(grids.shape[1:])
 ```
-然后，我们使用 mlab.contour3d 函数可视化静电势的等值线。此函数需要使用空间中的三维网格对电势进行采样。我们将分子放在一个 4 × 4 × 4 的中心，并调用 np.mgrid 函数在这个盒子内部生成均匀网格。这种均匀采样方案对 mlab.contour3d 函数生成平滑等值线至关重要。网格被传入 eval_potential 函数以计算电势值。必须确保输出形状与网格形状相匹配。此外，采样网格的坐标和电势值都应组织为三维数组。默认情况下，mlab.contour3d 函数生成五个等值面。为了控制绘制哪些曲面，我们可以向 contour 关键字参数提供一个值列表来选择曲面。静电势的等值线如图 3.7 所示。
+随后，我们使用 mlab.contour3d 函数绘制静电势等值面。该函数需要在三维空间网格上对电势充分采样。我们将分子放置在一个 4 × 4 × 4 盒子的中心，并调用 np.mgrid 函数在盒子内部生成规整的均匀网格。这种均匀采样方案对 mlab.contour3d 生成平滑的等值面起着关键作用。网格传入 eval_potential 函数以求解各点电势值，注意务必保证输出数组形状与网格完全一致。此外，采样网格的坐标与电势场数值都应组织为三维数组。默认情况下，mlab.contour3d 函数会自动生成五个等值面；若想控制绘制哪些特定曲面，只需向 contour 参数传入包含特定数值的列表。静电势等值面效果如图 3.7 所示。
 
 ```python
 def view_contour(mole,f n, contours=5, resolution=(80,80,80)):
@@ -347,7 +347,7 @@ view_contour(mole, eval_potential,[-.1, .1])
 
 **图 3.7** 以等高线可视化静电势
 
-Mayavi 支持可视化给定曲面上的电势值。这一可视化任务可以使用 mlab.mesh 函数完成。与仅限于平面上二维网格的 mlab.surf 不同，mlab.mesh 允许我们使用三维空间中的二维网格表示曲面。该网格上的每个点由其 x、y 和 z 笛卡尔坐标定义。例如，这里我们创建一个以分子几何中心为中心的球面。球体的半径设置得略大于中心到最远原子的距离。
+Mayavi 还支持在三维曲面上对电势分布进行着色渲染，这一任务可通过 mlab.mesh 轻松实现。与局限于平面二维网格的 mlab.surf 相比，mlab.mesh 允许利用三维空间中的二维网格构建曲面拓扑，其上每个节点由笛卡尔坐标 (x, y, z) 显式给出。下例中，我们构建了一个以分子几何中心为原点的球面，并将球体半径设定为略大于中心到最外层原子的极限距离。
 我们使用 np.mgrid 为球体的极角和方位角生成均匀网格。随后将这些网格转换为笛卡尔坐标。这些网格上的电势值及其坐标被输入 mlab.mesh 函数。
 
 ```python
@@ -381,7 +381,7 @@ view_sph_surface(mole, eval_potential)
 
 **图 3.8** 球面和柱面上的静电势强度
 
-作为另一个例子，我们为圆柱体表面构造二维网格。这个二维网格由三部分组成：底面、侧壁和顶面。对于两个端面，我们根据径向距离和方位角生成网格。对于侧壁，则根据方位角和高度创建网格。下面的代码展示了网格坐标。
+再看一个例子：我们为圆柱体表面构造二维网格。该二维网格由底面、侧壁与顶面三部分组成：对于两个端面，根据径向距离和方位角生成网格；对于侧壁，则根据方位角和高度创建网格。下面的代码展示了网格坐标的生成过程。
 
 ```python
 nx, ny = resolution
@@ -397,8 +397,8 @@ grids = np.concatenate([
     [u * np.cos(theta), u * np.sin(theta), np.full((nx,n y ) ,z ) ], ], axis=1) + xyz_center[:,None,None]
 ```
 球面和圆柱面及其上的电势值如图 3.8 所示。这些可视化结果可以提供一些信息，例如另一个分子可能从哪些方向接近当前分子。
-对于三维空间中的一般曲面，创建二维曲面网格可能是一项困难的任务。在这种情况下，我们可能必须使用三角形网格定义曲面，然后调用 mlab.triangular_mesh 函数渲染曲面。为三维对象生成合适的三角形网格的过程超出了本书范围。这里不作详细讨论。
-从这些例子中，你可能注意到 Mayavi 和 matplotlib 之间不同的编码风格。Matplotlib 将绘图过程映射为面向对象的任务，使用各种实例管理图中的不同元素。我们可以通过创建和组合这些实例完成绘图任务。要修改图形外观，只需访问实例并调整其属性。mlab 模块并非完全面向对象。它在默认画布上工作，可视化元素被添加到该画布。可视化选项在全局命名空间中配置。最后，mlab 调用底层可视化引擎执行渲染。它的用法更偏向命令式，类似于 Matplotlib 库旧版的 pylab 接口。
+面对三维空间中的任意复杂曲面，直接构建规整的二维网格往往十分困难。此时通常需借助三角面片定义几何表面，再调用 mlab.triangular_mesh 予以渲染。鉴于为三维实体剖分三角网格涉及较为深入的计算几何知识，已超出本书主旨，在此不再展开。
+从这些例子中可以看出，Mayavi 与 Matplotlib 具有不同的编码风格。Matplotlib 将绘图过程映射为面向对象的任务，使用各种实例管理图中的不同元素，我们通过创建和组合这些实例完成绘图；若要修改图形外观，只需访问实例并调整其属性即可。相比之下，mlab 模块并非完全面向对象：它在默认画布上工作，可视化元素被直接添加到画布上，配置项在全局命名空间中指定，最后由 mlab 调用底层引擎执行渲染。它的用法更偏向命令式，类似于 Matplotlib 旧版的 pylab 接口。
 在 Mayavi 文档提供的示例图库中，你可能会找到一些使用 mlab.pipeline 函数创建可视化元素的例子。Mayavi 中的流水线（pipeline）是指一系列协作产生三维可视化结果的数据处理和可视化组件 [11]。流水线通常由以下组件组成：
 
 - 源，加载原始数据，并存储和验证原始数据。
@@ -416,9 +416,9 @@ mlab 三维绘图函数，例如 mlab.plot3d、mlab.surf、mlab.mesh 和 mlab.co
 
 ## 3.4 化学可视化
 
-在化学系统的背景下，有几个专门的分子可视化工具。给定一个分子结构文件，例如 XYZ、PDB（Protein Data Bank）、MOL（Molecular Design Limited）或 SDF（Structure Data File），可以方便地使用许多工具（如 PyMOL、Avogadro、py3Dmol）可视化分子的三维结构。在量子化学领域，可视化的重点转向分子内的电子，包括它们的轨道、密度和其他量子化学结果。遗憾的是，没有专门用于三维可视化量子化学结果的 Python 库。一个可行的选择是 Mayavi 库。然而，Mayavi 的功能相对基础，可能需要大量配置和编码才能达到令人满意的显示效果。
+针对化学体系，业内已存在多种成熟的分子结构可视化软件。只要具备 XYZ、PDB（Protein Data Bank）、MOL 或 SDF 等标准分子格式文件，便能借助 PyMOL、Avogadro、py3Dmol 等工具便捷地展现三维构型。然而在量子化学领域，绘图核心转向了分子内部的电子行为，包含分子轨道、电子密度与静电势等波函数衍生属性。遗憾的是目前尚无专门封装此类结果的三维 Python 原生库。虽然 Mayavi 能够胜任部分任务，但其底层接口较为基础，通常需编写冗长的前后处理代码方能获得满意的视觉效果。
 可视化量子化学结果的一种更实用的方法是将其保存为专用文件格式，例如 Molden 和 Cube。量子化学可
-视化软件，如 VMD 或 Jmol，随后可以读取这些文件并生成三维显示。因此，这种方法的关键步骤是生成 Molden 或 Cube 文件。在此背景下，Jinja 模板技术对于高效生成 Molden 和 Cube 文件非常有用。
+视化软件，如 VMD 或 Jmol，随后即可读取这些文件并生成三维显示。因此，这种方法的关键在于生成 Molden 或 Cube 文件。在此背景下，Jinja 模板技术对于高效生成 Molden 和 Cube 文件非常实用。
 
 ### 3.4.1 模板
 
@@ -442,7 +442,7 @@ Out[1]:
 
 #### 表达式
 
-表达式由符号 {{}} 表示。在模板渲染过程中，这些表达式中的变量会被提供给模板的 Python 对象替换。这些表达式可以是数字、字符串、列表和字典等基本 Python 变量，也可以是需要运行时求值的更复杂表达式。此类复杂表达式的例子包括数学表达式、访问对象属性、调用函数以及使用单行 if-else 语句。
+表达式书写在双大括号 {{}} 内。在模板渲染过程中，其中的变量会被传入的 Python 对象实际替换。这些表达式既可以是数字、字符串、列表和字典等基础 Python 变量，也可以是需要在运行时求值的复杂表达式。常见的复杂表达式包括数学运算、访问对象属性、调用函数以及单行 if-else 判定语句。
 
 #### 控制语句
 
@@ -479,7 +479,7 @@ Out[4]:
 
 ### 3.4.2 格式
 
-Molden 格式是用于存储量子化学信息的标准文件格式。这些信息包括分子几何结构、基组、电子轨道等。Molden 格式的一种常见应用是可视化分子轨道。通过适当配置，Molden 格式可以用于可视化自定义轨道。
+Molden 是存储量子化学数据通用的标准文件规范，能完整记录分子构型、原子基组和轨道系数等信息。该格式极常用于呈现分子轨道，且在灵活配置后，还可直接用来可视化任意形式的自定义轨道。
 Molden 格式的结构有完善的文档记录，可以参考在线文档 https://www.theochem.ru.nl/molden/molden_format.html。下面，我们将使用 Jinja 模板展示 Molden 格式的结构。
 Molden 格式由一系列用方括号表示的区段组成，例如 [Molden Format]、[Atoms]、[GTO] 等。这些区段将 Molden 文件组织为不同的部分。
 
@@ -508,7 +508,7 @@ Comment lines
 ''')
 ```
 分子几何结构详述于 Molden 格式的 [Atoms] 区段。在这个区段中，每一行对应分子中的一个原子。
-要表示电子轨道，应同时提供基组信息和轨道系数。基组的详细信息包含在 [GTO] 区段中。在这里，Molden 格式要求分别指定每个原子的基组信息。请注意上述模板中的 {% endfor%} 符号。按照 Molden 格式规范，不同原子的基组之间必须插入空行。因此，Jinja 代码 {% for loop%} 中的尾随空白字符被有意保留，以满足这一要求。
+要表示电子轨道，应同时提供基组信息与轨道系数。基组的详细信息包含在 [GTO] 区段中。在这里，Molden 格式要求分别指定每个原子的基组信息。请注意上述模板中的 {% endfor%} 符号。按照 Molden 格式规范，不同原子的基组间必须插入空行。因此，Jinja 代码里的尾随空白字符被特意保留，以完全符合这一排版要求。
 基组的配置由一系列壳层指定。每个壳层的结构在下面的 gto_shell_tpl 模板中列出。对于常规的高斯型轨道（Gaussian-type orbital，GTO）基组，其信息可以从 Basis Set Exchange（BSE）在线数据库获取，该数据库可通过 Python 软件包 basis-set-exchange 访问 [13,14]。
 
 ```python
@@ -583,7 +583,7 @@ with open ('demo.molden', 'w') as f:
 ### 3.4.3 格式
 
 Cube 格式源自 Gaussian 计算化学软件。它已成为存储体积量子化学数据的事实标准。它非常适合在三维网格中详细表示分子轨道、电子密度和电势面。
-Gaussian 手册简要描述了 Cube 格式的结构。一些在线文档中可以找到更详细的说明 [15,16]。尽管 Cube 格式基于文本，但其数据表示必须遵循严格的预定格式。Cube 文件必须包含体积区域的原点、体素信息、分子中的原子和体积数据的详细信息。对于原子和体素信息，整数必须格式化为 5d，浮点数必须格式化为 12.6f。存储体积数据时，数字格式为 13.5E，每行六个数字。
+Gaussian 官方手册简述了 Cube 格式规范，更多细节亦见于各类技术文档 [15,16]。尽管 Cube 文件本质上是纯文本，但其排版格式极其严格。文件头必须依序包含体区域原点、体素步长、体系原子坐标以及网格场数值。写入原子与体素元数据时，整型数据须固定为 5d 格式，浮点数采用 12.6f 格式；而在存储三维场数据时，数值必须遵循 13.5E 格式，且规定每行输出六个数值。
 以下 Jinja 模板展示了 Cube 格式的结构。
 
 ```text
@@ -627,7 +627,7 @@ def render_cube(elements, coordinates, voxel, origin, data):
     return cube_tpl.render( atoms=atoms, len=len, n_voxels=n_voxels, voxel=voxel, origin=origin, volumetric_data=formatted_data)
 ```
 要可视化电子性质，可以创建网格，计算其在网格上的值，并使用此模板渲染 Cube 文件。
-例如，我们可以按如下方式创建一个 Cube 文件来可视化 p 型原子轨道。体素网格是一个 0.3 × 0.3 × 0.3 的立方体体积，沿 x、y 和 z 轴各分配了 60 个体素。为简单起见，我们使用量子化学程序 PySCF [17,18] 计算 p 轨道在这些网格上的值。请注意对分子几何结构进行的单位转换。Cube 文件中的所有距离数据都必须以玻尔为单位。
+例如，我们可按下列流程构造 Cube 文件以观察 p 型原子轨道。设定 0.3 × 0.3 × 0.3 的体素微元，沿 x、y、z 轴各采样 60 个网格点。为便于演示，我们调用量子化学程序 PySCF [17,18] 快速求取 p 轨道在各个空间网格点上的波函数值。请特别留意分子坐标的单位转换：Cube 规范明确要求所有几何长度参数均以玻尔（Bohr）为单位。
 
 ```text
 # NOTE: all units are in Bohr
@@ -655,8 +655,8 @@ with open ('demo.cub', 'w') as f:
 
 ## 小结
 
-本章探讨了用于科学数据可视化的二维和三维可视化技术，包括使用 Matplotlib 进行二维可视化和使用 Mayavi 进行三维可视化。对于量子化学数据的可视化，我们借助外部软件，并使用 Molden 和 Cube 文件交换数据。我们讨论了使用 Jinja 模板技术生成 Molden 和 Cube 文件。
-我们的讨论仅限于数据可视化的技术层面。除了可视化技术，更重大的挑战在于创建信息丰富的可视化结果，有效传达数据背后的故事。关于这一主题，Claus O. Wilke 的 Fundamentals of Data Visualization [19] 是一本出色的参考书。
+本章探讨了科学数据可视化的二维与三维技术，包括使用 Matplotlib 开展二维可视化和使用 Mayavi 进行三维可视化。对于量子化学数据的可视化，我们借助外部软件，并使用 Molden 和 Cube 文件交换数据。我们还讨论了使用 Jinja 模板技术生成 Molden 和 Cube 文件的方法。
+我们的讨论侧重于数据可视化的技术层面。除了实现技术，更重大的挑战在于创建信息丰富的可视化结果，以有效传达数据背后的故事。关于这一主题，Claus O. Wilke 的 Fundamentals of Data Visualization [19] 是一本出色的参考书。
 
 ## 参考文献
 

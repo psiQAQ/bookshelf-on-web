@@ -14,7 +14,7 @@ from unittest.mock import patch
 import yaml
 
 from scripts.build import _deliver, build, portal_index
-from scripts.check_site import check_site
+from scripts.check_site import check_site, registered_slugs
 from scripts.publishing import (ROOT, PublishingError, book_config, check_qmd, load_yaml,
                                 safe_path, schema_errors, validate)
 
@@ -376,6 +376,19 @@ class CheckSiteTests(unittest.TestCase):
         (self.site / "style.css").write_text('', encoding="utf-8")
         (self.site / "index.html").write_text('<link id="quarto-bootstrap" href="style.css"><link id="quarto-bootstrap" href="style.css">', encoding="utf-8")
         self.assertEqual(check_site(self.site, set()), [])
+
+    def test_registry_supplies_default_expected_slugs(self):
+        registry = Path(self.temporary.name) / "catalog"
+        registry.mkdir()
+        (registry / "books.yaml").write_text(
+            "books:\n"
+            "- id: sample-waves\n  path: books/sample-waves/metadata.yaml\n"
+            "- id: sample-linear-algebra\n  path: books/sample-linear-algebra/metadata.yaml\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(registered_slugs(Path(self.temporary.name)), {"sample-waves", "sample-linear-algebra"})
+        (registry / "books.yaml").write_text("books: []\n", encoding="utf-8")
+        self.assertEqual(registered_slugs(Path(self.temporary.name)), set())
 
     def test_missing_entry_and_unregistered_books_private_paths(self):
         self.assertTrue(check_site(self.site, set()))

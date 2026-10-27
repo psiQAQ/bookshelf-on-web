@@ -8,9 +8,11 @@ import re
 from urllib.parse import unquote, urlsplit
 
 try:
-    from .publishing import Issue, PublishingError, write_report
+    from .publishing import Issue, PublishingError, load_yaml, write_report
 except ImportError:
-    from publishing import Issue, PublishingError, write_report
+    from publishing import Issue, PublishingError, load_yaml, write_report
+
+ROOT = Path(__file__).resolve().parents[1]
 
 OUTPUT_SUFFIXES = {".html", ".css", ".js", ".json", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg",
                    ".woff", ".woff2", ".ttf", ".otf", ".eot", ".ico", ".map", ".wasm", ".txt", ".xml"}
@@ -108,13 +110,20 @@ def check_site(site: Path, expected_slugs: set[str]) -> list[Issue]:
     return issues
 
 
+def registered_slugs(root: Path = ROOT) -> set[str]:
+    """Slugs recorded in the publish registry, so CI need not repeat them."""
+    registry = load_yaml(root / "catalog/books.yaml")
+    books = registry.get("books") if isinstance(registry, dict) else None
+    return {str(book["id"]) for book in books or [] if isinstance(book.get("id"), str)}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("site", type=Path)
     parser.add_argument("--book", action="append", default=[])
     parser.add_argument("--report", type=Path, default=Path("reports/links.json"))
     args = parser.parse_args()
-    issues = check_site(args.site, set(args.book))
+    issues = check_site(args.site, set(args.book) or registered_slugs())
     report = write_report(args.report, issues, site=str(args.site))
     print(f"Site check: {'PASS' if report['ok'] else 'FAIL'}; {len(issues)} issue(s); {args.report}")
     return 0 if report["ok"] else 1

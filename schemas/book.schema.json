@@ -98,6 +98,81 @@
               "pattern": "^https://"
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "description",
+            "sha256",
+            "pages",
+            "work"
+          ],
+          "properties": {
+            "type": {
+              "const": "translation"
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "pages": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "work": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "title",
+                "author",
+                "publisher",
+                "year"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "author": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "publisher": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "year": {
+                  "type": "integer",
+                  "minimum": 1000,
+                  "maximum": 2100
+                },
+                "doi": {
+                  "type": "string",
+                  "pattern": "^10\\.\\S+$"
+                }
+              }
+            },
+            "translator_model": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "polisher_model": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
         }
       ]
     },

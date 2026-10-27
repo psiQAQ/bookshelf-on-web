@@ -12,6 +12,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+EXPLICIT_ANCHOR = re.compile(r"\{[^{}]*#([A-Za-z][\w:.-]*)")
 SLUG = r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
 QUARTO_VERSION = "1.10.19"
 ASSET_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
@@ -87,6 +88,18 @@ def schema_errors(root: Path, name: str, value: Any) -> list[str]:
     return [f"{'/'.join(map(str, error.absolute_path))}: {error.message}" for error in validator.iter_errors(value)]
 
 
+def book_header_style() -> str:
+    return (
+        "<style>"
+        'mjx-container[display="true"] { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 0.25em 0; }'
+        " img { max-width: 100%; height: auto; }"
+        " .page-columns, #quarto-document-content, main.content { min-width: 0; }"
+        " #quarto-document-content p, #quarto-document-content li, #quarto-document-content td"
+        " { overflow-wrap: anywhere; }"
+        "</style>"
+    )
+
+
 def book_config(metadata: dict) -> dict:
     return {
         "project": {"type": "book", "output-dir": "_book"},
@@ -95,7 +108,7 @@ def book_config(metadata: dict) -> dict:
         "format": {"html": {"lang": metadata["language"], "theme": {"light": "cosmo", "dark": "darkly"},
                             "html-math-method": "mathjax", "toc": True, "number-sections": True,
                             "code-copy": True, "code-overflow": "scroll",
-                            "include-in-header": [{"text": "<style>mjx-container[display=\"true\"] { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 0.25em 0; }</style>"}]}},
+                            "include-in-header": [{"text": book_header_style()}]}},
         "execute": {"enabled": False, "eval": False},
     }
 
@@ -112,13 +125,24 @@ def portal_config() -> dict:
     }
 
 
+def explicit_anchors(text: str) -> list[str]:
+    """Anchor names carrying ``#`` inside an attribute list, e.g. ``{#ch01 .unnumbered}``."""
+    return EXPLICIT_ANCHOR.findall(text)
+
+
+def prose_only(text: str) -> str:
+    """Drop fenced blocks and inline code so samples are never read as links."""
+    without_fences = re.sub(r"(?ms)^(```|~~~)[^\n]*\n.*?^\1[^\n]*$", "", text)
+    return re.sub(r"`[^`\n]*`", "", without_fences)
+
+
 def check_qmd(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
     # No document-level options, shortcodes/includes, executable cells or inline engines.
     # Only static code fences are accepted by this deliberately narrow M0 input format.
     if text.lstrip().startswith("---") or re.search(r"\{\{[<%]|(?:`{3,}|~{3,})\s*\{|`\{(?:python|r|julia|ojs)\}", text):
         raise PublishingError(f"Executable cells, front matter and shortcodes are forbidden: {path}")
-    anchors = re.findall(r"\{#([A-Za-z][\w:.-]*)\}", text)
+    anchors = explicit_anchors(text)
     if len(anchors) != len(set(anchors)):
         raise PublishingError(f"Duplicate explicit anchor: {path}")
 
@@ -129,7 +153,7 @@ def check_source_links(directory: Path, chapter: str, inputs: set[str]) -> None:
     M0 accepts ordinary Markdown links/images, reference definitions and HTML URL
     attributes; this is a conservative preflight, not a general Markdown linter.
     """
-    text = (directory / chapter).read_text(encoding="utf-8")
+    text = prose_only((directory / chapter).read_text(encoding="utf-8"))
     urls = [a or b for a, b in re.findall(r"!?\[[^\]]*\]\(\s*(?:<([^>]+)>|([^\s)]+))", text)]
     urls += re.findall(r"^\s*\[[^\]]+\]:\s*<?([^\s>]+)", text, flags=re.M)
     urls += re.findall(r"(?:href|src|poster)\s*=\s*[\"']([^\"']+)[\"']", text, flags=re.I)
@@ -229,10 +253,10 @@ def validate(root: Path = ROOT, *, preview: bool = False, strict: bool = False) 
                     if block["qmd"] not in metadata["chapters"]:
                         raise PublishingError("Provenance target is not a registered chapter")
                     text = safe_path(directory, block["qmd"]).read_text(encoding="utf-8")
-                    if "{#" + block["qmd_anchor"] + "}" not in text:
+                    if block["qmd_anchor"] not in explicit_anchors(text):
                         raise PublishingError("Provenance anchor is missing")
                     source = block["source"]
-                    if source["type"] != metadata["source"]["type"]:
+                    if source["type"] not in {metadata["source"]["type"], "original"}:
                         raise PublishingError("Original/PDF provenance type mismatch")
                     if source["type"] == "pdf":
                         if source["pdf_sha256"] != metadata["source"]["sha256"]:

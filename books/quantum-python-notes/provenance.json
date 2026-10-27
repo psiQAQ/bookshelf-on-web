@@ -40,8 +40,7 @@
           18,
           71
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
-        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
       },
       "review_state": "verified"
     },

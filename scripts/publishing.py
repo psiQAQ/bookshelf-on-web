@@ -108,6 +108,7 @@ def book_config(metadata: dict) -> dict:
         "format": {"html": {"lang": metadata["language"], "theme": {"light": "cosmo", "dark": "darkly"},
                             "html-math-method": "mathjax", "toc": True, "number-sections": True,
                             "code-copy": True, "code-overflow": "scroll",
+                            "lightbox": True,
                             "include-in-header": [{"text": book_header_style()}]}},
         "execute": {"enabled": False, "eval": False},
     }

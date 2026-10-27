@@ -175,8 +175,8 @@ scipy.sparse.linalg函数的基本用法非常直观。我们不会在此详细�
 
 ### 4.2.3 算符
 
-在某些情况下，以稀疏格式存储矩阵可能不切实际，甚至不可能。这些矩阵通常通过它们与另一个向量的乘积来定义。第 14 章讨论的量子化学中的全组态相互作用（FCI）问题就是一个典型例子。
-我们可以利用scipy.sparse.linalg.LinearOperator类表示通过矩阵向量乘积定义的稀疏矩阵。事实上，scipy.sparse.linalg模块中的所有迭代方法都依赖LinearOperator类提供的matvec接口，无论底层矩阵是稠密矩阵、稀疏矩阵还是线性算符。
+在某些情况下，以稀疏格式存储矩阵并不现实，甚至完全行不通。这些矩阵通常通过它们与另一个向量的乘积来定义。第 14 章讨论的量子化学全组态相互作用（FCI）问题就是一个典型例子。
+我们可以利用scipy.sparse.linalg.LinearOperator类表示通过矩阵向量乘积定义的稀疏矩阵。scipy.sparse.linalg模块中的所有迭代方法本质上都依赖LinearOperator类提供的matvec接口，无论底层矩阵是稠密矩阵、稀疏矩阵还是线性算符。
 为了展示LinearOperator类的用法，我们考虑一个简单例子：一维谐振子的哈密顿量：
 
 ![公式图](../assets/math/eq-04-003.png){width=45%}
@@ -284,11 +284,11 @@ d = np.einsum( 'ij ,jl ->il',a , np.einsum('jk ,kl ->jl',b , c))
 - einsum模式能否转换为矩阵乘法形式。
 
 当einsum模式可以映射为
-矩阵乘法时，optimize选项是有益的。只有当任何重复索引都恰好出现
-两次时，转换才有可能。如果无法转换为矩阵乘法，为np.einsum设置
+矩阵乘法时，optimize选项确有益处。只有当所有重复索引都恰好出现
+两次时，转换才切实可行。如果无法转换为矩阵乘法，为np.einsum设置
 optimize=True只会调用标准的np.einsum实
-现，因此性能不会提高。值得注意的是，在这些情况
-下，简单的NumPy广播有时可以比np.einsum表现得更好。
+现，因此性能不会提高。在这类特定情况
+下，简单的NumPy广播有时反而可以比np.einsum表现得更好。
 例如：
 
 ```python
@@ -490,7 +490,7 @@ In [6]: fft_obj = pyfftw.builders.fft(x , threads=nproc)
 FFT问题规模是影响FFT性能的关键因素。这里我们考察两种对比场景。一种涉及较大的FFT长度，反映各FFT库中O(n log (n))的效率。此外，鉴于晶体体系的量子化学计算通常在三维空间中使用FFT网格
 的中等大小盒子内，因此每个轴上的FFT长度通常不大。因此，第二组测试用例侧重于FFT长度小于100的场景。这个测试主要反映各FFT库的内存效率。
 科学计算通常使用多核CPU并行执行。多线程并行的效率是另一个需要考虑的因素。因此，每个FFT库的性能都在单线程和8线程并行场景下进行基准测试。多线程基准测试针对较短FFT长度的测试进行。为尽量减少初始化开销的影响，FFT应用于具有足够多向量（范围从105到107）的数组。
-基准测试在AWS c5a.4xlarge EC2实例上进行。该实例是在AWS云上运行的16核虚拟机，配备运行频率为3.3 GHz的AMD EPYC CPU和32 GB内存。在这台机器上，我们安装了NumPy v1.24、scipy v1.13、PyFFTW v0.13以及带有MKL 2024.1的mkl_fft v1.3。这些库通过PyPI提供的预编译wheel安装。值得注意的是，PyFFTW v0.13的wheel不支持SIMD（单指令多数据，Single Instruction Multiple Data）矢量化。要启用FFTW的SIMD级优化，需要手动编译FFTW和PyFFTW库。然而，可能由于问题规模和PyFFTW接口的开销，在这些测试中我们没有观察到手动编译的SIMD-FFTW比wheel打包的FFTW有优势。因此，我们从基准测试结果中排除了手动编译的FFTW的结果。
+基准测试在AWS c5a.4xlarge EC2实例上进行。该实例是在AWS云上运行的16核虚拟机，配备运行频率为3.3 GHz的AMD EPYC CPU和32 GB内存。在这台机器上，我们安装了NumPy v1.24、scipy v1.13、PyFFTW v0.13以及带有MKL 2024.1的mkl_fft v1.3。这些库通过PyPI提供的预编译wheel安装。需要说明的是，PyFFTW v0.13的wheel并不支持SIMD（单指令多数据，Single Instruction Multiple Data）矢量化。要启用FFTW的SIMD级优化，需要手动编译FFTW和PyFFTW库。然而，可能受限于问题规模以及PyFFTW接口开销，在这些测试中我们没有观察到手动编译的SIMD-FFTW比wheel打包的FFTW有优势。因此，我们从基准测试结果中排除了手动编译的FFTW的结果。
 在较大FFT长度这一端，我们测试了可以分解为小素数基数以及不能这样分解的FFT长度。各FFT库的性能总结于表 4.2。SciPy在多个场景中表现最快。Intel FFT略慢于scipy.fft，但它们的速度总体相当。在涉及大素数的场景中，PyFFTW显示出明显的性能优势。这一优势可归因于它为一般FFT长度提供了大量O(n log (n))选择。在其他情况下，令人惊讶的是，当FFT长度可分解为小素数因子时，PyFFTW表现缓慢。即使使用FFTW_MEASURE规划器优化PyFFTW并充分预热后，它仍比scipy.fft慢约一倍。
 在短FFT长度测试中，我们实现了额外的代码来辅助基准测试。
 numpy.fft缺少多线程并行能力。为了实现并行执行，我们利用Python多线程模块在独立向量上并行执行numpy.fft。下面的代码示例展示了如何并行化numpy.fft.fft函数。其他类型的FFT变换以类似方式并行化。
@@ -547,8 +547,8 @@ def naive_fft2(x):
     return y.reshape(n1 ,n 2 , -1).transpose(2 ,0 ,1)
 ```
 在基准测试中，朴素DFT的计算时间随FFT长度N严格按N变化。这作为衡量其他FFT库性能的基准。性能基准测试结果总结于图 4.1和图 4.2。多线程并行效率显示于图 4.3。
-我们可以观察到，相对于朴素DFT的加速比在这些FFT库之间有很大差异。某些FFT长度的性能明显差于相邻数据点。这些FFT长度主要对应素数。FFT库通常没有针对这些中等大小素数的特殊优化。在这些数据点上，FFT库甚至比朴素DFT更慢。
-对于不是素数的FFT长度，numpy.fft和scipy.fft相对于朴素DFT都表现出显著的性能提升。值得注意的是，numpy.fft在多项测试中优于scipy.fft，尤其是在r2c-FFT情况下。启用多线程时，由于具有更好的内置并行实现，scipy.fft在c2c-fft、r2c-rfft和c2c-fft2任务中比numpy.fft更快。
+观察结果可知，相对于朴素DFT的加速比在这些FFT库之间有很大差异。某些FFT长度的性能明显差于相邻数据点。这些FFT长度主要对应素数。FFT库通常没有针对这些中等大小素数的特殊优化。在这些数据点上，FFT库甚至比朴素DFT更慢。
+对于不是素数的FFT长度，numpy.fft和scipy.fft相对于朴素DFT都表现出显著的性能提升。需要指出的是，numpy.fft在多项测试中优于scipy.fft，尤其是在r2c-FFT情况下。启用多线程时，由于具有更好的内置并行实现，scipy.fft在c2c-fft、r2c-rfft和c2c-fft2任务中比numpy.fft更快。
 numpy.fft的性能优势主要归因于数据类型转换和数据移动相关开销的减少。NumPy FFT代码在执行类型转换和数据复制时比SciPy FFT函数略高效，因此在某些测试中性能优于SciPy。默认情况下，NumPy和SciPy提供的FFT函数不会修改输入数据。这些FFT库中额外的数据复制步骤因此导致显著开销。如果启用overwrite_x关键字
 
 ![](../assets/figures/fig-4-1.png)
@@ -557,7 +557,7 @@ numpy.fft的性能优势主要归因于数据类型转换和数据移动相关�
 
 对于scipy.fft函数，scipy.fft的性能可以显著提高，超过numpy.fft。
 有趣的是，NumPy r2c-fft的性能非常突出，在许多测试中比scipy.fft快30%或更多。如前所述，scipy.fft包含处理r2c-fft的特殊代码，利用了实值FFT的对称性。那么，为什么这种优化实际上会导致性能下降？
-对于规模较小的FFT问题，这种对称性对计算成本的影响很小。为了利用这种对称性，scipy.fft纳入了复杂的数据移动操作。这些数据移动操作的开销接近或超过FFT本身的计算成本。更糟糕的是，SciPy r2c-fft中的数据移动操作没有并行处理，进一步放大了多线程计算中的开销。作为证据，在图 4.3中，我们可以看到SciPy r2c-fft的多线程加速比异常低。
+对于规模较小的FFT问题，这种对称性对计算成本的影响很小。为了利用这种对称性，scipy.fft纳入了复杂的数据移动操作。这些数据移动操作的开销接近或超过FFT本身的计算成本。更糟糕的是，SciPy r2c-fft中的数据移动操作没有并行处理，进一步放大了多线程计算中的开销。图 4.3清楚地印证了这一点：SciPy r2c-fft的多线程加速比确实异常低。
 随着FFT长度增加，SciPy的r2c-fft中的特殊优化变得更有效。处理较大的FFT时，SciPy在单线程执行中可以优于NumPy，虽然这里的结果没有显示这一点。然而，当
 
 ![](../assets/figures/fig-4-2.png)

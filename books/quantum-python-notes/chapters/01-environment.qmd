@@ -11,8 +11,8 @@ Python 程序的语法简洁，代码结构易于理解。这些特点使人们�
 - 我有一个继承自多个基类的类，如何知道基类中的某个方法是否被正确调用？
 - 我想尝试一些很酷的 Python 包，但安装新包会破坏我的环境。如何保持运行环境稳定，不受影响？
 
-这些问题由于不直接涉及编程技能，通常在 Python 编程教材中被省略。然而，它们极大地影响着 Python 编程能力和效率。我们将从这些技术方面开始 Python 编程的学习之旅。
-本章将考察 Python 运行时系统和包管理系统。这些系统与管理 Python 项目和分发 Python 包的方法密切相关。为了有效管理 Python 项目，我们需要各种工具，而不仅限于 Python 专用工具。我们还将讨论 Git 和 Docker 等现代软件开发工具的使用。Docker 虽然不是 Python 工具，但在 Python 生态系统中尤为重要。本书将自始至终使用它。
+这些问题由于不直接涉及具体编程技能，常在 Python 编程教材中被略过。然而，它们直接决定了 Python 实际开发能力与效率。我们将从这些工程技术细节出发，开启 Python 编程学习。
+本章将考察 Python 运行时系统和包管理系统。这两大系统与日常管理 Python 项目、分发 Python 包密切相关。为了高效维护 Python 工程，我们需要借助多种现代开发工具，并不局限于 Python 专用工具。我们还将讨论 Git 和 Docker 等现代软件工具的使用。Docker 虽非 Python 原生工具，在 Python 生态中却尤为关键，本书后续也将贯穿使用。
 
 ## 1.1 包系统
 
@@ -443,8 +443,8 @@ $  pip install -r requirements.txt
 
 ### 1.1.5 Conda
 
-科学软件通常涉及使用 Python 之外的许多工具和库。对于涉及多种编程语言或各种系统库的项目，Python 包系统可能不足以进行管理。Conda 为管理使用多种编程语言开发的科学计算项目提供了解决方案。此外，Conda 通过 Anaconda 发行版和 Anaconda cloud [9] 提供了对大量科学计算库的访问。
-不仅仅是一个 Python 包，尽管可以通过以下命令安装名为 conda 的 CLI 工具：
+科学计算软件通常涉及 Python 之外的许多工具和库。对于涉及多门编程语言或底层系统库的项目，单一的 Python 包管理系统往往难以胜任。Conda 为跨语言科学计算项目的环境与依赖管理提供了成熟方案。此外，借助 Anaconda 发行版与 Anaconda 云平台 [9]，Conda 还打通了海量科学计算软件生态。
+Conda 不仅仅是一个 Python 包，尽管可以通过以下命令安装名为 conda 的 CLI 工具：
 
 ```bash
 pip install conda
@@ -499,12 +499,12 @@ $  sudo apt install docker
 ```bash
 $  curl -fsSL https://get.docker.com/rootless | sh
 ```
-在安装过程中，系统会提示你在 shell 启动配置文件（例如 ~/.bashrc）中设置 DOCKER_HOST 等环境变量。安装后，可以通过在不使用 sudo 的情况下执行以下服务，验证无 root 模式 Docker 的安装：
+在安装过程中，系统会提示在 shell 启动配置文件（例如 ~/.bashrc）中设置 DOCKER_HOST 等环境变量。安装完成后，无需使用 sudo 直接运行以下服务，即可验证无 root 模式 Docker 的安装效果：
 
 ```bash
 $  docker run hello -world
 ```
-为确保无 root 模式 Docker 在系统启动时作为守护进程启动，应执行以下命令进行额外配置：
+若需确保无 root 模式 Docker 随系统开机自动作为守护进程启动，可执行以下命令完成配置：
 
 ```bash
 $  systemctl --user enable docker
@@ -576,7 +576,7 @@ CMD pypi -server run -v -a . -P .
 $  docker build -t local -pypi:0.1 -f Dockerfile .
 ```
 这里，-t 选项指定该镜像的标签，通常包括两部分：镜像名称（local-pypi）和版本 ID（0.1）。
-定义 Dockerfile 是构建 Docker 镜像的关键步骤。Dockerfile 中需要使用若干关键字来指定如何构建 Docker 镜像 [18]。在这个例子中，Dockerfile 指定新镜像基于 python:3.10 基础镜像，如 FROM 行所示。以关键字 RUN 开头的行指定 docker build 过程中将在 shell 中执行的命令。ENV 行配置新的环境变量。CMD 关键字定义为该镜像启动 Docker 容器时执行的默认命令。
+编写 Dockerfile 是构建 Docker 镜像的核心环节。Dockerfile 使用若干专属指令来指导构建流程 [18]。本例中，Dockerfile 指定新镜像基于 python:3.10 基础镜像构建，即 FROM 声明的内容。以 RUN 开头的指令指定在 docker build 期间在容器 shell 中执行的构建命令。ENV 指令用于声明环境变量。CMD 指令则指定依据该镜像启动容器时默认运行的命令。
 
 #### 部署私有 PyPI 服务器
 
@@ -956,7 +956,7 @@ PEP 8 [28] 是 Python 社区推荐的编码风格指南。它涵盖缩进、行�
 
 #### 1.3.4.2 使用 pyproject.toml 和 setup.py 配置 Python 软件包
 
-软件包的元数据和安装选项可以在 pyproject.toml 文件、setup.cfg 文件中指定，也可以直接在 setup.py 文件中 setup() 函数的参数里指定。目前推荐使用 pyproject.toml 文件进行配置。下面以 pyldd 工具为例，展示 pyproject.toml [35] 的配置。
+软件包的元数据和安装选项既可在 pyproject.toml 文件、setup.cfg 文件中声明，也可直接写入 setup.py 脚本中 setup() 函数的参数里。现代 Python 生态更推荐优先采用 pyproject.toml 统一配置。下面以 pyldd 工具为例，介绍 pyproject.toml [35] 的配置方式。
 pyldd 的 pyproject.toml 文件可以配置如下：
 
 ```text
@@ -1013,8 +1013,8 @@ $  python setup.py sdist
 $  pip install build
 $  python -m build -s .
 ```
-bdist 也称为 wheel，它是一个文件名以 .whl 为后缀的 ZIP 压缩文件。这意味着可以使用 unzip 命令提取 wheel 文件的内容。wheel 文件包含针对特定平台预先构建的二进制文件。如果 Python 项目包含 C/C++ 扩展，安装其 sdist 包时需要编译这些扩展，这可能不太方便。wheel 发行包无需在安装过程中编译扩展，简化了安装。
-要生成 wheel 文件，我们可以使用下面的 bdist_wheel 命令。它会在 dist/ 目录中生成 wheel 文件 pyldd-0.1.0-py3-none-any.whl。
+bdist 也称为 wheel，是一种扩展名为 .whl 的 ZIP 压缩包。这意味着可以直接使用 unzip 命令解压查看其内容。wheel 文件包含面向特定平台预编译的二进制构件。如果 Python 项目包含 C/C++ 扩展，直接安装 sdist 源码包时需要现场编译，相对繁琐；wheel 发行包省去了安装时的编译步骤，简化了安装过程。
+要生成 wheel 文件，可以使用下面的 bdist_wheel 命令。该命令会在 dist/ 目录下输出 pyldd-0.1.0-py3-none-any.whl 文件：
 
 ```bash
 $  pip install wheel
@@ -1048,8 +1048,8 @@ PyPI 服务器对软件包版本执行非常严格的规则。如果上传历史
 
 #### 1.3.4.5 构建 Conda 软件包
 
-除了打包 wheel 版本供 PyPI 发布，Conda 是另一种常用的软件包分发方式。虽然 wheel 可以打包预编译的二进制库，但它无法有效管理 Python 扩展以外的二进制库的复杂依赖树。由于打包环境与运行环境不同，auditwheel 对二进制库施加了严格限制，以确保它们兼容各种系统。受这些限制影响，许多 bdist wheel 无法通过 auditwheel 检查。相比之下，Conda 不仅可以管理 Python 库，还可以管理系统库。Conda 包管理器能够为软件包的构建和运行提供一致的环境。Conda 软件包中的二进制库受到的限制要少得多。
-要构建 Conda 软件包，需要使用 Conda 配方文件（recipe file）meta.yaml 指定软件包的元数据。与 pyproject.toml 中记录的元数据类似，我们可以在 Conda 配方文件中定义名称、版本、描述、依赖和其他信息。conda-build 工具需要这些信息来构建 Conda 软件包。
+除了打包 wheel 版本供 PyPI 发布，Conda 也是另一种常用的软件包分发方式。虽然 wheel 可以打包预编译的二进制库，却难以有效管理 Python 扩展之外底层系统库的复杂依赖树。由于构建环境与运行环境存在差异，auditwheel 对二进制库施加了严格限制以确保通用兼容；受这些约束影响，不少 bdist wheel 无法通过 auditwheel 检查。相比之下，Conda 不仅管理 Python 库，还能直接管理底层系统库。Conda 包管理器能够为软件包的构建与运行提供一致的环境，使得 Conda 软件包中的二进制库所受约束要少得多。
+要构建 Conda 软件包，需要使用 Conda 配方文件（recipe file）meta.yaml 声明软件包的元数据。与 pyproject.toml 类似，我们可以在 Conda 配方文件中定义名称、版本、描述、依赖项和其他信息。conda-build 工具正是根据这些配方信息来构建 Conda 软件包。
 以 pyldd 项目为例，我们在 pyldd 仓库根目录下的 condarecipe 目录中创建了一个 meta.yaml 文件。meta.yaml 文件的最简配置如下。
 
 ```text
@@ -1304,8 +1304,8 @@ class HybridDFT(HartreeFock , KohnShamDFT):
 class HybridDFT(HartreeFock , KohnShamDFT):
     check_convergence = KohnShamDFT.check_convergence
 ```
-值得注意的是，在这个例子中，我们显式写出了父类的名称，而不是使用 Python 内置函数 super() 来确定父类。为什么这里不使用 super() 函数？这是因为 super() 依靠 MRO 在超类中查找方法。在这个例子中，我们希望不依赖 MRO 而调用特定父类的方法。使用 super() 会重新引入 MRO 并造成歧义。
-这引出了一个相关问题：在什么情况下使用 super() 有利？考虑一种情况，我们需要访问父类中的每个重载方法。在这种情况下，使用 super() 可以沿着 MRO 链自动查找并执行可用的方法，如下面的示例所示：
+在这个例子中，我们直接写明了父类的名称，而没有调用 Python 内置的 super() 函数来确定父类。为什么这里不适合使用 super() 函数？这是因为 super() 依靠 MRO 链在超类中搜索方法。在这个例子中，我们的目标是绕开 MRO 明确调用特定父类的方法；使用 super() 反而会重新引入 MRO 并造成继承歧义。
+那么，在什么情况下使用 super() 更为合适？考虑一种需要遍历父类中各个重载方法的场景。在这种情况下，使用 super() 可以沿着 MRO 链自动查找并依次执行可用的方法，如下面的示例代码所示：
 
 ```python
 class SelfConsistentField:
@@ -1534,7 +1534,7 @@ $  ssh -fN -R 18888:localhost:8888 intermediate_server_ip
 - 面向对象的Python项目的设计原则。
 - IPython和Jupyter Notebook的配置。
 
-这些主题在学习Python编程的过程中经常被忽视。然而，在实践中，它们是人们可能经常遇到的常见问题。花时间理解这些技术方面是有益的。Git、Docker和持续集成与持续交付（CI/CD）工作流等技术虽然并非Python编程所独有，但在Python应用程序的开发中很常用。熟悉这些技术可以大大提高程序开发和科学研究的效率。
+这些主题在学习 Python 编程的过程中容易被忽略。然而在工程实践中，它们是开发者经常遇到的真实问题。花时间搞懂这些技术底层非常有益。Git、Docker 和持续集成与持续交付（CI/CD）等技术虽然并非 Python 专有，但在 Python 项目开发中十分普及。熟练掌握这些工程技术可以大幅提高程序开发与科学研究的整体效率。
 
 ## 参考文献
 

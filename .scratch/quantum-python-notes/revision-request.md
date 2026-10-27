@@ -70,9 +70,9 @@
 | --- | --- |
 | 1. 资产抽取 | 完成。59 张图（220 DPI）、18 张表（200 DPI）、228 张公式图（300 DPI），清单与 SHA-256 见 `docs/reviews/quantum-python-figures.md`；公式图是偏离项——PDF 文本层把公式拆成无法复原的字形残片，改为按版面裁剪成图。 |
 | 2. 术语表 | 未单独成文。术语约定写入译者规则（`中文（English）` 首次标注），并由逐章译文自身保持一致；`docs/reviews/quantum-python-glossary.md` 不存在。 |
-| 3. 直译 + 润色 | 完成。直译 `gpt-6.1-terra`（thinking=low）、150 个片段；润色 `gemini-3.8-flash-low` + humanizer-zh 规则，16/17 章通过结构与字数校验，第 1 章因篇幅未润色。 |
-| 4. 元数据 | 完成，但与条目原文不同：`source.type: translation`（而非 `pdf`），每个 provenance 块记录 `pdf_sha256` + `pdf_pages` 页范围 + `model`/`polished_by`，不逐块记录 `bbox`。 |
+| 3. 直译 + 润色 | 完成。直译 `gpt-6.1-terra`（thinking=low）、150 个片段；润色 `gemini-3.8-flash-low`（`agy`，`--effort low`）+ humanizer-zh 规则，17/17 章通过结构闸门，逐章数字见 `docs/reviews/quantum-python-polish.md`。 |
+| 4. 元数据 | 完成，但与条目原文不同：`source.type: translation`（而非 `pdf`），metadata 记录 `translator_model`/`polisher_model`；14 个正文块与前言块共 17 个 translation provenance 记录 `pdf_sha256` + `pdf_pages` 页范围 + `model` + `polished_by`（`notes-guide` 块为原创说明，无这两项），不逐块记录 `bbox`。 |
 | 5. 排版核验 | 完成，见 `docs/VERIFICATION.md`「整书直译上线记录」。 |
-| 6. 合并、推送、部署 | 完成。提交 `d475d5e`…`a3f8b9a`，`deploy.yml` run 40497222200 成功；为首次发布在仓库启用 Pages（`build_type: workflow`，域名 `notes.psiqaq.cn`）。 |
+| 6. 合并、推送、部署 | 完成。提交 `d475d5e`…`e46d7d0` 与后续润色提交，`deploy.yml` 多次手动触发（40497222200、40521570743、40533170055 及最终版）均成功；为首次发布在仓库启用 Pages（`build_type: workflow`，域名 `notes.psiqaq.cn`）。 |
 
 页级覆盖记录：`docs/reviews/quantum-python-coverage.md` 已按译本重写（旧「学习笔记」版本作废），逐章列出 PDF 物理页范围、资产与代码计数，并说明 717 页如何分配到「书名页 + 目录 + 前言 + 16 章正文」；机器可读的页范围在 `provenance.json` 的 `pdf_pages`，计数校验报告为 `.local/verify_coverage.py` 输出（`problems=0`）。

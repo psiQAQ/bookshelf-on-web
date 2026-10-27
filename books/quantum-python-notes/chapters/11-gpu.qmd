@@ -1,8 +1,8 @@
 # GPU 编程 {#ch11 .unnumbered}
 
-图形处理器（Graphics Processing Units，GPU）配备了数千个核心，能够并行执行任务。这种架构使 GPU 具备低成本、高吞吐量的计算能力。在浮点运算密集型应用中，例如线性代数程序，GPU 的性能可以显著超过 CPU。利用 GPU 进行数据并行化，是提高量子化学应用性能的一种有吸引力的选择。
-如何在 Python 程序中启用 GPU 加速？如果 GPU 运行时环境配置正确，支持 GPU 的 Python 软件包，例如 PyTorch、CuPy 和 JAX，通常很容易使用。然而，要充分利用 GPU 硬件的计算能力，就必须深入了解 GPU 架构、运行时、硬件规格和 CUDA 编程模型。
-本章提供在 Python 应用中集成 GPU 计算的指导，重点讨论：
+图形处理器（Graphics Processing Units，GPU）配备数千个核心，能够并行执行海量任务。这种架构赋予 GPU 低成本、高吞吐量的计算优势。在线性代数等浮点运算密集型应用中，GPU 的计算性能往往大幅超过 CPU。利用 GPU 实现数据并行化，是提升量子化学计算性能极具吸引力的选择。
+如何在 Python 程序中启用 GPU 加速？只要 GPU 运行时环境配置得当，支持 GPU 的 Python 软件包（例如 PyTorch、CuPy 和 JAX）通常十分易用。然而，若要充分释放 GPU 硬件的计算潜力，就必须深入了解 GPU 架构、运行时、硬件规格以及 CUDA 编程模型。
+本章指导读者在 Python 应用中集成 GPU 计算，重点探讨：
 
 - 能否将基于 NumPy 的程序逐步改造为 GPU 程序？
 - 能否在 Python 层面利用固定内存（pinned memory）和异步计算（asynchronous computation）等 GPU 特性来加速 GPU 计算？
@@ -12,15 +12,15 @@
 
 ## 11.1 配置 GPU 运行时环境
 
-GPU 硬件的快速发展带来了种类繁多的 GPU 编程工具包。这些工具包的组合不当可能导致兼容性问题。因此，为 Python 应用配置 GPU 运行时环境成为一项复杂的任务。
-与普通 Python 应用不同，仅靠 Conda 软件包或 Python wheel 都不足以管理 GPU 应用。运行 GPU
-应用时，用户可能无法完全了解 GPU 硬件规格和运行时配置。要正确安装和运行 Python GPU 应用，我们需要基本了解 GPU 运行时环境和架构，包括：
+GPU 硬件的飞速演进带来了繁多的 GPU 编程工具包。这些工具包若组合不当可能引发兼容性问题。因此，为 Python 应用配置 GPU 运行时环境便成了一项棘手任务。
+与常规 Python 应用不同，仅靠 Conda 软件包或 Python wheel 都不足以妥善管理 GPU 应用。运行 GPU
+应用时，用户可能未必全面了解 GPU 硬件规格与运行时配置。要正确安装并运行 Python GPU 应用，我们需要基本掌握 GPU 运行时环境及其架构，包括：
 
-- GPU 应用的框架和厂商选择，例如用于 Nvidia GPU 的 CUDA，以及用于 AMD GPU 的 OpenCL 和 ROCm。
-- CUDA 工具包和运行时的版本，例如 CUDA 11 和 CUDA 12。使用较新版本 CUDA 工具包开发的应用可能与旧版 CUDA 运行时不兼容。为确保兼容性和最佳性能，建议编译和 CUDA 运行时使用相同版本的 CUDA。
-- CUDA 计算架构（Compute Architectures）和计算能力（Compute Capabilities）的版本 [1,2]。我们需要确保 GPU 应用的计算能力，例如 sm_70、sm_80 和 sm_90，与 GPU 硬件的计算架构，例如 Volta、Ampere 和 Hopper，兼容。不同版本的计算能力之间不保证二进制兼容性。
-- 真实架构与虚拟架构的区别 [3]。GPU 应用可能包含针对特定硬件的真实二进制文件，例如 CUDA 中的 cubin 文件，也可能包含虚拟中间指令集，例如 CUDA 中的 PTX（Parallel Thread Execution，并行线程执行）代码，或同时包含两者。CUDA 运行时可以执行即时编译（JIT），将虚拟代码转换为当前使用的特定 GPU 硬件的真实指令。然而，有些应用编译时可能没有以虚拟架构为目标，导致代码无法在不同 GPU 架构之间移植。
-- 特定 GPU 型号。即使属于同一微架构，例如 Hopper，各个 GPU 的硬件规格也可能不同，特别是在内存大小和双精度计算能力方面。有些应用专门针对特定 GPU 型号进行了优化。即使满足 GPU 计算能力、CUDA 版本及其他软件先决条件，这些应用也可能无法按预期运行。
+- GPU 应用的框架与厂商选型，例如面向 Nvidia GPU 的 CUDA，以及面向 AMD GPU 的 OpenCL 和 ROCm。
+- CUDA 工具包与运行时的具体版本，例如 CUDA 11 和 CUDA 12。基于较新 CUDA 工具包开发的应用可能无法在旧版 CUDA 运行时下工作。为确保兼容性并发挥最佳性能，建议编译环境与 CUDA 运行时采用完全一致的 CUDA 版本。
+- CUDA 计算架构（Compute Architectures）与计算能力（Compute Capabilities）的版本 [1,2]。我们必须确保 GPU 应用的目标计算能力（例如 sm_70、sm_80 与 sm_90）与实际 GPU 硬件的计算架构（例如 Volta、Ampere 与 Hopper）相互兼容。不同版本的计算能力之间并不保证二进制兼容性。
+- 真实架构与虚拟架构的区别 [3]。GPU 应用既可包含针对特定硬件的真实二进制文件（如 CUDA 中的 cubin 文件），也能包含虚拟中间指令集（如 CUDA 中的 PTX，即 Parallel Thread Execution 并行线程执行代码），或兼而有之。CUDA 运行时通过即时编译（JIT），将虚拟代码实时转译为当前 GPU 硬件的物理指令。然而，部分应用在编译时若未指定虚拟架构，所生成代码便无法跨 GPU 架构移植。
+- 具体 GPU 型号的差异。即便属于同一微架构（例如 Hopper），各款 GPU 的硬件规格也存在不同，尤以显存容量和双精度浮点算力为甚。部分应用专门针对特定 GPU 型号深度调优；即便系统满足了计算能力、CUDA 版本及其他软件前提，这些应用也可能无法达到预期效果。
 
 下面概述识别和配置 CUDA 运行时的一些常用方法。
 
@@ -66,8 +66,8 @@ $  which nvidia -container -toolkit
 
 #### 检查计算能力
 
-GPU 应用可以设计为针对多个计算能力类别，从而包含每个类别的可执行指令。然而，这种策略可能显著增加程序大小。为减小程序大小，有些 GPU 应用仅针对特定 GPU 硬件或所需的计算能力进行编译。执行预编译的 GPU 应用时，必须确
-保硬件支持所需的计算能力 [2]。可以使用以下命令列出 CUDA 库中支持的 PTX 文件 [7]：
+GPU 应用可以面向多个计算能力级别编译，生成包含各类别指令的胖二进制。然而，这种策略会显著增加程序体积。为了缩减体积，部分 GPU 应用仅面向特定 GPU 硬件或指定计算能力编译。运行这类预编译 GPU 应用前，必须确认
+硬件切实支持所需的计算能力 [2]。可以使用以下命令列出 CUDA 动态库中支持的 PTX 文件 [7]：
 
 ```bash
 $  cuobjdump --all -fatbin /path/to/library.so
@@ -79,8 +79,8 @@ $  cuobjdump --all -fatbin /path/to/library.so
 
 ## 11.2 与架构无关的优化
 
-在 Python 科学计算应用中，执行大量线性代数运算时，GPU 的计算能力可以显著提升性能。在 CPU 平台上，这些运算通常使用 NumPy 和 SciPy 库开发。要优化性能，第一步是重写 NumPy 函数或重构所需的代码块，引入能够利用 GPU 硬件的函数。在这个阶段，无须考虑具体的 GPU 架构。一种实用策略是使用 CuPy、PyTorch 或 JAX 等库，作为现有 NumPy/SciPy 代码的直接替代品。
-为了说明这一过程，让我们重新看一下第 10 章介绍的 get_j 函数。这个函数可以简单地使用 einsum 函数计算。然而，为了展示各个 Python GPU 软件包的功能以及 GPU 应用的优化过程，我们在本例中特意没有使用 einsum。
+在 Python 科学计算应用中，涉及海量线性代数计算时，GPU 的强大算力能显著提升运行效率。在 CPU 平台上，这类计算通常依托 NumPy 与 SciPy 库构建。要优化性能，首要步骤是改写 NumPy 函数或重构目标代码块，引入能调用 GPU 硬件的算子。在这一阶段，尚无须顾虑具体的 GPU 硬件架构。一种务实做法是直接采用 CuPy、PyTorch 或 JAX 等库，作为现有 NumPy/SciPy 代码的原位替代。
+为清晰展现这一改写过程，我们重新审视第 10 章出现的 get_j 函数。该函数本身可直接用 einsum 函数简练表达。但为了全面演示各个 Python GPU 软件包的特性及 GPU 代码优化脉络，此处特意不使用 einsum。
 
 ```python
 def get_j(eri , dm):
@@ -98,7 +98,7 @@ def get_j(eri , dm):
 
 ### 11.2.1 CuPy
 
-将基于 NumPy 的程序转换为使用 CuPy 的程序十分简单。CuPy 提供 NumPy 中的大多数功能。有关 CuPy API 与对应 NumPy API 的详细比较，可以参考 CuPy 文档 [11,12]。在大多数情况下，我们只需将模块名从 numpy 改为 cupy，例如
+把基于 NumPy 的程序迁移到 CuPy 极为直观。CuPy 提供了 NumPy 的绝大多数常用功能。有关 CuPy API 与对应 NumPy API 的详尽比对，可查阅 CuPy 官方文档 [11,12]。在多数场景下，我们仅需把模块名称从 numpy 改为 cupy，例如
 
 ```python
 np.dot -> cupy.dot
@@ -125,7 +125,7 @@ eri = cp.asarray(eri) # Transfer to memory on GPU
 ```
 使用 CuPy 时，可能会遇到基于 NumPy 的程序中不存在的某些问题：
 
-- 内存管理。为尽量减少 GPU 上内存分配和初始化的开销，CuPy 使用内存池（memory pool）管理 GPU 设备上的内存。删除 CuPy 数组对象时，CuPy 不会立即释放数组的内存，而是将内存保留在内存池中以供复用，这有助于 CuPy 减少内存分配的开销。只有新数组无法放入现有内存池时，内存池才会扩展。在某些情况下，即使 nvidia-smi 命令显示有足够的空闲 GPU 内存，创建新 CuPy 数组对象时仍可能遇到 OutOfMemoryError。要解决这个问题，可能需要使用以下方法手动调整内存池大小 [13]：
+- 内存管理。为尽量削减 GPU 上显存分配与初始化的开销，CuPy 引入内存池（memory pool）管理 GPU 设备显存。当 Python 删除 CuPy 数组对象时，CuPy 并不立即向操作系统归还显存，而是暂留在内存池中以待复用，这有效摊薄了频繁分配显存的耗时。只有当新数组超出当前池容量时，内存池才会向外扩展。某些情况下，即便 nvidia-smi 提示仍有充裕的空闲显存，分配新 CuPy 数组时依然可能触发 OutOfMemoryError。遇到这类瓶颈时，可借助如下方法手动设定内存池上限 [13]：
 
 ```text
 cupy.get_default_memory_pool().set_limit()
@@ -137,11 +137,11 @@ cupy.get_default_memory_pool().free_all_blocks()
 ```
 来释放未使用的内存块并减小内存池大小。
 
-- 异步执行。除了 cupy.asarray() 和 cupy.asnumpy() 等少数数据传输函数外，CuPy 库中的大多数函数都异步执行。调用 CuPy 函数时，它会被加入队列，在 GPU 上执行。随后控制流立即返回 Python 解释器，处理下一条语句。这种异步执行可能误导 Python 性能分析器。Python 性能分析器通常记录在 CPU 上执行每条 Python 语句所花费的时间。它们只能捕获 CuPy 函数向 GPU 设备提交任务所需的时间，而不是 GPU 本身的执行时间。因此，CPU 性能分析器报告的计时数据对 CuPy 函数并不可靠。为解决这个问题，CuPy 开发了一个性能分析模块。该模块引入了 cupyx.profiler.benchmark() 和 cupyx.profiler.profile() 方法，用于测量涉及 GPU 操作的 Python 函数或代码片段的运行时间 [14]。一般来说，CuPy 的性能分析工具功能有限，不如传统 Python 性能分析工具全面。
+- 异步执行。除 cupy.asarray() 与 cupy.asnumpy() 等少数内存拷贝接口外，CuPy 库内的大多数算子均采用异步执行机制。调用 CuPy 函数后，任务仅被推入 GPU 队列即刻返回，控制流随之继续执行下一行 Python 语句。这种异步特性容易误导常规的 Python 性能分析工具。传统分析器往往在 CPU 侧统计语句执行耗时，在此只能捕捉到算子向 GPU 提交任务的瞬间开销，无法测得内核在 GPU 上的真实运算时长，导致 CPU 分析器给出的耗时数据对 CuPy 并不准确。为解决这一痛点，CuPy 专门提供了性能分析模块，包含 cupyx.profiler.benchmark() 和 cupyx.profiler.profile() 等方法，便于精确测定包含 GPU 操作的 Python 代码块真实耗时 [14]。不过总体而言，CuPy 自带的分析工具仍显轻量，不如通用 Python 分析套件那样完备。
 
 ### 11.2.2 PyTorch
 
-的张量对象和 API 与 NumPy 非常相似，因此大多数 NumPy 函数都可以无缝替换为对应的 PyTorch 函数。然而，与 CuPy 和 NumPy 的相似程度相比，PyTorch API 的差异更多。下面列出使用 PyTorch 替代 NumPy 时一些常见的不兼容问题：
+PyTorch 的张量对象与 API 设计同 NumPy 极为接近，多数 NumPy 操作均可直接映射为对应的 PyTorch 算子。然而相比 CuPy 对 NumPy 的高度复刻，PyTorch 的 API 存在更多细节分歧。将 NumPy 代码迁移到 PyTorch 时，常见的不兼容点包括：
 
 - PyTorch 缺少 NumPy 中的某些函数，例如 np.array_equal 和 np.append 函数。
 - 除非显式配置 torch.set_default_tensor_type 函数，否则 PyTorch 张量对象的默认数据类型为 float32，而 NumPy 的默认数据类型为 float64。例如，torch.zeros(5)、
@@ -151,8 +151,8 @@ torch.rand(5) , and torch.as_tensor([1. , 2. , 3.]) all yield float32 tensors by
 ```
 默认情况下都会产生 float32 张量。
 
-- 当多个索引适用时，NumPy 函数使用关键字 axis 指定对张量的哪个索引进行操作。PyTorch 中对应的关键字参数是 dim。
-- 某些 PyTorch 函数的函数签名与对应的 NumPy 函数不同。例如，np.unique 和 torch.unique 对返回值遵循不同的约定 [15]。在程序中直接用 torch.unique 替换 np.unique 可能产生意料之外的结果。
+- 当适用于多个维度时，NumPy 函数使用关键字 axis 指定沿哪个轴执行操作。PyTorch 中对应的关键字参数则是 dim。
+- 部分 PyTorch 函数的接口签名与对应 NumPy 算子存在差异。例如 np.unique 与 torch.unique 的返回值规范并不一致 [15]。在程序中若直接用 torch.unique 替换 np.unique，可能产生意料之外的结果。
 
 不像 CuPy，没有全面的文档跟踪 PyTorch 和 NumPy API 的所有差异。建议在用对应的 PyTorch 函数替换任何 NumPy 函数之前查阅 PyTorch 文档，以确保兼容性。除此之外，将 CPU 程序转换为 PyTorch 版本的方法与前面展示的 CuPy 方法类似。
 以 get_j 函数为例。要使用 PyTorch，首先需要设置默认数据类型。接着添加在主机和设备之间传输数据的语句。可以使用 torch.as_tensor 函数将数据传输到 GPU 内存。必须在该函数中加入关键字 device=’cuda’，因为 PyTorch 默认在主机内存中创建 Tensor 对象。或者，可以使用 torch.from_numpy 函数将 NumPy 数组转换为 Tensor 对象，然后调用通用转换方法 to 将数据传输到 GPU。
@@ -177,8 +177,8 @@ eri = torch.as_tensor(eri , device= 'cuda') # Transfer to GPU
 
 ### 11.2.3 JAX
 
-库包含一个模块 jax.numpy，它紧密遵循 NumPy API。JAX 采用的设计和数据处理方式与 NumPy 有很大不同。将程序直接从 NumPy 转换为 JAX 可能导致性能大幅下降。高效的 JAX 实现通常需要对原程序进行大幅修改。
-的逐元素操作速度较慢。推荐采用面向向量的编码风格。官方文档 How to Think in JAX [17] 提供了指导，帮助我们更好地理解 JAX 的编码风格。前面几节介绍的 get_j 实现不适合 JAX。我们可以使用 NumPy ufunc 和广播规则执行矢量化操作。消除显式迭代后，可以应用 JAX 即时编译，将计算卸载到 GPU 设备。
+JAX 库包含紧密遵循 NumPy API 的 jax.numpy 模块。然而 JAX 采用的设计与数据处理机制与 NumPy 迥然有别。若将程序直接由 NumPy 搬到 JAX，往往会导致严重的性能衰退。高效的 JAX 实现通常要求对原程序做出较大幅度的修改。
+JAX 执行逐元素循环操作相对缓慢，因此推荐采用面向向量的编码范式。官方指南 How to Think in JAX [17] 提供了明确指导，帮助读者建立 JAX 的思维模式。前面章节的 get_j 实现并不适合 JAX。我们应使用 NumPy ufunc 与广播规则写成矢量化形式；在消除显式循环后，再施加 JAX 即时编译，将密集计算下沉到 GPU 设备。
 
 ```python
 import jax.numpy as jnp
@@ -200,9 +200,9 @@ jax.config.update('jax_enable_x64', True)
 
 ### 11.3.1 固定内存
 
-固定内存（pinned memory），也称为页锁定内存（page-locked memory），是一种操作系统不能将其分页换出到磁盘的内存。在数据传输中使用固定内存可以提高数据传输性能。
-通常，程序使用的内存是可分页的。然而，GPU 不能直接访问可分页主机内存中的数据。当数据从可分页主机内存传输到设备内存时，数据移动分两个阶段进行。首先，将数据从可分页内存复制到页锁定缓冲区，随后从缓冲区传输到设备。CPU 参与这一两步数据传输过程，具体负责在可分页内存和页锁定内存之间移动数据的步骤。如果主机上的数据一开始就创建在固定内存中，便可以跳过这一步。这消除了 CPU 内存管理相关的延迟和开销 [18]。
-在 cupy.cuda.pinned_memory 模块中提供了几个操作固定内存的函数。为了与 NumPy 更无缝地集成，CuPy 还在 cupyx 软件包中提供高级 API，用于创建由固定内存支持的 NumPy 数组。cupyx 中一些常用的 API 包括
+固定内存（pinned memory），也称为页锁定内存（page-locked memory），是操作系统不能将其分页换出到磁盘的物理内存。在数据传输中使用固定内存可以提升传输性能。
+通常，程序所用的内存是可分页的。然而，GPU 不能直接访问可分页主机内存中的数据。当数据从可分页主机内存传输到设备内存时，数据移动分两个阶段展开。首先，将数据从可分页内存复制到页锁定缓冲区，随后从缓冲区传输到设备。CPU 参与这一两步传输过程，负责在可分页内存和页锁定内存之间移动数据。如果主机上的数据一开始就创建在固定内存中，便可以省去这一步骤。这消除了 CPU 内存管理相关的延迟和开销 [18]。
+cupy.cuda.pinned_memory 模块提供了几个操作固定内存的函数。为了与 NumPy 更顺畅地集成，CuPy 还在 cupyx 软件包中提供高级 API，用于创建由固定内存支持的 NumPy 数组。cupyx 中一些常用的 API 包括
 -
 -
 -
@@ -232,8 +232,8 @@ output_cpu = output.get(out=cupyx.empty_pinned((n , n)))
 
 ### 11.3.2 CUDA 流
 
-GPU 流（GPU stream）是由 GPU 执行的操作队列。GPU 可以并行执行多个流，从而并发执行多个操作。使用 GPU 流可以更高效地利用 GPU。GPU 流的一种常见使用场景是使计算和数据传输重叠，从而减少总执行时间。
-CUDA 使用一个称为 NULL 流的默认流。GPU 上的所有处理器都执行该流中排队的任务。CuPy 函数通常使用 NULL 流，使整个 GPU 执行相同的指令集。要管理多个 GPU 流，可以使用 cupy.cuda.stream 模块。例如，可以创建专用流来处理异步数据传输。关于异步数据传输，有几个关键方面：
+GPU 流（GPU stream）是 GPU 执行操作的任务队列。GPU 可以并发执行多个流，从而同时推进多个操作。利用 GPU 流可以更高效地压榨硬件算力。GPU 流最常见的使用场景是重叠计算与数据传输，从而显著缩减总执行时间。
+CUDA 使用名为 NULL 流的默认流。GPU 上的所有处理器均会执行该流中排队的任务。CuPy 函数通常默认走 NULL 流，使整个 GPU 执行相同的指令集。如需管理多个 GPU 流，可以使用 cupy.cuda.stream 模块。例如，可以创建专用流来处理异步数据传输。关于异步数据传输，有几个关键要点：
 
 - 主机内存必须分配为固定内存，这是异步传输的要求 [19]。
 - 在调用对应流的 synchronize 方法之前，应避免修改固定内存的内容。
@@ -287,8 +287,8 @@ ctypes 模块可以与原生 CUDA C++ 项目结合使用。这种组合在 GPU �
 
 **图 11.1** GPU 并行化模型：由网格、块和线程组成的层次结构
 
-从本质上说，实现 GPU 内核就是将数据并行化问题映射到 GPU 并行化模型的任务。这里我们将简要讨论 get_j 函数的 CUDA 代码设计与优化。这个 CUDA 内核随后将集成到 Python 代码中。如果你对 GPU 架构和优化方法的细节感兴趣，官方手册 *CUDA C Programming Guide* [25] 以及 *CUDA by Example: An Introduction to General-Purpose GPU Programming* [26] 等教材都是很好的资源，全面介绍了 GPU 编程概念。
-我们的初始版本源自第 11.2 节介绍的 CPU 代码。在这个版本中，循环索引 i 和 j 被映射到 CUDA 线程。高维数组用一维数组表示，其寻址方式由多维格式转换而来。这是在 CUDA 内核中处理多维数组的常用技术。确保 Python 端数组的连续性至关重要。
+本质上，编写 GPU 内核的核心任务是将数据并行化问题映射到 GPU 并行模型。这里我们将简要讨论 get_j 函数的 CUDA 代码设计与优化。这个 CUDA 内核随后将嵌入 Python 代码中。若对 GPU 架构与优化细节感兴趣，官方手册 *CUDA C Programming Guide* [25] 以及 *CUDA by Example: An Introduction to General-Purpose GPU Programming* [26] 都是很好的教材，全面介绍了 GPU 编程概念。
+我们的初始版本脱胎自第 11.2 节的 CPU 代码。该版本将外层循环索引 i 和 j 映射到 CUDA 线程。高维数组由一维数组表示，寻址方式通过多维坐标公式换算而来。这是在 CUDA 内核中处理多维数组的常用技术。确保 Python 端数组在内存中连续排布至关重要。
 
 ```text
 #include <cuda_runtime.h >
@@ -455,9 +455,9 @@ def get_j_v3(eri , dm):
 ### 11.4.3 自定义内核
 
 CuPy、PyCUDA 和 CUDA-Python 都是允许我们在 Python 程序中嵌入原始 CUDA 内核的工具。
-在这三者中，Nvidia 提供的 CUDA-Python 不太常用。CUDA-Python 提供了一整套 CUDA API，其命名约定和 API 结构与 CUDA C++ API 几乎完全相同。理论上，它可以完成 CUDA C++ 能完成的几乎所有工作。然而，CUDA-Python 只是将 CUDA API 函数导出到 Python，并未适配 Python 语言的惯例。使用 CUDA-Python 时，需要注意数据类型、错误代码以及通常与 C++ 编程有关的其他细节。编译配置也要求深入理解 CUDA 二进制文件和运行时框架。与全部用 C++ 实现后再通过 ctypes 或 CFFI 导出到 Python 相比，单独使用 CUDA-Python 并不能简化开发过程。
-和 PyCUDA 都在 CUDA 编程与 Python 集成之间提供了更好的平衡。使用 CuPy 和 PyCUDA 时，只需专注于 CUDA 内核代码。这些工具会自动处理其余任务，包括编译配置和 Python 接口。它们提供访问大多数基本 CUDA 特性的 API，尽管不如 CUDA-Python 全面。这些 API 分别位于 CuPy 的 cupy.cuda.runtime 模块和 PyCUDA 的 pycuda.driver 模块中。例如，第 11.4.4 节将要使用的零拷贝（zero-copy）内存访问技术，需要直接调用 cupy.cuda.runtime 模块的 API。
-我们以 CuPy RawKernel 为例，探讨如何将原始 CUDA 内核集成到 Python 程序中。虽然 PyCUDA 的 API 命名和包结构与 CuPy 不同，但它们的用法非常相似。基于 CuPy 示例，使用 PyCUDA 实现相同功能并不困难。
+在这三者中，Nvidia 提供的 CUDA-Python 较少使用。CUDA-Python 提供了一整套 CUDA API，其命名约定和 API 结构与 CUDA C++ API 几乎完全相同。理论上，它可以完成 CUDA C++ 能完成的绝大多数工作。然而，CUDA-Python 只是将 CUDA API 函数导出到 Python，并未适配 Python 语言的惯例。使用 CUDA-Python 时，需要关注数据类型、错误代码以及通常与 C++ 编程有关的其他细节。编译配置也要求深入理解 CUDA 二进制文件和运行时框架。与全部用 C++ 编写后再通过 ctypes 或 CFFI 导出到 Python 相比，单独使用 CUDA-Python 并不能简化开发过程。
+CuPy 和 PyCUDA 都在 CUDA 编程与 Python 集成之间提供了更好的平衡。使用 CuPy 和 PyCUDA 时，只需专注于 CUDA 内核代码。这些工具会自动处理其余任务，包括编译配置和 Python 接口封装。它们提供访问大多数基本 CUDA 特性的 API，尽管不如 CUDA-Python 全面。这些 API 分别位于 CuPy 的 cupy.cuda.runtime 模块和 PyCUDA 的 pycuda.driver 模块中。例如，第 11.4.4 节将要使用的零拷贝（zero-copy）内存访问技术，需要直接调用 cupy.cuda.runtime 模块的 API。
+我们以 CuPy RawKernel 为例，探讨如何将原始 CUDA 内核集成到 Python 程序中。虽然 PyCUDA 的 API 命名和包结构与 CuPy 不同，但它们的用法非常相似。参照 CuPy 示例，使用 PyCUDA 实现相同功能并不困难。
 使用第 11.4.1 节开发的原始 CUDA 内核源代码，我们可以按如下方式初始化一个 RawKernel 实例：
 
 ```python
@@ -624,10 +624,9 @@ kernel_v2
 
 ## 总结
 
-本章介绍了使用 Python 进行 GPU 编程以加速计算的技术。CuPy 和 PyTorch 等库提供了类似 NumPy 的功能，用于管理数组和加速 GPU 上的线性代数运算。要在 Python 程序中启用 GPU 加速，一个直接的方法是将 NumPy 代码替换为 CuPy 或 PyTorch 中对应的函数或类。
-如果 CuPy 或 PyTorch 的性能不足，或者这些库没有提供所需功能，就可能需要自定义 GPU 内核并将其集成到 Python 程序中。Numba JIT 编译提供了一种将 Python 函数转换为 GPU 内核的方法。然而，采用这种方法不容易对 GPU 特性进行精细控制。为了更精确地控制 GPU 的能力，可以开发原生 CUDA 代码，并使用 CuPy 或 PyCUDA 将其集成到 Python 代码中，也可以利用 ctypes 将 CUDA C++ 项目纳入 Python 程序。
-为了更好地利用 GPU 的计算能力，我们可以利用 GPU 架构的独有特性来提高程序性能。例如，可以利用 CUDA 流在 GPU 上并发执行多个任务。这一能力使计算与数据传输能够重叠。使用
-参考文献 锁页内存可以减少主机与 GPU 之间数据移动的开销。此外，使用零拷贝技术可以进一步减少这种数据移动开销。在 GPU 内核中恰当使用共享内存可以降低全局内存访问的频率。内存访问模式对性能有显著影响，尤其是在通过零拷贝技术访问主机内存时。GPU 计算受益于合并内存访问。在设计数据结构和算法时应考虑这一特性。
+本章系统介绍了在 Python 中运用 GPU 编程加速科学计算的技术方案。CuPy 与 PyTorch 等库提供了类似 NumPy 的丰富接口，用于管理张量并加速 GPU 上的线性代数运算。要在 Python 程序中启用 GPU 加速，最直接的手段是将现有 NumPy 代码替换为 CuPy 或 PyTorch 中对应的函数或类。
+若 CuPy 或 PyTorch 的运算性能未达预期，或者这些库缺少所需的前沿功能，就必须自定义编写 GPU 内核并集成到 Python 项目中。Numba JIT 编译提供了一种将常规 Python 函数直接编译为 GPU 内核的途径。不过，采用这种方法往往不易精细掌控底层 GPU 特性。为了更精确地挖掘硬件算力，我们可以编写原生 CUDA 代码，再利用 CuPy 或 PyCUDA 集成进 Python，也可以借助 ctypes 将 CUDA C++ 项目动态加载到 Python 环境中。
+为了更充分地释放硬件性能，我们还可以结合 GPU 架构的特有机制优化程序。例如，通过 CUDA 流可在 GPU 上并发执行多个任务，实现计算与数据传输的相互重叠。合理使用锁页内存可以削减主机与 GPU 之间搬运数据的开销。进一步地，零拷贝技术能省去显存中转，降低通信成本。在内核中合理使用共享内存有助于减少全局内存访问频次。内存访问模式对程序性能至关重要，GPU 计算尤为受益于合并内存访问，在规划数据结构和算法流程时应充分兼顾这一特点。
 
 ## 参考文献
 

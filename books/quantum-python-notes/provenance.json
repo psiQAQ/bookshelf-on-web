@@ -23,7 +23,8 @@
           2,
           8
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -39,7 +40,8 @@
           18,
           71
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -55,7 +57,8 @@
           72,
           132
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -71,7 +74,8 @@
           133,
           157
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -87,7 +91,8 @@
           158,
           184
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -103,7 +108,8 @@
           185,
           206
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -119,7 +125,8 @@
           207,
           234
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -135,7 +142,8 @@
           235,
           273
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -151,7 +159,8 @@
           274,
           313
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -167,7 +176,8 @@
           314,
           403
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -183,7 +193,8 @@
           404,
           457
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -199,7 +210,8 @@
           458,
           483
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -215,7 +227,8 @@
           484,
           565
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -231,7 +244,8 @@
           566,
           618
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -247,7 +261,8 @@
           619,
           646
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -263,7 +278,8 @@
           647,
           679
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     },
@@ -279,7 +295,8 @@
           680,
           717
         ],
-        "model": "gpt-6.1-terra (openai-codex, thinking=low)"
+        "model": "gpt-6.1-terra (openai-codex, thinking=low)",
+        "polished_by": "gemini-3.8-flash-low (agy) + humanizer-zh"
       },
       "review_state": "verified"
     }

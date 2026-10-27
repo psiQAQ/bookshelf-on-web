@@ -342,6 +342,7 @@ source:
     publisher: Elsevier
     year: 2025
   translator_model: gpt-6.1-terra (openai-codex, thinking=low)
+  polisher_model: gemini-3.8-flash-low (agy) + humanizer-zh
 review:
   status: approved
   approved_by: psiQAQ (repository owner, decision recorded in the translation revision request)

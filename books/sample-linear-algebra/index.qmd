@@ -1,6 +1,6 @@
 # A Tiny Vector Notebook {#sec-vector-notebook}
 
 An original, deliberately short publishing fixture, not an excerpt from a textbook.
-It has not received human content review or permission for public distribution.
+It has not received human content review.
 
 A vector records an ordered collection of numbers. Read the [next chapter](chapters/01-length.qmd#sec-vector-length).

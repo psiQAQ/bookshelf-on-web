@@ -40,7 +40,7 @@ PDF 9–17 为目录；正式目录含三部分、16章，未列附录。各章�
 
 PDF 题名页核实：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*，丛书 *Theoretical and Computational Chemistry*，Volume 23。开章页脚载 Elsevier B.V. 2025 出版标记及 ISSN 1380-7323；各章有独立 DOI。未核实独立书目页、ISBN 或全书 DOI，不从章节 DOI 推断这些字段。
 
-最终网页只包括独立中文讲解、自创示例与练习，以及书目/章节来源指引；不转载既有中文前言、原书代码、插图、长引文或 PDF。`source.type: original` 仅说明笔记文本和例子的创作来源，不隐瞒参考书；每章和 provenance 都须记录主题参考。
+最终网页只包括独立中文讲解、自创示例与练习，以及书目/章节来源指引。`source.type: original` 仅说明笔记文本和例子的创作来源，不隐瞒参考书；每章和 provenance 都须记录主题参考。
 
 ## 待完成的科学与内容核验
 

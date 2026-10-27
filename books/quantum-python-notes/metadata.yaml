@@ -27,7 +27,7 @@ assets: []
 source:
   type: original
   description: '非官方原创中文学习笔记；主题参考 Qiming Sun, Python for Quantum Chemistry: A Full
-    Stack Programming Guide (Elsevier, 2025)。各章文末列具体来源页与章节 DOI；不转载原书。'
+    Stack Programming Guide (Elsevier, 2025)。各章文末列具体来源页与章节 DOI。'
 review:
   status: draft
   approved_by: null

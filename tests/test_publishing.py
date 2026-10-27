@@ -52,7 +52,6 @@ class PublishingFixture(unittest.TestCase):
             path = self.root / "books" / slug / "metadata.yaml"
             m = load_yaml(path)
             m["review"].update(status="approved", approved_by="SYNTHETIC TEST FIXTURE", approved_at="2026-01-01T00:00:00Z", evidence_path="docs/reviews/test-fixture.md")
-            m["rights"].update(public=True, license="TEST-ONLY", evidence_url="https://example.invalid/test-only")
             path.write_text(yaml.safe_dump(m), encoding="utf-8")
             provenance_path = path.parent / "provenance.json"
             provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
@@ -87,7 +86,6 @@ class ValidateTests(PublishingFixture):
         self.assertFalse(any(i.severity == "error" for i in issues))
         for book in books:
             self.assertEqual(book.metadata["review"]["status"], "draft")
-            self.assertFalse(book.metadata["rights"]["public"])
             self.assertNotIn("sha256", book.metadata["source"])
 
     def test_strict_rejects_registered_drafts(self):
@@ -143,23 +141,9 @@ class ValidateTests(PublishingFixture):
         with self.assertRaises(PublishingError):
             safe_path(self.directory, "linked.qmd")
 
-    def test_public_rights_not_inferred_from_notes_or_approval(self):
-        self.approve_fixture()
-        m = self.metadata()
-        m["rights"].update(public=False, publication_mode="notes")
-        self.save(m)
-        self.assertTrue(any(i.code == "ineligible" for i in self.errors(strict=True)))
-
     def test_missing_review_record_blocks_approved_fixture(self):
         self.approve_fixture()
         (self.root / "docs/reviews/test-fixture.md").unlink()
-        self.assertTrue(self.errors(strict=True))
-
-    def test_missing_authorization_evidence_blocks_approved_fixture(self):
-        self.approve_fixture()
-        m = self.metadata()
-        m["rights"]["evidence_url"] = None
-        self.save(m)
         self.assertTrue(self.errors(strict=True))
 
     def test_unresolved_p0_p1_block_but_p2_does_not(self):
@@ -179,11 +163,10 @@ class ValidateTests(PublishingFixture):
         path.write_text(json.dumps(provenance), encoding="utf-8")
         self.assertTrue(any(i.code == "unreviewed-provenance" for i in self.errors(strict=True)))
 
-    def test_invalid_date_and_rights_uri(self):
+    def test_invalid_date(self):
         m = self.metadata()
         m["review"]["approved_at"] = "yesterday"
-        m["rights"]["evidence_url"] = "file:///private"
-        self.assertGreaterEqual(len(schema_errors(self.root, "book.schema.json", m)), 2)
+        self.assertTrue(schema_errors(self.root, "book.schema.json", m))
 
     def test_original_mapping_cannot_claim_pdf_coordinates(self):
         path = self.directory / "provenance.json"

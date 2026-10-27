@@ -154,11 +154,9 @@ def check_source_links(directory: Path, chapter: str, inputs: set[str]) -> None:
 
 def eligibility(metadata: dict) -> list[str]:
     reasons = []
-    review, rights = metadata["review"], metadata["rights"]
+    review = metadata["review"]
     if review["status"] != "approved" or not all(review.get(k) for k in ("approved_by", "approved_at", "evidence_path")):
         reasons.append("Explicit human approval and its evidence are required")
-    if rights["public"] is not True or not rights.get("license") or not rights.get("evidence_url"):
-        reasons.append("Public rights clearance, license and evidence URL are required")
     if any(i["severity"] in {"P0", "P1"} and i["status"] == "open" for i in review["issues"]):
         reasons.append("Unresolved P0/P1 issues block publication")
     return reasons

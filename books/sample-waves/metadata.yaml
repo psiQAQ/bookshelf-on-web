@@ -11,11 +11,6 @@ assets: []
 source:
   type: original
   description: Original M0 sample written for this repository; no source PDF.
-rights:
-  publication_mode: full
-  public: false
-  license: null
-  evidence_url: null
 review:
   status: draft
   approved_by: null

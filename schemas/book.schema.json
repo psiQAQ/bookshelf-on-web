@@ -10,7 +10,6 @@
     "chapters",
     "assets",
     "source",
-    "rights",
     "review"
   ],
   "properties": {
@@ -101,43 +100,6 @@
           }
         }
       ]
-    },
-    "rights": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "publication_mode",
-        "public",
-        "license",
-        "evidence_url"
-      ],
-      "properties": {
-        "publication_mode": {
-          "enum": [
-            "full",
-            "notes"
-          ]
-        },
-        "public": {
-          "type": "boolean"
-        },
-        "license": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "minLength": 1,
-          "pattern": "\\S"
-        },
-        "evidence_url": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "format": "uri",
-          "pattern": "^https://"
-        }
-      }
     },
     "review": {
       "type": "object",

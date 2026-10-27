@@ -24,44 +24,44 @@ MEP 是研究分子反应性的有用工具。我们用 MEP 来展示如何根�
 这个积分可以使用第 12 章介绍的单电子库仑积分函数 coulomb_1e_MD 计算。MEP 的计算代码可以实现如下。
 
 ```python
-from pychem_book.chap12.analytical_integrals.v5.basis import Molecule , CGTO
+from pychem_book.chap12.analytical_integrals.v5.basis import Molecule, CGTO
 from pychem_book.chap12.analytical_integrals.v5 import coulomb_1e_MD
 from pychem_book.chap13.simple_scf import SCFWavefunction
-def eval_mep(mol: Molecule , gtos: List[CGTO] , wfn: SCFWavefunction , grids):
-    dist = np.linalg.norm(grids[: ,None ,:] - mol.coordinates , axis=2)
-    mep = -np.einsum( 'z ,gz ->g', np.array(mol.nuclear_charges), 1./dist)
+def eval_mep(mol: Molecule, gtos: List[CGTO], wfn: SCFWavefunction, grids):
+    dist = np.linalg.norm(grids[:,None,:] - mol.coordinates, axis=2)
+    mep = -np.einsum( 'z,gz->g', np.array(mol.nuclear_charges), 1./dist)
     dm = wfn.density_matrices
-    for i ,r in enumerate (grids):
-        v = coulomb_1e_MD.get_matrix(gtos ,r )
-        mep[i] += np.einsum( 'ij ,ji ->',v , dm)
+    for i,r in enumerate (grids):
+        v = coulomb_1e_MD.get_matrix(gtos,r )
+        mep[i] += np.einsum( 'ij,ji->',v , dm)
     return mep
 ```
 使用这个函数，我们可以在均匀网格上计算 MEP，随后使用第 3 章介绍的可视化工具显示 MEP。例如，以下脚本生成一个 cube 文件，然后可以使用 JMol、VMD 或其他可视化软件查看。
 
 ```python
 from pychem_book.chap03.render_cube import render_cube
-from pychem_book.chap13.simple_scf import RHF , simple_scf
-xyz = ' ' '
+from pychem_book.chap13.simple_scf import RHF, simple_scf
+xyz = '''
 N- . 7 500
-N0 . 7 500 ' ' '
+N0 . 7 500 '''
 mol = Molecule.from_xyz(xyz)
-gtos = mol.assign_basis({ 'N': '6 -31g'})
-model = RHF(mol , gtos)
+gtos = mol.assign_basis({ 'N': '6-31g'})
+model = RHF(mol, gtos)
 wfn = scf_iter(model)
 ```
 
 ```python
-boundary = [[ -5. , 5.] , [ -5. , 5.] , [ -5. , 5.]]
-mesh = [20 ,2 0 , 20]
-mgrids = np.mgrid[[ slice(r[0] , r[1] ,m *1j) for r ,m in zip (boundary , mesh)
+boundary = [[-5., 5.], [-5., 5.], [-5., 5.]]
+mesh = [20,2 0, 20]
+mgrids = np.mgrid[[ slice(r[0], r[1],m *1j) for r,m in zip (boundary, mesh)
     ]]
-grids = mgrids.reshape(3 , -1).T
-rho = eval_density(mol , gtos , wfn , grids).reshape(mesh)
-mep = eval_mep(mol , gtos , wfn , grids).reshape(mesh)
-origin = mgrids[: ,0 ,0 ,0]
-voxel = np.array([mgrids[: ,1 ,0 ,0] - origin , mgrids[: ,0 ,1 ,0] - origin , mgrids[: ,0 ,0 ,1] - origin])
+grids = mgrids.reshape(3, -1).T
+rho = eval_density(mol, gtos, wfn, grids).reshape(mesh)
+mep = eval_mep(mol, gtos, wfn, grids).reshape(mesh)
+origin = mgrids[:,0,0,0]
+voxel = np.array([mgrids[:,1,0,0] - origin, mgrids[:,0,1,0] - origin, mgrids[:,0,0,1] - origin])
 with open ('mep.cub', 'w') as f:
-    render_cube(mol.elements , mol.coordinates , voxel , origin , mep)
+    render_cube(mol.elements, mol.coordinates, voxel, origin, mep)
 ```
 
 ## 16.2 核梯度
@@ -156,22 +156,22 @@ PySCF 软件包在其 Mole 类中提供了通用积分求值方法 intor()。通
 对应的 Python 代码为：
 
 ```python
-def grad_overlap(mol , atom_id):
+def grad_overlap(mol, atom_id):
     s1 = mol.intor( 'int1e_ipovlp')
-    p0 , p1 = mol.aoslice_by_atom()[atom_id ,2:4]
-    s_A = np.zeros((3 , nao , nao))
-    s_A[: ,p0:p1] = -s1[: ,p0:p1]
-    return s_A + s_A.transpose(0 ,2 ,1 )
+    p0, p1 = mol.aoslice_by_atom()[atom_id,2:4]
+    s_A = np.zeros((3, nao, nao))
+    s_A[:,p0:p1] = -s1[:,p0:p1]
+    return s_A + s_A.transpose(0,2 ,1 )
 ```
 四指标电子排斥积分（electron repulsion integrals）的导数计算与重叠积分（overlap integrals）类似。相关的函数名称是 int2e_ip1。该函数给出四指标张量中第一个指标处基函数的导数。四个指标按照化学家记号（chemist’s notation）排列。为了使积分张量对称化，需要进行两次转置，将导数分配到其余三个指标上。
 
 ```python
 eri1 = mol.intor( 'int2e_ip1')
-p0 , p1 = mol.aoslice_by_atom()[atom_id ,2:4]
-eri_A = np.zeros((3 , nao , nao , nao , nao))
-eri_A[: ,p0:p1] = -eri1[: ,p0:p1]
-eri_A = eri_A + eri_A.transpose(0 ,2 ,1 ,3 ,4)
-eri_A = eri_A + eri_A.transpose(0 ,3 ,4 ,1 ,2)
+p0, p1 = mol.aoslice_by_atom()[atom_id,2:4]
+eri_A = np.zeros((3, nao, nao, nao, nao))
+eri_A[:,p0:p1] = -eri1[:,p0:p1]
+eri_A = eri_A + eri_A.transpose(0,2,1,3,4)
+eri_A = eri_A + eri_A.transpose(0,3,4,1,2)
 ```
 h 由动能算符（kinetic operator）和核吸引算符（nuclear attraction operator）组成。动能积分的导数与重叠积分的导数类似。对于核吸引算符 Vnuc，计算既需要作用于基函数的导数，也需要算符自身的导数：
 
@@ -188,14 +188,14 @@ h 由动能算符（kinetic operator）和核吸引算符（nuclear attraction o
 h 的积分程序可以实现为：
 
 ```python
-def grad_hcore(mol , atom_id):
+def grad_hcore(mol, atom_id):
     # derivatives o fT+Vo nb r a
     hcore_partial = mol.intor( 'int1e_ipkin') + mol.intor( 'int1e_ipnuc')
     with mol.with_rinv_at_nucleus(atom_id):
         v = mol.intor( 'int1e_iprinv') * -mol.atom_charge(atom_id)
-    p0 , p1 = mol.aoslice_by_atom()[atom_id ,2:4]
-    v[: ,p0:p1] -= hcore_partial[: ,p0:p1]
-    return v + v.transpose(0 ,2 ,1 )
+    p0, p1 = mol.aoslice_by_atom()[atom_id,2:4]
+    v[:,p0:p1] -= hcore_partial[:,p0:p1]
+    return v + v.transpose(0,2 ,1 )
 ```
 
 ### 16.2.3 RHF 能量的核梯度
@@ -209,35 +209,35 @@ def grad_hcore(mol , atom_id):
 类似的变换也可应用于 J 项和重叠项。将这些简化与前面介绍的积分函数结合起来，就可以得到计算 RHF 核梯度的程序。
 
 ```python
-def grad_hf_energy(mol , mo_energy , mo_coeff , nocc):
-    mo_o = mo_coeff[: ,:nocc]
-    dm = einsum( 'pi ,qi ->pq', mo_o , mo_o) * 2
-    dme = einsum( 'pi ,i ,qi ->pq', mo_o , mo_energy[:nocc] , mo_o) * 2
+def grad_hf_energy(mol, mo_energy, mo_coeff, nocc):
+    mo_o = mo_coeff[:,:nocc]
+    dm = einsum( 'pi,qi->pq', mo_o, mo_o) * 2
+    dme = einsum( 'pi,i,qi->pq', mo_o, mo_energy[:nocc], mo_o) * 2
     eri1 = mol.intor( 'int2e_ip1')
-    j = einsum( 'xpqrs ,sr ->xpq', eri1 , dm)
-    k = einsum( 'xpqrs ,qr ->xps', eri1 , dm)
+    j = einsum( 'xpqrs,sr->xpq', eri1, dm)
+    k = einsum( 'xpqrs,qr->xps', eri1, dm)
     v h f=j-k * .5
     s1 = mol.intor( 'int1e_ipovlp')
     aoslices = mol.aoslice_by_atom()
-    de = np.zeros((mol.natm , 3))
+    de = np.zeros((mol.natm, 3))
 ```
 
 ```python
     for k in range (mol.natm):
-        p0 , p1 = aoslices[k ,2:]
-        h1 = grad_hcore(mol ,k )
-        de[k] += np.einsum( 'xij ,ji ->x',h 1 , dm)
-        de[k] += np.einsum( 'xij ,ji ->x', -vhf[: ,p0:p1] ,d m [ : ,p0:p1]) * 2
-        de[k] -= np.einsum( 'xij ,ji ->x', -s1[: ,p0:p1] , dme[: ,p0:p1]) * 2
+        p0, p1 = aoslices[k,2:]
+        h1 = grad_hcore(mol,k )
+        de[k] += np.einsum( 'xij,ji->x',h 1, dm)
+        de[k] += np.einsum( 'xij,ji->x', -vhf[:,p0:p1],d m [ :,p0:p1]) * 2
+        de[k] -= np.einsum( 'xij,ji->x', -s1[:,p0:p1], dme[:,p0:p1]) * 2
     coords = mol.atom_coords()
     Z = mol.atom_charges()
-de_nuc = jax.grad(nuclear_repulsion_energy)(coords ,Z ) # (1)
+de_nuc = jax.grad(nuclear_repulsion_energy)(coords,Z ) # (1)
     return de + de_nuc
-def nuclear_repulsion_energy(coords , z):
-    rr = coords[: ,None ,:] - coords
-    zz = z[: ,None] * z
+def nuclear_repulsion_energy(coords, z):
+    rr = coords[:,None,:] - coords
+    zz = z[:,None] * z
     tril = np.tril_indices( len(z), -1)
-    d = jnp.linalg.norm(rr[tril] , axis=1)
+    d = jnp.linalg.norm(rr[tril], axis=1)
     return (zz[tril] / d). sum()
 ```
 在第 (1) 行，我们利用 JAX 库的自动微分（automatic differentiation，autodiff）功能计算核排斥能的梯度。第 5 章第 5.3 节已经讨论过这一功能。
@@ -248,20 +248,20 @@ import pyscf
 mol = pyscf.M(atom= 'N 0. 0 0; N 1.5 0 0' , basis= 'ccpvdz')
 mf = mol.RHF().run()
 nocc = mol.nelectron // 2
-de = grad_hf_energy(mol , mf.mo_energy , mf.mo_coeff , nocc)
+de = grad_hf_energy(mol, mf.mo_energy, mf.mo_coeff, nocc)
 ```
 可以使用有限差分法（finite difference method）验证结果。
 
 ```python
-def finite_diff(mol , i_j , delta=1e -2):
+def finite_diff(mol, i_j, delta=1e-2):
     mol = mol.copy()
     coords = mol.atom_coords()
     coords[i_j] += .5 * delta
-    mol.set_geom_(coords , unit= 'Bohr')
+    mol.set_geom_(coords, unit= 'Bohr')
     mf = mol.RHF(verbose=0).run()
     ehf0 = mf.e_tot
     coords[i_j] -= delta
-    mol.set_geom_(coords , unit= 'Bohr')
+    mol.set_geom_(coords, unit= 'Bohr')
     mf = mol.RHF(verbose=0).run()
     ehf1 = mf.e_tot
 ```
@@ -270,9 +270,9 @@ def finite_diff(mol , i_j , delta=1e -2):
     return (ehf0 - ehf1) / delta
 for i in range (mol.natm):
     for j in range (3):
-        diff1 = de[i ,j] - finite_diff(mol ,( i , j))
-        diff2 = de[i ,j] - finite_diff(mol ,( i , j), 0.5e -2)
-        print(i ,j , diff1 , diff2)
+        diff1 = de[i,j] - finite_diff(mol,( i, j))
+        diff2 = de[i,j] - finite_diff(mol,( i, j), 0.5e-2)
+        print(i,j , diff1, diff2)
 ```
 
 ### 16.2.4 用有限差分计算核梯度
@@ -336,41 +336,41 @@ for i in range (mol.natm):
 以类似方式改写式 (16.28) 的其他项之后，我们就可以着手实现式 (16.28) 的计算程序。
 
 ```python
-def _fock_partial_deriv(mol , mo_coeff , nocc):
-    nao , nmo = mo_coeff.shape
-    mo_o = mo_coeff[: ,:nocc]
+def _fock_partial_deriv(mol, mo_coeff, nocc):
+    nao, nmo = mo_coeff.shape
+    mo_o = mo_coeff[:,:nocc]
     eri1 = mol.intor( 'int2e_ip1')
     eri = mol.intor( 'int2e')
-    dm = einsum( 'pi ,qi ->pq', mo_o , mo_o) * 2
-    j = einsum( 'xpqrs ,sr ->xpq', eri1 , dm)
-    k = einsum( 'xpqrs ,qr ->xps', eri1 , dm)
+    dm = einsum( 'pi,qi->pq', mo_o, mo_o) * 2
+    j = einsum( 'xpqrs,sr->xpq', eri1, dm)
+    k = einsum( 'xpqrs,qr->xps', eri1, dm)
     v h f 1=j-k * .5
     s1 = mol.intor( 'int1e_ipovlp')
     aoslices = mol.aoslice_by_atom()
     s1_buf = []
     f1_buf = []
     for ia in range (mol.natm):
-        shl0 , shl1 ,p 0 , p1 = aoslices[ia]
-        s1ao = np.zeros((3 , nao , nao))
-        s1ao[: ,p0:p1] -= s1[: ,p0:p1]
-        s1ao[: ,: ,p0:p1] -= s1[: ,p0:p1].transpose(0 ,2 ,1)
+        shl0, shl1,p 0, p1 = aoslices[ia]
+        s1ao = np.zeros((3, nao, nao))
+        s1ao[:,p0:p1] -= s1[:,p0:p1]
+        s1ao[:,:,p0:p1] -= s1[:,p0:p1].transpose(0,2,1)
         s1_buf.append(s1ao)
 ```
 
 ```python
-        j = einsum( 'xpqrs ,qp ->xrs', eri1[: ,p0:p1] , dm[: ,p0:p1])
-        k = einsum( 'xpqrs ,sp ->xrq', eri1[: ,p0:p1] , dm[: ,p0:p1])
+        j = einsum( 'xpqrs,qp->xrs', eri1[:,p0:p1], dm[:,p0:p1])
+        k = einsum( 'xpqrs,sp->xrq', eri1[:,p0:p1], dm[:,p0:p1])
         v1 = -(j - k * .5)
-        v1[: ,p0:p1] -= vhf1[: ,p0:p1]
-        v1 = v1 + v1.transpose(0 ,2 ,1)
-        s1_oo = einsum( 'pi ,xpq ,qj ->xij', mo_o , s1ao , mo_o)
-        s1_oo = einsum( 'pi ,xij ,qj ->xpq', mo_o , s1_oo , mo_o) * 2
-        fock1 = grad_hcore(mol , ia) + v1 - get_vhf(eri , s1_oo)
+        v1[:,p0:p1] -= vhf1[:,p0:p1]
+        v1 = v1 + v1.transpose(0,2,1)
+        s1_oo = einsum( 'pi,xpq,qj->xij', mo_o, s1ao, mo_o)
+        s1_oo = einsum( 'pi,xij,qj->xpq', mo_o, s1_oo, mo_o) * 2
+        fock1 = grad_hcore(mol, ia) + v1 - get_vhf(eri, s1_oo)
         f1_buf.append(fock1)
     return np.vstack(f1_buf), np.vstack(s1_buf)
-def get_vhf(eri , dm):
-    j = einsum( 'pqrs ,xqp ->xrs', eri , dm)
-    k = einsum( 'pqrs ,xqr ->xps', eri , dm)
+def get_vhf(eri, dm):
+    j = einsum( 'pqrs,xqp->xrs', eri, dm)
+    k = einsum( 'pqrs,xqr->xps', eri, dm)
     return j-k * .5
 ```
 耦合微扰 Hartree–Fock（CPHF）方程 (16.27) 本质上是一个线性方程
@@ -383,44 +383,44 @@ def get_vhf(eri , dm):
 
 ```python
 from .krylov import solve_krylov
-def solve_mo1(mol , mo_energy , mo_coeff , nocc):
-    nao , nmo = mo_coeff.shape
+def solve_mo1(mol, mo_energy, mo_coeff, nocc):
+    nao, nmo = mo_coeff.shape
     nvir = nmo - nocc
-    mo_o = mo_coeff[: ,:nocc]
-    mo_v = mo_coeff[: ,nocc:]
+    mo_o = mo_coeff[:,:nocc]
+    mo_v = mo_coeff[:,nocc:]
     e_o = mo_energy[:nocc]
     e_v = mo_energy[nocc:]
     eri = mol.intor( 'int2e')
     def matvec(x):
-        x = x.reshape( -1 ,nvir ,nocc)
-        dm = einsum( 'pi ,xij ,qj ->xpq', mo_v ,x , mo_o) * 2
-        dm = dm + dm.transpose(0 ,2 ,1 )
-        vhf = einsum( 'pi ,xpq ,qj ->xij', mo_v , get_vhf(eri , dm), mo_o)
-        vhf /= e_v[: ,None] - e_o
+        x = x.reshape(-1,nvir,nocc)
+        dm = einsum( 'pi,xij,qj->xpq', mo_v,x , mo_o) * 2
+        dm = dm + dm.transpose(0,2 ,1 )
+        vhf = einsum( 'pi,xpq,qj->xij', mo_v, get_vhf(eri, dm), mo_o)
+        vhf /= e_v[:,None] - e_o
         return vhf.ravel()
 ```
 
 ```python
-    f1 , s1 = _fock_partial_deriv(mol , mo_coeff , nocc)
-    s1 = einsum( 'pi ,xpq ,qj ->xij', mo_coeff ,s 1 , mo_coeff)
-    f1 = einsum( 'pi ,xpq ,qj ->xij', mo_v ,f 1 , mo_o)
-    b = (f1 - s1[: ,nocc: ,:nocc] * e_o) / (e_o - e_v[: ,None])
-    mo1_vo = solve_krylov(matvec , b.ravel()).reshape( -1 ,nvir ,nocc)
-mo1 = -.5 * s1 # The occupied -occupied and virtual -virtual blocks
-    mo1[: ,nocc: ,:nocc] = mo1_vo
+    f1, s1 = _fock_partial_deriv(mol, mo_coeff, nocc)
+    s1 = einsum( 'pi,xpq,qj->xij', mo_coeff,s 1, mo_coeff)
+    f1 = einsum( 'pi,xpq,qj->xij', mo_v,f 1, mo_o)
+    b = (f1 - s1[:,nocc:,:nocc] * e_o) / (e_o - e_v[:,None])
+    mo1_vo = solve_krylov(matvec, b.ravel()).reshape(-1,nvir,nocc)
+mo1 = -.5 * s1 # The occupied -occupied and virtual-virtual blocks
+    mo1[:,nocc:,:nocc] = mo1_vo
     # mo1.T + s1 + mo1 = 0
-    mo1[: ,:nocc ,nocc:] = -s1[: ,:nocc ,nocc:] - mo1_vo.transpose(0 ,2 ,1 )
-    mo1 = einsum( 'pq ,xqi ->xpi', mo_coeff , mo1)
-    return mo1.reshape(mol.natm ,3 , nao , nmo)
+    mo1[:,:nocc,nocc:] = -s1[:,:nocc,nocc:] - mo1_vo.transpose(0,2 ,1 )
+    mo1 = einsum( 'pq,xqi->xpi', mo_coeff, mo1)
+    return mo1.reshape(mol.natm,3 , nao, nmo)
 ```
 为便于后续章节的讨论，在这个程序中，我们将所得的一阶轨道转换回原子轨道基表示。
 如何验证一阶轨道是否计算正确？在这种情况下，不适合使用有限差分法（finite difference method）验证一阶轨道。这是因为由式 (16.26) 中的条件确定的一阶轨道占据-占据块，与正则 HF 轨道的正交归一性并不一致。另一种方法是使用有限差分法检查一阶密度矩阵。可以使用以下代码获得一阶密度矩阵：
 
 ```text
-mo1 = solve_mo1(mol , mf.mo_energy , mf.mo_coeff , nocc)
-nao , nmo = mf.mo_coeff.shape
-mo1 = mo1.reshape(mol.natm ,3 , nao , nmo)
-dm = einsum( 'pi ,qi ->pq', mo1[0 ,0] , mf.mo_coeff) * 2
+mo1 = solve_mo1(mol, mf.mo_energy, mf.mo_coeff, nocc)
+nao, nmo = mf.mo_coeff.shape
+mo1 = mo1.reshape(mol.natm,3 , nao, nmo)
+dm = einsum( 'pi,qi->pq', mo1[0,0], mf.mo_coeff) * 2
 d m=d m+d m . T
 ```
 
@@ -466,31 +466,31 @@ d m=d m+d m . T
 每次生成新基向量时都进行上述计算。如果残差的大小低于收敛阈值，就可以停止生成基向量的迭代。函数 solve_krylov 可以实现如下：
 
 ```python
-def solve_krylov(A ,b , tol=1e -5 , maxiter=50):
+def solve_krylov(A,b , tol=1e-5, maxiter=50):
 vs = [b]
 h v=[ ]
-h = np.empty((maxiter , maxiter))
+h = np.empty((maxiter, maxiter))
 g = np.empty(maxiter)
 c=[ ]
 for cycle in range (maxiter):
 # Generate new vector in Krylov subspace and orthogonalize it
-v1 = A(vs[ -1])
+v1 = A(vs[-1])
 hv.append(v1 + vs[cycle]) # (I+A) *v
 for v in vs:
-    v1 -= v * np.dot(v , v1)
+    v1 -= v * np.dot(v, v1)
 # Add to subspace if it linearly independent to others
 v_norm = np.linalg.norm(v1)
-if v_norm < 1e -10:
+if v_norm < 1e-10:
     break
 v1 /= v_norm
 vs.append(v1)
 for i in range (cycle+1):
-    h[i ,cycle] = np.dot(vs[i] , hv[cycle])
-    h[cycle ,i] = np.dot(vs[cycle] , hv[i])
-g[cycle] = np.dot(vs[cycle] ,b )
-c = np.linalg.solve(h[:cycle+1 ,:cycle+1] , g[:cycle+1])
+    h[i,cycle] = np.dot(vs[i], hv[cycle])
+    h[cycle,i] = np.dot(vs[cycle], hv[i])
+g[cycle] = np.dot(vs[cycle],b )
+c = np.linalg.solve(h[:cycle+1,:cycle+1], g[:cycle+1])
 residual = -b
-for i ,c i in enumerate (c):
+for i,c i in enumerate (c):
     # Reuse hv vectors to reduce the matvec A(x)
     residual += hv[i] * ci
 norm = np.linalg.norm(residual)
@@ -500,7 +500,7 @@ if norm < tol:
 else:
 raise RuntimeError('solve_krylov not converged' )
 x = np.zeros_like(b)
-for i ,c i in enumerate (c):
+for i,c i in enumerate (c):
 x += vs[i] * ci
 return x
 ```
@@ -513,9 +513,9 @@ return x
 通过调整向量 b，我们可以对 x 使用同一个 Krylov 子空间求解器，得到修订后的函数：
 
 ```python
-def solve_krylov(A ,b , x0=None , tol=1e -5 , maxiter=50):
+def solve_krylov(A,b , x0=None, tol=1e-5, maxiter=50):
     if x0 is not None:
-        x = solve_krylov(A ,b -A(x0)-x0 , tol=tol , maxiter=maxiter)
+        x = solve_krylov(A,b -A(x0)-x0, tol=tol, maxiter=maxiter)
         return x+x 0
     ...
 ```
@@ -563,21 +563,21 @@ PyTorch只支持使用反向模式自定义自动微分。另一方面，JAX同�
 - 为每个函数创建明确的输入参数列表和明确定义的输出。JAX追踪输入和输出，以建立函数的导数规则。例如，第15章第15.2节中CCD程序的主函数CCD_solve最初定义如下：
 
 ```python
-def CCD_solve(mf , conv_tol=1e -5 , max_cycle=100):
+def CCD_solve(mf, conv_tol=1e-5, max_cycle=100):
     ...
-    return e_ccd ,t 2
+    return e_ccd,t 2
 ```
 为了明确指定计算关于原子坐标的CCD总能量的函数，应将coords变量加入参数列表。因此，CCD_solve的函数签名更新为：
 
 ```python
-def CCD_solve(coords ,m f , conv_tol=1e -5 , max_cycle=100):
+def CCD_solve(coords,m f, conv_tol=1e-5, max_cycle=100):
     ...
     return e_ccd
 ```
 第二个参数mf和其余关键字参数可以保留在函数的参数列表中。执行JAX雅可比矩阵计算时，这些参数不参与计算。同样，mo_integrals的函数签名也需要改写，以反映其对coords的依赖：
 
 ```python
-def mo_integrals(coords , mf: pyscf.scf.hf.RHF):
+def mo_integrals(coords, mf: pyscf.scf.hf.RHF):
     ...
     return H
 ```
@@ -587,13 +587,13 @@ def mo_integrals(coords , mf: pyscf.scf.hf.RHF):
 
 ```text
 Fvv[np.diag_indices(nvir)] -= e_v
-t2out += .5 * einsum('ijkl ,abkl ->abij', oooo , t2)
+t2out += .5 * einsum('ijkl,abkl->abij', oooo, t2)
 ```
 应将其改为：
 
 ```text
 Fvv = Fvv - jnp.diag(e_v)
-t2out = t2out + .5 * einsum('ijkl ,abkl ->abij', oooo , t2)
+t2out = t2out + .5 * einsum('ijkl,abkl->abij', oooo, t2)
 ```
 
 - 将NumPy和SciPy函数替换为对应的JAX函数。为了确保与JAX自动微分兼容，必须将所有NumPy和SciPy函数替换为对应的JAX函数。例如，所有np.einsum都应替换为jax.numpy.einsum。
@@ -602,81 +602,81 @@ t2out = t2out + .5 * einsum('ijkl ,abkl ->abij', oooo , t2)
 
 ```python
 einsum = jnp.einsum
-def update_CCD_amplitudes(H ,t 2 , level_shift=0):
- nvir , nocc = t2.shape[1:3]
+def update_CCD_amplitudes(H,t 2, level_shift=0):
+ nvir, nocc = t2.shape[1:3]
  fock = H[ 'fock']
- foo = fock[:nocc ,:nocc]
- fvv = fock[nocc: ,nocc:]
+ foo = fock[:nocc,:nocc]
+ fvv = fock[nocc:,nocc:]
  e_o = foo.diagonal()
  e_v = fvv.diagonal() + level_shift
- Fvv = fvv - .5 * einsum('klcd ,bdkl ->bc',H [ 'oovv'] ,t 2 )
- Foo = foo + .5 * einsum('klcd ,cdjl ->kj',H [ 'oovv'] ,t 2 )
+ Fvv = fvv - .5 * einsum('klcd,bdkl->bc',H [ 'oovv'],t 2 )
+ Foo = foo + .5 * einsum('klcd,cdjl->kj',H [ 'oovv'],t 2 )
  Fvv = Fvv - jnp.diag(e_v)
  Foo = Foo - jnp.diag(e_o)
  t2out = .25 * H['vvoo']
- t2out = t2out - einsum( 'bkcj ,acik ->abij',H [ 'vovo'] , t2)
- t2out = t2out + .5 * einsum('bc ,acij ->abij', Fvv , t2)
- t2out = t2out - .5 * einsum('kj ,abik ->abij', Foo , t2)
- t2out = t2out + .5 * einsum('klcd ,acik ,bdjl ->abij',H [ 'oovv'] ,t 2 ,t 2 )
- t2out = t2out - t2out.transpose(0 ,1 ,3 ,2)
- t2out = t2out - t2out.transpose(1 ,0 ,2 ,3)
- oooo = .5 * einsum('klcd ,cdij ->ijkl',H [ 'oovv'] , t2)
+ t2out = t2out - einsum( 'bkcj,acik->abij',H [ 'vovo'], t2)
+ t2out = t2out + .5 * einsum('bc,acij->abij', Fvv, t2)
+ t2out = t2out - .5 * einsum('kj,abik->abij', Foo, t2)
+ t2out = t2out + .5 * einsum('klcd,acik,bdjl->abij',H [ 'oovv'],t 2,t 2 )
+ t2out = t2out - t2out.transpose(0,1,3,2)
+ t2out = t2out - t2out.transpose(1,0,2,3)
+ oooo = .5 * einsum('klcd,cdij->ijkl',H [ 'oovv'], t2)
  oooo = oooo + H[ 'oooo']
- t2out = t2out + .5 * einsum('ijkl ,abkl ->abij', oooo , t2)
- t2out = t2out + .5 * einsum('abcd ,cdij ->abij',H [ 'vvvv'] , t2)
- eijab = e_o + e_o[: ,None] - e_v[: ,None ,None] - e_v[: ,None ,None ,None]
+ t2out = t2out + .5 * einsum('ijkl,abkl->abij', oooo, t2)
+ t2out = t2out + .5 * einsum('abcd,cdij->abij',H [ 'vvvv'], t2)
+ eijab = e_o + e_o[:,None] - e_v[:,None,None] - e_v[:,None,None,None]
  t2out = t2out / eijab
  return t2out
 ```
 
 ```python
-def get_CCD_corr_energy(H , t2):
-    return .25 * einsum('ijab ,abij ->',H [ 'oovv'] , t2)
+def get_CCD_corr_energy(H, t2):
+    return .25 * einsum('ijab,abij->',H [ 'oovv'], t2)
 def mp2(H):
     nocc = H[ 'oooo'].shape[0]
     e _ o=H [ 'fock'].diagonal()[:nocc]
     e _ v=H [ 'fock'].diagonal()[nocc:]
-    eijab = e_o + e_o[: ,None] - e_v[: ,None ,None] - e_v[: ,None ,None ,None]
+    eijab = e_o + e_o[:,None] - e_v[:,None,None] - e_v[:,None,None,None]
     t 2=H [ 'vvoo'] / eijab
-    e = get_CCD_corr_energy(H , t2)
-    return H['e_hf']+e  ,t 2
-def CCD_solve(coords: np.ndarray , mf: pyscf.scf.hf.RHF):
-    H = mo_integrals(coords , mf)
-    e_ccd , t2 = mp2(H) # initial guess
+    e = get_CCD_corr_energy(H, t2)
+    return H['e_hf']+e ,t 2
+def CCD_solve(coords: np.ndarray, mf: pyscf.scf.hf.RHF):
+    H = mo_integrals(coords, mf)
+    e_ccd, t2 = mp2(H) # initial guess
     print(f'E(MP2)={e_ccd}')
     e_hf = H[ 'e_hf']
     for cycle in range (max_cycle):
-        t2 , t2_prev = update_CCD_amplitudes(H , t2), t2
-        e_ccd , e_prev = get_CCD_corr_energy(H , t2) + e_hf , e_ccd
-        print(f'{cycle=} , E(CCD)={e_ccd} , dE={e_ccd -e_prev}')
+        t2, t2_prev = update_CCD_amplitudes(H, t2), t2
+        e_ccd, e_prev = get_CCD_corr_energy(H, t2) + e_hf, e_ccd
+        print(f'{cycle=}, E(CCD)={e_ccd}, dE={e_ccd-e_prev}')
         if jnp.abs(t2 - t2_prev). max() < conv_tol:
             break
     return e_ccd
-def mo_integrals(coords , mf: pyscf.scf.hf.RHF): # (1)
-    ' ' 'MO integrals in physists notation <pq||rs >' ' '
+def mo_integrals(coords, mf: pyscf.scf.hf.RHF): # (1)
+    '''MO integrals in physists notation <pq||rs>'''
     mol = mf.mol
     assert jnp.allclose(mol.atom_coords(), coords)
     orb = mf.mo_coeff
     nmo = orb.shape[1]
     eri = mol.intor( 'int2e', aosym= 's1')
-    eri = einsum( 'pqrs ,pi ,qj ,rk ,sl ->ijkl', eri , orb , orb , orb , orb)
+    eri = einsum( 'pqrs,pi,qj,rk,sl->ijkl', eri, orb, orb, orb, orb)
 i2 = jnp.eye(2) # (2)
-    eri = einsum( 'pqrs ,ab ,cd ->parcqbsd', eri ,i 2 , i2).reshape([nmo *2]*4)
-    eri = eri - eri.transpose(1 ,0 ,2 ,3)
+    eri = einsum( 'pqrs,ab,cd->parcqbsd', eri,i 2, i2).reshape([nmo *2]*4)
+    eri = eri - eri.transpose(1,0,2,3)
     no = mol.nelectron
     H={ }
-    H['vvoo'] = vvoo = eri[no: ,no: ,:no ,:no]
-    H['oovv'] = vvoo.transpose(2 ,3 ,0 ,1)
-    H['vovo'] = eri[no: ,:no ,no: ,:no]
-    H['oooo'] = eri[:no ,:no ,:no ,:no]
+    H['vvoo'] = vvoo = eri[no:,no:,:no,:no]
+    H['oovv'] = vvoo.transpose(2,3,0,1)
+    H['vovo'] = eri[no:,:no,no:,:no]
+    H['oooo'] = eri[:no,:no,:no,:no]
 ```
 
 ```python
-    H['vvvv'] = eri[no: ,no: ,no: ,no:]
+    H['vvvv'] = eri[no:,no:,no:,no:]
     hcore = mol.intor( 'int1e_kin') + mol.intor( 'int1e_nuc')
-    hcore = einsum( 'pq ,pi ,qj ->ij', hcore , orb , orb)
-    hcore = einsum( 'pq ,ab ->paqb', hcore , i2).reshape([nmo *2]*2)
-    H['fock'] = hcore + einsum( 'ipiq ->pq', eri[:no ,: ,:no ,:])
+    hcore = einsum( 'pq,pi,qj->ij', hcore, orb, orb)
+    hcore = einsum( 'pq,ab->paqb', hcore, i2).reshape([nmo *2]*2)
+    H['fock'] = hcore + einsum( 'ipiq->pq', eri[:no,:,:no,:])
     H['e_hf'] = mf.e_tot
     return H
 ```
@@ -684,7 +684,7 @@ i2 = jnp.eye(2) # (2)
 在第15章介绍的mo_integrals中，我们使用切片表示法::2和1::2为α和β轨道赋值分子轨道（molecular orbital，MO）积分。这些赋值在第(2)行中被使用2 × 2矩阵i2的einsum操作取代。如果希望使用花式索引（fancy indexing）实现赋值代码，可以使用JAX的.at和.set方法，如以下代码所示。
 
 ```text
-output = output.at[::2 ,::2 ,::2 ,::2].set(eri)
+output = output.at[::2,::2,::2,::2].set(eri)
 ```
 请注意，这段代码会创建output数组的新副本，而不是原地更新它。使用.at方法时应当谨慎。建议查阅JAX的.at方法文档[10]，了解更多细节。
 为简单起见，我们从CCD迭代函数中移除了DIIS加速。从数学上讲，这只会降低CCD程序的运行速度，而不影响结果。
@@ -703,74 +703,74 @@ DIIS模块是面向对象编程（object-oriented programming，OOP）范式的�
 要自定义JVP导数规则，可以使用jax.custom_jvp函数。对于CCD程序中的mo_integrals函数，JVP规则可以如下实现：
 
 ```python
-@partial(jax.custom_jvp , nondiff_argnums=(1 ,))
-def mo_integrals(coords , mf: pyscf.scf.hf.RHF):
-    ' ' 'MO integrals in physists notation <pq||rs >' ' '
+@partial(jax.custom_jvp, nondiff_argnums=(1,))
+def mo_integrals(coords, mf: pyscf.scf.hf.RHF):
+    '''MO integrals in physists notation <pq||rs>'''
     mol = mf.mol
     assert jnp.allclose(mol.atom_coords(), coords)
     orb = mf.mo_coeff
     eri = mol.intor( 'int2e', aosym= 's1')
-    eri = einsum( 'pqrs ,pi ,qj ,rk ,sl ->ijkl', eri , orb , orb , orb , orb)
+    eri = einsum( 'pqrs,pi,qj,rk,sl->ijkl', eri, orb, orb, orb, orb)
     hcore = mol.intor( 'int1e_kin') + mol.intor( 'int1e_nuc')
-    hcore = einsum( 'pq ,pi ,qj ->ij', hcore , orb , orb)
-    return _mo_integrals_common(mol , hcore , eri , mf.e_tot)
+    hcore = einsum( 'pq,pi,qj->ij', hcore, orb, orb)
+    return _mo_integrals_common(mol, hcore, eri, mf.e_tot)
 @mo_integrals.defjvp # (1)
-def mo_integrals_jvp(mf , primals , tangents):
-    coords , = primals
-    primals_out = mo_integrals(coords , mf)
+def mo_integrals_jvp(mf, primals, tangents):
+    coords, = primals
+    primals_out = mo_integrals(coords, mf)
 ```
 
 ```python
 mol = mf.mol
-disp , = tangents
-assert disp.shape == (mol.natm ,3 )
+disp, = tangents
+assert disp.shape == (mol.natm,3 )
 nocc = mol.nelectron // 2
-mo1 = solve_mo1(mol , mf.mo_energy , mf.mo_coeff , nocc)
-mo1 = einsum( 'ixpq ,ix ->pq', mo1 , disp)
-eri = _eri_deriv(mol , mf.mo_coeff , mo1 , disp)
-hcore = _hcore_deriv(mol , mf.mo_coeff , mo1 , disp)
-e_hf1 = grad_hf_energy(mol , mf.mo_energy , mf.mo_coeff , nocc)
-e_hf = einsum( 'ix ,ix ->', e_hf1 , disp)
-return primals_out , _mo_integrals_common(mol , hcore , eri , e_hf)
-def _mo_integrals_common(mol , hcore , eri , e_hf):
+mo1 = solve_mo1(mol, mf.mo_energy, mf.mo_coeff, nocc)
+mo1 = einsum( 'ixpq,ix->pq', mo1, disp)
+eri = _eri_deriv(mol, mf.mo_coeff, mo1, disp)
+hcore = _hcore_deriv(mol, mf.mo_coeff, mo1, disp)
+e_hf1 = grad_hf_energy(mol, mf.mo_energy, mf.mo_coeff, nocc)
+e_hf = einsum( 'ix,ix->', e_hf1, disp)
+return primals_out, _mo_integrals_common(mol, hcore, eri, e_hf)
+def _mo_integrals_common(mol, hcore, eri, e_hf):
 nmo = hcore.shape[0]
 no = mol.nelectron
     i2 = jnp.eye(2)
-eri = einsum( 'pqrs ,ab ,cd ->parcqbsd', eri ,i 2 , i2).reshape([nmo *2]*4)
-eri = eri - eri.transpose(1 ,0 ,2 ,3)
+eri = einsum( 'pqrs,ab,cd->parcqbsd', eri,i 2, i2).reshape([nmo *2]*4)
+eri = eri - eri.transpose(1,0,2,3)
 H={ }
-H['vvoo'] = vvoo = eri[no: ,no: ,:no ,:no]
-H['oovv'] = vvoo.transpose(2 ,3 ,0 ,1)
-H['vovo'] = eri[no: ,:no ,no: ,:no]
-H['oooo'] = eri[:no ,:no ,:no ,:no]
-H['vvvv'] = eri[no: ,no: ,no: ,no:]
-hcore = einsum( 'pq ,ab ->paqb', hcore , i2).reshape([nmo *2]*2)
-H['fock'] = hcore + einsum( 'ipiq ->pq', eri[:no ,: ,:no ,:])
+H['vvoo'] = vvoo = eri[no:,no:,:no,:no]
+H['oovv'] = vvoo.transpose(2,3,0,1)
+H['vovo'] = eri[no:,:no,no:,:no]
+H['oooo'] = eri[:no,:no,:no,:no]
+H['vvvv'] = eri[no:,no:,no:,no:]
+hcore = einsum( 'pq,ab->paqb', hcore, i2).reshape([nmo *2]*2)
+H['fock'] = hcore + einsum( 'ipiq->pq', eri[:no,:,:no,:])
 H['e_hf'] = e_hf
 return H
-def _hcore_deriv(mol , mo0 , mo1 , disp):
+def _hcore_deriv(mol, mo0, mo1, disp):
 hcore = mol.intor( 'int1e_kin') + mol.intor( 'int1e_nuc')
-hcore = einsum( 'pq ,pi ,qj ->ij', hcore , mo1 , mo0)
+hcore = einsum( 'pq,pi,qj->ij', hcore, mo1, mo0)
 hcore = hcore + hcore.T
 for i in range (mol.natm):
-h1 = grad_hcore(mol ,i )
-hcore = hcore + einsum( 'x ,xpq ,pi ,qj ->ij', disp[i] ,h 1 , mo0 , mo0)
+h1 = grad_hcore(mol,i )
+hcore = hcore + einsum( 'x,xpq,pi,qj->ij', disp[i],h 1, mo0, mo0)
 return hcore
-def _eri_deriv(mol , mo0 , mo1 , disp):
+def _eri_deriv(mol, mo0, mo1, disp):
 eri1 = mol.intor( 'int2e_ip1', aosym= 's1')
-eri1_partial = einsum( 'xpqrs ,qj ,rk ,sl ->xpjkl', eri1 , mo0 , mo0 , mo0)
+eri1_partial = einsum( 'xpqrs,qj,rk,sl->xpjkl', eri1, mo0, mo0, mo0)
 eri = mol.intor( 'int2e', aosym= 's1')
-eri = einsum( 'pqrs ,pi ,qj ,rk ,sl ->ijkl', eri , mo1 , mo0 , mo0 , mo0)
+eri = einsum( 'pqrs,pi,qj,rk,sl->ijkl', eri, mo1, mo0, mo0, mo0)
 ```
 
 ```python
-    aoslices = mol.aoslice_by_atom()[: ,2:4]
+    aoslices = mol.aoslice_by_atom()[:,2:4]
     for i in range (mol.natm):
-        p0 , p1 = aoslices[i]
-        eri = eri + einsum( 'x ,xpjkl ,pi ->ijkl', disp[i] , -eri1_partial[: ,p0:p1] , mo0[p0:p1])
+        p0, p1 = aoslices[i]
+        eri = eri + einsum( 'x,xpjkl,pi->ijkl', disp[i], -eri1_partial[:,p0:p1], mo0[p0:p1])
     # symmetrize eri
-    eri = eri + eri.transpose(1 ,0 ,2 ,3)
-    eri = eri + eri.transpose(2 ,3 ,0 ,1)
+    eri = eri + eri.transpose(1,0,2,3)
+    eri = eri + eri.transpose(2,3,0,1)
     return eri
 ```
 custom_jvp函数用于装饰原始函数mo_integrals。第(1)行所示的.defjvp方法添加了一个表示自定义JVP规则的函数。在后续讨论中，我们将这个被添加的函数称为JVP增补函数。增补函数必须遵循特定的输入和输出格式[12]。
@@ -780,57 +780,57 @@ custom_jvp函数用于装饰原始函数mo_integrals。第(1)行所示的.defjvp
 def f(x):
     ...
 @f.defjvp
-def f_jvp(primals , tangents):
+def f_jvp(primals, tangents):
     ...
-    return primals_out , jvp_product
+    return primals_out, jvp_product
 ```
 默认情况下，原始函数中的所有参数都被视为可以求导的变量。可微变量通过输入参数primals传递给JVP增补函数。另一个参数tangents表示与primals对应的切向量。JVP增补函数的返回值由两个元素组成。第一个元素是原始函数的输出，在代码示例中记为primals_out。它通过使用参数primals调用原始函数来计算。第二个元素jvp_product表示雅可比矩阵-向量积的结果。
 原始函数中的某些参数可能不可微。它们由custom_jvp中的nondiff_argnums参数指定。处理不可微参数时，例如mo_integrals函数中的mf对象，无论这些参数在原始函数中有多少个以及定义在什么位置，它们都放在增补函数签名的开头[13]。custom_jvp函数的代码签名如下：
 
 ```python
-@partial(custom_jvp , nondiff_argnums=(0 ,2))
-def f(a ,x , b):
+@partial(custom_jvp, nondiff_argnums=(0,2))
+def f(a,x , b):
     ...
 @f.defjvp
 ```
 
 ```python
-def f_jvp(a ,b , primals , tangents):
+def f_jvp(a,b , primals, tangents):
     ...
-    return primals_out , jvp_product
+    return primals_out, jvp_product
 ```
 JVP 增广函数 mo_integrals_jvp 计算雅可比矩阵（Jacobian）与原始输入变量所关联的残差的乘积。执行乘法之前不必完整构造雅可比矩阵。相反，我们可以提前使用残差向量，简化 JVP 规则。例如，通过定义 _hcore_deriv 和 eri_deriv 函数，我们计算一阶积分与核坐标位移的乘积。得到的 hcore 和 eri 张量与原始函数中的张量保持相同的形状。因此，原始函数代码的某些部分可以在 JVP 操作中复用，这些部分被集中放在 _mo_integrals_common 函数中。
 在 JVP 增广函数中，作用于切空间（tangent space）的操作必须是线性变换。对切向量参数进行的非线性操作，如 jnp.sqrt(tangent) 或 jnp.sin(tangent)，虽然可以由 JAX 变换，但不允许出现在 JVP 增广函数中。这意味着不能使用有限差分法（finite difference method）近似雅可比矩阵与向量的乘积，即使在某些情况下应用有限差分法可能很简单。后文将探讨要求使用线性变换的原因。
 为 mo_integrals 定义 JVP 规则后，我们可以使用 jax.grad 函数计算 CCD 核梯度，如下所示：
 
 ```python
-In [1]: mol = pyscf.M(atom= ' N0 .00 ;N3 .00 ' , unit= 'Bohr', basis='cc -pvdz')
+In [1]: mol = pyscf.M(atom= ' N0 .00 ;N3 .00 ' , unit= 'Bohr', basis='cc-pvdz')
         mf = mol.RHF().run()
-        grad = jax.grad(CCD_solve , argnums=0)
+        grad = jax.grad(CCD_solve, argnums=0)
         print(grad(mol.atom_coords(), mf))
 Out[1]:
-E(MP2)=Traced <ConcreteArray( -109.13850360728081 , dtype=float64)> with <
+E(MP2)=Traced<ConcreteArray(-109.13850360728081, dtype=float64)> with<
     JVPTrace(level=2/0)> with
-  primal = Array( -109.13850361 , dtype=float64)
-  tangent = Traced <ShapedArray(float64[])>with <JaxprTrace(level=1/0)> with
+  primal = Array(-109.13850361, dtype=float64)
+  tangent = Traced<ShapedArray(float64[])>with<JaxprTrace(level=1/0)> with
     pval = (ShapedArray(float64[]), None)
-    recipe = JaxprEqnRecipe(eqn_id= <object object at 0x7f50e45c4e30 > , in_tracers=(Traced <ShapedArray(...
+    recipe = JaxprEqnRecipe(eqn_id=<object object at 0x7f50e45c4e30>, in_tracers=(Traced<ShapedArray(...
 ...
-cycle=19 , E(CCD)=Traced <ConcreteArray( -109.03387828514111 , dtype=float64)>
-    with <JVPTrace(level=2/0)> with
-  primal = Array( -109.03387829 , dtype=float64)
-  tangent = Traced <ShapedArray(float64[])>with <JaxprTrace(level=1/0)> with
+cycle=19, E(CCD)=Traced<ConcreteArray(-109.03387828514111, dtype=float64)>
+    with<JVPTrace(level=2/0)> with
+  primal = Array(-109.03387829, dtype=float64)
+  tangent = Traced<ShapedArray(float64[])>with<JaxprTrace(level=1/0)> with
     pval = (ShapedArray(float64[]), None)
-    recipe = JaxprEqnRecipe(eqn_id= <object object at 0x7f50e407bc40 > , in_tracers=(Traced <ShapedArray(...
-  primal = Array( -2.76017473e -05 , dtype=float64)
+    recipe = JaxprEqnRecipe(eqn_id=<object object at 0x7f50e407bc40>, in_tracers=(Traced<ShapedArray(...
+  primal = Array(-2.76017473e-05, dtype=float64)
 ```
 
 ```text
-  tangent = Traced <ShapedArray(float64[])>with <JaxprTrace(level=1/0)> with
+  tangent = Traced<ShapedArray(float64[])>with<JaxprTrace(level=1/0)> with
     pval = (ShapedArray(float64[]), None)
-    recipe = JaxprEqnRecipe(eqn_id= <object object at 0x7f50e407bda0 > , in_tracers=(Traced <ShapedArray(...
-[[ -2.78494891e -01 1.80279569e -16 7.12077149e -17]
- [ 2.78494891e -01 -1.80279569e -16 -7.12077149e -17]]
+    recipe = JaxprEqnRecipe(eqn_id=<object object at 0x7f50e407bda0>, in_tracers=(Traced<ShapedArray(...
+[[-2.78494891e-01 1.80279569e -16 7.12077149e -17]
+ [ 2.78494891e-01 -1.80279569e-16 -7.12077149e-17]]
 ```
 
 #### 步骤 4，优化反向传播
@@ -855,22 +855,22 @@ jax.tree_util.tree_unflatten()
 下面的例子取自 JAX 文档，展示了叶节点、树定义以及这两个函数的用法：
 
 ```python
-In [2]: from jax.tree_util import tree_flatten , tree_unflatten
-     # The leaves in value_flat correspond to the ' * ' markers in
+In [2]: from jax.tree_util import tree_flatten, tree_unflatten
+     # The leaves in value_flat correspond to the ' *' markers in
   value_tree
-     value_flat , value_tree = tree_flatten([1. , (2. , 3.)])
+     value_flat, value_tree = tree_flatten([1., (2., 3.)])
      print(f"{value_flat=}\n{value_tree=}")
-     # Transform the flat value list using an element -wise numeric
+     # Transform the flat value list using an element-wise numeric
   transformer
-     transformed_flat = list(map(lambda v: v * 2. , value_flat))
+     transformed_flat = list(map(lambda v: v * 2., value_flat))
      print(f"{transformed_flat=}")
-     # Reconstruct the structured output , using the original
-     transformed_structured = tree_unflatten(value_tree , transformed_flat)
+     # Reconstruct the structured output, using the original
+     transformed_structured = tree_unflatten(value_tree, transformed_flat)
      print(f"{transformed_structured=}")
-Out[2]: value_flat=[1.0 , 2.0 , 3.0]
-     value_tree=PyTreeDef([* ,( * , *)])
-     transformed_flat=[2.0 , 4.0 , 6.0]
-     transformed_structured=[2.0 , (4.0 , 6.0)]
+Out[2]: value_flat=[1.0, 2.0, 3.0]
+     value_tree=PyTreeDef([*,( *, *)])
+     transformed_flat=[2.0, 4.0, 6.0]
+     transformed_structured=[2.0, (4.0, 6.0)]
 ```
 遵循以下准则，JAX 允许我们将自定义类注册为 PyTree 节点 [14]：
 
@@ -883,57 +883,57 @@ Out[2]: value_flat=[1.0 , 2.0 , 3.0]
 
 ```python
 def _RHF_flatten(mf):
-    children = (mf.mol ,)
-metadata = (mf ,[ 'mol']) # (1)
-    return children , metadata
-def _tree_unflatten(metadata , children):
-    obj , keys = metadata
+    children = (mf.mol,)
+metadata = (mf,[ 'mol']) # (1)
+    return children, metadata
+def _tree_unflatten(metadata, children):
+    obj, keys = metadata
     # Create a copy of the original object
     out = object.__new__(obj.__class__)
     out.__dict__.update(obj.__dict__)
-    for k ,a in zip (keys , children):
-        setattr(out ,k ,a )
+    for k,a in zip (keys, children):
+        setattr(out,k ,a )
     return out
-jax.tree_util.register_pytree_node( pyscf.scf.hf.RHF , _RHF_flatten , _tree_unflatten)
+jax.tree_util.register_pytree_node( pyscf.scf.hf.RHF, _RHF_flatten, _tree_unflatten)
 ```
 在 _RHF_flatten 函数中，mol 对象被包含在 children 元组中，因为它含有可微分属性 coords。要在 unflatten 函数中重建 RHF 实例，必须指定 mf 对象的可微分属性名称以及其余不可微分属性。为简单起见，我们将 mf 对象放入 metadata 变量，如第 (1) 行所示，以传递所有必要信息。请注意，用这种方法创建的 PyTree 节点在处理高阶导数时可能遇到类型兼容性问题。这里不深入探讨这一问题。建议读者查阅 JAX PyTree 文档，了解更多细节。
 使用类似的方法，我们也可以注册 Mole 类。由于 coords 变量不是 PySCF Mole 实例的属性，我们在首次引用该属性时检查它是否存在，并转而使用 Mole.atom_coords 方法生成默认值。当求导函数返回时，表示核坐标导数的 coords 属性便可访问。该属性在 _tree_unflatten 函数中创建。
 
 ```python
 def _Mole_flatten(mol):
-    if hasattr (mol , 'coords'):
+    if hasattr (mol, 'coords'):
         coords = mol.coords
     else:
         coords = mol.atom_coords()
-    children = (coords ,)
-    metadata = (mol ,[ 'coords'])
-    return children , metadata
+    children = (coords,)
+    metadata = (mol,[ 'coords'])
+    return children, metadata
 ```
 
 ```text
-jax.tree_util.register_pytree_node( pyscf.gto.mole.Mole , _Mole_flatten , _tree_unflatten)
+jax.tree_util.register_pytree_node( pyscf.gto.mole.Mole, _Mole_flatten, _tree_unflatten)
 ```
 由于这两个类已注册为 JAX PyTree 节点，因此不再需要将 coords 变量显式传递给 CCD 程序。我们只需将 mf 对象传递给 CCD 程序，因为它通过 mol 对象携带可微属性 coords。CCD_solve 和 mo_integrals 的函数签名已更新，以反映这一变化。
 
 ```python
-def CCD_solve(mf: pyscf.scf.hf.RHF , max_cycle=20 , conv_tol=1e -5):
+def CCD_solve(mf: pyscf.scf.hf.RHF, max_cycle=20, conv_tol=1e-5):
     H = mo_integrals(mf)
     ...
 @jax.custom_jvp
 def mo_integrals(mf: pyscf.scf.hf.RHF):
     ...
 @mo_integrals.defjvp
-def mo_integrals_jvp(primals , tangents):
-    mf , = tangents
+def mo_integrals_jvp(primals, tangents):
+    mf, = tangents
     disp = mf.mol.coords
     ...
 ```
 注册这些 Python 类并进行必要的修改后，这些类便可以在 JAX 自动微分（AD）代码和原始 Python 程序中无缝使用。例如，CCD 核梯度的计算可以简化为：
 
 ```python
-mol = pyscf.M(atom= ' N0 .00 ;N3 .00 ' , unit= 'Bohr', basis= 'cc -pvdz')
+mol = pyscf.M(atom= ' N0 .00 ;N3 .00 ' , unit= 'Bohr', basis= 'cc-pvdz')
 mf = mol.RHF().run()
-grad = jax.grad(CCD_solve , argnums=0)
+grad = jax.grad(CCD_solve, argnums=0)
 dmf = grad(mf)
 print(dmf.mol.coords)
 ```
@@ -975,28 +975,28 @@ print(dmf.mol.coords)
 
 ```python
 from .krylov import solve_krylov
-def solve_lambda(H , t2_star , v):
-    _ , vjp_Ht = jax.vjp( lambda t2: update_CCD_amplitudes(H , t2), t2_star)
+def solve_lambda(H, t2_star, v):
+    _, vjp_Ht = jax.vjp( lambda t2: update_CCD_amplitudes(H, t2), t2_star)
     def matvec(x):
         return -np.asarray(vjp_Ht(x.reshape(v.shape))[0]).ravel()
-    l = solve_krylov(matvec , np.asarray(v).ravel())
+    l = solve_krylov(matvec, np.asarray(v).ravel())
     return l.reshape(v.shape)
 ```
 jax.vjp 函数生成操作 vjp_Ht，借此计算向量 Λ 与雅可比矩阵（Jacobian）的乘积。式 (16.44) 右侧的项充当 CPHF 方程中的「力」，它通过 JAX AD 求得：
 
 ```text
-jax.jacrev(lambda t2: get_CCD_corr_energy(H , t2))(t2_star)
+jax.jacrev(lambda t2: get_CCD_corr_energy(H, t2))(t2_star)
 ```
 solve_lambda 函数的输出对应于耦合簇能量泛函理论中的退激发算符 Λ [17]。在耦合簇能量泛函的框架下，Λ 的方程通过复杂的图解
 方法推导得到。相比之下，在 JAX AD 方法中，无需进行任何复杂的代数推导。只需几条 JAX AD 语句即可得到 Λ 算符！
 让我们进一步探讨线性方程 (16.44) 的求解器。除了 Krylov 子空间求解器，式 (16.44) 还可以使用其他方法求解，例如 DIIS 加速或 GMRES（Generalized Minimal Residual Method，广义最小残差法）求解器。在需要 JAX 计算高阶导数的情况下，线性方程求解器也必须能被 JAX 变换。此时，JAX.scipy.linalg.sparse 模块提供的求解器是合适的选择。
 
 ```python
-def solve_lambda(H , t2_star , v):
-    _ , vjp_Ht = jax.vjp( lambda t2: update_CCD_amplitudes(H , t2), t2_star)
+def solve_lambda(H, t2_star, v):
+    _, vjp_Ht = jax.vjp( lambda t2: update_CCD_amplitudes(H, t2), t2_star)
     def matvec(x):
         return x - vjp_Ht(x)[0]
-    return jax.scipy.sparse.linalg.gmres(matvec ,v , tol=1e -5)[0]
+    return jax.scipy.sparse.linalg.gmres(matvec,v , tol=1e-5)[0]
 ```
 将 Λ 求解器整合到 CCD 程序中，需要对 CCD_solve 函数进行一些修改。
 
@@ -1004,38 +1004,38 @@ def solve_lambda(H , t2_star , v):
 def CCD_solve(mf):
     H = mo_integrals(mf)
     t2 = fixed_point(H)
-    e=H [ 'e_hf'] + get_CCD_corr_energy(H , t2)
+    e=H [ 'e_hf'] + get_CCD_corr_energy(H, t2)
     return e
 # The fixed point iteration
-@partial(jax.custom_vjp , nondiff_argnums=(1 , 2))
-def fixed_point(H , conv_tol=1e -5 , max_cycle=100):
-    ' ' 'A fixed -point iteration solver for spin -orbital CCD' ' '
-    e_ccd , t2 = mp2(H) # initial guess
+@partial(jax.custom_vjp, nondiff_argnums=(1, 2))
+def fixed_point(H, conv_tol=1e-5, max_cycle=100):
+    '''A fixed-point iteration solver for spin-orbital CCD'''
+    e_ccd, t2 = mp2(H) # initial guess
     print(f'E(MP2)={e_ccd}')
     e_hf = H[ 'e_hf']
     with tempfile.TemporaryDirectory() as tmpdir:
         diis = DIIS(f '{tmpdir}/diis')
         for cycle in range (max_cycle):
-            t2 , t2_prev = update_CCD_amplitudes(H , t2), t2
-            e_ccd , e_prev = get_CCD_corr_energy(H , t2) + e_hf , e_ccd
-            print(f'{cycle=} , E(CCD)={e_ccd} , dE={e_ccd -e_prev}')
+            t2, t2_prev = update_CCD_amplitudes(H, t2), t2
+            e_ccd, e_prev = get_CCD_corr_energy(H, t2) + e_hf, e_ccd
+            print(f'{cycle=}, E(CCD)={e_ccd}, dE={e_ccd-e_prev}')
             if jnp.abs(t2 - t2_prev). max() < conv_tol:
                 break
-            t2 = diis.update(t2 - t2_prev , t2)
+            t2 = diis.update(t2 - t2_prev, t2)
     return t2
-def fp_fwd(H , conv_tol=1e -4 , max_cycle=100): # (1)
-    t2 = fixed_point(H , conv_tol , max_cycle)
-    return t2 ,( H , t2)
+def fp_fwd(H, conv_tol=1e-4, max_cycle=100): # (1)
+    t2 = fixed_point(H, conv_tol, max_cycle)
+    return t2,( H, t2)
 ```
 
 ```python
-def fp_bwd(conv_tol , max_cycle , res , cotangent): # (2)
-    H , t2_star = res
-    L = solve_lambda(H , t2_star , cotangent)
-    _ , vjp_R = jax.vjp( lambda H: update_CCD_amplitudes(H , t2_star), H)
+def fp_bwd(conv_tol, max_cycle, res, cotangent): # (2)
+    H, t2_star = res
+    L = solve_lambda(H, t2_star, cotangent)
+    _, vjp_R = jax.vjp( lambda H: update_CCD_amplitudes(H, t2_star), H)
     # vjp_R computes the prodcut of L and the Jacobian of update_t2
     return vjp_R(L)
-fixed_point.defvjp(fp_fwd , fp_bwd) # (3)
+fixed_point.defvjp(fp_fwd, fp_bwd) # (3)
 ```
 t2 的迭代被集中到一个专门的 fixed_point 函数中。随后，CCD 能量计算单独进行，并使用 fixed_point 函数的输出。这里使用 custom_vjp 为 fixed_point 函数定义反向模式规则。
 在第 (3) 行，custom_vjp.defvjp 方法以两个增强函数为参数调用：第 (1) 行的 fp_fwd 用于前向传播，第 (2) 行的 fp_bwd 用于反向传播。前向传播函数 fp_fwd 的签名与原始函数的签名相同。fp_fwd 的输出应包含原始结果以及一个残余值（residual），后者将传递给 fp_bwd 函数。这一设计约定使前向和反向传播过程能够共享某些中间量，从而在一定程度上减少计算开销。反向函数 fp_bwd 至少需要两个输入参数：来自 fp_fwd 的残余数据，以及与原始函数输出关联的余切量（cotangent）。如果原始函数包含不可微参数，如本例所示，无论这些参数在原始函数签名中处于什么位置，都应将它们作为 fp_bwd 的前置参数传入。
@@ -1043,12 +1043,12 @@ t2 的迭代被集中到一个专门的 fixed_point 函数中。随后，CCD 能
 请注意 fp_bwd 和 solve_lambda 中的匿名 lambda 函数。它们针对同一个 update_CCD_amplitudes 函数的可微变量定义。在 solve_lambda 中，可微变量是 t2，对应的 VJP 操作为：
 
 ```text
-jax.vjp(lambda t2: update_CCD_amplitudes(H , t2) , t2_star)
+jax.vjp(lambda t2: update_CCD_amplitudes(H, t2), t2_star)
 ```
 在 fp_bwd 中，可微变量是 H。VJP 操作通过以下代码实现：
 
 ```text
-jax.vjp(lambda H: update_CCD_amplitudes(H , t2_star) , H)
+jax.vjp(lambda H: update_CCD_amplitudes(H, t2_star), H)
 ```
 与原始 CCD-AD 程序相比，本节介绍的隐式微分方法计算成本更低，内存占用也更少。这些优势归功于 CCD_solve 中的 DIIS 加速，
 以及反向传播生成的追踪器更少。在隐式微分方法中，只创建一个部分求值的 update_CCD_amplitudes 追踪器，而在早期版本的 CCD-AD 程序中，每次迭代都会生成多个追踪器。
@@ -1056,21 +1056,21 @@ jax.vjp(lambda H: update_CCD_amplitudes(H , t2_star) , H)
 不动点迭代是科学计算应用中的一项基本技术。因此，jaxopt 库提供了实现隐式微分的专用工具。这个工具是 custom_fixed_point 函数，可通过 jaxopt.implicit_diff 模块访问 [16]。因此，无需为不动点函数实现 custom_vjp 规则。我们只需为 custom_fixed_point 装饰器指定更新函数和相应的不动点求解器，如下所示：
 
 ```python
-@custom_fixed_point( lambda t2 ,H , *args , **kwargs: update_CCD_amplitudes(H , t2), solve=partial(jaxopt.linear_solve.solve_gmres , tol=1e -5))
-def fixed_point(t2 ,H , conv_tol=1e -5 , max_cycle=100):
-    ' ' 'A fixed -point iteration solver for spin -orbital CCD' ' '
-    e_ccd , t2 = mp2(H) # initial guess
+@custom_fixed_point( lambda t2,H , *args, **kwargs: update_CCD_amplitudes(H, t2), solve=partial(jaxopt.linear_solve.solve_gmres, tol=1e-5))
+def fixed_point(t2,H , conv_tol=1e-5, max_cycle=100):
+    '''A fixed-point iteration solver for spin-orbital CCD'''
+    e_ccd, t2 = mp2(H) # initial guess
     print(f'E(MP2)={e_ccd}')
     e_hf = H[ 'e_hf']
     with tempfile.TemporaryDirectory() as tmpdir:
         diis = DIIS(f '{tmpdir}/diis')
         for cycle in range (max_cycle):
-            t2 , t2_prev = update_CCD_amplitudes(H , t2), t2
-            e_ccd , e_prev = get_CCD_corr_energy(H , t2) + e_hf , e_ccd
-            print(f'{cycle=} , E(CCD)={e_ccd} , dE={e_ccd -e_prev}')
+            t2, t2_prev = update_CCD_amplitudes(H, t2), t2
+            e_ccd, e_prev = get_CCD_corr_energy(H, t2) + e_hf, e_ccd
+            print(f'{cycle=}, E(CCD)={e_ccd}, dE={e_ccd-e_prev}')
             if jnp.abs(t2 - t2_prev). max() < conv_tol:
                 break
-            t2 = diis.update(t2 - t2_prev , t2)
+            t2 = diis.update(t2 - t2_prev, t2)
     return t2
 ```
 
@@ -1081,47 +1081,47 @@ JAX 支持对普通的、能被 JAX 变换的函数计算高阶导数。这一�
 在最初的 CCD-AD 程序中，mo_integrals 的 custom_jvp 实现如下：
 
 ```python
-@partial(jax.custom_jvp , nondiff_argnums=(1 ,))
-def mo_integrals(coords , mf: pyscf.scf.hf.RHF):
+@partial(jax.custom_jvp, nondiff_argnums=(1,))
+def mo_integrals(coords, mf: pyscf.scf.hf.RHF):
     ...
 @mo_integrals.defjvp
-def mo_integrals_jvp(mf , primals , tangents):
-    coords , = primals
+def mo_integrals_jvp(mf, primals, tangents):
+    coords, = primals
     ...
-    primals_out = mo_integrals(coords , mf)
-    return primals_out , jvp_product
+    primals_out = mo_integrals(coords, mf)
+    return primals_out, jvp_product
 ```
 在 mo_integrals_jvp 函数内部，primals_out 由可经 JAX 变换的函数 mo_integrals 生成。在这个 CCD 程序中调用核 Hessian 时，JAX 自动微分能够执行而不会报错。然而，结果必然不正确，因为我们没有实现任何高阶导数积分。
 为了防止 JAX 错误地尝试计算高阶导数，一种有效方法是使用不能经 JAX 变换的函数生成 primals_out。例如，将 mo_integrals 的功能分离到一个不能经 JAX 变换的独立函数 _mo_integrals_no_ad 中，就能将 CCD-AD 代码的应用限制在一阶导数范围内。
 
 ```python
-def _mo_integrals_no_ad(coords , mf: pyscf.scf.hf.RHF):
+def _mo_integrals_no_ad(coords, mf: pyscf.scf.hf.RHF):
     ...
-@partial(jax.custom_jvp , nondiff_argnums=(1 ,))
-def mo_integrals(coords , mf: pyscf.scf.hf.RHF):
-    return _mo_integrals_no_ad(coords , mf)
+@partial(jax.custom_jvp, nondiff_argnums=(1,))
+def mo_integrals(coords, mf: pyscf.scf.hf.RHF):
+    return _mo_integrals_no_ad(coords, mf)
 @mo_integrals.defjvp
-def mo_integrals_jvp(mf , primals , tangents):
-    coords , = primals
+def mo_integrals_jvp(mf, primals, tangents):
+    coords, = primals
     ...
-    primals_out = mo_integrals_no_ad(coords , mf)
-    return primals_out , _mo_integrals_common(mol , hcore , eri , e_hf)
+    primals_out = mo_integrals_no_ad(coords, mf)
+    return primals_out, _mo_integrals_common(mol, hcore, eri, e_hf)
 ```
 计算高阶导数时，primals 参数将包含嵌套的追踪器（tracer），而不是普通输入，其嵌套层级对应于所要计算的导数阶数。
 将这些参数传给自定义 JVP 的原始函数可能会发起对 JVP 增强函数的递归调用，此时 primals 中追踪器的嵌套层级会降低。为高阶导数设计 JVP 增强函数时，必须仔细考虑这种递归调用模式。
 为了自定义高阶导数，例如在增强函数中加入高斯型轨道（GTO）积分的高阶导数，我们可能需要在 JVP 增强函数中追踪当前的导数阶数。一种方法是检测 primals 参数中追踪器的层级。另一种方法是显式引入一个计数器来表示导数阶数。例如，在下面给出的 JVP 增强代码中，根据导数阶数应用不同的 JVP 规则。导数计数器通过不可微参数管理。
 
 ```python
-@partial(jax.custom_jvp , nondiff_argnums=(1 ,))
-def f(x , level): # level=0 indicates the second order
+@partial(jax.custom_jvp, nondiff_argnums=(1,))
+def f(x, level): # level=0 indicates the second order
     return x
 @f.defjvp
-def f_jvp(level , primals , tangents):
-    x , = primals
-    primals_out = f(x , level -1)
-    tangent_out = custom_jvp_rules(level , primals , tangents)
-    return primals_out , tangent_out
-jax.hessian(f)(3.14 ,2 )
+def f_jvp(level, primals, tangents):
+    x, = primals
+    primals_out = f(x, level-1)
+    tangent_out = custom_jvp_rules(level, primals, tangents)
+    return primals_out, tangent_out
+jax.hessian(f)(3.14,2 )
 ```
 
 ### 16.4.4 JVP 与 VJP 之间的转换

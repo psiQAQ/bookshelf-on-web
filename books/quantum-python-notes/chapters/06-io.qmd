@@ -33,7 +33,7 @@ Python 提供了多种数据序列化方案。其中，Pickle 无疑是处理通
 ```python
 In [1]: import pickle
         with open ('file.pkl', 'wb') as f:
-            pickle.dump(obj ,f )
+            pickle.dump(obj,f )
         with open ('file.pkl', 'rb') as f:
             obj = pickle.load(f)
 In [2]: bytes_stream = pickle.dumps(obj)
@@ -67,12 +67,12 @@ In [2]: bytes_stream = pickle.dumps(obj)
 ```python
 In [3]: def pow_n(n):
             def partial_pow(m):
-                return pow (m ,n )
+                return pow (m,n )
             return partial_pow
         pickle.dumps(pow_n(3))
-AttributeError: Can t pickle local object 'pow_n. <locals >.partial_pow'
+AttributeError: Can t pickle local object 'pow_n.<locals>.partial_pow'
 In [4]: def pow_n(n):
-            return functools.partial(pow , exp=n)
+            return functools.partial(pow, exp=n)
         pickle.dumps(pow_n(3))
 Out[4]:
 b'\x80\x04\x95C\x00\x00\x00\x00\x00\x00\x00\x8...'
@@ -101,15 +101,15 @@ Python有一个处理JSON文档的内置模块，它提供json.dump和json.dumps
 ```python
 In [5]: import json
         with open ('file.json', 'w') as f:
-            json.dump(obj ,f )
+            json.dump(obj,f )
         with open ('file.json', 'r') as f:
             obj = json.load(f)
-In [6]: json.dumps({ 'a':[ 2 , 3]})
+In [6]: json.dumps({ 'a':[ 2, 3]})
 Out[6]:
-'{"a": [2 , 3]}'
-In [7]: json.loads( '{"a": [2 , 3]}' )
+'{"a": [2, 3]}'
+In [7]: json.loads( '{"a": [2, 3]}' )
 Out[7]:
-{'a':[ 2 , 3]}
+{'a':[ 2, 3]}
 ```
 JSON不是Python的原生数据格式。因此，将Python对象序列化为JSON格式时存在一些限制。
 JSON格式只支持Python内置类型的一个子集，仅限于None、True、False、数字（整数和实数）、字符串、元组、列表和字典。无法使用JSON格式直接序列化Python函数或类。
@@ -118,8 +118,8 @@ JSON格式只支持Python内置类型的一个子集，仅限于None、True、Fa
 
 ```python
 class NpArrayEncoder(json.JSONEncoder):
-    def default(self , obj):
-        if isinstance (obj , np.ndarray):
+    def default(self, obj):
+        if isinstance (obj, np.ndarray):
             return {'python/ndarray': obj.tolist()}
         return super ().default(obj)
 def np_decoder(obj):
@@ -130,23 +130,23 @@ def np_decoder(obj):
 可以按如下方式执行自定义编码器和解码器：
 
 ```python
-In [6]: arr = np.arange(4.).reshape(2 ,2 )
-        dat_encoded = json.dumps({ 'a': arr , 'b':[ 3 , 4]} , cls=NpArrayEncoder)
-        dat_decoded = json.loads(dat_encoded , object_hook=np_decoder)
+In [6]: arr = np.arange(4.).reshape(2,2 )
+        dat_encoded = json.dumps({ 'a': arr, 'b':[ 3, 4]}, cls=NpArrayEncoder)
+        dat_decoded = json.loads(dat_encoded, object_hook=np_decoder)
         print(dat_encoded)
         print(dat_decoded)
 Out[6]:
-{"a":{ "python/ndarray": [[0.0 , 1.0] , [2.0 , 3.0]]} , "b":[ 3 , 4]}
-{'a': array([[0. , 1.] , [2. , 3.]]), 'b':[ 3 , 4]}
+{"a":{ "python/ndarray": [[0.0, 1.0], [2.0, 3.0]]}, "b":[ 3, 4]}
+{'a': array([[0., 1.], [2., 3.]]), 'b':[ 3, 4]}
 ```
 在某些场景中，我们只能将Python对象转换为二进制数据（bytes或bytearray类型）。然而，JSON格式要求使用UTF-8编码。Python中的json模块无法处理JSON文档中的二进制数据。在这种情况下，我们可以在将二进制数据存入JSON之前使用base64编码进行转换。Base64编码是一种将数据转换为ASCII字符的方法。
 为说明如何在JSON文档中处理二进制数据，我们仍以NumPy数组为例。在JSON编码器中，我们可以使用.tobytes()方法提取NumPy数组的原始内容。然后使用Python base64库中的b64encode函数将二进制数据编码为base64字符串。在JSON解码阶段，我们首先将base64字符串解码回二进制数据，然后使用NumPy函数重建数组。编码器和解码器的程序如下所示。
 
 ```python
-from base64 import b64encode , b64decode
+from base64 import b64encode, b64decode
 class NpArrayEncoder(json.JSONEncoder):
-    def default(self , obj):
-        if isinstance (obj , np.ndarray):
+    def default(self, obj):
+        if isinstance (obj, np.ndarray):
             return {'python/ndarray': b64encode(obj.tobytes()).decode(), 'shape': obj.shape}
         return super ().default(obj)
 def np_decoder(obj):
@@ -164,18 +164,18 @@ Python标准库不支持读写YAML格式文档。我们必须安装外部库来�
 ```python
 In [8]: from ruamel import yaml
         with open ('file.yaml', 'w') as f:
-            yaml.dump(obj ,f )
+            yaml.dump(obj,f )
         with open ('file.yaml', 'r') as f:
             obj = yaml.load(f)
 ```
 
 ```yaml
-In [9]: yaml.dump({ 'a':[ 2 , 3]})
+In [9]: yaml.dump({ 'a':[ 2, 3]})
 Out[9]:
-'a: [2 , 3]\n'
-In [10]: yaml.load( 'a: [2 , 3]\n' )
+'a: [2, 3]\n'
+In [10]: yaml.load( 'a: [2, 3]\n' )
 Out[10
-{'a':[ 2 , 3]}
+{'a':[ 2, 3]}
 ```
 运行这个代码示例时，由于使用了yaml.load()函数，你会收到UnsafeLoaderWarning。这一警告的原因是YAML库中的解码器可以对某些节点执行Python函数。这一特性使YAML对Python对象的支持比JSON更广泛。它允许YAML编码多种数据类型，包括集合、时间戳、复数，甚至NumPy数组。然而，允许YAML解码器执行Python函数会引入安全风险，类似于pickle反序列化相关的漏洞。我们可以使用yaml.safe_load()函数防止解码器执行Python对象构造函数，尽管这会限制YAML支持的数据类型。尽管如此，在大多数情况下，yaml.safe_load()函数应当足以反序列化YAML文档。
 YAML如何处理二进制数据？作为基于文本的格式，YAML无法原生表示二进制数据。ruamel.yaml库中的编码器可以自动检测Python对象中的二进制数据，并使用base64编码器转换二进制数据。解码YAML文档时，这些经过base64编码的字符串可以被自动识别并转换回二进制对象。这一能力也使YAML成为比JSON更方便的选择。
@@ -202,13 +202,13 @@ YAML如何处理二进制数据？作为基于文本的格式，YAML无法原生
 NumPy提供np.save函数，可将数组序列化到.npy格式的文件中。可以使用np.load函数将.npy文件加载到内存中。
 
 ```python
-In [11]: np.save(np.random.rand(2 ,2 , 3), 'rand.npy')
+In [11]: np.save(np.random.rand(2,2 , 3), 'rand.npy')
          a = np.load( 'rand.npy')
 ```
 如果想在一个文件中保存多个数组，NumPy提供了np.savez函数。该函数将多个数组归档到一个.npz文件中。访问.npz归档的内容时，仍可使用np.load函数。np.load返回一个NpzFile对象，其行为类似于字典。我们可以通过访问NpzFile对象的相应键，访问保存在npz文件中的特定数组。
 
 ```python
-In [12]: np.savez( 'multi.npz', arr1=np.random.rand(2 ,2 , 3), arr2=np.eye(4), index=np.arange(5))
+In [12]: np.savez( 'multi.npz', arr1=np.random.rand(2,2 , 3), arr2=np.eye(4), index=np.arange(5))
          with np.load('rand.npz') as npz_ar:
 ```
 
@@ -217,15 +217,15 @@ In [12]: np.savez( 'multi.npz', arr1=np.random.rand(2 ,2 , 3), arr2=np.eye(4), i
              print(npz_ar['arr2'].shape)
              print(npz_ar['index'].shape)
 Out[12]:
-(2 ,2 ,3 )
-         (4 ,4 )
-         (5 ,)
+(2,2 ,3 )
+         (4,4 )
+         (5,)
 ```
 请注意，NumPy处理.npz文件时采用延迟加载策略。只有在引用.npz文件中的单个数组时，才会将其加载到内存中。换言之，如果我们只从.npz文件读取一个特定数组，就不必担心读取文件中其他数组所带来的CPU或内存开销。
 .npz格式本质上是多个.npy文件的压缩归档。解压这个.npz文件，就能清楚地看到npz格式的结构。NpzFile对象的键对应文件名。
 
 ```bash
-$  unzip multi.npz
+$ unzip multi.npz
 Archive: multi.npz
  extracting: arr1.npy
  extracting: arr2.npy
@@ -235,11 +235,11 @@ Archive: multi.npz
 默认情况下，np.load函数将.npy文件中的整个数组加载到内存中。如果我们只需要访问.npy数组的部分元素，加载整个数组文件便很低效。为解决这个问题，np.load函数提供了memmap模式，允许我们直接将.npy文件映射到内存（见第6.2.3节）。然后，我们可以像访问普通NumPy ndarray一样访问这个memmap数组。
 
 ```python
-In [13]: np.save(np.random.rand(2 ,2 , 3), 'rand.npy')
+In [13]: np.save(np.random.rand(2,2 , 3), 'rand.npy')
          a = np.load( 'rand.npy', mmap_mode= 'r')
-         print(a[1 ,0 ,:2])
+         print(a[1,0,:2])
 Out[13]:
-[0.79594989 , 0.4396052 ]
+[0.79594989, 0.4396052 ]
 ```
 np.load的memmap模式有一定限制。它不允许直接修改文件的内容。此外，访问.npz文件中的数组时，memmap模式不适用。
 .npy格式是NumPy数组专用的序列化格式，并非为不同编程语言之间的互操作而设计。然而，NumPy确保.npy格式保持跨平台兼容性 [7]。.npy格式存储了准确重建数组所需的所有信息（例如形状和dtype）。.npy文件可以在任何操作系统和架构上可靠地加载。
@@ -260,9 +260,9 @@ HDF5（Hierarchical Data Formats，层次数据格式）是存储NumPy数组的�
 ```python
 # Store array. File is opened in writable mode
 with h5py.File('example.h5', 'w') as f:
-    dataset = f.create_dataset( 'data', shape=(8 ,), maxshape=(None ,))
+    dataset = f.create_dataset( 'data', shape=(8,), maxshape=(None,))
     dataset[:] = np.arange(8.)
-    # let h5py automatically set the dataset name , data types , and shape
+    # let h5py automatically set the dataset name, data types, and shape
     f['data1'] = np.arange(8.)
 # Load array
 with h5py.File('example.h5', 'r') as f:
@@ -291,12 +291,12 @@ HDF5的性能受其Dataset存储配置的影响很大。优化HDF5性能需要�
 内存映射（memmap）是一种允许像访问内存一样访问文件的技术。这项技术对于处理无法全部放入内存的大型数据集尤其有用。NumPy可以将memmap用作数组的数据缓冲区。操作memmap数组与操作标准数组几乎相同。它允许只访问数组中的一小部分元素，而无需将整个数组加载到内存中。NumPy memmap的使用很简单。要创建用于存储NumPy数组的memmap，只需使用以下命令：
 
 ```python
-arr = np.memmap( 'filename.mmap', shape=(5 ,5), dtype= 'f8', mode= 'w')
+arr = np.memmap( 'filename.mmap', shape=(5,5), dtype= 'f8', mode= 'w')
 ```
 写入memmap数组的任何内容都会同步到文件，从而无需额外的数据序列化过程。要加载磁盘上已有的memmap数组，可以使用以下命令：
 
 ```python
-arr = np.memmap( 'filename.mmap', shape=(5 ,5), dtype= 'f8', mode= 'r+')
+arr = np.memmap( 'filename.mmap', shape=(5,5), dtype= 'f8', mode= 'r+')
 ```
 
 ## 6.3 缓冲
@@ -315,7 +315,7 @@ with h5py.File('example.h5', 'r') as f:
 在某些场景中，我们可能希望禁用缓冲I/O。你可能经历过这样的情况：Python程序的输出被重定向到日志文件时，输出消息不会立即出现在文件中。这种延迟是因为写入文件的消息被缓冲了。为解决这一问题，可以使用-u选项强制Python对stdout重定向禁用缓冲，确保输出立即在日志文件中可见。
 
 ```bash
-$  python -u example.py > log
+$ python -u example.py > log
 ```
 
 ## 6.4 I/O
@@ -330,7 +330,7 @@ $  python -u example.py > log
 内存I/O可以使用Python标准库io实现。利用io模块中的BytesIO和StringIO类，我们可以创建功能类似文件操作的内存I/O对象。
 
 ```python
-In [15]: from io import BytesIO , StringIO
+In [15]: from io import BytesIO, StringIO
 In [16]: buf = io.StringIO()
 ```
 
@@ -387,26 +387,26 @@ Create a Python function to query basis sets from bse:
 ```python
 - Handle error in response.
 - Use the following signature
-' ' '
-def query_basis_sets(basis_name , elements: List[ str]):
+'''
+def query_basis_sets(basis_name, elements: List[ str]):
     ...
-    return {element1: basis_dat1 , element2: basis_dat2}
-' ' '
+    return {element1: basis_dat1, element2: basis_dat2}
+'''
 ```
 生成的程序如下，其中requests库已针对该任务正确配置。
 
 ```python
 import requests
 from typing import List
-def query_basis_sets(basis_name , elements: List[ str]):
+def query_basis_sets(basis_name, elements: List[ str]):
     # Construct the URL for the API request
     u r l=f "https://www.basissetexchange.org/api/basis/{basis_name}/format/
     json/"
-    # Prepare the parameters for the request , including multiple elements
+    # Prepare the parameters for the request, including multiple elements
     params = { 'elements': elements}
     try:
         # Make the request to the BSE API with a timeout of 10 seconds
-        response = requests.get(url , params=params , timeout=10)
+        response = requests.get(url, params=params, timeout=10)
         # Check if the response was successful (status code 200)
         if response.status_code == 200:
             # Parse the JSON response
@@ -429,8 +429,8 @@ def query_basis_sets(basis_name , elements: List[ str]):
 ```python
 # Example usage
 elements = [ '1', '6'] # Hydrogen and Carbon
-basis_name = 'cc -pVDZ' # Example basis set name
-data = query_basis_sets(basis_name , elements)
+basis_name = 'cc-pVDZ' # Example basis set name
+data = query_basis_sets(basis_name, elements)
 print(data)
 ```
 
@@ -465,26 +465,26 @@ Create a HTTP service that serves for DFT calculations online
 - Use flask framework.
 - Provide REST API
 - Implement functionalities below
-' ' '
-# REST API: POST at URI '/dft -energy/ '
-def create_dft_job(geometry: str , basis_set: str , xc_func: str):
-    - launch a dft calculation , return an ID for the job
-    return {'id': ... , 'status': ...}
-# REST API: GET at URI '/dft -energy/ <id > '
+'''
+# REST API: POST at URI '/dft-energy/'
+def create_dft_job(geometry: str, basis_set: str, xc_func: str):
+    - launch a dft calculation, return an ID for the job
+    return {'id': ..., 'status': ...}
+# REST API: GET at URI '/dft-energy/<id>'
 def query_dft_result(id):
     - get the result or the state of a specific job
-    return {'results': ... , 'status': ...}
-# REST API: GET at URI '/jobs/ <status > '
+    return {'results': ..., 'status': ...}
+# REST API: GET at URI '/jobs/<status>'
 def list_jobs():
-    - list jobs for the specified status , such as pending , running , finished.
-    return {'jobs':[ id , id , id] , 'status': ...}
-' ' '
+    - list jobs for the specified status, such as pending, running, finished.
+    return {'jobs':[ id, id, id], 'status': ...}
+'''
 ```
 下面展示了GPT-4生成的代码。为简单起见，我们省略了
 AI生成的一些注释和解释。
 
 ```python
-from flask import Flask , jsonify , request , abort
+from flask import Flask, jsonify, request, abort
 from uuid import uuid4
 from threading import Thread
 import time
@@ -495,11 +495,11 @@ jobs_db = {}
 PENDING = 'pending'
 RUNNING = 'running'
 FINISHED = 'finished'
-def simulate_dft_calculation(job_id , geometry , basis_set , xc_func):
+def simulate_dft_calculation(job_id, geometry, basis_set, xc_func):
 time.sleep(5) # Simulate computation time
  jobs_db[job_id]['status'] = FINISHED
  jobs_db[job_id]['results'] = ...
-@app.route('/dft -energy/', methods=[ 'POST'])
+@app.route('/dft-energy/', methods=[ 'POST'])
 def create_dft_job():
  data = request.json
  geometry = data.get( 'geometry')
@@ -508,11 +508,11 @@ def create_dft_job():
  if not geometry or not basis_set or not xc_func:
 abort(400) # Bad request if any field is missing
  job_id = str(uuid4())
- jobs_db[job_id] = { 'status': PENDING , 'results': None}
- thread = Thread(target=simulate_dft_calculation , args=(job_id , geometry , basis_set , xc_func))
+ jobs_db[job_id] = { 'status': PENDING, 'results': None}
+ thread = Thread(target=simulate_dft_calculation, args=(job_id, geometry, basis_set, xc_func))
  thread.start()
- return jsonify({'id': job_id , 'status': PENDING}), 202
-@app.route('/dft -energy/ <id >', methods=[ 'GET'])
+ return jsonify({'id': job_id, 'status': PENDING}), 202
+@app.route('/dft-energy/<id>', methods=[ 'GET'])
 def query_dft_result(id):
 ```
 
@@ -520,21 +520,21 @@ def query_dft_result(id):
     job = jobs_db.get( id)
     if job is None:
 abort(404) # Not found if the job ID does not exist
-    return jsonify({'results': job[ 'results'] , 'status': job[ 'status']})
-@app.route('/jobs/ <status >', methods=[ 'GET'])
+    return jsonify({'results': job[ 'results'], 'status': job[ 'status']})
+@app.route('/jobs/<status>', methods=[ 'GET'])
 def list_jobs(status):
-    filtered_jobs = [job_id for job_id , details in jobs_db.items() if
+    filtered_jobs = [job_id for job_id, details in jobs_db.items() if
     details['status'] == status]
-    return jsonify({'jobs': filtered_jobs , 'status': status})
+    return jsonify({'jobs': filtered_jobs, 'status': status})
 if __name__ == '__main__':
     app.run()
 ```
 在生成的代码中，如注释所示，DFT计算部分是模拟的。为了将这个服务器转换为可运行的应用程序，这里我们集成量子化学程序PySCF [15]来执行DFT计算。
 
 ```python
-def simulate_dft_calculation(job_id , geometry , basis_set , xc_func):
+def simulate_dft_calculation(job_id, geometry, basis_set, xc_func):
     import pyscf
-    mf = pyscf.M(atom=geometry , basis=basis_set).RKS(xc=xc_func).run()
+    mf = pyscf.M(atom=geometry, basis=basis_set).RKS(xc=xc_func).run()
     jobs_db[job_id]['status'] = FINISHED
     jobs_db[job_id]['results'] = mf.e_tot
 ```
@@ -591,8 +591,8 @@ message DFTJobResponse {
 2. 使用grpcio-tools软件包生成一个名为dft_rpc_pb2.py的protobuf模块和一个名为dft_rpc_pb2_grpc.py的gRPC包装模块。
 
 ```bash
-$  pip install grpcio -tools
-$  python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=.
+$ pip install grpcio -tools
+$ python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=.
     dft_rpc.proto
 ```
 
@@ -604,9 +604,9 @@ import grpc
 import dft_rpc_pb2
 import dft_rpc_pb2_grpc
 class DFTCalculationServicer(object):
-    def run_dft(self , request , context):
+    def run_dft(self, request, context):
         import pyscf
-        mol = pyscf.M(atom=request.geometry , basis=request.basis_set)
+        mol = pyscf.M(atom=request.geometry, basis=request.basis_set)
         mf = mol.RKS(xc=request.xc_func).run()
         return dft_rpc_pb2.DFTJobResponse(energy=mf.e_tot)
 ```
@@ -631,14 +631,14 @@ if __name__ == '__main__':
 import grpc
 import dft_rpc_pb2
 import dft_rpc_pb2_grpc
-def run_dft(geometry , basis_set , xc_func):
+def run_dft(geometry, basis_set, xc_func):
     with grpc.insecure_channel('localhost:50051') as channel:
         stub = dft_rpc_pb2_grpc.DFTCalculationStub(channel)
-        response = stub.run_dft(dft_rpc_pb2.DFTJobRequest( geometry=geometry , basis_set=basis_set , xc_func=xc_func
+        response = stub.run_dft(dft_rpc_pb2.DFTJobRequest( geometry=geometry, basis_set=basis_set, xc_func=xc_func
         ))
         return response.energy
 if __name__ == '__main__':
-    e = run_dft( ' O000 ;H 0.757 0.587 0; H -0.757 0.587 0' , 'sto -3g', 'b3lyp')
+    e = run_dft( ' O000 ;H 0.757 0.587 0; H -0.757 0.587 0' , 'sto-3g', 'b3lyp')
     print("DFT job results:" ,e )
 ```
 
@@ -653,18 +653,18 @@ import pickle
 import json
 import numpy as np
 import pyarrow.flight as flight
-def run_dft(geometry , basis_set , xc_func):
+def run_dft(geometry, basis_set, xc_func):
     import pyscf
-    mf = pyscf.M(atom=geometry , basis=basis_set).RKS(xc=xc_func).run()
-    return mf.e_tot , mf.mo_energy
+    mf = pyscf.M(atom=geometry, basis=basis_set).RKS(xc=xc_func).run()
+    return mf.e_tot, mf.mo_energy
 class DFTFlightServer(flight.FlightServerBase):
-    def do_action(self , context , action):
+    def do_action(self, context, action):
 if action.type == 'run_dft': # (1)
             # Decode inputs from the action body
             params = json.loads(action.body.to_pybytes())
-            energy , orbital_energies = run_dft( params['geometry'] , params['basis_set'] , params['xc_func'])
+            energy, orbital_energies = run_dft( params['geometry'], params['basis_set'], params['xc_func'])
 yield flight.Result(pickle.dumps(energy)) # (2)
-            yield flight.Result(pickle.dumps( (orbital_energies.shape , orbital_energies.dtype)))
+            yield flight.Result(pickle.dumps( (orbital_energies.shape, orbital_energies.dtype)))
             yield flight.Result(orbital_energies.data)
         else:
             raise NotImplementedError
@@ -683,23 +683,23 @@ import pickle
 import json
 import numpy as np
 from pyarrow import flight
-def run_dft(geometry , basis_set , xc_func):
+def run_dft(geometry, basis_set, xc_func):
     request = json.dumps({
-        "geometry": geometry , "basis_set": basis_set , "xc_func": xc_func
+        "geometry": geometry, "basis_set": basis_set, "xc_func": xc_func
     })
     action = flight.Action( 'run_dft', request.encode())
     with flight.FlightClient('grpc://localhost:50011') as client:
         result = client.do_action(action)
         energy = pickle.loads( next(result).body)
-        shape , dtype = pickle.loads( next(result).body)
-        orbital_energies = np.frombuffer( next(result).body , dtype).reshape(shape)
-        return energy , orbital_energies
+        shape, dtype = pickle.loads( next(result).body)
+        orbital_energies = np.frombuffer( next(result).body, dtype).reshape(shape)
+        return energy, orbital_energies
 if __name__ == '__main__':
 ```
 
 ```python
-    e , mo_energy = run_dft( ' O000 ;H 0.757 0.587 0; H -0.757 0.587 0' , '
-    sto -3g', 'b3lyp')
+    e, mo_energy = run_dft( ' O000 ;H 0.757 0.587 0; H -0.757 0.587 0' , '
+    sto-3g', 'b3lyp')
     print("DFT energy:" ,e )
     print("orbital energies:" , mo_energy)
 ```

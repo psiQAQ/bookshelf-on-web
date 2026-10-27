@@ -24,8 +24,8 @@ Python 内置函数 eval 和 exec 可以解析并求值字符串中的代码。�
 eval 和 exec 的函数签名相似：
 
 ```text
-eval(expr , globals=None , locals=None)
-exec(code , globals=None , locals=None)
+eval(expr, globals=None, locals=None)
+exec(code, globals=None, locals=None)
 ```
 eval 的第一个参数是代码表达式。它受到一些限制：
 
@@ -38,10 +38,10 @@ exec 的代码字符串可以是任何原始 Python 代码。我们可以在代�
 eval 和 exec 在 globals 和 locals 字典提供的上下文中对代码字符串求值。默认情况下，这些字典对应当前的全局和局部命名空间。这一特性使我们能够控制代码字符串的执行环境。例如，通过自定义局部环境，我们可以使用 eval 函数模仿 Pandas DataFrame.eval 方法的功能，如下面的 simple_eval 函数所示。
 
 ```python
-In [1]: def simple_eval(df , expr):
-            return eval (expr ,{ } ,{ **df})
+In [1]: def simple_eval(df, expr):
+            return eval (expr,{ },{ **df})
 In [2]: mole = pd.read_csv( 'water.csv')
-        simple_eval(mole , ' ( x+y+ z)/3')
+        simple_eval(mole, ' ( x+y+ z)/3')
 Out[2]:
 0 1.357033
 1 1.512567
@@ -68,20 +68,20 @@ class Foo(metaclass=Meta):
 Python 中 type 函数的主要功能是确定对象的数据类型。其效果与访问对象的 __class__ 属性相同：object.__class__。type 的第二个功能是动态创建类：
 
 ```text
-new_cls = type(cls_name , (bases ,), cls_attrs)
+new_cls = type(cls_name, (bases,), cls_attrs)
 ```
 这里，cls_name 是表示类名的字符串，类似于在普通类中访问 cls.__name__。bases 是由作为父类的类组成的元组，在普通类中可以通过 cls.__bases__ 找到。cls_attrs 是记录类中属性和方法映射的字典，在普通类中可以通过 cls.__dict__ 访问。例如，
 
 ```yaml
-dyn_cls = type( 'DynamicClass', (BaseClass , ClassMixin), {'a':4 2 , '__repr__': lambda self: f 'DynamicClass({self.a})', 'inc': lambda self , n=1: self.a + n})
+dyn_cls = type( 'DynamicClass', (BaseClass, ClassMixin), {'a':4 2, '__repr__': lambda self: f 'DynamicClass({self.a})', 'inc': lambda self, n=1: self.a + n})
 ```
 这条语句等价于使用以下代码创建一个新类：
 
 ```python
-class DynamicClass(BaseClass , ClassMixin):
+class DynamicClass(BaseClass, ClassMixin):
     a=4 2
     def __repr__(self):
-        return f'DynamicClass({self.a})', def inc(self , n=1):
+        return f'DynamicClass({self.a})', def inc(self, n=1):
         return self.a + n
 dyn_cls = DynamicClass
 ```
@@ -125,22 +125,22 @@ Python 标准模块 ast 提供了一套用于检查和修改 Python 程序 AST �
 首先，我们使用 ast.NodeVisitor 类搜索与赋值语句相关的依赖关系映射。为此，我们创建 ast.NodeVisitor 的子类，并使用 visit_Assign 方法检查 Assign 节点。为了收集每个 Assign 节点中的所有变量，我们调用通用树遍历函数 ast.walk() 并筛选 ast.Name 节点，因为变量名由 ast.Name 节点表示。依赖关系是从一个字符串到多个字符串的映射，存储在字典中。
 
 ```python
-import itertools , inspect , ast , textwrap
+import itertools, inspect, ast, textwrap
 class DepdenciesVisitor(ast.NodeVisitor):
     def __init__(self):
         self.deps = {}
         self.returns = []
-    def visit_Assign(self , node):
+    def visit_Assign(self, node):
         args = [x. id for x in ast.walk(node.value)
-                if isinstance (x , ast.Name)]
+                if isinstance (x, ast.Name)]
         for t in node.targets:
-            if isinstance (t , ast.Name):
+            if isinstance (t, ast.Name):
 if t.id in self.deps: # (1)
                     self.deps[t.id].extend(args)
                 else:
                     self.deps[t.id] = args
-    def visit_Return(self , node):
-        self.returns.extend( [x.id for x in ast.walk(node.value) if isinstance (x , ast.Name)
+    def visit_Return(self, node):
+        self.returns.extend( [x.id for x in ast.walk(node.value) if isinstance (x, ast.Name)
     ])
 ```
 需要注意，有些变量可能在函数中被多次赋值，从而多次生成依赖关系映射。为了防止新的依赖关系覆盖已有依赖关系，我们必须检查依赖树中是否已经存在这些依赖关系，如第 (1) 行所示。
@@ -149,28 +149,28 @@ if t.id in self.deps: # (1)
 检查完整的 AST 后，所有变量的依赖关系都记录在字典 DepdenciesVisitor.deps 中。请注意，有些变量
 
 ```yaml
-others indirectly. For example, the mappings like { 'b ': 'a ' , 'c ': 'b '} implies that
+othersindirectly.Forexample,themappings like{'b': 'a', 'c': 'b'}impliesthat
 ```
 变量 c 依赖于变量 a。为此，我们可以追踪依赖链以识别所有间接依赖。在追踪过程中，变量之间可能存在循环依赖。为了打破循环依赖，我们在追踪时不断从依赖字典中删除已访问的条目。追踪依赖关系的过程由下面的 flatten_deps 函数实现，它根据提供的依赖字典识别所有必需的变量。其输出可用于确定不可到达的变量。这个函数使用动态规划技术，第 9 章第 9.7.3 节将对此进行解释。
 
 ```python
-def flatten_deps(keys , deps):
+def flatten_deps(keys, deps):
     if not keys or not deps:
         return []
     # Remove keys from deps to avoid potential circular dependency
-    sub_deps = {k: v for k ,v in deps.items() if k not in keys}
-    flattened = [flatten_deps(deps[k] , sub_deps)
+    sub_deps = {k: v for k,v in deps.items() if k not in keys}
+    flattened = [flatten_deps(deps[k], sub_deps)
                  for k in keys if k in deps]
-    return set (itertools.chain(keys , *flattened))
+    return set (itertools.chain(keys, *flattened))
 ```
 获得不可到达变量的列表后，我们创建 ast.NodeTransformer 的子类以修改 AST。在这个类中，我们实现 visit_Assign 方法以消除涉及不可到达变量的赋值语句。如果 visit_ 方法返回 None，相应节点将从 AST 中删除。
 
 ```python
 class RemoveUnreachable(ast.NodeTransformer):
-    def __init__(self , to_remove):
+    def __init__(self, to_remove):
         self.to_remove = set(to_remove)
-    def visit_Assign(self , node):
-        if any (isinstance(t , ast.Name) and t.id in self.to_remove
+    def visit_Assign(self, node):
+        if any (isinstance(t, ast.Name) and t.id in self.to_remove
                for t in node.targets):
 return None # Remove the node
         return node
@@ -185,7 +185,7 @@ def remove_unreachable_statements(fn):
     visitor = DepdenciesVisitor()
     visitor.visit(orig_code)
     # Search for variables that are accessible from returns
-    referenced = flatten_deps(visitor.returns , visitor.deps)
+    referenced = flatten_deps(visitor.returns, visitor.deps)
     unreachable = set(visitor.deps).difference(referenced)
     filtered = RemoveUnreachable(unreachable).visit(orig_code)
     return ast.unparse(filtered)
@@ -195,7 +195,7 @@ Python 标准库 inspect 是代码生成任务的强大工具。虽然它不能�
 让我们检查 remove_unreachable_statements 函数的结果
 
 ```python
-In [1]: def fun1(x , y):
+In [1]: def fun1(x, y):
             a=x+2
             b=a * x
             c=y * 9-b
@@ -204,16 +204,16 @@ In [1]: def fun1(x , y):
             return b * a
         print(remove_unreachable_statements(fun1))
 Out[1]:
-def fun1(x , y):
+def fun1(x, y):
     a=x+2
     b=a * x
     d = f(b)
     b=d
     return b * a
-In [2]: def fun2(x , y):
+In [2]: def fun2(x, y):
             a=x+2
             b=a * x
-            a ,b=a+b    ,a-b
+            a,b=a+b ,a-b
             c = f(y)
             d=c
 ```
@@ -222,24 +222,24 @@ In [2]: def fun2(x , y):
             return a
         print(remove_unreachable_statements(fun2))
 Out[2]:
-def fun2(x , y):
+def fun2(x, y):
     a=x+2
     b=a * x
-    a ,b=a+b    ,a-b
+    a,b=a+b ,a-b
     return a
 ```
 基于 remove_unreachable_statements 函数，我们可以开发一个装饰器来转换函数对象。这需要使用 exec 在局部命名空间中编译 remove_unreachable_statements 的输出。
 
 ```python
 def optimize(fn):
-    ' ' 'A decorator , which can remove unreachable statements of a function
-    remove_unreachable_statements' ' '
+    '''A decorator, which can remove unreachable statements of a function
+    remove_unreachable_statements'''
     new_fn = remove_unreachable_statements(fn)
     new_code = ast.parse(new_fn)
     # Remove the line containing the decorator from the AST
     new_code.body[0].decorator_list = []
     local_ns = {}
-    exec(ast.unparse(new_code), None , local_ns)
+    exec(ast.unparse(new_code), None, local_ns)
     return local_ns[fn.__name__]
 ```
 没有直接的方法将 AST 转换回函数对象。使用 exec 编译 AST 输出是常见做法。这个操作生成一个与输入函数同名的新函数，但它注册在局部命名空间中。然而，当在装饰器中调用 AST 代码时，装饰器本身也包含在生成的函数中，这可能导致循环依赖。为避免这种情况，我们在编译新代码之前清空函数的 decorator_list。
@@ -250,36 +250,36 @@ def optimize(fn):
 符号是符号计算的核心元素。在 SymPy 中，sympy.Symbol 类是表示符号变量的基本数据结构。符号变量由字符串名称标识。符号的命名规则遵循 Python 变量名的规则，可以由字母、数字和下划线组成。除了使用 sympy.Symbol 类实例化符号变量， sympy.symbols 函数也常用于一次创建多个符号变量。例如，以下语句都是定义符号变量的有效方法：
 
 ```text
-x ,y , z = sympy.symbols( 'x y z' )
-x ,y , z = sympy.symbols( 'x ,y1 ,z2_')
-x ,y , z = sympy.symbols( 'x y ,_z1')
-x ,y , z = sympy.symbols([ 'x', 'y', 'z'])
-x02 , x03 , x12 , x13 , var1 , var2 = sympy.symbols( 'x(0:2)(2:4) y z' )
+x,y , z = sympy.symbols( 'x y z' )
+x,y , z = sympy.symbols( 'x,y1,z2_')
+x,y , z = sympy.symbols( 'x y,_z1')
+x,y , z = sympy.symbols([ 'x', 'y', 'z'])
+x02, x03, x12, x13, var1, var2 = sympy.symbols( 'x(0:2)(2:4) y z' )
 ```
 调用 sympy.symbols 时，不同变量的名称用逗号或空白字符分隔。为了减少输入量，sympy.symbols 还支持使用范围语法生成符号列表。在上面的例子中，x(0:2)(2:4) 中的切片 0:2 和 2:4 分别展开，从而创建六个变量。
 除了 Symbol 类，SymPy 程序中的另一个核心数据结构是符号表达式，由 sympy.Expr 类提供。符号表达式由符号、数字以及定义在符号上的数学函数组成。
 为了表示符号或表达式的集合，sympy.Matrix 类用于表示矩阵，sympy.Array 类则用于多维数组。sympy.Matrix 和 sympy.Array 类提供的某些方法，如转置、重塑和索引，与 NumPy 数组的对应操作有些相似。然而，其中大多数与 NumPy 中的方法不同。例如，sympy.Matrix 不支持用于逐元素操作的 ufunc。对两个矩阵调用 a * b 时，它执行标准矩阵乘法。
 
 ```text
-In [1]: a = sympy.Matrix(sympy.symbols( 'x(:2)(:3)')).reshape(2 ,3)
+In [1]: a = sympy.Matrix(sympy.symbols( 'x(:2)(:3)')).reshape(2,3)
         a.T * a
 Out[1]:
 Matrix([
-[ x00 **2 + x10 **2 , x00 *x01 + x10 *x11 , x00 *x02 + x10 *x12] , [x00*x01 + x10 *x11 , x01 **2 + x11 **2 , x01 *x02 + x11 *x12] , [x00*x02 + x10 *x12 , x01 *x02 + x11 *x12 , x02 **2 + x12 **2]])
+[ x00 **2 + x10 **2, x00 *x01 + x10 *x11, x00 *x02 + x10 *x12], [x00*x01 + x10 *x11, x01 **2 + x11 **2, x01 *x02 + x11 *x12], [x00*x02 + x10 *x12, x01 *x02 + x11 *x12, x02 **2 + x12 **2]])
 ```
 符号表达式的 .subs() 方法可用于替换、求值、转换或简化符号表达式。它根据字典中定义的规则替换符号。例如，下面的例子展示如何使用 .subs() 方法按照仿射变换转换多项式表达式。
 
 ```text
-In [2]: x ,y , z = sympy.symbols( ' xyz ' )
+In [2]: x,y , z = sympy.symbols( ' xyz ' )
         P=. 5 * x**2+. 5 * y**2
-        T = sympy.Matrix([[.7 ,. 1 ,0 . , 0.] , [0. ,. 9 , -.2 , .5] , [.3 ,0 . ,. 8 , 0.]])
+        T = sympy.Matrix([[.7,. 1,0 ., 0.], [0.,. 9,-.2, .5], [.3,0 .,. 8, 0.]])
 ```
 
 ```python
-        xprime , yprime , zprime = T * Matrix([x ,y ,z , 1])
-        Ptransformed = P.subs({x: xprime , y: yprime , z: zprime} , simultaneous=True)
+        xprime, yprime, zprime = T * Matrix([x,y ,z , 1])
+        Ptransformed = P.subs({x: xprime, y: yprime, z: zprime}, simultaneous=True)
         print(Ptransformed.expand())
-        print(Ptransformed.subs({x: 1.0 ,y :2 . 0 , z: 0.5}))
+        print(Ptransformed.subs({x: 1.0,y :2 . 0, z: 0.5}))
 Out[2]:
 0.245*x**2 + 0.07 *x*y + 0.41 *y**2 - 0.18 *y*z + 0.45 *y + 0.02 *z**2 - 0.1 *z+
      0.125
@@ -308,12 +308,12 @@ Out[2]:
 - 和不定积分。积分可通过 sympy.Integral 类或 sympy.integrate 函数进行。不定积分使用以下方式计算：
 
 ```text
-   sympy.integrate(expr , variables)
+   sympy.integrate(expr, variables)
 ```
 定积分使用以下方式计算：
 
 ```text
-sympy.integrate(expr , (variable , lower_limit , upper_limit))
+sympy.integrate(expr, (variable, lower_limit, upper_limit))
 ```
 指定积分限时，SymPy 中的变量 sympy.oo 表示 ∞。对于多变量积分，可以向 sympy.integrate 函数传递多个积分限。SymPy 还提供常见的积分变换。这些功能可在 sympy.integrals 模块中找到，包括： -
 -
@@ -339,7 +339,7 @@ xf (x) = cos (x)) 可以转换为 SymPy 代码
 ```text
 f = sympy.Function( 'f')
 eq = sympy.Eq(x *f(x).diff(x), sympy.cos(x))
-sympy.dsolve(eq , f(x)))
+sympy.dsolve(eq, f(x)))
 ```
 为了表示函数的微分，可以使用 .diff 方法和 sympy.Derivative 类。
 
@@ -418,10 +418,10 @@ E =.)
 这个函数可以使用 NumPy 广播规则实现。
 
 ```python
-def coulomb_energy(coords: torch.Tensor , z: torch.Tensor):
-    zz = z[: ,None] * z
-    rr = coords[: ,None ,:] - coords
-    d = torch.linalg.norm(rr , axis=2)
+def coulomb_energy(coords: torch.Tensor, z: torch.Tensor):
+    zz = z[:,None] * z
+    rr = coords[:,None,:] - coords
+    d = torch.linalg.norm(rr, axis=2)
     tril = np.tril_indices( len(z), -1)
     return (zz[tril] / d[tril]). sum()
 ```
@@ -429,33 +429,33 @@ def coulomb_energy(coords: torch.Tensor , z: torch.Tensor):
 提供了几种方法来获取函数相对于其输入变量的导数。一种方法是使用 torch.func 模块提供的类似 JAX 的函数。例如，torch.func.grad 和 torch.func.hessian 函数分别可用于计算梯度和海森矩阵。
 
 ```text
-In [1]: coords = torch.rand(2 ,3 )
-        Z = torch.rand(2 ,3 )
-        torch.func.grad(coulomb_energy , argnums=0)(coords ,Z )
+In [1]: coords = torch.rand(2,3 )
+        Z = torch.rand(2,3 )
+        torch.func.grad(coulomb_energy, argnums=0)(coords,Z )
 Out[1]:
-tensor([[ 0.1631 , 2.6309 , -1.6224] , [ -0.1631 , -2.6309 , 1.6224]] , grad_fn= <AddBackward0 >)
-In [2]: torch.func.hessian(coulomb_energy , argnums=1)(coords ,Z )
+tensor([[ 0.1631, 2.6309 , -1.6224], [-0.1631, -2.6309, 1.6224]] , grad_fn=<AddBackward0>)
+In [2]: torch.func.hessian(coulomb_energy, argnums=1)(coords,Z )
 Out[2]:
-tensor([[0.0000 , 2.3221] , [2.3221 , 0.0000]] , grad_fn= <ViewBackward0 >)
+tensor([[0.0000, 2.3221], [2.3221, 0.0000]], grad_fn=<ViewBackward0>)
 ```
 argnums 参数指定要使用自动微分求导的参数的位置。请注意，自动微分的输入变量必须是 torch.Tensor 对象。
 第二种方法采用反向传播来生成每个单独变量的梯度。在这种方法中，创建输入变量时必须指定关键字 requires_grad= True。这表示在反向传播期间应计算这些变量的梯度。为了计算梯度，我们首先进行前向传播以计算结果。然后在结果上调用 .backward() 方法来执行反向传播。完成这两个步骤后，可以通过输入变量的 .grad 属性访问梯度。例如，
 
 ```python
-In [3]: coords = torch.rand(2 ,3 , requires_grad=True)
-        Z = torch.rand(2 ,3 , requires_grad=True)
-        e = coulomb_energy(coords ,Z )
+In [3]: coords = torch.rand(2,3 , requires_grad=True)
+        Z = torch.rand(2,3 , requires_grad=True)
+        e = coulomb_energy(coords,Z )
         e.backward()
         print(coords.grad)
         print(Z.grad)
 Out[3]:
-tensor([[ 0.1631 , 2.6309 , -1.6224] , [ -0.1631 , -2.6309 , 1.6224]])
-tensor([[0.0000 , 2.3221] , [2.3221 , 0.0000]])
+tensor([[ 0.1631, 2.6309 , -1.6224], [-0.1631, -2.6309, 1.6224]])
+tensor([[0.0000, 2.3221], [2.3221, 0.0000]])
 ```
 请注意，.backward() 方法会给可微参数引入副作用。反向传播过程执行自动微分，并原地更新输入变量的梯度。当同一变量被多个函数的输出访问时，对每个输出调用 .backward() 方法会使梯度在同一个变量中累积，而不是只保留最近一次的梯度。
 
 ```python
-In [4]: x = torch.tensor(1. , requires_grad=True)
+In [4]: x = torch.tensor(1., requires_grad=True)
         y=x **2
         y.backward()
         print(x.grad)
@@ -488,33 +488,33 @@ Out[6]: tensor(3.)
 ```python
 class CoulombEnergy(torch.autograd.Function):
 @staticmethod
-def forward(ctx , coords , z):
-zz = z[: ,None] * z
-rr = coords[: ,None ,:] - coords
-d = np.linalg.norm(coords[: ,None ,:] - coords , axis=2)
+def forward(ctx, coords, z):
+zz = z[:,None] * z
+rr = coords[:,None,:] - coords
+d = np.linalg.norm(coords[:,None,:] - coords, axis=2)
 tril = np.tril_indices( len(z), -1)
 res = (zz[tril] / d[tril]). sum()
 # ctx.save_for_backward can cache info in ctx for backward
 # computation. The saved info can be accessed in the .saved_tensors attribute.
-ctx.save_for_backward(coords ,z )
+ctx.save_for_backward(coords,z )
 return res
 @staticmethod
-def backward(ctx , grad_output):
-coords , z = ctx.saved_tensors
-zz = z[: ,None] * z
-rr = coords[: ,None ,:] - coords
-d = np.linalg.norm(coords[: ,None ,:] - coords , axis=2)
+def backward(ctx, grad_output):
+coords, z = ctx.saved_tensors
+zz = z[:,None] * z
+rr = coords[:,None,:] - coords
+d = np.linalg.norm(coords[:,None,:] - coords, axis=2)
 with np.errstate(all='ignore'):
 r i n v=1 ./d
 rinv[np.diag_indices(len(z))] = 0.
-r_grad = -np.einsum( 'i ,j ,ijx ,ij ->ix',z ,z ,r r , rinv **3)
-z_grad = np.einsum( 'j ,ij ->i',z , rinv)
+r_grad = -np.einsum( 'i,j,ijx,ij->ix',z ,z ,r r, rinv **3)
+z_grad = np.einsum( 'j,ij->i',z , rinv)
 # grad_output represents the factor associated with the current function.
-return grad_output * r_grad , grad_output * z_grad
+return grad_output * r_grad, grad_output * z_grad
 if __name__ == '__main__':
-coords = torch.rand(2 ,3 , requires_grad=True)
-Z = torch.rand(2 ,3 , requires_grad=True)
-e = CoulombEnergy. apply(coords ,Z )
+coords = torch.rand(2,3 , requires_grad=True)
+Z = torch.rand(2,3 , requires_grad=True)
+e = CoulombEnergy. apply(coords,Z )
 e.backward()
 print(coords.grad)
 print(Z.grad)
@@ -526,7 +526,7 @@ print(Z.grad)
 库由两个主要组件组成：jax 软件包侧重于数值计算和自动微分操作的高级 API，而 jaxlib 软件包提供针对特定硬件的计算加速所需的底层绑定。这两个组件作为独立的库分发。要启用 JAX 的计算能力，应安装两者。如果目的是探索 JAX 自动微分的功能，为简单起见可以只安装 CPU 后端。
 
 ```bash
-$  pip install jax[cpu] jaxlib
+$ pip install jax[cpu] jaxlib
 ```
 如果希望启用 Nvidia 或 AMD GPU 的后端，或者在 Google Colab 笔记本中使用 TPU，就应安装相应的 JAX 后端。更多细节参见 JAX 文档 [7]。
 库采用函数式编程范式设计。JAX 的自动微分通过使用高阶函数实现。与 PyTorch 相比，新用户可能需要付出更多努力才能熟悉 JAX 程序。
@@ -545,32 +545,32 @@ import jax.numpy as jnp
 对于库仑能问题，为了确保可以由 JAX 变换，我们必须使用 coulomb_energy 函数的另一种实现，在调用 norm 函数之前排除 rr 数组的对角项：
 
 ```python
-def coulomb_energy(coords , z):
-    zz = z[: ,None] * z
-    rr = coords[: ,None ,:] - coords
+def coulomb_energy(coords, z):
+    zz = z[:,None] * z
+    rr = coords[:,None,:] - coords
     # Note zeros are not differentiable for norm.
     # They are discarded before calling norm.
     tril = np.tril_indices( len(z), -1)
-    d = jnp.linalg.norm(rr[tril] , axis=1)
+    d = jnp.linalg.norm(rr[tril], axis=1)
     return (zz[tril] / d). sum()
 ```
 如果复用上一节中 coulomb_energy 函数的实现，JAX 将为梯度返回 nan。这个问题源于 rr 矩阵对角项中的零，在处理 jnp.linalg.norm 函数的梯度时会导致非法值。这里我们不探究 PyTorch 和 JAX 处理 norm 函数的差异。读者只需注意，在梯度中遇到 nan 值时，jnp.linalg.norm 可能存在这个问题。
 现在，我们可以使用 jax.grad 函数计算梯度。
 
 ```text
-In [7]: coords = jnp.array(np.random.rand(2 , 3))
+In [7]: coords = jnp.array(np.random.rand(2, 3))
         Z = jnp.array(np.random.rand(2))
-        jax.grad(coulomb_energy , argnums=(0 , 1))(coords ,Z )
+        jax.grad(coulomb_energy, argnums=(0, 1))(coords,Z )
 Out[7]:
-(Array([[ -0.03555296 , -0.17780247 , 0.02858889] , [ 0.03555296 , 0.17780247 , -0.02858889]] , dtype=float32), Array
-    ([0.58357096 , 0.31454977] , dtype=float32))
+(Array([[-0.03555296, -0.17780247, 0.02858889] , [ 0.03555296, 0.17780247 , -0.02858889]], dtype=float32), Array
+    ([0.58357096, 0.31454977], dtype=float32))
 ```
 jax.grad 函数用于计算标量值函数的梯度。如果函数输出数组，JAX 提供 jax.jacobian 函数来计算雅可比矩阵。
 
 ```text
-In [8]: jax.jacobian(coulomb_energy , argnums=0)(coords ,Z )
+In [8]: jax.jacobian(coulomb_energy, argnums=0)(coords,Z )
 out[8]:
-[[ -0.03555296 -0.17780247 0.02858889]
+[[-0.03555296 -0.17780247 0.02858889]
 [ 0.03555296 0.17780247 -0.02858889]]
 ```
 此外，JAX 提供 jax.jacfwd 和 jax.jacrev 函数来计算雅可比矩阵。这两个函数可以更精细地控制雅可比矩阵的计算。
@@ -583,13 +583,13 @@ jax.jacobian 函数默认调用 jac.jacrev 版本。对于高阶导数，可以�
 给定一个计算 f (x) 值的 Python 函数，jax.jvp 可以同时求出 f (x) 和乘积 ∂f (x) · v，而 jax.vjp 生成 f (x) 和 v · ∂f (x)。以 coulomb_energy 函数为例，我们可以使用 jax.jvp 对电荷变化引起的能量变化建模。jax.jvp 函数的输入包括函数 f (x)、计算 ∂f (x) 时所在的原始值，以及用于雅可比矩阵与向量相乘的切向量 v。原始值和切向量都是与 f (x) 的位置参数对应的元组。例如，下面的代码展示了如何调用库仑能函数的 jvp 操作。
 
 ```text
-In [9]: coords = jnp.array(np.random.rand(2 , 3))
+In [9]: coords = jnp.array(np.random.rand(2, 3))
         Z = jnp.array(np.random.rand(2))
         disp = jnp.array(np.random.rand(2))
-        fun = lambda z: coulomb_energy(coords ,z )
-        primals = (Z ,)
-        tangents = (disp ,)
-        e , e_tangets = jax.jvp(fun , primals , tangents)
+        fun = lambda z: coulomb_energy(coords,z )
+        primals = (Z,)
+        tangents = (disp,)
+        e, e_tangets = jax.jvp(fun, primals, tangents)
 ```
 自定义 JAX 导数需要分别使用 JAX 函数 custom_jvp 或 custom_vjp 来定义前向模式或反向模式求导规则。JAX 导数自定义使用的编程模型不同于在 PyTorch 中直接实现 .forward() 和 .backward() 方法。在第 16 章中，我们将以耦合簇方法为例，说明如何为梯度计算自定义 JVP 和 VJP。
 

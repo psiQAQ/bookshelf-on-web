@@ -55,7 +55,7 @@ FCI 方法要求在波函数展开中包含所有行列式。在非相对论计�
 
 ```python
 class String:
-    def __init__(self , occupied_orbitals: List):
+    def __init__(self, occupied_orbitals: List):
         self.occupied_orbitals = set(occupied_orbitals)
     def __repr__(self):
         return f'Det{self.occupied_orbitals}'
@@ -63,9 +63,9 @@ class String:
     def vacuum(cls):
         return cls(set())
     @classmethod
-    def fully_occupied(cls , n):
+    def fully_occupied(cls, n):
         return cls(set(range(n)))
-    def add_occupancy(self , orbital_id):
+    def add_occupancy(self, orbital_id):
         assert orbital_id not in self.occupied_orbitals
         return String(self.occupied_orbitals.union([orbital_id]))
     def __hash__(self):
@@ -73,22 +73,22 @@ class String:
 
 ```python
         return hash (tuple(self.occupied_orbitals))
-    def __eq__(self , other):
+    def __eq__(self, other):
         return self.occupied_orbitals == other.occupied_orbitals
-    def annihilate(self , orbital_id):
-        ' ' 'Apply an annihilation operator. Returns the sign and a new
-    string.' ' '
+    def annihilate(self, orbital_id):
+        '''Apply an annihilation operator. Returns the sign and a new
+    string.'''
         if orbital_id not in self.occupied_orbitals:
-            return 0 , String.vacuum()
-        sign = ( -1) ** sum(i > orbital_id for i in self.occupied_orbitals)
-        return sign , String(self.occupied_orbitals.difference([orbital_id])
+            return 0, String.vacuum()
+        sign = (-1) ** sum(i > orbital_id for i in self.occupied_orbitals)
+        return sign, String(self.occupied_orbitals.difference([orbital_id])
     )
-    def create(self , orbital_id):
-        ' ' 'Apply a creation operator. Returns the sign and a new string.' ' '
+    def create(self, orbital_id):
+        '''Apply a creation operator. Returns the sign and a new string.'''
         if orbital_id in self.occupied_orbitals:
-            return 0. , String.vacuum()
-        sign = ( -1) ** sum(i > orbital_id for i in self.occupied_orbitals)
-        return sign , String(self.occupied_orbitals.union([orbital_id]))
+            return 0., String.vacuum()
+        sign = (-1) ** sum(i > orbital_id for i in self.occupied_orbitals)
+        return sign, String(self.occupied_orbitals.union([orbital_id]))
 ```
 † †
 将二次量子化算符作用于 String 对象时，可能产生正号或负号。在 String 表示中，我们约定算符按轨道索引从低到高的顺序作用，例如
@@ -97,7 +97,7 @@ class String:
 
 ```python
 @lru_cache(200)
-def make_strings(norb: int , noccupied: int):
+def make_strings(norb: int, noccupied: int):
     assert norb >= noccupied
     if norb == 0:
         return [String.vacuum()]
@@ -108,9 +108,9 @@ def make_strings(norb: int , noccupied: int):
 ```
 
 ```python
-    return (make_strings(norb -1 , noccupied) +
-            [s.add_occupancy(norb -1)
-             for s in make_strings(norb -1 , noccupied -1)])
+    return (make_strings(norb-1, noccupied) +
+            [s.add_occupancy(norb-1)
+             for s in make_strings(norb-1, noccupied-1)])
 ```
 
 ## 14.3 Davidson 对角化
@@ -145,56 +145,56 @@ def make_strings(norb: int , noccupied: int):
 Davidson 迭代从初始猜测 v0 开始，采用上述步骤改进子空间基向量，直到式 (14.11) 定义的残差小于要求的收敛阈值。下面是针对实对称矩阵最低本征值的简化实现：
 
 ```python
-def davidson(A , A_diag , x0=None , tol=1e -5 , maxiter=50 , space=15):
-    def precond(r , e):
+def davidson(A, A_diag, x0=None, tol=1e-5, maxiter=50, space=15):
+    def precond(r, e):
         return r / (A_diag - e)
 ```
 
 ```python
     # The initial guess
     if x0 is None:
-        x0 = 1. / (A_diag - A_diag.argmin() + 1e -2)
+        x0 = 1. / (A_diag - A_diag.argmin() + 1e-2)
     x0 = x0 / np.linalg.norm(x0)
     v s=[ ]
     h v=[ ]
-    h = np.empty((space , space))
+    h = np.empty((space, space))
     for cycle in range (maxiter):
         vs.append(x0)
         hv.append(A(x0))
         n= len(vs)
         for i in range (n):
-            h[i ,n -1] = np.dot(vs[i] , hv[n -1])
-            h[n -1 ,i] = h[i ,n -1].conj()
-        e , c = np.linalg.eigh(h[:n ,:n])
+            h[i,n-1] = np.dot(vs[i], hv[n-1])
+            h[n-1,i] = h[i,n-1].conj()
+        e, c = np.linalg.eigh(h[:n,:n])
         e0 = e[0]
-        c0 = c[: ,0]
+        c0 = c[:,0]
         x = np.zeros_like(x0)
-        for i ,c i in enumerate (c0):
+        for i,c i in enumerate (c0):
             x += vs[i] * ci
         residual = -e0 * x
-        for i ,c i in enumerate (c0):
+        for i,c i in enumerate (c0):
             residual += hv[i] * ci
         norm = np.linalg.norm(residual)
         print(f'davidson {cycle=} {e0=} residual={norm:.5g}' )
         if norm < tol:
             break
         if len (vs) >= space:
-            # Restart the calculation , the last x is used as initial guess
-            x0 ,v s ,h v=x ,[ ] ,[ ]
+            # Restart the calculation, the last x is used as initial guess
+            x0,v s,h v=x ,[ ],[ ]
             continue
-        x0 = precond(residual , e0)
+        x0 = precond(residual, e0)
         # orthogonalize the basis
         for v in vs:
-            x0 -= v * np.dot(v , x0)
+            x0 -= v * np.dot(v, x0)
         norm = np.linalg.norm(x0)
-        assert norm < 1e -10 , 'Linearly dependent basis vectors'
+        assert norm < 1e-10, 'Linearly dependent basis vectors'
 ```
 
 ```python
         x0 /= norm
     else:
         raise RuntimeError('davidson not converged' )
-    return e0 ,x
+    return e0,x
 ```
 在迭代过程中，新的基向量加入子空间之前，必须相对于现有基向量进行正交化。如果没有这一步，子空间本征值问题将成为广义本征值问题：
 
@@ -209,7 +209,7 @@ def davidson(A , A_diag , x0=None , tol=1e -5 , maxiter=50 , space=15):
 
 ```python
 def matvec(x)
-    return compute_hc(h1 , eri ,x , norb , nelec_a , nelec_b)
+    return compute_hc(h1, eri,x , norb, nelec_a, nelec_b)
 ```
 参数 h1 是单电子积分矩阵，eri 是双电子积分张量。其他参数包括轨道数 norb、α 串中的算符数（nelec_a）和 β 串中的算符数（nelec_b）。compute_hc 是 FCI 方法中计算最密集的部分。它可以使用高效的高维张量收缩算法求值，第 14.4 节将对此进行讨论。
 Davidson 算法需要的另一个参数是哈密顿量的对角元素。这些元素可以使用 Slater-Condon 规则 [4] 计算。
@@ -221,34 +221,34 @@ Davidson 算法需要的另一个参数是哈密顿量的对角元素。这些�
 得益于 NumPy 的花式索引（fancy indexing）功能，计算对角元素的程序很容易实现。
 
 ```python
-def make_hdiag(h1 , eri , norb , nelec_a , nelec_b):
-    occs_a = make_strings(norb , nelec_a).occupied_orbitals
-    occs_b = make_strings(norb , nelec_b).occupied_orbitals
-    eri = ao2mo.restore(1 , eri , norb)
-    diagj = np.einsum( 'iijj ->ij', eri)
-    diagk = np.einsum( 'ijji ->ij', eri)
+def make_hdiag(h1, eri, norb, nelec_a, nelec_b):
+    occs_a = make_strings(norb, nelec_a).occupied_orbitals
+    occs_b = make_strings(norb, nelec_b).occupied_orbitals
+    eri = ao2mo.restore(1, eri, norb)
+    diagj = np.einsum( 'iijj->ij', eri)
+    diagk = np.einsum( 'ijji->ij', eri)
     hdiag = []
     for aocc in occs_a:
         for bocc in occs_b:
-            e1 = h1[aocc ,aocc].sum() + h1[bocc ,bocc].sum()
-            e2 =(diagj[aocc][: ,aocc].sum() + diagj[aocc][: ,bocc].sum() +
-                 diagj[bocc][: ,aocc].sum() + diagj[bocc][: ,bocc].sum() -
-                 diagk[aocc][: ,aocc].sum() - diagk[bocc][: ,bocc].sum())
+            e1 = h1[aocc,aocc].sum() + h1[bocc,bocc].sum()
+            e2 =(diagj[aocc][:,aocc].sum() + diagj[aocc][:,bocc].sum() +
+                 diagj[bocc][:,aocc].sum() + diagj[bocc][:,bocc].sum() -
+                 diagk[aocc][:,aocc].sum() - diagk[bocc][:,bocc].sum())
             hdiag.append(e1 + e2 *.5)
     return np.array(hdiag)
 ```
 求解基态 FCI 波函数的 FCI_solve 函数可以如下实现：
 
 ```python
-def FCI_solve(h1 , eri , norb , nelec_a , nelec_b , x0=None):
-    # matrix -vector product
+def FCI_solve(h1, eri, norb, nelec_a, nelec_b, x0=None):
+    # matrix-vector product
     def matvec(x):
-        hc = compute_hc(h1 , eri ,x , norb , nelec_a , nelec_b)
+        hc = compute_hc(h1, eri,x , norb, nelec_a, nelec_b)
         return hc.ravel()
     # Diagonal elements
-    h_diag = make_hdiag(h1 , eri , norb , nelec_a , nelec_b)
-    e , wfn = davidson(matvec , h_diag , x0=x0)
-    return e , wfn
+    h_diag = make_hdiag(h1, eri, norb, nelec_a, nelec_b)
+    e, wfn = davidson(matvec, h_diag, x0=x0)
+    return e, wfn
 ```
 实际上，Davidson 对角化程序往往比上面的示例复杂得多。还有一些技术细节必须
 考虑。本书不会为这些技术方面逐一实现代码示例。下面简要讨论其中一些关键技术要点。
@@ -349,23 +349,23 @@ E 张量定义为
 E 张量的元素只有三个可能的值：0、+1 和 − 1。我们可以使用二次量子化代数确定它们的值，如下面的代码示例所示。
 
 ```python
-def Etensor_value(create_p: int , annihilate_q: int , strI: String , strJ: String):
-    ' ' 'The value of <stringI|p^\dagger q|stringJ >' ' '
-    sign1 , strK1 = strJ.annihilate(annihilate_q)
-    sign2 , strK2 = strK1.create(create_p)
+def Etensor_value(create_p: int, annihilate_q: int, strI: String, strJ: String):
+    '''The value of <stringI|p^\dagger q|stringJ>'''
+    sign1, strK1 = strJ.annihilate(annihilate_q)
+    sign2, strK2 = strK1.create(create_p)
     if strK2 == strI:
         return sign1 * sign2
     else:
         return 0
-def make_Etensor(norb , nelec):
-    strings = make_strings(norb , nelec)
+def make_Etensor(norb, nelec):
+    strings = make_strings(norb, nelec)
     na = len(strings)
-    Et = np.zeros((norb ,norb ,na ,na))
+    Et = np.zeros((norb,norb,na,na))
     for p in range (norb):
         for q in range (norb):
-            for i , strI in enumerate (strings):
-                for j , strJ in enumerate (strings):
-                    Et[p ,q ,i ,j] = Etensor_value(p ,q , strI , strJ)
+            for i, strI in enumerate (strings):
+                for j, strJ in enumerate (strings):
+                    Et[p,q,i,j] = Etensor_value(p,q , strI, strJ)
     return Et
 ```
 根据式 (14.4) 中行列式的结构，我们可以将 FCI 波函数系数组织成矩阵 CJαJβ。该矩阵的行和列分别对应 α 串和 β 串。矩阵向量乘积 HC 可以分解为三个张量收缩步骤：
@@ -381,15 +381,15 @@ def make_Etensor(norb , nelec):
 这些张量收缩可以使用 einsum 函数快速实现。
 
 ```python
-def compute_hc(h1 , eri , fciwfn , norb , nelec_a , nelec_b):
-    Etensor_a = make_Etensor(norb , nelec_a)
-    Etensor_b = make_Etensor(norb , nelec_b)
-    d = einsum( 'pqKI ,IJ ->pqKJ', Etensor_a , fciwfn , optimize=True)
-    d += einsum( 'pqKJ ,IJ ->pqIK', Etensor_b , fciwfn , optimize=True)
-    v = merge_h1_eri(h1 , eri , nelec_a + nelec_b)
-    g = einsum( 'pqrs ,rsIJ ->pqIJ',v ,d )
-    sigma = einsum( 'pqKI ,pqIJ ->KJ', Etensor_a ,g , optimize=True)
-    sigma += einsum( 'pqKJ ,pqIJ ->IK', Etensor_b ,g , optimize=True)
+def compute_hc(h1, eri, fciwfn, norb, nelec_a, nelec_b):
+    Etensor_a = make_Etensor(norb, nelec_a)
+    Etensor_b = make_Etensor(norb, nelec_b)
+    d = einsum( 'pqKI,IJ->pqKJ', Etensor_a, fciwfn, optimize=True)
+    d += einsum( 'pqKJ,IJ->pqIK', Etensor_b, fciwfn, optimize=True)
+    v = merge_h1_eri(h1, eri, nelec_a + nelec_b)
+    g = einsum( 'pqrs,rsIJ->pqIJ',v ,d )
+    sigma = einsum( 'pqKI,pqIJ->KJ', Etensor_a,g , optimize=True)
+    sigma += einsum( 'pqKJ,pqIJ->IK', Etensor_b,g , optimize=True)
     return sigma
 ```
 
@@ -405,28 +405,28 @@ E 张量的非零元素可以高效地存储在查找表中：
 下面的代码展示了如何构造查找表：
 
 ```python
-def make_Elt(norb , nelec):
-    ' ' 'The lookup table for non -zero elements of E tensor' ' '
-    strings = make_strings(norb , nelec)
-    # To setup the map from string to address ,
+def make_Elt(norb, nelec):
+    '''The lookup table for non-zero elements of E tensor'''
+    strings = make_strings(norb, nelec)
+    # To setup the map from string to address,
     # __hash__ and __eq__ methods must be created for String object.
-    strings_address = {s: i for i ,s in enumerate (strings)}
+    strings_address = {s: i for i,s in enumerate (strings)}
     E l t=[ ]
-    for k , strI in enumerate (strings):
+    for k, strI in enumerate (strings):
         table_k = []
         occs = strI.occupied_orbitals
         uoccs = [p for p in range (norb) if p not in occs]
         for q in occs:
-            sign1 , strK1 = strI.annihilate(q)
+            sign1, strK1 = strI.annihilate(q)
             for p in uoccs:
-                sign2 , strJ = strK1.create(p)
+                sign2, strJ = strK1.create(p)
 ```
 
 ```python
 # Applying a^\dagger_p a_q on address of strI leads to to address of the output string (strJ)
-                table_k.append([p ,q , strings_address[strJ] , sign1 *sign2])
+                table_k.append([p,q , strings_address[strJ], sign1 *sign2])
         for p in occs:
-            table_k.append([p ,p ,k , 1])
+            table_k.append([p,p ,k , 1])
         Elt.append(table_k)
     return Elt
 ```
@@ -434,27 +434,27 @@ def make_Elt(norb , nelec):
 通过使用查找表，我们消除了 E 张量及与 E 张量相关的所有张量收缩。因此，我们得到了 HC 的优化实现：
 
 ```python
-def compute_hc(h1 , eri , fciwfn , norb , nelec_a , nelec_b):
-    Elt_a = make_Elt(norb , nelec_a)
-    Elt_b = make_Elt(norb , nelec_b)
+def compute_hc(h1, eri, fciwfn, norb, nelec_a, nelec_b):
+    Elt_a = make_Elt(norb, nelec_a)
+    Elt_b = make_Elt(norb, nelec_b)
     na = len(Elt_a)
     nb = len(Elt_b)
-    d = np.zeros((norb ,norb ,na ,nb))
-    for I , tab in enumerate (Elt_a):
-        for a ,i ,J , sign in tab:
-            d[a ,i ,J] += sign * fciwfn[I]
-    for I , tab in enumerate (Elt_b):
-        for a ,i ,J , sign in tab:
-            d[a ,i ,: ,J] += sign * fciwfn[: ,I]
-    v = absorb_h1(h1 , eri , nelec_a + nelec_b)
-    g = einsum( 'pqrs ,rsIJ ->pqIJ',v ,d )
+    d = np.zeros((norb,norb,na,nb))
+    for I, tab in enumerate (Elt_a):
+        for a,i ,J , sign in tab:
+            d[a,i,J] += sign * fciwfn[I]
+    for I, tab in enumerate (Elt_b):
+        for a,i ,J , sign in tab:
+            d[a,i,:,J] += sign * fciwfn[:,I]
+    v = absorb_h1(h1, eri, nelec_a + nelec_b)
+    g = einsum( 'pqrs,rsIJ->pqIJ',v ,d )
     sigma = np.zeros_like(fciwfn)
-    for I , tab in enumerate (Elt_a):
-        for a ,i ,J , sign in tab:
-            sigma[J] += sign * g[a ,i ,I]
-    for I , tab in enumerate (Elt_b):
-        for a ,i ,J , sign in tab:
-            sigma[: ,J] += sign * g[a ,i ,: ,I]
+    for I, tab in enumerate (Elt_a):
+        for a,i ,J , sign in tab:
+            sigma[J] += sign * g[a,i,I]
+    for I, tab in enumerate (Elt_b):
+        for a,i ,J , sign in tab:
+            sigma[:,J] += sign * g[a,i,:,I]
     return sigma
 ```
 在这个函数中，调用 make_Elt 是一个主要瓶颈。make_Elt 中最耗时的操作包括确定 aˆpaqˆ 的符号，以及查找所得串的地址。为提高该函数的效率，我们采用以下优化：
@@ -468,14 +468,14 @@ def compute_hc(h1 , eri , fciwfn , norb , nelec_a , nelec_b):
 def as_bin(occupied_orbitals):
  binstr = 0
  for i in occupied_orbitals:
-     binstr |= (1 < <i )
+     binstr |= (1 <<i )
  return binstr
-def make_Elt(norb , nelec):
- ' ' 'The lookup table for non -zero elements of E tensor' ' '
- strings = make_strings(norb , nelec)
- strings_address = {as_bin(s): i for i ,s in enumerate (strings)}
+def make_Elt(norb, nelec):
+ '''The lookup table for non-zero elements of E tensor'''
+ strings = make_strings(norb, nelec)
+ strings_address = {as_bin(s): i for i,s in enumerate (strings)}
  E l t=[ ]
- for k , binI in enumerate (bin_strings):
+ for k, binI in enumerate (bin_strings):
      table_k = []
      occs = []
      uoccs = []
@@ -483,18 +483,18 @@ def make_Elt(norb , nelec):
      sign = 1
      for i in reversed (range(norb)):
          sign_cache.append(sign)
-         if (1 < < i) & binI:
+         if (1 << i) & binI:
              occs.append(i)
              sign = -sign
          else:
              uoccs.append(i)
-     sign_cache = sign_cache[:: -1]
-     occs = occs[:: -1]
-     uoccs = uoccs[:: -1]
+     sign_cache = sign_cache[::-1]
+     occs = occs[::-1]
+     uoccs = uoccs[::-1]
      for p in occs:
-         table_k.append([p ,p ,k , 1])
-     for q ,p in product(occs , uoccs):
-         binJ = binI ^ (1 < <q )^( 1< <p )
+         table_k.append([p,p ,k , 1])
+     for q,p in product(occs , uoccs):
+         binJ = binI ^ (1 <<q )^( 1< <p )
          if p>q :
 ```
 
@@ -502,9 +502,9 @@ def make_Elt(norb , nelec):
                 sign = sign_cache[p] * sign_cache[q]
             else:
                 sign = -sign_cache[p] * sign_cache[q]
-            table_k.append([p ,q , strings_address[binJ] , sign])
+            table_k.append([p,q , strings_address[binJ], sign])
         Elt.append(table_k)
-    return np.array(Elt , dtype= int)
+    return np.array(Elt, dtype= int)
 ```
 
 ## 14.6 优化内存效率
@@ -516,7 +516,7 @@ def make_Elt(norb , nelec):
 为减少内存使用，我们应当分块处理 d 张量和 g 张量。在此算法中，必须小心处理 Elt 查找表提供的地址，因为它可能超出分块后的 d 张量边界。例如，在语句
 
 ```text
-d[a ,i ,J] += sign * fciwfn[I]
+d[a,i,J] += sign * fciwfn[I]
 ```
 中，任意索引 J 很可能不位于 d 张量当前的子块内。
 由于 E 张量具有置换对称性：
@@ -528,61 +528,61 @@ d[a ,i ,J] += sign * fciwfn[I]
 语句
 
 ```text
-d[a ,i ,J] += sign * fciwfn[I]
+d[a,i,J] += sign * fciwfn[I]
 ```
 与语句
 
 ```text
-d[i ,a ,I] += sign * fciwfn[J]
+d[i,a,I] += sign * fciwfn[J]
 ```
 将产生相同的中间张量 d。因此，我们可以将 compute_hc 函数改成分块式实现：
 
 ```python
 @numba.njit
-def _compute_hc(v , fciwfn , norb , Elt , blocksize=60):
-    Elt_a , Elt_b = Elt
-    na , nb = fciwfn.shape
+def _compute_hc(v, fciwfn, norb, Elt, blocksize=60):
+    Elt_a, Elt_b = Elt
+    na, nb = fciwfn.shape
 ```
 
 ```python
     sigma = np.zeros_like(fciwfn)
-    for Ka0 in range (0 ,n a , blocksize):
-        ma = min(na - Ka0 , blocksize)
+    for Ka0 in range (0,n a, blocksize):
+        ma = min(na - Ka0, blocksize)
         Ka1 = Ka0 + ma
-        for Kb0 in range (0 ,n b , blocksize):
-            mb = min(nb - Kb0 , blocksize)
+        for Kb0 in range (0,n b, blocksize):
+            mb = min(nb - Kb0, blocksize)
             K b 1=K b 0+m b
-            d = np.zeros((norb ,norb ,ma ,mb))
-            for I , tab in enumerate (Elt_a[Ka0:Ka1]):
-                for a ,i ,J , sign in tab:
+            d = np.zeros((norb,norb,ma,mb))
+            for I, tab in enumerate (Elt_a[Ka0:Ka1]):
+                for a,i ,J , sign in tab:
                     for K in range (mb):
-                        d[i ,a ,I ,K] += sign * fciwfn[J ,Kb0+K]
-            for I , tab in enumerate (Elt_b[Kb0:Kb1]):
-                for a ,i ,J , sign in tab:
+                        d[i,a,I,K] += sign * fciwfn[J,Kb0+K]
+            for I, tab in enumerate (Elt_b[Kb0:Kb1]):
+                for a,i ,J , sign in tab:
                     for K in range (ma):
-                        d[i ,a ,K ,I] += sign * fciwfn[Ka0+K ,J]
-            g = v.dot(d.reshape(norb **2 , -1)).reshape(norb ,norb ,ma ,mb)
-            for I , tab in enumerate (Elt_a[Ka0:Ka1]):
-                for a ,i ,J , sign in tab:
+                        d[i,a,K,I] += sign * fciwfn[Ka0+K,J]
+            g = v.dot(d.reshape(norb **2,-1)).reshape(norb,norb,ma,mb)
+            for I, tab in enumerate (Elt_a[Ka0:Ka1]):
+                for a,i ,J , sign in tab:
                     for K in range (mb):
-                        sigma[J ,Kb0+K] += sign * g[a ,i ,I ,K]
-            for I , tab in enumerate (Elt_b[Kb0:Kb1]):
-                for a ,i ,J , sign in tab:
+                        sigma[J,Kb0+K] += sign * g[a,i,I,K]
+            for I, tab in enumerate (Elt_b[Kb0:Kb1]):
+                for a,i ,J , sign in tab:
                     for K in range (ma):
-                        sigma[Ka0+K ,J] += sign * g[a ,i ,K ,I]
+                        sigma[Ka0+K,J] += sign * g[a,i,K,I]
     return sigma
-def compute_hc(h1 , eri , fciwfn , norb , nelec_a , nelec_b , blocksize=60):
-    Elt_a = make_Elt(norb , nelec_a)
-    Elt_b = make_Elt(norb , nelec_b)
-    v = absorb_h1(h1 , eri , nelec_a + nelec_b).reshape(norb **2 , -1)
-    return _compute_hc(v , fciwfn , norb , (Elt_a , Elt_b), blocksize)
+def compute_hc(h1, eri, fciwfn, norb, nelec_a, nelec_b, blocksize=60):
+    Elt_a = make_Elt(norb, nelec_a)
+    Elt_b = make_Elt(norb, nelec_b)
+    v = absorb_h1(h1, eri, nelec_a + nelec_b).reshape(norb **2,-1)
+    return _compute_hc(v, fciwfn, norb, (Elt_a, Elt_b), blocksize)
 ```
 对于分块计算算法，这里出现了一个新问题：应当如何选择块大小？不同的块大小各有优势：
 
 - 较大的块可以减少 Python 代码中各种操作带来的开销，并提高矩阵乘法的效率
 
 ```text
-   g = v.dot(d.reshape(norb**2 , -1))
+   g = v.dot(d.reshape(norb**2,-1))
 ```
 
 - 较小的块有利于内存管理。访问较小的数组发生缺页的可能性更低。
@@ -593,25 +593,25 @@ compute_hc 函数的另一个问题是在循环内部使用 np.zeros 函数创�
 
 ```python
 @numba.njit
-def _compute_hc(v , fciwfn , norb , Elt , blocksize=60):
-    Elt_a , Elt_b = Elt
-    na , nb = fciwfn.shape
+def _compute_hc(v, fciwfn, norb, Elt, blocksize=60):
+    Elt_a, Elt_b = Elt
+    na, nb = fciwfn.shape
     sigma = np.zeros_like(fciwfn)
     d_buf = np.empty(norb **2*blocksize**2)
     g_buf = np.empty(norb **2*blocksize**2)
-    for Ka0 in range (0 ,n a , blocksize):
-        ma = min(na - Ka0 , blocksize)
+    for Ka0 in range (0,n a, blocksize):
+        ma = min(na - Ka0, blocksize)
         Ka1 = Ka0 + ma
-        for Kb0 in range (0 ,n b , blocksize):
-            mb = min(nb - Kb0 , blocksize)
+        for Kb0 in range (0,n b, blocksize):
+            mb = min(nb - Kb0, blocksize)
             K b 1=K b 0+m b
-            d = d_buf[:norb *norb*ma*mb].reshape(norb ,norb ,ma ,mb)
+            d = d_buf[:norb *norb*ma*mb].reshape(norb,norb,ma,mb)
             d[:] = 0.
             ...
-            g = g_buf[:norb *norb*ma*mb].reshape(norb*norb ,ma*mb)
-            g = np.dot(v , d.reshape(norb **2 , -1), out=g)
-            g = g.reshape(norb ,norb ,ma ,mb)
-            d_buf , g_buf = g_buf , d_buf
+            g = g_buf[:norb *norb*ma*mb].reshape(norb*norb,ma*mb)
+            g = np.dot(v, d.reshape(norb **2,-1), out=g)
+            g = g.reshape(norb,norb,ma,mb)
+            d_buf, g_buf = g_buf, d_buf
             ...
 ```
 
@@ -640,11 +640,11 @@ np.zeros 版本的性能分析输出如下：
 ```bash
 $ perf python fci_zeros_allocator.py
 ...
-8 ,681 ,115 page   -faults # 0.245 M/sec
-109 ,270 ,271 ,406 cycles # 3.083 GHz
-187 ,988 ,136 ,856 instructions # 1.72 insn per cycle
-11 ,589 ,167 ,229 branches # 326.946 M/sec
-97 ,273 ,047 branch   -misses # 0.84% of all
+8,681,115 page -faults # 0.245 M/sec
+109,270,271,406 cycles # 3.083 GHz
+187,988,136,856 instructions # 1.72 insn per cycle
+11,589,167,229 branches # 326.946 M/sec
+97,273,047 branch -misses # 0.84% of all
                         branches
       35.466817095 seconds time elapsed
       25.798432000 seconds user
@@ -655,11 +655,11 @@ $ perf python fci_zeros_allocator.py
 ```bash
 $ perf python fci_empty_allocator.py
 ...
-62 ,376 page    -faults # 0.003 M/sec
-65 ,411 ,436 ,911 cycles # 3.065 GHz
-153 ,148 ,554 ,394 instructions # 2.34 insn per cycle
-5 ,683 ,433 ,297 branches # 266.341 M/sec
-69 ,155 ,915 branch   -misses # 1.22% of all
+62,376 page -faults # 0.003 M/sec
+65,411,436,911 cycles # 3.065 GHz
+153,148,554,394 instructions # 2.34 insn per cycle
+5,683,433,297 branches # 266.341 M/sec
+69,155,915 branch -misses # 1.22% of all
     branches
       21.360130211 seconds time elapsed
       21.199824000 seconds user
@@ -689,12 +689,12 @@ $ perf python fci_empty_allocator.py
 第 14.6 节实现的代码中，外层循环很难并行化，例如循环
 
 ```text
-for Kb0 in range(0 , nb , blocksize)
+for Kb0 in range(0, nb, blocksize)
 ```
 或者
 
 ```text
-for Ka0 in range(0 , na , blocksize)
+for Ka0 in range(0, na, blocksize)
 ```
 这是因为在这些循环内部调用的 np.dot 函数也可能创建线程，从而导致嵌套线程。嵌套线程可能使 CPU 资源超额使用，并大幅增加上下文切换的开销。
 
@@ -706,19 +706,19 @@ for Ka0 in range(0 , na , blocksize)
 对构造 d 张量和分配 g 张量的操作进行自动线程并行化面临不同的挑战。困难在于，不同线程在某些操作中可能访问相同的内存地址。例如，在以下构造 d 张量的代码中，将索引 I 并行化可能导致多个线程访问 d 张量的最后一个索引。
 
 ```text
-for I , tab in enumerate (Elt_b[Kb0:Kb1]):
-    for a ,i ,J , sign in tab:
+for I, tab in enumerate (Elt_b[Kb0:Kb1]):
+    for a,i ,J , sign in tab:
         for K in range (ma):
-            d[i ,a ,K ,I] += sign * fciwfn[Ka0+K ,J]
+            d[i,a,K,I] += sign * fciwfn[Ka0+K,J]
 ```
 即使没有竞争条件，通过不同处理器访问连续的内存地址也可能导致不同 CPU 核心之间发生缓存伪共享争用。如第 9 章所述，这会导致很高的缓存一致性开销。
 为了并行化 d 和 g 张量的代码，我们可以重构这两个张量，以避免低效的内存访问模式。例如，通过交换轨道索引和 String 索引（将布局从 d[i,a,K,I] 改为 d[K,I,i,a]），我们可以如下构造 d 张量：
 
 ```text
-for I , tab in enumerate (Elt_b[Kb0:Kb1]):
-    for a ,i ,J , sign in tab:
+for I, tab in enumerate (Elt_b[Kb0:Kb1]):
+    for a,i ,J , sign in tab:
         for K in range (ma):
-d[K ,I ,i ,a] += sign * fciwfn[Ka0+K ,J] # (1)
+d[K,I,i,a] += sign * fciwfn[Ka0+K,J] # (1)
 ```
 这一修改将减少不同线程之间出现内存一致性问题的情况。然而，这一改变可能略微降低 CPU 缓存的效用，因为第 (1) 行的赋值涉及非连续的数据访问。
 可以通过自动线程并行化进一步优化 compute_hc 函数的效率。利用 OpenMP 提供的临界区和线程同步等功能，可以解决竞争条件并并行化更多循环。这减少了程序中串行执行的部分，从而提高并行性能。然而，这些功能需要通过 OpenMP 的 C/C++ 层 API 使用。FCI 代码必须用 C/C++ 编写，然后使用第 8 章介绍的 Python/C 接口方法导入 Python。这里省略用 C/C++ 编写的代码细节。
@@ -726,56 +726,56 @@ d[K ,I ,i ,a] += sign * fciwfn[Ka0+K ,J] # (1)
 
 ```python
 @numba.njit(nogil=True)
-def build_d(task , fciwfn , norb , Elt):
-    Ka0 , Ka1 , Kb0 , Kb1 = task
+def build_d(task, fciwfn, norb, Elt):
+    Ka0, Ka1, Kb0, Kb1 = task
     ma = Ka1 - Ka0
     mb = Kb1 - Kb0
-    Elt_a , Elt_b = Elt
-    d = np.zeros((norb , norb ,m a , mb))
-    for I , tab in enumerate (Elt_a[Ka0:Ka1]):
-        for a ,i ,J , sign in tab:
+    Elt_a, Elt_b = Elt
+    d = np.zeros((norb, norb,m a, mb))
+    for I, tab in enumerate (Elt_a[Ka0:Ka1]):
+        for a,i ,J , sign in tab:
             for K in range (mb):
-                d[i ,a ,I ,K] += sign * fciwfn[J ,Kb0+K]
-    for I , tab in enumerate (Elt_b[Kb0:Kb1]):
-        for a ,i ,J , sign in tab:
+                d[i,a,I,K] += sign * fciwfn[J,Kb0+K]
+    for I, tab in enumerate (Elt_b[Kb0:Kb1]):
+        for a,i ,J , sign in tab:
             for K in range (ma):
-                d[i ,a ,K ,I] += sign * fciwfn[Ka0+K ,J]
+                d[i,a,K,I] += sign * fciwfn[Ka0+K,J]
 ```
 
 ```python
-return d , task # (1)
+return d, task # (1)
 @numba.njit(nogil=True)
-def dot_v(d_task , v):
-    d , task = d_task
-    norb ,m a , mb = d.shape[1:]
-    g = v.reshape(norb **2 , -1).dot(d.reshape(norb**2 ,ma*mb))
-return g.reshape(norb ,norb ,ma ,mb), task # (2)
-def assemble_g(g_task , norb , Elt , sigma_pool):
+def dot_v(d_task, v):
+    d, task = d_task
+    norb,m a, mb = d.shape[1:]
+    g = v.reshape(norb **2,-1).dot(d.reshape(norb**2,ma*mb))
+return g.reshape(norb,norb,ma,mb), task # (2)
+def assemble_g(g_task, norb, Elt, sigma_pool):
     thread_id = threading.get_ident()
     if thread_id in sigma_pool:
         sigma = sigma_pool[thread_id]
     else:
-        Elt_a , Elt_b = Elt
+        Elt_a, Elt_b = Elt
         na = len(Elt_a)
         nb = len(Elt_b)
-        sigma = np.zeros((na , nb))
+        sigma = np.zeros((na, nb))
 sigma_pool[thread_id] = sigma # (3)
-    _assemble_g(g_task , norb , Elt , sigma)
+    _assemble_g(g_task, norb, Elt, sigma)
 @numba.njit(nogil=True)
-def _assemble_g(g_task , norb , Elt , sigma):
-    g , task = g_task
-    Ka0 , Ka1 , Kb0 , Kb1 = task
+def _assemble_g(g_task, norb, Elt, sigma):
+    g, task = g_task
+    Ka0, Ka1, Kb0, Kb1 = task
     ma = Ka1 - Ka0
     mb = Kb1 - Kb0
-    Elt_a , Elt_b = Elt
-    for I , tab in enumerate (Elt_a[Ka0:Ka1]):
-        for a ,i ,J , sign in tab:
+    Elt_a, Elt_b = Elt
+    for I, tab in enumerate (Elt_a[Ka0:Ka1]):
+        for a,i ,J , sign in tab:
             for K in range (mb):
-                sigma[J ,Kb0+K] += sign * g[a ,i ,I ,K]
-    for I , tab in enumerate (Elt_b[Kb0:Kb1]):
-        for a ,i ,J , sign in tab:
+                sigma[J,Kb0+K] += sign * g[a,i,I,K]
+    for I, tab in enumerate (Elt_b[Kb0:Kb1]):
+        for a,i ,J , sign in tab:
             for K in range (ma):
-                sigma[Ka0+K ,J] += sign * g[a ,i ,K ,I]
+                sigma[Ka0+K,J] += sign * g[a,i,K,I]
 ```
 build_d、dot_v 和 assemble_g 操作需要在流水线中按顺序执行。每个操作的输出作为下一个操作的输入。因此，除了将必要的张量作为每个操作的结果返回之外，我们还输出当前作业的任务 ID，如第 (1) 行和第 (2) 行所示。该任务 ID 用于确定后续操作要处理哪个任务。
 assemble_g 函数需要访问输出变量 sigma。为了避免线程之间的竞争条件，给每个工作线程分配一个私有的 sigma 对象
@@ -784,32 +784,32 @@ assemble_g 函数需要访问输出变量 sigma。为了避免线程之间的竞
 优化后的 compute_hc 函数采用完全不同的方式实现，如下所示：
 
 ```python
-def create_tasks(na ,n b , blocksize):
-    for Ka0 in range (0 ,n a , blocksize):
-        Ka1 = min(na , Ka0 + blocksize)
-        for Kb0 in range (0 ,n b , blocksize):
-            Kb1 = min(nb , Kb0 + blocksize)
-            yield Ka0 , Ka1 , Kb0 , Kb1
-def compute_hc(h1 , eri , fciwfn , norb , nelec_a , nelec_b , blocksize=40 , threads=2):
+def create_tasks(na,n b, blocksize):
+    for Ka0 in range (0,n a, blocksize):
+        Ka1 = min(na, Ka0 + blocksize)
+        for Kb0 in range (0,n b, blocksize):
+            Kb1 = min(nb, Kb0 + blocksize)
+            yield Ka0, Ka1, Kb0, Kb1
+def compute_hc(h1, eri, fciwfn, norb, nelec_a, nelec_b, blocksize=40, threads=2):
     from threadpoolctl import ThreadpoolController
-    Elt_a = make_Elt(norb , nelec_a)
-    Elt_b = make_Elt(norb , nelec_b)
-    Elt = (Elt_a , Elt_b)
-    v = merge_h1_eri(h1 , eri , nelec_a + nelec_b).reshape(norb **2 , -1)
+    Elt_a = make_Elt(norb, nelec_a)
+    Elt_b = make_Elt(norb, nelec_b)
+    Elt = (Elt_a, Elt_b)
+    v = merge_h1_eri(h1, eri, nelec_a + nelec_b).reshape(norb **2,-1)
     na = len(Elt_a)
     nb = len(Elt_b)
-    tasks = create_tasks(na ,n b , blocksize)
+    tasks = create_tasks(na,n b, blocksize)
     sigma_pool = {}
 blas_cpus = (threads+1)//2 # (1)
     remaining_cores = threads - blas_cores
-    with ThreadpoolController().limit(limits=blas_cpus , user_api= 'blas'):
+    with ThreadpoolController().limit(limits=blas_cpus, user_api= 'blas'):
 with ThreadPoolExecutor(max_workers=remaining_cpus) as q1: # (2)
 with ThreadPoolExecutor(max_workers=1) as q2: # (3)
                 sigmas = pipeline([
-(q1 , build_d , (fciwfn , norb , Elt)), # (4)
-(q2 , dot_v ,( v ,)), # (5)
-(q1 , assemble_g , (norb , Elt , sigma_pool)), # (6)
-                ] , tasks , dynamic_scheduler)
+(q1, build_d, (fciwfn, norb, Elt)), # (4)
+(q2, dot_v,( v,)), # (5)
+(q1, assemble_g, (norb, Elt, sigma_pool)), # (6)
+                ], tasks, dynamic_scheduler)
     return sum (sigma_pool.values())
 ```
 执行 build_d、dot_v 和 assemble_g 操作的计算成本各不相同。如何为每个操作合理分配资源，并在各个操作和任务之间实现

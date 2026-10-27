@@ -83,22 +83,22 @@ scipy.sparse.csr_array(np.eye(4))
 或从另一个稀疏矩阵构造，
 
 ```text
-scipy.sparse.csr_array(scipy.sparse.eye(4 , format='coo'))
+scipy.sparse.csr_array(scipy.sparse.eye(4, format='coo'))
 ```
 给定数据列表及其行索引和列索引，我们可以如下创建稀疏矩阵：
 
 ```python
 row_indices = np.arange(4)
 col_indices = np.arange(4)
-scipy.sparse.csr_array(np.ones(4), (row_indices , col_indices))
+scipy.sparse.csr_array(np.ones(4), (row_indices, col_indices))
 ```
 另一种方法是直接指定CSR的indices和indptr以及data数组，从而直接创建CSR稀疏数组：
 
 ```python
 data = np.ones(4)
-indices = np.array([0 ,1 ,2 ,3])
-indptr = np.array([0 ,1 ,2 ,3 ,4])
-scipy.sparse.csr_array((data , indices , indptr), shape=(4 , 4))
+indices = np.array([0,1,2,3])
+indptr = np.array([0,1,2,3,4])
+scipy.sparse.csr_array((data, indices, indptr), shape=(4, 4))
 ```
 不同存储格式之间的转换可以通过两种方法完成。一种是使用每个稀疏矩阵类的.to{format}()方法。另一种是使用前面讨论过的类实例化函数{format}_array或{format}_matrix。例如，下面的代码片段展示了从COO格式到其他格式的转换。
 
@@ -109,7 +109,7 @@ a_coo.toarray()
 # convert to CSC format
 a_coo.tocsc()
 # convert to BSR format
-a_coo.tobsr(blocksize=(2 ,2))
+a_coo.tobsr(blocksize=(2,2))
 ```
 
 ![](../assets/tables/table-4-1.png)
@@ -121,39 +121,39 @@ a_coo.tobsr(blocksize=(2 ,2))
 
 ```python
 a = scipy.sparse.coo_array(np.eye(3))
-for row , col , value in zip (a.row , a.col , a.data):
-    print(f'({row} , {col}): {value}' )
+for row, col, value in zip (a.row, a.col, a.data):
+    print(f'({row}, {col}): {value}' )
 ```
 CSR的非零元素可以通过.indptr、.indices和.data属性访问：
 
 ```python
 for row in range (csr_matrix.shape[0]):
-    for ptr in range (csr_matrix.indptr[row] , csr_matrix.indptr[row+1]):
+    for ptr in range (csr_matrix.indptr[row], csr_matrix.indptr[row+1]):
         col = csr_matrix.indices[ptr]
         value = csr_matrix.data[ptr]
-        print(f'({row} , {col}): {value}' )
+        print(f'({row}, {col}): {value}' )
 ```
 对于CSC，可以使用类似的代码：
 
 ```python
 for col in range (csc_matrix.shape[1]):
-    for ptr in range (csc_matrix.indptr[col] , csc_matrix.indptr[col + 1]):
+    for ptr in range (csc_matrix.indptr[col], csc_matrix.indptr[col + 1]):
         row = csc_matrix.indices[ptr]
         value = csc_matrix.data[ptr]
-        print(f'({row} , {col}): {value}' )
+        print(f'({row}, {col}): {value}' )
 ```
 LIL的非零元素由.rows和.data属性管理，可以这样访问：
 
 ```python
 for row in range (lil_matrix.shape[0]):
-    for col , value in zip (lil_matrix.rows[row] , lil_matrix.data[row]):
-        print(f'({row} , {col}): {value}' )
+    for col, value in zip (lil_matrix.rows[row], lil_matrix.data[row]):
+        print(f'({row}, {col}): {value}' )
 ```
 对于DOK，遍历非零元素类似于遍历字典：
 
 ```python
-for (row , col), value in dok_matrix.items():
-    print(f'({row} , {col}): {value}' )
+for (row, col), value in dok_matrix.items():
+    print(f'({row}, {col}): {value}' )
 ```
 
 ### 4.2.2 稀疏矩阵的代数
@@ -203,24 +203,24 @@ dx a
 使用这个公式，可以直接推导出计算乘积H ψ的matvec函数。然后我们利用LinearOperator类注册matvec函数，得到一个与scipy.sparse.linalg函数兼容的对象。随后可以使用迭代稀疏矩阵特征值求解器计算量子体系的能量及其对应的状态。
 
 ```python
-def harmonic_oscillator(m ,k , ngrids , box_size):
-    ' ' 'H = 1/2m p^2 + 1/2 k x^2' ' '
-    x = np.linspace( -box_size , box_size , ngrids)
+def harmonic_oscillator(m,k , ngrids, box_size):
+    '''H = 1/2m p^2 + 1/2 k x^2'''
+    x = np.linspace(-box_size, box_size, ngrids)
     dx = x[1] - x[0]
     def matvec(psi):
         d2 = psi * -2
-        d2[: -1] += psi[1:]
-        d2[1:] += psi[: -1]
+        d2[:-1] += psi[1:]
+        d2[1:] += psi[:-1]
         return -1/(2*m*dx**2) * d2 + k/2 * x**2 * psi
-    return scipy.sparse.linalg.LinearOperator((ngrids , ngrids), matvec=
+    return scipy.sparse.linalg.LinearOperator((ngrids, ngrids), matvec=
     matvec)
 if __name__ == '__main__':
     m = 0.5
     k = 0.5
     ngrids = 1000
     box_size = 10.
-    A = harmonic_oscillator(m ,k , ngrids , box_size)
-    e , psi = scipy.sparse.linalg.eigsh(A , which= 'SM')
+    A = harmonic_oscillator(m,k , ngrids, box_size)
+    e, psi = scipy.sparse.linalg.eigsh(A, which= 'SM')
     print(e)
 ```
 
@@ -239,43 +239,43 @@ n − 1
 
 ```python
 def cov(x):
-    m , n = x.shape
-    c = np.zeros((m , m))
-    for i ,x i in enumerate (x):
-        for j ,x j in enumerate (x):
-            c[i ,j] = np.dot(xi - xi.mean(), xj - xj.mean()) / (n - 1)
+    m, n = x.shape
+    c = np.zeros((m, m))
+    for i,x i in enumerate (x):
+        for j,x j in enumerate (x):
+            c[i,j] = np.dot(xi - xi.mean(), xj - xj.mean()) / (n - 1)
     return c
 ```
 或者，可以使用张量缩并代码实现相同功能：
 
 ```python
 def cov(x):
-    m , n = x.shape
-    dx = x - x.mean(axis=1)[: ,None]
-    return np.einsum('ik ,jk ->ij',d x ,d x )/( n-1 )
+    m, n = x.shape
+    dx = x - x.mean(axis=1)[:,None]
+    return np.einsum('ik,jk->ij',d x,d x )/( n-1 )
 ```
 在这个例子中，我们使用NumPy的np.einsum函数执行张量缩并。在np.einsum中，输入操作数和输出张量的索引用字母标记。缩并模式由这些字母组成的字符串描述。在这个描述字符串中，输入和输出由符号’->’分隔。出现在输入中但不出现在输出中的重复字母表示按照爱因斯坦求和约定对这些索引求和。当有多个输入操作数时，它们的索引用逗号分隔。
 为什么我们更喜欢在科学计算问题中使用张量缩并？除了代码可读性方面的优势，张量缩并还提供更好的性能，因为它可以利用专门针对张量缩并运算优化的库。协方差矩阵计算就是一个例子。einsum版本比使用for循环的版本快一个数量级。
 请注意，np.einsum的默认实现并非性能最优。例如，执行矩阵乘法
 
 ```python
-c = np.einsum( 'ij ,jk ->ik ' , a , b)
+c = np.einsum('ij,jk->ik', a, b)
 ```
 时，np.einsum明显慢于np.dot函数。后者利用底层BLAS库提供的矩阵乘法例程实现更快的性能。
 可以通过指定关键字参数optimize=True来改善np.einsum的性能。使用这个选项时，einsum利用tensordot函数将einsum模式转换为矩阵乘法。此外，当缩并涉及多个张量时，这个选项会启用对最高效缩并路径的搜索。例如，考虑下面的张量缩并，其中数组a和数组b的形状均为(n,n)，数组c的形状为(n, n)。
 
 ```python
-d = np.einsum( 'ij ,jk ,kl ->il',a ,b ,c )
+d = np.einsum( 'ij,jk,kl->il',a ,b ,c )
 ```
 np.einsum默认在单次运算中执行三个张量的缩并，其复杂度为O(n)。这无疑是不利的。如果我们将缩并过程分解为
 
 ```python
-d = np.einsum( 'ik ,kl ->il', np.einsum('ij ,jk ->ik',a , b), c)
+d = np.einsum( 'ik,kl->il', np.einsum('ij,jk->ik',a , b), c)
 ```
 这两步张量缩并需要2n n次浮点运算。如果将缩并顺序改为
 
 ```python
-d = np.einsum( 'ij ,jl ->il',a , np.einsum('jk ,kl ->jl',b , c))
+d = np.einsum( 'ij,jl->il',a , np.einsum('jk,kl->jl',b , c))
 ```
 浮点运算总次数变为n n。显然，交换后的缩并顺序更高效。启用optimize=True选项时，缩并顺序由np.einsum_path函数优化。np.einsum_path可以分析张量缩并中的浮点运算，并建议使浮点运算次数最少的最优缩并路径。
 使用np.einsum时，是否建议始终启用optimize选项？
@@ -292,42 +292,42 @@ optimize=True只会调用标准的np.einsum实
 例如：
 
 ```python
-   I n[ 1 ] :a=n p .random.rand(100 , 100 , 100)
-           b = np.random.rand(100 , 100 , 100)
-   In [2]: %time c = np.einsum( 'kij ,ijp ->ijkp',a ,b )
-   CPU times: user 175 ms , sys: 128 ms , total: 303 ms
+   I n[ 1 ] :a=n p .random.rand(100, 100, 100)
+           b = np.random.rand(100, 100, 100)
+   In [2]: %time c = np.einsum( 'kij,ijp->ijkp',a ,b )
+   CPU times: user 175 ms, sys: 128 ms, total: 303 ms
    Wall time: 302 ms
-   In [3]: %time c = np.einsum( 'kij ,ijp ->ijkp',a ,b , optimize=True)
-   CPU times: user 175 ms , sys: 113 ms , total: 288 ms
+   In [3]: %time c = np.einsum( 'kij,ijp->ijkp',a ,b , optimize=True)
+   CPU times: user 175 ms, sys: 113 ms, total: 288 ms
    Wall time: 287 ms
-   In [4]: %time c = a.transpose(1 ,2 ,0)[: ,: ,: ,None] * b[: ,None ,: ,:]
-   CPU times: user 101 ms , sys: 133 ms , total: 234 ms
+   In [4]: %time c = a.transpose(1,2,0)[:,:,:,None] * b[:,None,:,:]
+   CPU times: user 101 ms, sys: 133 ms, total: 234 ms
    Wall time: 233 ms
 ```
 
 - 问题规模。通常，np.einsum_path可能引入约100毫秒的开销。当问题规模相对较小时，这种开销就不能再忽略。另一方面，对于大型张量缩并问题，确定运算受CPU限制还是受内存限制至关重要（这些概念的细节将在第 9 章探讨）。当张量缩并是内存受限问题时，即使可以将其转换为矩阵乘法，不使用optimize=True的原始np.einsum也可能达到更高效率。例如，
 
 ```python
-I n[ 5 ] :a=n p .random.rand(100 , 100)
-        b = np.random.rand(100 , 100)
-In [6]: %time c=np.einsum( 'ij ,kl ->ijkl',a ,b )
-CPU times: user 104 ms , sys: 125 ms , total: 229 ms
+I n[ 5 ] :a=n p .random.rand(100, 100)
+        b = np.random.rand(100, 100)
+In [6]: %time c=np.einsum( 'ij,kl->ijkl',a ,b )
+CPU times: user 104 ms, sys: 125 ms, total: 229 ms
 Wall time: 228 ms
-In [7]: %time c=np.einsum( 'ij ,kl ->ijkl',a ,b , optimize=True)
-CPU times: user 132 ms , sys: 100 ms , total: 232 ms
+In [7]: %time c=np.einsum( 'ij,kl->ijkl',a ,b , optimize=True)
+CPU times: user 132 ms, sys: 100 ms, total: 232 ms
 Wall time: 231 ms
 ```
 
 - 生成中间结果的开销。为了将einsum模式映射为矩阵乘法，tensordot执行一系列张量转置和形状调整运算。如第 2 章所述，这些转置和形状调整运算可能导致创建NumPy数组的副本。涉及大型张量时，创建张量副本可能引入显著开销，有时甚至可能占据计算成本的主要部分。例如，
 
 ```python
-I n[ 8 ] :a=n p .random.rand(500 , 500 , 500)
-        b = np.random.rand(500 ,3 , 500)
-In [9]: %time c=np.einsum( 'jki ,ipj ->kp',a ,b )
-CPU times: user 529 ms , sys: 0 ns , total: 529 ms
+I n[ 8 ] :a=n p .random.rand(500, 500, 500)
+        b = np.random.rand(500,3 , 500)
+In [9]: %time c=np.einsum( 'jki,ipj->kp',a ,b )
+CPU times: user 529 ms, sys: 0 ns, total: 529 ms
 Wall time: 528 ms
-In [10]: %time c=np.einsum( 'jki ,ipj ->kp',a ,b , optimize=True)
-CPU times: user 969 ms , sys: 115 ms , total: 1.08 s
+In [10]: %time c=np.einsum( 'jki,ipj->kp',a ,b , optimize=True)
+CPU times: user 969 ms, sys: 115 ms, total: 1.08 s
 Wall time: 1.08 s
 ```
 
@@ -371,7 +371,7 @@ In [1]: x = np.random.rand(10)
         x = scipy.fft.ifft(y)
         print(y.shape)
 Out[1]:
-(10 ,)
+(10,)
 ```
 
 ```python
@@ -380,7 +380,7 @@ In [2]: x = np.random.rand(10)
         x = scipy.fft.irfft(y)
         print(y.shape)
 Out[2]:
-(6 ,)
+(6,)
 In [3]: print(scipy.fft.rfftfreq(10))
 Out[3]:
 [0. 0.1 0.2 0.3 0.4 0.5]
@@ -389,9 +389,9 @@ Out[3]:
 scipy.fft模块的一个重要特性是能够使用多线程并行地对多个向量执行FFT。通过设置参数workers，我们可以分配多个线程执行SciPy FFT函数。
 
 ```python
-x = np.random.rand(2000 , 10)
-y = scipy.fft.fft(x , workers=4) # using 4 threads
-y = scipy.fft.fft(x , workers= -1) # using all available CPU cores
+x = np.random.rand(2000, 10)
+y = scipy.fft.fft(x, workers=4) # using 4 threads
+y = scipy.fft.fft(x, workers=-1) # using all available CPU cores
 ```
 由于并行化是在向量之间而不是在FFT维度内执行的，如果没有足够多的向量需要变换，使用多个worker就不会带来好处。
 你可能已经注意到，NumPy库也在numpy.fft模块中提供了FFT实现。scipy.fft和numpy.fft的功能几乎相同。然而，总体而言，scipy.fft模块比numpy.fft更有优势，原因如下：
@@ -412,13 +412,13 @@ Intel FFT是适用于X86硬件的高性能库。它利用矢量化和多核并�
 Intel FFT是Intel Math Kernel Library（MKL）的一个组件。在Python程序中，可以通过Python包mkl_fft访问Intel FFT函数。请注意，mkl_fft包只是MKL库的接口。它不包含MKL库本身，后者必须单独安装。在大多数X86平台上，可以使用pip命令在Python环境中安装Intel MKL核心库和FFT包装器
 
 ```bash
-$  pip install mkl_fft mkl mkl -service
+$ pip install mkl_fft mkl mkl -service
 ```
 Intel FFT库使用起来很直接。它不像FFTW那样需要复杂配置，例如创建或缓存计划（参见第 4.4.3 节）。此外，内存对齐并非强制要求，尽管对齐内存可以提高性能。mkl_fft.interfaces.scipy_fft模块遵循scipy.fft和numpy.fft的API。下面的代码示例说明如何使用兼容接口从SciPy和NumPy无缝过渡到mkl_fft。
 
 ```text
-y = scipy.fft.rfft(x , workers=4)
-y = mkl_fft.interfaces.scipy_fft.rfft(x , workers=4)
+y = scipy.fft.rfft(x, workers=4)
+y = mkl_fft.interfaces.scipy_fft.rfft(x, workers=4)
 y = numpy.fft.rfft(x)
 y = mkl_fft.interfaces.numpy_fft.rfft(x)
 ```
@@ -426,7 +426,7 @@ y = mkl_fft.interfaces.numpy_fft.rfft(x)
 
 ```text
 In [4]: with scipy.fft.set_backend(mkl_fft.interfaces.scipy_fft):
-            y = scipy.fft.fft(x , workers=8)
+            y = scipy.fft.fft(x, workers=8)
 ```
 在这个上下文中，调用scipy.fft模块中的函数时，实际上执行的是mkl_fft库中的FFT函数。
 
@@ -440,7 +440,7 @@ PyFFTW包提供两个主要接口，以简化在Python中使用FFTW：与scipy.f
 
 ```text
 In [5]: with scipy.fft.set_backend(pyfftw.interfaces.scipy_fft):
-         y = scipy.fft.fft(x , workers=8)
+         y = scipy.fft.fft(x, workers=8)
 ```
 然而，正如我们将在下一节的性能基准测试中看到的那样，通过标准接口不太可能获得性能优势。如果打算在应用中使用PyFFTW，建议使用PyFFTW的高级接口，以充分发挥FFTW的性能潜力。
 高级接口为FFTW运算提供更详细的定制，包括：
@@ -449,7 +449,7 @@ In [5]: with scipy.fft.set_backend(pyfftw.interfaces.scipy_fft):
 
 ```python
 # Preallocate array with aligned memory
-x = pyfftw.empty_aligned(shape , dtype=np.complex128)
+x = pyfftw.empty_aligned(shape, dtype=np.complex128)
 x[:] = np.random.random(shape)
 ```
 或者，可以使用
@@ -467,7 +467,7 @@ x = pyfftw.byte_align(x)
 或设置FFT函数的关键字参数planner_effort：
 
 ```text
-   pyfftw.interfaces.scipy_fft.fft(x , planner_effort= 'FFTW_MEASURE')
+   pyfftw.interfaces.scipy_fft.fft(x, planner_effort= 'FFTW_MEASURE')
 ```
 
 - 执行计划。FFTW规划器FFTW_MEASURE和FFTW_PATIENT在设置期间可能引入显著开销。如果FFT长度很大，这种开销可能远远超过FFT执行时间。因此，这些规划器适合反复执行同一类型FFT的程序。为确保规划器只初始化一次，应缓存生成的计划。在PyFFTW中可以通过执行以下命令启用此缓存：
@@ -478,7 +478,7 @@ x = pyfftw.byte_align(x)
 通过高级接口配置FFTW时，建议使用辅助函数pyfftw.builders.fft创建pyfftw.FFTW类的实例。这个实例包含计算所需的全部FFTW参数。我们可以调用这个实例来执行实际变换。
 
 ```text
-In [6]: fft_obj = pyfftw.builders.fft(x , threads=nproc)
+In [6]: fft_obj = pyfftw.builders.fft(x, threads=nproc)
         out = fft_obj()
 ```
 
@@ -497,9 +497,9 @@ numpy.fft缺少多线程并行能力。为了实现并行执行，我们利用Py
 
 ```python
 import threading
-def np_fft(fn ,x , nproc=8):
-    y = np.empty(x.shape , dtype=np.complex128)
-    block = (x.shape[0]+nproc -1) // nproc
+def np_fft(fn,x , nproc=8):
+    y = np.empty(x.shape, dtype=np.complex128)
+    block = (x.shape[0]+nproc-1) // nproc
     def _fft_priv(i):
 ```
 
@@ -508,11 +508,11 @@ def np_fft(fn ,x , nproc=8):
 **表 4.2** 大 FFT 长度下标准一维 fft 的性能基准。
 
 ```python
-i0 ,i 1=i * block , (i+1) * block
+i0,i 1=i * block , (i+1) * block
 y[i0:i1] = np.fft.fft(x[i0:i1])
 threads = []
 for i in range (nproc):
-t = threading.Thread(target=_fft_priv , args=(i ,))
+t = threading.Thread(target=_fft_priv, args=(i,))
 t.start()
 threads.append(t)
 [t.join() for t in threads]
@@ -520,9 +520,9 @@ return y
 import pyfftw
 pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
 pyfftw.interfaces.cache.enable()
-def fftw_warmup(x , nproc=8):
+def fftw_warmup(x, nproc=8):
 x = pyfftw.byte_align(x)
-fftw_obj = pyfftw.builders.fft(x , threads=nproc)
+fftw_obj = pyfftw.builders.fft(x, threads=nproc)
 fftw_obj()
 return fftw_obj
 ```
@@ -530,21 +530,21 @@ return fftw_obj
 
 ```python
 def naive_fft(x):
-    n = x.shape[ -1]
-    m = np.exp( -2j*np.pi*np.arange(n)[: ,None] * np.fft.fftfreq(n))
+    n = x.shape[-1]
+    m = np.exp(-2j*np.pi*np.arange(n)[:,None] * np.fft.fftfreq(n))
     return x.dot(m)
 def naive_rfft(x):
     assert x.dtype.kind != 'c'
-    n = x.shape[ -1]
-    m = np.exp( -2j*np.pi/n*np.arange(n)[: ,None] * np.fft.rfftfreq(n))
+    n = x.shape[-1]
+    m = np.exp(-2j*np.pi/n*np.arange(n)[:,None] * np.fft.rfftfreq(n))
     return x.dot(m.T)
 def naive_fft2(x):
-    n1 , n2 = x.shape[ -2:]
-    m1 = np.exp( -2j*np.pi/n*np.arange(n1)[: ,None] * np.fft.fftfreq(n1))
-    m2 = np.exp( -2j*np.pi/n*np.arange(n2)[: ,None] * np.fft.fftfreq(n2))
-    x1 = m1.T.dot(x.reshape( -1 ,n2).T)
-    y = m2.T.dot(x1.reshape( -1 ,n1).T)
-    return y.reshape(n1 ,n 2 , -1).transpose(2 ,0 ,1)
+    n1, n2 = x.shape[-2:]
+    m1 = np.exp(-2j*np.pi/n*np.arange(n1)[:,None] * np.fft.fftfreq(n1))
+    m2 = np.exp(-2j*np.pi/n*np.arange(n2)[:,None] * np.fft.fftfreq(n2))
+    x1 = m1.T.dot(x.reshape(-1,n2).T)
+    y = m2.T.dot(x1.reshape(-1,n1).T)
+    return y.reshape(n1,n 2, -1).transpose(2,0,1)
 ```
 在基准测试中，朴素DFT的计算时间随FFT长度N严格按N变化。这作为衡量其他FFT库性能的基准。性能基准测试结果总结于图 4.1和图 4.2。多线程并行效率显示于图 4.3。
 我们可以观察到，相对于朴素DFT的加速比在这些FFT库之间有很大差异。某些FFT长度的性能明显差于相邻数据点。这些FFT长度主要对应素数。FFT库通常没有针对这些中等大小素数的特殊优化。在这些数据点上，FFT库甚至比朴素DFT更慢。

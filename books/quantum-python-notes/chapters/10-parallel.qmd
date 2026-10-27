@@ -35,20 +35,20 @@ threading 模块的核心功能是 threading.Thread 类，它负责创建新线�
 下面以库仑矩阵（Coulomb matrix）计算的并行化为例。这是量子化学中常见的计算任务，我们将在第 13 章介绍更多相关理论背景。这个问题本质上是四指标张量 eri（电子排斥积分的缩写）与方阵 dm（表示密度矩阵）之间的张量收缩。使用 einsum 函数，我们可以把库仑矩阵的计算程序简化为以下 get_j 函数。
 
 ```python
-def get_j(eri , dm):
-    return np.einsum('ijkl ,ji ->kl', eri ,d m )
+def get_j(eri, dm):
+    return np.einsum('ijkl,ji->kl', eri,d m )
 ```
 在实际应用中，eri 张量通常过大，无法一次性计算并存储在内存中。它的元素往往是在需要时即时计算的。为了演示并行计算技术，我们将省略 eri 张量计算的细节，并使用占位函数 compute_eri 模拟 eri 张量子块的实时计算。以下是 get_j 函数的一种并行实现，它采用多线程来分配 eri 张量第三个指标的工作负载：
 
 ```python
-def compute_eri(k , n):
+def compute_eri(k, n):
     # Mimic the computation of ERIs
     np.random.seed(k)
-    return np.random.rand(n ,n ,n)
-output = np.zeros((n ,n))
-def get_j_task(k , dm):
-    output[k] += np.einsum( 'jil ,ij ->l', compute_eri(k , n), dm)
-threads = [threading.Thread(target=get_j_task , args=(k ,d m ) )
+    return np.random.rand(n,n,n)
+output = np.zeros((n,n))
+def get_j_task(k, dm):
+    output[k] += np.einsum( 'jil,ij->l', compute_eri(k, n), dm)
+threads = [threading.Thread(target=get_j_task, args=(k,d m ) )
            for k in range (n)]
 for t in threads:
     t.start()
@@ -82,9 +82,9 @@ I/O 操作或调用外部 C 库时。因此，多线程无法促进字节码的�
 - 一致性。缓存一致性（cache coherence）可能成为多线程程序的瓶颈。请看以下版本的 get_j_task 函数：
 
 ```python
-output = np.zeros((n , n))
-def get_j_task(l ,d m , output):
-    output[: , l] += np.einsum( 'jik ,ij ->k', eri[: ,: ,: ,l] , dm)
+output = np.zeros((n, n))
+def get_j_task(l,d m, output):
+    output[:, l] += np.einsum( 'jik,ij->k', eri[:,:,:,l], dm)
 ```
 对此任务进行多线程并行化时，每个线程都需要更新全局变量 output 矩阵的一列。output 矩阵按行主序存储。访问列会破坏顺序内存操作。相邻的内存地址可能被不同的 CPU 核心访问，导致 CPU 缓存中的伪共享（false sharing）[1]。这种情况迫使硬件频繁锁定和同步缓存行，显著降低内存访问效率。有关这些技术问题的更多细节，读者可以参考 *What Every Programmer Should Know About Memory* 一书 [2]。
 显然，threading.Thread 类有几个缺点。它缺少一种简洁的方式来监控任务的运行状态、错误和执行结果。此外，它无法管理和复用线程资源。在实践中，threading.Thread 类很少单独用于多线程并行化。它主要作为多线程并行化的基本组件。其他基于 threading 模块构建的多线程工具能够创建更加健壮的并行执行框架。concurrent.futures 模块提供的 ThreadPoolExecutor 就是一个例子。它对 threading.Thread 的功能作出了显著改进，并经常用于并行计算。
@@ -96,11 +96,11 @@ def get_j_task(l ,d m , output):
 为了说明如何使用 ThreadPoolExecutor，我们再次以 get_j 函数为例。下面的示例代码对 eri 张量的第一个索引进行并行处理。然后，由 np.sum 函数汇总各个并行任务产生的部分收缩结果。
 
 ```python
-def get_j_task(i , dm):
+def get_j_task(i, dm):
     n = dm.shape[0]
-    return np.einsum('jkl ,j ->kl', compute_eri(i , n), dm[: ,i])
+    return np.einsum('jkl,j->kl', compute_eri(i, n), dm[:,i])
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as scheduler:
-    fs = [scheduler.submit(get_j_task ,i , dm) for i in range (n)]
+    fs = [scheduler.submit(get_j_task,i , dm) for i in range (n)]
     output = np. sum([f.result() for f in fs])
 ```
 退出 ThreadPoolExecutor 的 with 上下文时，主线程将被阻塞，直到所有工作线程完成任务且调度器关闭。如果我们打算在主线程中异步执行某些代码，同时让 ThreadPoolExecutor 在后台执行一些操作，就必须把异步部分放在 with 上下文块内。这可以确保异步代码不会被 ThreadPoolExecutor.__exit__ 方法阻塞。
@@ -124,9 +124,9 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=8) as scheduler:
 使用 ThreadPoolExecutor.map 方法处理批量任务可以在一定程度上缓解内存占用问题。该方法返回一个 Future 对象生成器（generator）。与 Future 对象的列表容器不同，遍历生成器可以持续消费它产生的 Future 对象。已消费的 Future 对象所占内存可以立即释放。例如，在 get_j 程序中，我们可以遍历 map 函数返回的生成器对象，从而不必在内存中保留 n 个矩阵。在处理 Future 对象的同时累加输出：
 
 ```python
-output = np.zeros((n ,n))
+output = np.zeros((n,n))
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as scheduler:
-    mapped = scheduler. map(get_j_task , range(n), itertools.repeat(dm ,n ) )
+    mapped = scheduler. map(get_j_task, range(n), itertools.repeat(dm,n ) )
     for v in mapped:
         output += v
 ```
@@ -139,13 +139,13 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=8) as scheduler:
 
 ```python
 mutex = threading.Lock()
-output = np.zeros((n ,n))
-def get_j_task(i , dm):
-    j_priv = np.einsum( 'jkl ,j ->kl', eri[i] , dm[: ,i])
+output = np.zeros((n,n))
+def get_j_task(i, dm):
+    j_priv = np.einsum( 'jkl,j->kl', eri[i], dm[:,i])
     with mutex:
         output += j_priv
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as scheduler:
-    mapped = scheduler. map(get_j_task , range(n), itertools.repeat(dm ,n ) )
+    mapped = scheduler. map(get_j_task, range(n), itertools.repeat(dm,n ) )
 ```
 我们将对输出矩阵的原位更新放在 with mutex 上下文中。互斥锁的 with 语句在进入临界区（critical section）前自动触发 lock.acquire() 操作，并在完成后触发 lock.release() 操作。互斥锁保证在任何特定时刻，只有一个线程修改共享的输出矩阵。
 
@@ -185,7 +185,7 @@ def computation_task(buffer):
         # code to manipulate data in buffer
         ...
 ready_for_read.clear()
-        # notify the I/O thread that data in buffer are consumed ,
+        # notify the I/O thread that data in buffer are consumed,
         # the buffer can be reused
 ready_for_write.set()
         # Other code which do not need to access buffer
@@ -247,7 +247,7 @@ def prefetch(buffer):
 ```python
 from collections import deque
 class Queue:
-    def __init__(self , max_size):
+    def __init__(self, max_size):
         self._queue = deque([])
         self.max_size = max_size
         self.mutex = threading.Lock()
@@ -256,7 +256,7 @@ class Queue:
 ```
 
 ```python
-    def put(self , item):
+    def put(self, item):
         with self.mutex:
             while len (self._queue) >= self.max_size:
                 self.not_full.wait()
@@ -280,18 +280,18 @@ Queue 实例将任务存储在 _queue 属性中。生产者可以通过 put 方�
 ```python
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
-def compute_eri(i , n):
+def compute_eri(i, n):
     # Mimic the function to compute ERIs
     np.random.seed(i)
-    return np.random.rand(n ,n ,n)
-def get_j_task(i ,d m , q):
-    ' ' 'The producer' ' '
+    return np.random.rand(n,n,n)
+def get_j_task(i,d m, q):
+    '''The producer'''
     n = dm.shape[0]
-    jmat = np.einsum( 'jkl ,j ->kl', compute_eri(i ,n), dm[: ,i])
+    jmat = np.einsum( 'jkl,j->kl', compute_eri(i,n), dm[:,i])
     q.put(jmat)
-def reduce (n , q):
-    ' ' 'The consumer' ' '
-    output = np.zeros((n ,n))
+def reduce (n, q):
+    '''The consumer'''
+    output = np.zeros((n,n))
     for i in range (n):
         output += q.get()
     return output
@@ -299,8 +299,8 @@ n = 200
 dm = np.identity(n)
 q = Queue(max_size=8)
 with ThreadPoolExecutor(max_workers=16) as scheduler:
-    fut = scheduler.submit(consumer ,n ,q )
-    for _ in scheduler.map(get_j_task , range(n), [dm] *n , [q] *n):
+    fut = scheduler.submit(consumer,n ,q )
+    for _ in scheduler.map(get_j_task, range(n), [dm] *n, [q] *n):
         pass
 print(fut.result().sum())
 ```
@@ -324,18 +324,18 @@ print(fut.result().sum())
 
 ```python
 from concurrent.futures import ThreadPoolExecutor
-def pipeline(ops , tasks):
+def pipeline(ops, tasks):
     with ThreadPoolExecutor() as q:
         def proc0():
-            return [queue.submit(ops[0] , task) for task in tasks]
+            return [queue.submit(ops[0], task) for task in tasks]
         def proc1():
-            return [queue.submit(ops[1] , task.result()) for task in proc0()
+            return [queue.submit(ops[1], task.result()) for task in proc0()
     ]
         def proc2():
 ```
 
 ```python
-            return [queue.submit(ops[2] , task.result()) for task in proc1()
+            return [queue.submit(ops[2], task.result()) for task in proc1()
     ]
         ...
         return [future.result() for future in proc_last()]
@@ -345,49 +345,49 @@ def pipeline(ops , tasks):
 在流水线执行器中，应避免直接调用 task.result()，因为它可能阻塞流水线。我们可以改为引入一个闭包（closure）来包装 task.result() 方法，将阻塞操作推迟到运行时引用其值时才执行。这种方法与惰性求值（lazy evaluation）技术有些相似。
 
 ```python
-from concurrent.futures import ThreadPoolExecutor , Future
+from concurrent.futures import ThreadPoolExecutor, Future
 def _ensure(task):
-    if isinstance (task , Future):
+    if isinstance (task, Future):
         return task.result()
     else:
         return task
-def scheduler(queue ,f n , tasks):
+def scheduler(queue,f n, tasks):
     def fn_with_future(task):
         return fn(_ensure(task))
-    return [queue.submit(fn_with_future , task) for task in tasks]
-def pipeline(ops , tasks):
+    return [queue.submit(fn_with_future, task) for task in tasks]
+def pipeline(ops, tasks):
     with ThreadPoolExecutor() as queue:
         def proc0():
 ```
 
 ```python
-            return scheduler(queue , ops[0] , tasks)
+            return scheduler(queue, ops[0], tasks)
         def proc1():
-            return scheduler(queue , ops[1] , proc0())
+            return scheduler(queue, ops[1], proc0())
         def proc2():
-            return scheduler(queue , ops[2] , proc1())
+            return scheduler(queue, ops[2], proc1())
         ...
         return [future.result() for future in proc_last()]
 ```
 经过这一改进，流式处理可以迅速提交所有任务，并按如下方式填充任务队列：
 
 ```text
-ops[0](tasks[0]) , ops[0](tasks[1]) , ops[0](tasks[2]) , ... , ops[1](ops[0](tasks[0])) , ops[1](ops[0](tasks[1])) , ...
+ops[0](tasks[0]), ops[0](tasks[1]), ops[0](tasks[2]), ..., ops[1](ops[0](tasks[0])), ops[1](ops[0](tasks[1])), ...
 ```
 如果并行能力有限，例如只允许同时执行 4 个任务，那么即使所有上游依赖都已满足，较晚入队的任务仍会因资源限制而处于等待状态。因此，下游任务无法及时执行，导致上游任务产生的结果不能及时被消费。上游结果不得不在内存中保存较长时间，导致内存使用效率低下，内存管理效率降低。
 为解决这个问题，我们可以为流式执行实现多个队列。通过将不同的消费者分配给不同的队列，可以利用每个队列独立的任务调度。一旦任务的上游依赖得到解决，与消费者关联的队列就可以立即调度该任务执行。下面这个版本的 pipeline 函数展示了这一思路。
 
 ```python
-def pipeline(ops , tasks):
+def pipeline(ops, tasks):
     with ThreadPoolExecutor() as queue1:
         def proc0():
-            return scheduler(queue1 , ops[0] , tasks)
+            return scheduler(queue1, ops[0], tasks)
         with ThreadPoolExecutor() as queue2:
             def proc1():
-                return scheduler(queue2 , ops[1] , proc0())
+                return scheduler(queue2, ops[1], proc0())
             with ThreadPoolExecutor() as queue3:
                 def proc2():
-                    return scheduler(queue3 , ops[2] , proc1())
+                    return scheduler(queue3, ops[2], proc1())
                 with ThreadPoolExecutor() as ...:
 ```
 
@@ -404,11 +404,11 @@ def pipeline(ops , tasks):
 前面展示的调度器优先提交所有可用任务，然后才继续处理 ops 列表中的下一个操作。如果将 ops 中的每个操作视为树中的一个节点，前面的调度器便以类似广度优先搜索（breadth-first search）的方式遍历这棵树（图 10.2）。因此，我们称其为 bf_scheduler。另一种方式是修改任务调度器的遍历方法，使其类似深度优先搜索（depth-first search，DFS）模式（图 10.3）。这里可以创建一个 df_scheduler，利用生成器的惰性求值特性来改变任务提交顺序。
 
 ```python
-def df_scheduler(queue ,f n , tasks , args):
+def df_scheduler(queue,f n, tasks, args):
     def fn_with_future(task):
         return fn(_ensure(task), *args)
     for task in tasks:
-        yield queue.submit(fn_with_future , task)
+        yield queue.submit(fn_with_future, task)
 ```
 当 df_scheduler 应用于 pipeline 函数时，下游任务会递归地引用每个 proc 函数创建的生成器中的元素，
 
@@ -420,23 +420,23 @@ def df_scheduler(queue ,f n , tasks , args):
 例如，假设 pipeline 函数只由三个函数组成：proc0、proc1 和 proc2，每个函数都使用 df_scheduler 提交任务。
 
 ```python
-def pipeline(ops , tasks):
+def pipeline(ops, tasks):
     with ThreadPoolExecutor() as queue1:
         def proc0():
-            return df_scheduler(queue1 , ops[0] , tasks)
+            return df_scheduler(queue1, ops[0], tasks)
         with ThreadPoolExecutor() as queue2:
             def proc1():
-                return df_scheduler(queue2 , ops[1] , proc0())
+                return df_scheduler(queue2, ops[1], proc0())
             with ThreadPoolExecutor() as queue3:
                 def proc2():
-                    return df_scheduler(queue3 , ops[2] , proc1())
+                    return df_scheduler(queue3, ops[2], proc1())
                 return [future.result() for future in proc2()]
 ```
 在 proc2 中，从 tasks 生成器访问一个元素会触发 proc1 中的 yield 语句。这一操作又会从 proc0 创建的 tasks 生成器中取出一个元素。访问 proc0 的生成器时，任务提交命令
 10.4 流水线执行器 queue.submit(fn_with_future, task) 被执行。这个命令向任务队列追加一个作业，并通过生成器将一个 Future 对象传给 proc1。随后，proc1 接收该 Future 对象并用它提交一个任务。由此产生的 Future 对象随后被传给 proc2。处理接收到的 Future 对象后，proc2 继续处理 tasks 生成器中的下一个元素，再次触发上述循环。proc0、proc1 和 proc2 将生成新任务并依次将它们加入任务队列。最终，任务队列可能填充如下：
 
 ```text
-ops[0](tasks[0]) , ops[1](Future(ops[0])) , ops[2](Future(ops[1])) , ops[0](tasks[1]) , ops[1](Future(ops[0])) , ops[2](Future(ops[1])) , ...
+ops[0](tasks[0]), ops[1](Future(ops[0])), ops[2](Future(ops[1])), ops[0](tasks[1]), ops[1](Future(ops[0])), ops[2](Future(ops[1])), ...
 ```
 df_scheduler 可以主动消化上游任务的结果，解决 bf_scheduler 可能出现的内存使用过多问题。然而，df_scheduler 可能导致某些正在运行的任务在等待上游任务完成时陷入非活动状态。这些任务占用工作线程，却无法充分利用计算资源，造成计算能力的浪费。
 
@@ -447,9 +447,9 @@ df_scheduler 可以主动消化上游任务的结果，解决 bf_scheduler 可�
 为了平衡并行效率和内存利用率，我们可以设计实现不同策略的新调度器。例如，下面介绍的 df_warmup_scheduler 采用混合方法（图 10.4）。
 
 ```python
-def df_warmup_scheduler(queue ,f n , tasks , args , max_workers=8):
-    ' ' 'Launches several tasks at beginning then fills task queue like
-    df_scheduler' ' '
+def df_warmup_scheduler(queue,f n, tasks, args, max_workers=8):
+    '''Launches several tasks at beginning then fills task queue like
+    df_scheduler'''
     def fn_with_future(task):
         return fn(_ensure(task), *args)
     future_buf = deque()
@@ -457,7 +457,7 @@ def df_warmup_scheduler(queue ,f n , tasks , args , max_workers=8):
 
 ```text
     for task in tasks:
-        future_buf.append(queue.submit(fn_with_future , task))
+        future_buf.append(queue.submit(fn_with_future, task))
         if len (future_buf) > max_workers:
             yield future_buf.popleft()
     while future_buf:
@@ -466,23 +466,23 @@ def df_warmup_scheduler(queue ,f n , tasks , args , max_workers=8):
 它最初像 bf_scheduler 一样提交一部分任务，然后对剩余任务切换到 df_scheduler 模式。这个调度器旨在一开始就用非阻塞任务迅速占用线程执行器中可用的工作线程。随着初始任务完成，它随后以深度优先调度器的方式逐步重新填充队列。其基本假设是，通过立即处理初始任务，后续任务所需的上游依赖很可能在它们被调度时已经得到满足。这种方法旨在尽量降低任务陷入非活动状态的可能性。得到的任务队列可能包含如下任务：
 
 ```text
-ops[0](tasks[0]) , ops[0](tasks[1]) , ... , ops[0](tasks[7]) , ops[1](Future(ops[0])) , ops[2](Future(ops[1])) , ops[0](tasks[8]) , ops[1](Future(ops[0])) , ...
+ops[0](tasks[0]), ops[0](tasks[1]), ..., ops[0](tasks[7]), ops[1](Future(ops[0])), ops[2](Future(ops[1])), ops[0](tasks[8]), ops[1](Future(ops[0])), ...
 ```
 基于 df_warmup_scheduler，我们可以进一步开发一个 dynamic_scheduler，只启动那些可以立即执行的任务。后续任务会被推迟，只有在上游任务完成后才提交。任务队列不会完全被初始任务填满。为了便于在上游任务完成时启动任务，引入了 LaunchInFuture 类。这个类提供一个 submit 方法，使一个任务（以 Future 对象表示）能够在另一个任务完成时作为回调执行。
 
 ```python
 class LaunchInFuture(Future):
-    def __init__(self , queue , fn):
+    def __init__(self, queue, fn):
         self.queue = queue
         self.fn = fn
         super().__init__()
-def submit(self , task): # (1)
-future = self.queue.submit(self.fn , task) # (2)
+def submit(self, task): # (1)
+future = self.queue.submit(self.fn, task) # (2)
 future.add_done_callback(self.pass_result) # (3)
-def pass_result(self , value: Future): # (4)
+def pass_result(self, value: Future): # (4)
         self.set_result(value.result())
-def dynamic_scheduler(queue ,f n , tasks , args , max_workers=8):
-    ' ' 'Dynamic scheduler submits tasks only if they are ready to proceed' ' '
+def dynamic_scheduler(queue,f n, tasks, args, max_workers=8):
+    '''Dynamic scheduler submits tasks only if they are ready to proceed'''
     def fn_with_future(task):
         return fn(_ensure(task), *args)
 ```
@@ -493,10 +493,10 @@ def dynamic_scheduler(queue ,f n , tasks , args , max_workers=8):
 # Block the submission to prevent the task queue being filled with too many operations of the same type
         if len (future_buf) >= max_workers:
             future_buf.popleft().result()
-        if not isinstance (task , Future):
-            future = queue.submit(fn_with_future , task)
+        if not isinstance (task, Future):
+            future = queue.submit(fn_with_future, task)
         else:
-future = LaunchInFuture(queue , fn_with_future) # (5)
+future = LaunchInFuture(queue, fn_with_future) # (5)
 task.add_done_callback(future.submit) # (6)
         future_buf.append(future)
         yield future
@@ -505,21 +505,21 @@ task.add_done_callback(future.submit) # (6)
 最后，为了提高 pipeline 函数的可读性和易用性，我们改进该函数并将其转换为递归形式。重构后的 pipeline 函数现在支持使用各种任务调度器的一般流式处理计算。
 
 ```python
-def pipeline(ops , tasks , scheduler=dynamic_scheduler):
-    ' ' '
+def pipeline(ops, tasks, scheduler=dynamic_scheduler):
+    '''
     Streams operations and tasks
-    ' ' '
-    queue ,f n , args = ops[0]
+    '''
+    queue,f n, args = ops[0]
     if queue is None:
         with ThreadPoolExecutor() as queue:
-            return pipeline([(queue ,f n , args), *ops[1:]] , tasks , schduler)
+            return pipeline([(queue,f n, args), *ops[1:]], tasks, schduler)
     if len (ops) == 1:
         # Call list() to traverse through the entire schduler generator
     which
         # will launch all tasks and their upstream tasks.
-        return [_ensure(f) for f in list (scheduler(queue ,f n , tasks , args))
+        return [_ensure(f) for f in list (scheduler(queue,f n, tasks, args))
     ]
-    return pipeline(ops[1:] , scheduler(queue ,f n , tasks , args), scheduler)
+    return pipeline(ops[1:], scheduler(queue,f n, tasks, args), scheduler)
 ```
 在第 14 章，我们将以完全组态相互作用（Full Configuration Interaction，FCI）程序为例，演示如何使用流水线执行器并行处理复杂的计算任务。
 
@@ -539,9 +539,9 @@ def defer(f):
     @functools.wraps(f)
     def deferred_f(args):
         if lazy_mode:
-            return Promise(f , args)
+            return Promise(f, args)
         else:
-            return executor.submit(f , args)
+            return executor.submit(f, args)
     return deferred_f
 ```
 值得一提的是，上面的示例使用 ThreadPoolExecutor 来说明这一功能。也可以使用其他执行器，例如 dask.distributed 函数，来实现异步计算。
@@ -549,20 +549,20 @@ def defer(f):
 
 ```python
 @defer
-def compute_eri(i , n):
+def compute_eri(i, n):
     ...
     return eri
 @defer
-def get_j_task(i , dm):
+def get_j_task(i, dm):
     n = dm.shape[0]
-    eri = compute_eri(i , n).result()
-    return np.einsum('jkl ,j ->kl', eri , dm[: ,i])
+    eri = compute_eri(i, n).result()
+    return np.einsum('jkl,j->kl', eri, dm[:,i])
 @defer
 def get_j(dm):
     n = dm.shape[0]
-    output = np.zeros((n ,n))
+    output = np.zeros((n,n))
     for i in range (n):
-        output += get_j_task(i , dm).result()
+        output += get_j_task(i, dm).result()
     return output
 get_j(dm).result()
 ```
@@ -580,18 +580,18 @@ Python 中的异步编程通常与使用协程（coroutine）和 asyncio 模块�
 从上一节讨论的由 defer 装饰的 get_j 程序出发，我们只需用 async 关键字替换 defer 装饰器，并将 .result() 调用替换为带 await 的语句。这样修改后得到的 get_j 协程版本如下：
 
 ```python
-async def compute_eri(i ,n ) :
+async def compute_eri(i,n ) :
     ...
     return eri
-async def get_j_task(i , dm):
+async def get_j_task(i, dm):
     n = dm.shape[0]
-    eri = await compute_eri(i ,n )
+    eri = await compute_eri(i,n )
     await asyncio.sleep(0.5)
-    return np.einsum('jkl ,j ->kl', eri , dm[: ,i])
+    return np.einsum('jkl,j->kl', eri, dm[:,i])
 async def get_j(dm):
     n = dm.shape[0]
-    output = np.zeros((n ,n))
-    fs = [asyncio.ensure_future(get_j_task(i , dm)) for i in range (n)]
+    output = np.zeros((n,n))
+    fs = [asyncio.ensure_future(get_j_task(i, dm)) for i in range (n)]
     for fut in fs:
         output += await fut
     return output
@@ -622,43 +622,43 @@ COW 有效解决了向子进程传递函数参数的问题。就函数参数的�
 In [1]: import time
         from multiprocessing import Process
         from threading import Thread
-        def f(thread_id , tasks):
+        def f(thread_id, tasks):
             for task in tasks:
-                print(thread_id , task)
+                print(thread_id, task)
                 time.sleep(.1)
 In [2]: iters = enumerate(range(5))
-        ps = [Thread(target=f , args=(i , iters)) for i in range (3)]
+        ps = [Thread(target=f, args=(i, iters)) for i in range (3)]
         [p.start() for p in ps]
         [p.join() for p in ps]
 Out[2]:
-0( 0 ,0 )
-1( 1 ,1 )
-2( 2 ,2 )
-0( 3 ,3 )
-1( 4 ,4 )
+0( 0,0 )
+1( 1,1 )
+2( 2,2 )
+0( 3,3 )
+1( 4,4 )
 In [3]: iters = enumerate(range(5))
-        ps = [Process(target=f , args=(i , iters)) for i in range (3)]
+        ps = [Process(target=f, args=(i, iters)) for i in range (3)]
         [p.start() for p in ps]
         [p.join() for p in ps]
 Out[3]:
-0( 0 ,0 )
-1( 0 ,0 )
-2( 0 ,0 )
-0( 1 ,1 )
-1( 1 ,1 )
-2( 1 ,1 )
+0( 0,0 )
+1( 0,0 )
+2( 0,0 )
+0( 1,1 )
+1( 1,1 )
+2( 1,1 )
 ...
 ```
 父进程如何获取子进程的输出？与 threading.Thread 创建的子线程类似，子进程中函数的输出无法直接返回给父进程。在多线程的情况下，子线程中的函数可以修改输入参数，从而将信息传回主线程。虽然一般不推荐这样做，但这种方法能够在主线程与子线程之间交换数据。在多进程中，当子进程内的函数修改参数时，由于 COW 机制会产生一个本地副本。因此，父进程无法访问子进程对参数所做的修改。
 为了使父进程与子进程之间能够交换数据，multiprocessing 模块提供了 Manager 类。这个类模拟了列表和字典等几种 Python 数据结构。当子进程进行修改时，Manager 可以将修改传回父进程，从而实现进程间的数据共享。Manager 通过套接字或管道处理数据传输，自动完成服务器与客户端之间的数据传输。要使用 Manager 数据传输服务，需要正确初始化和终止 Manager，例如使用 with 上下文 [6]。
 
 ```python
-from multiprocessing import Process , Manager
-def append(lst , elem):
+from multiprocessing import Process, Manager
+def append(lst, elem):
     lst.append(elem)
 with Manager() as manager:
     l = manager. list()
-    p = Process(target=append , args=(l , 'a'))
+    p = Process(target=append, args=(l, 'a'))
     p.start()
     p.join()
     l= list(l) # convert to regular list
@@ -673,14 +673,14 @@ Manager.list 提供的 API 与 Python 标准列表相当。然而，不应简单
 数组创建数据缓冲区，然后将其连同其他函数参数传递给子进程。当子进程修改这些 NumPy 数组时，修改会直接写入底层共享内存或相应的内存映射文件。下面的示例展示如何使用这些技术实现共享 NumPy 数组。
 
 ```python
-from multiprocessing import Array , Process
+from multiprocessing import Array, Process
 from multiprocessing.shared_memory import SharedMemory
-def get_j_task(k ,d m , output):
+def get_j_task(k,d m, output):
     n = dm.shape[0]
-    output[k] = np.einsum( 'ijl ,ji ->l', compute_eri(k , n), dm)
-def get_j(dm , output):
+    output[k] = np.einsum( 'ijl,ji->l', compute_eri(k, n), dm)
+def get_j(dm, output):
     output[:] = 0.
-    ps = [Process(target=get_j_task , args=(k ,d m , output))
+    ps = [Process(target=get_j_task, args=(k,d m, output))
           for k in range (n)]
     [p.start() for p in ps]
     [p.join() for p in ps]
@@ -688,15 +688,15 @@ def get_j(dm , output):
 if __name__ == '__main__':
     n=5 0
     dm = np.identity(n)
-    shm = Array(dm.dtype.char , dm.size)
-    output = np.ndarray(dtype=dm.dtype , shape=dm.shape , buffer=shm.get_obj())
-    print(get_j(dm , output). sum())
-    shm = SharedMemory(create=True , size=dm.nbytes)
+    shm = Array(dm.dtype.char, dm.size)
+    output = np.ndarray(dtype=dm.dtype, shape=dm.shape, buffer=shm.get_obj())
+    print(get_j(dm, output). sum())
+    shm = SharedMemory(create=True, size=dm.nbytes)
     shm.unlink()
-    output = np.ndarray(dtype=dm.dtype , shape=dm.shape , buffer=shm.buf)
-    print(get_j(dm , output). sum())
-    output = np.memmap( '/dev/shm/output', dtype=dm.dtype , shape=dm.shape , mode='w+')
-    print(get_j(dm , output). sum())
+    output = np.ndarray(dtype=dm.dtype, shape=dm.shape, buffer=shm.buf)
+    print(get_j(dm, output). sum())
+    output = np.memmap( '/dev/shm/output', dtype=dm.dtype, shape=dm.shape, mode='w+')
+    print(get_j(dm, output). sum())
 ```
 
 ### 10.6.2 ProcessPoolExecutor 中的通信
@@ -715,23 +715,23 @@ ProcessPoolExecutor 使用任务队列向子进程分发数据。ProcessPoolExec
 
 ```python
 from multiprocessing.shared_memory import SharedMemory
-def get_j_task(k ,d m , output_attr):
-    filename , dtype , shape = output_attr
-    shm = SharedMemory(filename , create=False)
-    output = np.ndarray(dtype=dtype , shape=shape , buffer=shm.buf)
+def get_j_task(k,d m, output_attr):
+    filename, dtype, shape = output_attr
+    shm = SharedMemory(filename, create=False)
+    output = np.ndarray(dtype=dtype, shape=shape, buffer=shm.buf)
     n = dm.shape[0]
 ```
 
 ```python
-    output[k] = np.einsum( 'ijl ,ji ->l', compute_eri(k , n), dm)
+    output[k] = np.einsum( 'ijl,ji->l', compute_eri(k, n), dm)
 def get_j(dm):
     n = dm.shape[0]
-    shm = SharedMemory(create=True , size=dm.nbytes)
-    output = np.ndarray(dtype=dm.dtype , shape=dm.shape , buffer=shm.buf)
+    shm = SharedMemory(create=True, size=dm.nbytes)
+    output = np.ndarray(dtype=dm.dtype, shape=dm.shape, buffer=shm.buf)
     output[:] = 0.
-    output_attr = (shm.name , output.dtype , output.shape)
+    output_attr = (shm.name, output.dtype, output.shape)
     with ProcessPoolExecutor(max_workers=4) as executor:
-        futures = [executor.submit(get_j_task ,i ,d m , output_attr)
+        futures = [executor.submit(get_j_task,i ,d m, output_attr)
                    for i in range (n)]
         [f.result() for f in futures]
     shm.unlink()
@@ -740,18 +740,18 @@ def get_j(dm):
 借助辅助函数 np.memmap，使用 memmap 文件共享数据的代码很简单：
 
 ```python
-def get_j_task(k ,d m , output_attr):
-    filename , dtype , shape = output_attr
-    output = np.memmap(filename , shape=shape , dtype=dtype , mode= 'r+')
+def get_j_task(k,d m, output_attr):
+    filename, dtype, shape = output_attr
+    output = np.memmap(filename, shape=shape, dtype=dtype, mode= 'r+')
     n = dm.shape[0]
-    output[k] = np.einsum( 'ijl ,ji ->l', compute_eri(k , n), dm)
+    output[k] = np.einsum( 'ijl,ji->l', compute_eri(k, n), dm)
 def get_j(dm):
     n = dm.shape[0]
-    output = np.memmap( '/dev/shm/output', dtype=dm.dtype , shape=dm.shape , mode= 'w+')
+    output = np.memmap( '/dev/shm/output', dtype=dm.dtype, shape=dm.shape, mode= 'w+')
     output[:] = 0.
-    output_attr = ( '/dev/shm/output', output.dtype , output.shape)
+    output_attr = ( '/dev/shm/output', output.dtype, output.shape)
     with ProcessPoolExecutor(max_workers=4) as executor:
-        futures = [executor.submit(get_j_task ,i ,d m , output_attr)
+        futures = [executor.submit(get_j_task,i ,d m, output_attr)
                    for i in range (n)]
         [f.result() for f in futures]
     return output
@@ -766,22 +766,22 @@ def get_j(dm):
 使用 multiprocessing.Process 创建子进程时，我们仍然可以使用锁和同步原语，与它们在线程并行化中的用法相似。关键区别在于，必须使用 multiprocessing 模块提供的同步原语。例如，第 10.2 节中 get_j 函数的 multiprocessing.Process 版本可以实现如下。
 
 ```python
-from multiprocessing import Lock , Process
+from multiprocessing import Lock, Process
 import numpy as np
-def compute_eri(i , n):
+def compute_eri(i, n):
     # Mimic the function to compute ERIs
     np.random.seed(i)
-    return np.random.rand(n ,n ,n)
-def get_j_task(i ,d m , output , lock):
+    return np.random.rand(n,n,n)
+def get_j_task(i,d m, output, lock):
     n = dm.shape[0]
-    jmat = np.einsum( 'jkl ,j ->kl', compute_eri(i , n), dm[: ,i])
+    jmat = np.einsum( 'jkl,j->kl', compute_eri(i, n), dm[:,i])
     with lock:
         output += jmat
 def get_j(dm):
-    output = np.memmap( '/dev/shm/output', dtype=dm.dtype , shape=dm.shape , mode= 'w+')
+    output = np.memmap( '/dev/shm/output', dtype=dm.dtype, shape=dm.shape, mode= 'w+')
     output[:] = 0.
     lock = Lock()
-    ps = [Process(target=get_j_task , args=(i ,d m , output , lock))
+    ps = [Process(target=get_j_task, args=(i,d m, output, lock))
           for i in range (n)]
     [p.start() for p in ps]
     [p.join() for p in ps]
@@ -798,19 +798,19 @@ multiprocessing.Lock 对象在共享内存空间中创建，并在每个子进�
 请注意，multiprocessing.Lock 对象无法使用 pickle 序列化。使用 ProcessPoolExecutor 时，不能将它们作为参数传递。为了克服这一限制，可以使用 Manager 类提供的替代方案。Manager 类的 Lock 实例可以在后台于进程之间传递锁状态。我们可以修改上面的例子，使其使用 ProcessPoolExecutor：
 
 ```python
-def get_j_task(i ,d m , output_attr):
-    filename , dtype , shape = output_attr
-    output = np.memmap(filename , shape=shape , dtype=dtype , mode= 'r+')
+def get_j_task(i,d m, output_attr):
+    filename, dtype, shape = output_attr
+    output = np.memmap(filename, shape=shape, dtype=dtype, mode= 'r+')
     n = dm.shape[0]
-    jmat = np.einsum( 'jkl ,j ->kl', compute_eri(i , n), dm[: ,i])
+    jmat = np.einsum( 'jkl,j->kl', compute_eri(i, n), dm[:,i])
     with lock:
         output += jmat
 def get_j(dm):
-    output = np.memmap( '/dev/shm/output', dtype=dm.dtype , shape=dm.shape , mode= 'w+')
-    with Manager() as mgr , ProcessPoolExecutor(max_workers=4) as scheduler:
+    output = np.memmap( '/dev/shm/output', dtype=dm.dtype, shape=dm.shape, mode= 'w+')
+    with Manager() as mgr, ProcessPoolExecutor(max_workers=4) as scheduler:
         lock = mgr.Lock()
-        output_attr = ( '/dev/shm/output', output.dtype , output.shape , lock)
-        for _ in scheduler.map( get_j_task , range(n), [dm] *n , [output_attr] *n):
+        output_attr = ( '/dev/shm/output', output.dtype, output.shape, lock)
+        for _ in scheduler.map( get_j_task, range(n), [dm] *n, [output_attr] *n):
             pass
     return output
 ```
@@ -848,17 +848,17 @@ def timing(f):
      t1 = time.perf_counter()
      return t 1-t 0
  return timing_f
-def communicate(server , client , channel , args):
- if isinstance (channel , tuple):
-     r , w = channel
+def communicate(server, client, channel, args):
+ if isinstance (channel, tuple):
+     r, w = channel
  else:
      r = w = channel
 ```
 
 ```python
-    proc = multiprocessing.Process(target=client , args=(r , *args))
+    proc = multiprocessing.Process(target=client, args=(r, *args))
     proc.start()
-    server(w , *args)
+    server(w, *args)
     proc.join()
 class Guard:
     def __init__(self):
@@ -884,65 +884,65 @@ timing 函数是一个用于测量函数执行时间的装饰器。communicate �
 
 ```python
 import io
-def pipe_recv(fd , size , count):
+def pipe_recv(fd, size, count):
     for _ in range (count):
         buf = io.BytesIO()
         remaining = size
         while remaining > 0:
-            dat = os.read(fd , remaining)
+            dat = os.read(fd, remaining)
             buf.write(dat)
             remaining -= len(dat)
-        buf = np.ndarray(shape=(size ,), dtype= 'c', buffer=buf.getvalue())
-def pipe_send(fd , size , count):
-    a = np.ones(size , dtype= 'c')
+        buf = np.ndarray(shape=(size,), dtype= 'c', buffer=buf.getvalue())
+def pipe_send(fd, size, count):
+    a = np.ones(size, dtype= 'c')
     buf = a.data
     for _ in range (count):
         start = 0
         while start < size:
-            m = os.write(fd , buf[start:])
+            m = os.write(fd, buf[start:])
             start += m
 @timing
-def pipe_transfer(size , count):
-    r , w = os.pipe()
-    communicate(pipe_send , pipe_recv ,( r , w), (size , count))
+def pipe_transfer(size, count):
+    r, w = os.pipe()
+    communicate(pipe_send, pipe_recv,( r, w), (size, count))
     os.close(r)
     os.close(w)
 ```
 第二种方法在上述实现的基础上增加数据序列化代码。该程序模拟 ProcessPoolExecutor 执行的操作。正如我们将在吞吐量基准测试中看到的，序列化引入的开销很大，几乎等于数据传输所需的时间。
 
 ```python
-def pipe_pickle_recv(fd , size , count):
+def pipe_pickle_recv(fd, size, count):
     for _ in range (count):
         buf = io.BytesIO()
-        remaining = int.from_bytes(os.read(fd , 8), sys.byteorder)
+        remaining = int.from_bytes(os.read(fd, 8), sys.byteorder)
         while remaining > 0:
-            dat = os.read(fd , remaining)
+            dat = os.read(fd, remaining)
             buf.write(dat)
             remaining -= len(dat)
         pickle.loads(buf.getvalue())
-def pipe_pickle_send(fd , size , count):
-    a = np.ones(size , dtype= 'c')
+def pipe_pickle_send(fd, size, count):
+    a = np.ones(size, dtype= 'c')
 ```
 
 ```python
     for _ in range (count):
         buf = pickle.dumps(a)
-        os.write(fd , len(buf).to_bytes(8 , sys.byteorder))
+        os.write(fd, len(buf).to_bytes(8, sys.byteorder))
         start = 0
         while start < size:
-            m = os.write(fd , buf[start:])
+            m = os.write(fd, buf[start:])
             start += m
 @timing
-def pipe_pickle_transfer(size , count):
-    r ,w=o s .pipe()
-    communicate(pipe_pickle_send , pipe_pickle_recv ,( r , w), (size , count))
+def pipe_pickle_transfer(size, count):
+    r,w=o s .pipe()
+    communicate(pipe_pickle_send, pipe_pickle_recv,( r, w), (size, count))
     os.close(r)
     os.close(w)
 ```
 与管道的两种选择类似，通过套接字传输 NumPy 数组也有两种方法。使用数据序列化的方法产生的开销与管道中观察到的开销相当。因此，我们只实现使用套接字直接传输 NumPy 数组数据缓冲区的方法。
 
 ```python
-def socket_recv(sock , size , count):
+def socket_recv(sock, size, count):
     for _ in range (count):
         buf = io.BytesIO()
         remaining = size
@@ -950,9 +950,9 @@ def socket_recv(sock , size , count):
             dat = sock.recv(remaining)
             buf.write(dat)
             remaining -= len(dat)
-        buf = np.ndarray(shape=(size ,), dtype= 'c', buffer=buf.getvalue())
-def socket_send(sock , size , count):
-    a = np.ones(size , dtype= 'c')
+        buf = np.ndarray(shape=(size,), dtype= 'c', buffer=buf.getvalue())
+def socket_send(sock, size, count):
+    a = np.ones(size, dtype= 'c')
     buf = a.data
     for _ in range (count):
         start = 0
@@ -960,9 +960,9 @@ def socket_send(sock , size , count):
             m = sock.send(buf[start:])
             start += m
 @timing
-def socket_transfer(size , count):
-    r , w = socket.socketpair()
-    communicate(socket_send , socket_recv ,( r , w), (size , count))
+def socket_transfer(size, count):
+    r, w = socket.socketpair()
+    communicate(socket_send, socket_recv,( r, w), (size, count))
     r.close()
 ```
 
@@ -973,64 +973,64 @@ def socket_transfer(size , count):
 在下面的程序中，借助写时复制技术，我们直接将共享内存对象分发给子进程。请注意，这种机制与 ProcessPoolExecutor 不兼容，因为共享内存对象无法序列化和分发。
 
 ```python
-def shm_recv(shm , size , count , guard):
+def shm_recv(shm, size, count, guard):
     for _ in range (count):
         with guard.for_recv():
-            buf = np.ndarray(shape=(size ,), dtype= 'c', buffer=shm.buf)
-def shm_send(shm , size , count , guard):
-    data = np.ones(shape=(size ,), dtype= 'c')
+            buf = np.ndarray(shape=(size,), dtype= 'c', buffer=shm.buf)
+def shm_send(shm, size, count, guard):
+    data = np.ones(shape=(size,), dtype= 'c')
     for _ in range (count):
         with guard.for_send():
-            buf = np.ndarray(shape=(size ,), dtype= 'c', buffer=shm.buf)
+            buf = np.ndarray(shape=(size,), dtype= 'c', buffer=shm.buf)
             buf[:] = data
 @timing
-def shm_transfer(size , count):
-    shm = SharedMemory(create=True , size=size)
-    communicate(shm_send , shm_recv , shm , (size , count , Guard()))
+def shm_transfer(size, count):
+    shm = SharedMemory(create=True, size=size)
+    communicate(shm_send, shm_recv, shm, (size, count, Guard()))
     shm.unlink()
 ```
 为防止服务器和客户端同时修改共享内存，程序使用 Guard 类进行同步。在实际应用中，如果在创建子进程之前已将数据复制到共享内存，这一步同步可能没有必要。
 对于使用 ProcessPoolExecutor 的程序，共享内存可以通过文件系统传递。我们可以分发与共享内存关联的文件名，并在每个进程中重建共享内存对象。随后，可以将共享内存对象连接到 NumPy 数组，作为数据缓冲区。以下代码片段实现了这一过程。
 
 ```python
-def shm_file_recv(shm_file , size , count , guard):
+def shm_file_recv(shm_file, size, count, guard):
     for _ in range (count):
         with guard.for_recv():
             shm = SharedMemory(name=shm_file)
-            buf = np.ndarray(shape=(size ,), dtype= 'c', buffer=shm.buf)
+            buf = np.ndarray(shape=(size,), dtype= 'c', buffer=shm.buf)
 ```
 
 ```python
-def shm_file_send(shm_file , size , count , guard):
-    data = np.ones(shape=(size ,), dtype= 'c')
+def shm_file_send(shm_file, size, count, guard):
+    data = np.ones(shape=(size,), dtype= 'c')
     for _ in range (count):
         with guard.for_send():
             shm = SharedMemory(name=shm_file)
-            buf = np.ndarray(shape=(size ,), dtype= 'c', buffer=shm.buf)
+            buf = np.ndarray(shape=(size,), dtype= 'c', buffer=shm.buf)
             buf[:] = data
 @timing
-def shm_file_transfer(size , count):
-    shm = SharedMemory(create=True , size=size)
-    communicate(shm_file_send , shm_file_recv , shm.name , (size , count , Guard()))
+def shm_file_transfer(size, count):
+    shm = SharedMemory(create=True, size=size)
+    communicate(shm_file_send, shm_file_recv, shm.name, (size, count, Guard()))
     shm.unlink()
 ```
 在传输 NumPy 数组时，memmap 技术与共享内存方法有许多相似之处。通过使用 np.memmap 函数，我们创建可以直接传递给子进程的 NumPy 数组。服务器和客户端都可以操作这些 memmap 数组，无须任何额外操作。
 
 ```python
-def np_memmap_recv(buf , size , count , guard):
+def np_memmap_recv(buf, size, count, guard):
     for _ in range (count):
         with guard.for_recv():
             pass
-def np_memmap_send(buf , size , count , guard):
-    data = np.ones(shape=(size ,), dtype= 'c')
+def np_memmap_send(buf, size, count, guard):
+    data = np.ones(shape=(size,), dtype= 'c')
     for _ in range (count):
         with guard.for_send():
             buf[:] = data
 @timing
-def np_memmap_transfer(size , count):
+def np_memmap_transfer(size, count):
     mmap_file = tempfile.mktemp()
-    buf = np.memmap(mmap_file , shape=(size ,), dtype= 'c', mode= 'w+')
-    communicate(np_memmap_send , np_memmap_recv , buf , (size , count , Guard()))
+    buf = np.memmap(mmap_file, shape=(size,), dtype= 'c', mode= 'w+')
+    communicate(np_memmap_send, np_memmap_recv, buf, (size, count, Guard()))
     os.remove(mmap_file)
 ```
 直接分发 memmap 对象不适用于 ProcessPoolExecutor。对于 ProcessPoolExecutor，必须使用文件系统传输数据，类似于 shm_file_transfer 测试中实现的方法。我们可以发送
@@ -1040,20 +1040,20 @@ def np_memmap_transfer(size , count):
 **表 10.1** 各种 IPC 技术传输 NumPy 数组的吞吐量（GB/s）。
 
 ```python
-def memmap_recv(mmap_file , size , count , guard):
+def memmap_recv(mmap_file, size, count, guard):
     for _ in range (count):
         with guard.for_recv():
-            buf = np.memmap(mmap_file , shape=(size ,), dtype= 'c', mode= 'r+')
-def memmap_send(mmap_file , size , count , guard):
-    data = np.ones(shape=(size ,), dtype= 'c')
+            buf = np.memmap(mmap_file, shape=(size,), dtype= 'c', mode= 'r+')
+def memmap_send(mmap_file, size, count, guard):
+    data = np.ones(shape=(size,), dtype= 'c')
     for _ in range (count):
         with guard.for_send():
-            buf = np.memmap(mmap_file , shape=(size ,), dtype= 'c', mode= 'w+')
+            buf = np.memmap(mmap_file, shape=(size,), dtype= 'c', mode= 'w+')
             buf[:] = data
 @timing
-def memmap_transfer(size , count):
+def memmap_transfer(size, count):
     mmap_file = tempfile.mktemp()
-    communicate(memmap_send , memmap_recv , mmap_file , (size , count , Guard()))
+    communicate(memmap_send, memmap_recv, mmap_file, (size, count, Guard()))
     os.remove(mmap_file)
 ```
 
@@ -1095,7 +1095,7 @@ gomp = ctypes.CDLL( 'path/to/libgomp')
 
 ```text
 gomp.omp_set_num_threads(4)
-gomp.omp_set_schedule(omp_sched['guided'] , chunk_size)
+gomp.omp_set_schedule(omp_sched['guided'], chunk_size)
 ```
 基于这种方法，threadpoolctl 库 [10] 提供了更易使用的 Python API 来管理 OpenMP 线程。然而，threadpoolctl 不支持配置 OpenMP 调度方式。我们可以结合使用上面的代码片段和 threadpoolctl 来管理 OpenMP 并行计算。
 不同的 Python 模块可能使用来自不同供应商、不同版本和不同文件位置的 OpenMP 库。使用 ctypes.CDLL 加载 OpenMP 库时，必须指定正确的文件路径。threadpoolctl 库提供了一种自动识别 Python 中已加载的 OpenMP 库路径的方法。调用 threadpoolctl.threadpool_info() 函数即可获取这些路径。
@@ -1112,7 +1112,7 @@ pip install mpi4py
 将从源代码编译该软件包，这需要预先安装 MPI 库和相应的 mpicc 编译器。如果通过 conda 使用 Python，一种方便的 mpi4py 安装方法是使用 conda-forge 频道：
 
 ```bash
-conda install -c conda -forge mpi4py openmpi
+conda install -c conda-forge mpi4py openmpi
 ```
 该命令安装以 Open MPI 为后端的 mpi4py 库。
 在高性能计算集群上，经常会遇到多个 MPI 库、各种编译器和不同版本的 Python 解释器。如果使用特定的编译器、MPI 库和 Python 版本组合来编译 mpi4py，就必须使用
@@ -1153,7 +1153,7 @@ comm.gather。在这种模式下，Python 对象由发送方自动使用 pickle 
 - 对于名称带有后缀 v 的集合通信操作，例如
 
 ```text
-comm.Allgatherv , a four-element list [data , count , displ , datatype] can be
+comm.Allgatherv,a four-elementlist[data, count, displ, datatype] can be
 ```
 可以提供该列表。
 下面是一个简单的包装函数示例，它使用缓冲区模式向所有节点广播 NumPy 数组：
@@ -1163,12 +1163,12 @@ rank = comm.Get_rank()
 def broadcast(arr):
  if rank == 0:
      # The master node sends the array shape and data type
-     comm.bcast((arr.shape , arr.dtype.char))
+     comm.bcast((arr.shape, arr.dtype.char))
  else:
      # The other nodes receive the shape and data type
-     shape , dtype = comm.bcast(None)
+     shape, dtype = comm.bcast(None)
      # An empty array is created to receive the data
-     arr = np.empty(shape , dtype=dtype)
+     arr = np.empty(shape, dtype=dtype)
  # The actual data of the array is broadcasted
  # MPI automatically discovers the data type
  # The array data is directly written into the buffer
@@ -1187,25 +1187,25 @@ Python 中的 MPI 程序可以使用单程序多数据（Single Program Multiple
 from mpi4py.MPI import COMM_WORLD as comm
 rank = comm.Get_rank()
 size = comm.Get_size()
-def compute_eri(i , n):
-    # Mimic the function to compute a sub -block of the ERI tensor
-    return np.random.rand(n ,n ,n)
+def compute_eri(i, n):
+    # Mimic the function to compute a sub-block of the ERI tensor
+    return np.random.rand(n,n,n)
 def get_j(dm):
     if rank == 0:
         n = dm.shape[0]
         comm.bcast(n)
     else:
         n = comm.bcast(None)
-        dm = np.empty((n ,n ) )
+        dm = np.empty((n,n ) )
     comm.Bcast(dm)
     try:
-        output = np.zeros((n , n))
-        for i in range (0 ,n , size):
-            output += np.einsum( 'jkl ,j ->kl', compute_eri(i , n), dm[: ,i])
+        output = np.zeros((n, n))
+        for i in range (0,n , size):
+            output += np.einsum( 'jkl,j->kl', compute_eri(i, n), dm[:,i])
     except Exception:
 comm.Abort(1) # (1)
-    jmat = np.zeros((n , n))
-    req = comm.Iallreduce(output , jmat) # Communication in background
+    jmat = np.zeros((n, n))
+    req = comm.Iallreduce(output, jmat) # Communication in background
     req.wait()
 ```
 
@@ -1221,7 +1221,7 @@ Python 的错误异常机制允许在一处捕获错误，并推迟到另一处�
 可以使用以下命令启动这个 MPI Python 程序：
 
 ```bash
-$  mpirun -n 8 --host node1 ,node2 python get_j_mpi.py
+$ mpirun -n 8 --host node1 ,node2 python get_j_mpi.py
 ```
 该命令指定将 8 个 MPI 进程平均分布在两个节点上，这两个节点由主机名 node1 和 node2 标识。全部 8 个进程都将执行相同的 Python 程序 get_j_mpi.py。
 
@@ -1252,7 +1252,7 @@ def wait():
  assert comm.rank != 0
  func = None
  while True:
-     label , args = comm.recv(tag=TAG)
+     label, args = comm.recv(tag=TAG)
 ```
 
 ```text
@@ -1261,7 +1261,7 @@ def wait():
          case 'Func': func = args
          case 'Args':
              result = func( *args)
-             comm.send(result , dest=0 , tag=TAG)
+             comm.send(result, dest=0, tag=TAG)
 if __name__ == '__main__':
  wait()
 ```
@@ -1272,16 +1272,16 @@ if __name__ == '__main__':
 import itertools
 from mpi4py.MPI import COMM_WORLD as comm
 size = comm.Get_size()
-workers = range(1 , size)
+workers = range(1, size)
 TAG = 92815
 if comm.rank == 0:
  import atexit
  from time import sleep
- def wait_all(requests , timeout=None):
+ def wait_all(requests, timeout=None):
      if timeout is None:
          return [req.wait() for req in requests]
      if not all (req.test() for req in requests):
-         elapsed , interval = 0 , 0.1
+         elapsed, interval = 0, 0.1
 while elapsed < timeout: # (1)
              sleep(interval)
              if all (req.test() for req in requests):
@@ -1293,9 +1293,9 @@ while elapsed < timeout: # (1)
              raise TimeoutError
      return [req.wait() for req in requests]
  def shutdown():
-     reqs = [comm.isend(( 'Terminate', None), i , tag=TAG)
+     reqs = [comm.isend(( 'Terminate', None), i, tag=TAG)
              for i in workers]
-     wait_all(reqs , timeout=0.5)
+     wait_all(reqs, timeout=0.5)
 ```
 
 ```python
@@ -1303,22 +1303,22 @@ while elapsed < timeout: # (1)
 def _build_chunks(iterable): # (2)
     iterable = iter(iterable)
     while True:
-chunk = list(itertools.islice(iterable , size)) # (3)
+chunk = list(itertools.islice(iterable, size)) # (3)
         if not chunk:
             return
         yield chunk
-def map (func , *iterables): # (4)
+def map (func, *iterables): # (4)
     assert comm.rank == 0
     for i in workers:
-        comm.send(('Func', func), dest=i , tag=TAG)
+        comm.send(('Func', func), dest=i, tag=TAG)
     results = []
     for args_list in _build_chunks(zip(*iterables)):
-reqs = [comm.isend(( 'Args', args), i , tag=TAG) # (5)
-                for args ,i in zip (args_list[1:] , workers)]
-        reqs = wait_all(reqs , timeout=0.5)
+reqs = [comm.isend(( 'Args', args), i, tag=TAG) # (5)
+                for args,i in zip (args_list[1:], workers)]
+        reqs = wait_all(reqs, timeout=0.5)
         results.append(func(*args_list[0]))
         for i in workers[:len(reqs)]:
-            results.append(comm.recv(source=i , tag=TAG))
+            results.append(comm.recv(source=i, tag=TAG))
     return results
 ```
 在 map 函数中，我们可能需要将第 (4) 行的可迭代对象所表示的任务划分为较小的批次进行处理。第 (2) 行的生成器 _build_chunks 旨在根据可用的 MPI 进程数量重新分组任务。这通过第 (3) 行的 itertools.islice 函数实现，每次调用生成器时，该函数从任务列表中选取前 comm.size 个任务。因此，任务的分配与 MPI 进程数量相匹配，确保工作负载均衡。
@@ -1332,16 +1332,16 @@ map 函数的 MPI 版本可以集成到串行程序中。以 get_j 函数为例�
 import itertools
 import numpy as np
 import mpi_map
-def compute_eri(i , n):
+def compute_eri(i, n):
     # Mimic the function to compute ERIs
     np.random.seed(i)
-    return np.random.rand(n ,n ,n)
-def get_j_task(i , dm):
+    return np.random.rand(n,n,n)
+def get_j_task(i, dm):
     n = dm.shape[0]
-    return np.einsum('jkl ,j ->kl', compute_eri(i , n), dm[: ,i])
+    return np.einsum('jkl,j->kl', compute_eri(i, n), dm[:,i])
 def get_j(dm):
     n = dm.shape[0]
-    output = mpi_map. map(get_j_task , range(n), itertools.repeat(dm , n))
+    output = mpi_map. map(get_j_task, range(n), itertools.repeat(dm, n))
     jmat = sum(output)
     return jmat
 ```
@@ -1359,7 +1359,7 @@ print(out.shape)
 执行这个 Python 程序时，我们使用 MPMD 风格的命令启动进程。不同程序使用分隔符「:」隔开，如下所示：
 
 ```bash
-$  mpirun -n 1 python run.py : -n 7 python mpi_worker.py
+$ mpirun -n 1 python run.py : -n 7 python mpi_worker.py
 ```
 在 MPMD 中，mpirun 命令中指定程序的顺序至关重要。为了确保 MPI COMM_WORLD 中的 rank 0 分配给串行程序，必须首先指定串行程序。
 基于 MPMD 方法，可以实现其他并行功能，例如日志系统和错误处理机制。如果你有兴趣进一步探索这些概念，可以在 Python 软件包 schwimmbad [14] 中找到这些技术的实际示例。

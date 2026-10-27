@@ -90,11 +90,11 @@ DFT 计算。
 
 ```yaml
 {
-        "Version": "2012 -10 -17", "Statement":[
+        "Version": "2012-10-17", "Statement":[
                 {
                         "Effect": "Allow", "Action":[
                                 "ec2:*", "ecs:*", "ecr:*", "s3:*", "lambda:*", "sqs:*"
-                        ] , "Resource": "*"
+                        ], "Resource": "*"
                 }
         ]
 }
@@ -103,11 +103,11 @@ DFT 计算。
 容器化方法需要专门为计算任务设计的 Docker 镜像。假设目标是建立第 7.1.2 节中提到的 DFT PES 工作流，可以创建以下 Dockerfile：
 
 ```text
-FROM nvidia/cuda:12.0.1 -runtime -ubuntu22.04
+FROM nvidia/cuda:12.0.1-runtime-ubuntu22.04
 # Install necessary dependencies
-RUN apt -get update && apt -get install -y python3 python3 -pip \
+RUN apt-get update && apt-get install -y python3 python3-pip \
     && rm -rf /var/lib/apt/lists/ *
-RUN pip install --no -cache -dir pyscf gpu4pyscf -cuda12x awscli boto3
+RUN pip install --no-cache-dir pyscf gpu4pyscf-cuda12x awscli boto3
 COPY start.sh /app/start.sh
 WORKDIR /app
 ```
@@ -116,7 +116,7 @@ WORKDIR /app
 ```yaml
 #!/bin/bash
 # Set the default time limit to 1 hour
-TIMEOUT= $ {2: -3600}
+TIMEOUT=${2:-3600}
 S3PATH=$1
 aws s3 copy $S3PATH/job.py ./
 timeout $TIMEOUT python job.py > job.log
@@ -125,17 +125,17 @@ aws s3 copy job.log $S3PATH/
 计算任务定义在 Python 程序 job.py 中，该程序应由几何结构生成器服务创建。为了防止计算无限期运行，我们使用 GNU timeout 工具对计算强制执行时间限制。计算结果上传到 S3 存储。然后，我们构建此镜像并将其上传到 AWS ECR 服务：
 
 ```bash
-$  aws ecr create -repository --repository -name python -qc/dft -gpu
-$  docker build -t 987654321000.dkr.ecr.us -east -1.amazonaws.com/python -qc/
-    dft -gpu:1.0 .
-$  docker push 987654321000.dkr.ecr.us -east -1.amazonaws.com/python -qc/dft -
+$ aws ecr create -repository --repository-name python-qc/dft-gpu
+$ docker build -t 987654321000.dkr.ecr.us -east-1.amazonaws.com/python-qc/
+    dft-gpu:1.0 .
+$ docker push 987654321000.dkr.ecr.us -east-1.amazonaws.com/python-qc/dft-
     gpu:1.0
 ```
 12 位数字 987654321000 只是账户 ID 的占位符。你应该将其替换为自己的实际账户 ID。
 要在 AWS ECS 上部署计算工作流，首先需要定义一个 ECS 集群。ECS 集群包含虚拟机硬件资源、操作系统、网络配置以及各种访问权限的规格。使用 awscli 工具包提供的命令，我们可以建立一个以默认设置在虚拟机上运行的基本集群，称为 FARGATE 模式 [14]。
 
 ```bash
-$  aws ecs create -cluster --cluster -name ecs -basic -cluster
+$ aws ecs create -cluster --cluster-name ecs-basic-cluster
 ```
 FARGATE 模式集群足以探索 AWS ECS 的基本功能。然而，该集群不支持 GPU 加速。为了使用 GPU，我们需要在创建 ECS 集群时为 EC2 GPU 实例启用 ASG（自动扩缩组）[15]。建议使用 AWS Web 控制台配置这种 ECS 集群（图 7.3）。有关 ECS 集群配置的详细说明，请参阅 AWS ECS 文档 [3,16]。
 
@@ -153,16 +153,16 @@ Create a Python script to register an AWS ECS task definition:
 - Use GPU instances on ECS
 - Use boto3 library
 - Follow the template below
-' ' '
-config = ' ' '
+'''
+config = '''
 - ECS configuration in YAML.
-- Include docker image , the CPU , memory and other necessary requirements in
+- Include docker image, the CPU, memory and other necessary requirements in
      configuration.
-' ' '
+'''
 py_config = convert YAML config to Python code
-ecs_client = boto3.client( 'ecs ')
+ecs_client = boto3.client('ecs')
 response = ecs_client.appropriate_ecs_function( **py_config)
-' ' '
+'''
 ```
 GPT-4 的输出如下：
 
@@ -170,13 +170,13 @@ GPT-4 的输出如下：
 import boto3
 import yaml
 # Your YAML configuration for the ECS task
-config = ' ' '
+config = '''
 taskDefinition:
-  family: gpu -task -family
+  family: gpu-task-family
   networkMode: "awsvpc"
   containerDefinitions:
-    - name: gpu -container
-      image: your -docker -image
+    - name: gpu-container
+      image: your-docker-image
       cpu: 1024
       memory: 2048
       resourceRequirements:
@@ -189,7 +189,7 @@ taskDefinition:
     - EC2
   memory: "4GB"
   cpu: "1024"
-' ' '
+'''
 # Convert YAML config to Python dictionary
 py_config = yaml.safe_load(config)
 # Initialize a boto3 client for ECS
@@ -200,13 +200,13 @@ response = ecs_client.register_task_definition( **py_config['task_definition'])
 虽然可以改进提示词以生成更好的代码样例，但在当前情境下我们不再进行这种改进。上面的代码样例足够清楚地说明了 boto3 ECS 客户端的 register_task_definition 函数的参数。生成的 YAML 配置样例也很容易理解。基于这个代码样例，我们可以调整某些设置，得到如下注册任务定义的脚本：
 
 ```text
-config_tpl = ' ' '
+config_tpl = '''
 task_definition:
-  family: dft -demo
+  family: dft-demo
   networkMode: "awsvpc"
   containerDefinitions:
-    - name: dft -demo -1
-      image: 987654321000.dkr.ecr.us -east -1.amazonaws.com/python -qc/dft -gpu
+    - name: dft-demo-1
+      image: 987654321000.dkr.ecr.us-east-1.amazonaws.com/python-qc/dft-gpu
     :1.0
       cpu: 4
       memory: 2048
@@ -217,7 +217,7 @@ task_definition:
     - EC2
   memory: "4GB"
   cpu: "4"
-' ' '
+'''
 py_config = yaml.safe_load(config)
 ecs_client = boto3.client( 'ecs')
 response = ecs_client.register_task_definition( **py_config['task_definition'])
@@ -233,44 +233,44 @@ print(yaml.dump(response))
 import boto3
 import jinja2
 import yaml
-task_config_tpl = jinja2.Template( ' ' '
-cluster: python -qc
-taskDefinition: dft -demo
+task_config_tpl = jinja2.Template( '''
+cluster: python-qc
+taskDefinition: dft-demo
 count: 1
 overrides:
   containerOverrides:
-  - name: dft -demo -1
-{% - if image %}
+  - name: dft-demo-1
+{%- if image %}
     image: {{ image }}
-{% - endif %}
+{%- endif %}
     command:
     - /app/start.sh
-    - s3://python -qc -3vtl/{{ task }}/{{ job_id }}
+    - s3://python-qc-3vtl/{{ task }}/{{ job_id }}
     - "{{ timeout or 7200 }}"
     environment:
     - name: JOB_ID
       value: "{{ job_id }}"
     - name: OMP_NUM_THREADS
       value: "{{ threads or 1 }}"
-{% - if threads %}
+{%- if threads %}
   memory: {{ threads * 2} } G B
-{% - else %}
+{%- else %}
   memory: 2GB
-{% - endif %}
+{%- endif %}
 networkConfiguration:
   awsvpcConfiguration:
     subnets:
-{% - for v in subnets %}
+{%- for v in subnets %}
     -{ {v} }
-{% - endfor %}
-' ' ')
+{%- endfor %}
+''')
 ec2_client = boto3.client( 'ec2')
 ```
 
 ```python
 resp = ec2_client.describe_subnets()
 subnets = [v[ 'SubnetId'] for v in resp['Subnets']]
-config = task_config_tpl.render( task='dft -demo', job_id= '219a3d6c', threads=2 , subnets=subnets)
+config = task_config_tpl.render( task='dft-demo', job_id= '219a3d6c', threads=2, subnets=subnets)
 config = yaml.safe_load(config)
 ecs_client = boto3.client( 'ecs')
 resp = ecs_client.run_task( **config)
@@ -279,10 +279,10 @@ print(yaml.dump(resp))
 如果任务提交成功，ECS 将启动一台配备 GPU 设备的 EC2 虚拟机。然后，它根据任务和任务定义中指定的参数，在虚拟机内执行 docker run 命令。例如，本例中的任务实际上等同于以下 docker run 命令：
 
 ```bash
-$  docker run --runtime=nvidia -container -runtime \
+$ docker run --runtime=nvidia -container-runtime \
     -e OMP_NUM_THREADS=2 --cpus 2 --memory 8G \
-    987654321000.dkr.ecr.us -east -1.amazonaws.com/python -qc/dft -gpu:1.0 \
-    /app/start.sh s3://python -qc -3vtl/dft -demo/219a3d6c 7200
+    987654321000.dkr.ecr.us-east-1.amazonaws.com/python-qc/dft-gpu:1.0 \
+    /app/start.sh s3://python-qc-3vtl/dft-demo/219a3d6c 7200
 ```
 ECS 任务并不限于单个运行至完成的作业。我们可以使用 ECS 工作节点运行 Dask、Ray 或其他作业调度器。这些调度器可以执行各种类型的任务，简化配置各个 ECS 任务的复杂过程。我们将在第 7.2 节探讨这种方法。
 
@@ -291,12 +291,12 @@ ECS 任务并不限于单个运行至完成的作业。我们可以使用 ECS �
 在这个势能面（PES）工作流中，我们可能希望根据势能面计算的进展动态调整几何构型网格。为此，需要在几何构型生成程序与 DFT 计算任务之间建立交互。几何构型生成程序可以先在势能面上生成粗粒度网格，然后根据已完成的结果细化网格，而不是一次生成势能面上的所有网格。下面的函数 geometry_on_pes 给出了这一功能的原型。
 
 ```python
-def geometry_on_pes(molecule , pes_params , existing_results=None):
-    ' ' 'Generates molecule geometry for the important grids on PES
+def geometry_on_pes(molecule, pes_params, existing_results=None):
+    '''Generates molecule geometry for the important grids on PES
     Arguments:
     - molecule: Molecular formula
-    - pes_params: Targets to scan , such as bonds , bond angles.
-    ' ' '
+    - pes_params: Targets to scan, such as bonds, bond angles.
+    '''
     # This function should produce molecule configurations
     # based on the results of accomplished calculations.
     # Here is a fake implementation to demonstrate the functionality.
@@ -323,13 +323,13 @@ def geometry_on_pes(molecule , pes_params , existing_results=None):
 为便于与 RPC 服务器通信，可以将服务器地址作为参数或环境变量提供给 DFT 任务的 Docker 容器。基于第 7.1.3 节开发的 ECS 任务，我们稍作调整来设置 DFT 任务：
 
 ```yaml
-rpc_config_tpl = jinja2.Template( ' ' '
+rpc_config_tpl = jinja2.Template( '''
 cluster: {{ cluster }}
 taskDefinition: {{ task }}
 count: 1
 overrides:
 containerOverrides:
-- name: {{ task }} -1
+- name: {{ task }}-1
  command:
  - /app/start.sh
  - {{ job_path }}
@@ -351,10 +351,10 @@ EC2
 networkConfiguration:
 awsvpcConfiguration:
  subnets:
-{% - for v in subnets %}
+{%- for v in subnets %}
  -{ {v} }
-{% - endfor %}
-' ' ')
+{%- endfor %}
+''')
 ```
 DFT 执行器的 start.sh 脚本执行以下操作：1. 从 S3 存储中获取之前创建的 job.py 程序。
 
@@ -366,7 +366,7 @@ DFT 执行器的 start.sh 脚本执行以下操作：1. 从 S3 存储中获取�
 ```yaml
 #!/bin/bash
 # Set the default time limit to 1 hour
-TIMEOUT= $ {1: -3600}
+TIMEOUT=${1:-3600}
 S3PATH=$1
 ```
 
@@ -388,15 +388,15 @@ job_id = os.getenv( 'JOB_ID')
 status = sys.argv[1]
 logfile = sys.argv[2]
 def parse_log(logfile):
-    ' ' 'Reads the log file and finds the energy' ' '
-    log = open(logfile , 'r').read()
+    '''Reads the log file and finds the energy'''
+    log = open(logfile, 'r').read()
     ...
     return energy
 with ServerProxy(rpc_server) as proxy:
     if status == 'finished':
-        proxy.set_result(job_id , parse_log(logfile))
+        proxy.set_result(job_id, parse_log(logfile))
     else:
-        proxy.set_result(job_id , status)
+        proxy.set_result(job_id, status)
 ```
 如第 6 章所示，RPC 通信可以通过 REST API 实现。然而，为了简单起见，这里使用 Python 标准库 xmlrpc 创建 RPC 客户端。客户端需要 RPC 服务器的地址，该地址保存在环境变量 RPC_SERVER 中。这个环境变量此前已在 ECS 任务中配置。
 
@@ -406,9 +406,9 @@ with ServerProxy(rpc_server) as proxy:
 可以通过 AWS 提供的元数据 URI 获取 [18]。
 
 ```python
-import os , requests
+import os, requests
 def self_Ip():
-    ' ' 'IP address of the current container or EC2 instance' ' '
+    '''IP address of the current container or EC2 instance'''
     metadata_uri = os.getenv( 'ECS_CONTAINER_METADATA_URI')
     resp = requests.get(f '{metadata_uri}/task').json()
     return resp['Networks'][0]['IPv4Addresses']
@@ -416,27 +416,27 @@ def self_Ip():
 为了在 RPC 服务器上准备 DFT 任务，我们使用以下模板创建 Python 脚本 job.py：
 
 ```python
-rpc_job_tpl = jinja2.Template( ' ' '
+rpc_job_tpl = jinja2.Template( '''
 import pyscf
 from gpu4pyscf.dft import RKS
-mol = pyscf.M(atom="""{{ geom }}""" , basis= 'def2 -tzvp' , verbose=4)
-mf = RKS(mol , xc= 'wb97x').density_fit().run()
-' ' ')
+mol = pyscf.M(atom="""{{ geom }}""", basis='def2-tzvp', verbose=4)
+mf = RKS(mol, xc='wb97x').density_fit().run()
+''')
 ```
 job.py 脚本生成后，将上传到 S3 存储中由 job_path 指定的位置，以便远程访问。
 这些任务准备步骤可以整合到 launch_tasks 函数中，如下所示：
 
 ```python
-import boto3 , hashlib , jinja2 , json , yaml
-from typing import List , Dict
+import boto3, hashlib, jinja2, json, yaml
+from typing import List, Dict
 from concurrent.futures import Future
-CLUSTER = 'python -qc'
-TASK = 'dft -demo'
+CLUSTER = 'python-qc'
+TASK = 'dft-demo'
 RPC_PORT = 5005
 s3_client = boto3.client( 's3')
 ecs_client = boto3.client( 'ecs')
-job_pool: Dict[ str , Future] = {}
-def launch_tasks(geom_grids , results_path , timeout=7200):
+job_pool: Dict[ str, Future] = {}
+def launch_tasks(geom_grids, results_path, timeout=7200):
     assert results_path.startswith('s3://')
     ip = self_Ip()
     jobs = {}
@@ -446,10 +446,10 @@ def launch_tasks(geom_grids , results_path , timeout=7200):
 ```
 
 ```python
-        bucket , key = results_path.replace( 's3://', '').split('/',1 )
+        bucket, key = results_path.replace( 's3://', '').split('/',1 )
         job_path = f 's3://{bucket}/{key}/{job_id}'
-        s3_client.put_object(Bucket=bucket , Key=f'{key}/{job_id}/job.py', Body=job_conf)
-        task_config = rpc_config_tpl.render( cluster=CLUSTER , task=TASK , job_id=job_id , job_path=job_path , rpc_server=f'{ip}:{RPC_PORT}', timeout=timeout , threads=2)
+        s3_client.put_object(Bucket=bucket, Key=f'{key}/{job_id}/job.py', Body=job_conf)
+        task_config = rpc_config_tpl.render( cluster=CLUSTER, task=TASK, job_id=job_id, job_path=job_path, rpc_server=f'{ip}:{RPC_PORT}', timeout=timeout, threads=2)
         try:
             ecs_client.run_task(**yaml.safe_load(task_config))
         except Exception:
@@ -460,7 +460,7 @@ fut = Future() # (1)
             job_pool[job_id] = fut
             jobs[job_id] = fut
     return jobs
-def set_result(job_id , result):
+def set_result(job_id, result):
     fut = job_pool[job_id]
 fut.set_result(result) # (2)
 ```
@@ -479,11 +479,11 @@ from xmlrpc.server import SimpleXMLRPCServer
 ```python
 @contextmanager
 def rpc_service(funcs):
-    ' ' 'Creates an RPC service in background' ' '
+    '''Creates an RPC service in background'''
     try:
         rpc_server = SimpleXMLRPCServer(( "", RPC_PORT))
         for fn in funcs:
-            rpc_server.register_function(fn , fn.__name__)
+            rpc_server.register_function(fn, fn.__name__)
         rpc_service = Thread(target=rpc_server.serve_forever)
         rpc_service.start()
         yield
@@ -497,8 +497,8 @@ def rpc_service(funcs):
 ```python
 def parse_config(config_file):
     assert config_file.startswith('s3://')
-    bucket , key = config_file.replace( 's3://', '').split('/',1 )
-    config = json.loads(s3_client.get_object(Bucket=bucket , Key=key))
+    bucket, key = config_file.replace( 's3://', '').split('/',1 )
+    config = json.loads(s3_client.get_object(Bucket=bucket, Key=key))
     return config
 def pes_app(config_file):
     config = parse_config(config_file)
@@ -508,16 +508,16 @@ def pes_app(config_file):
     with rpc_service([set_result]):
         # Scan geometry until enough data are generated
         results = {}
-        geom_grids = geometry_on_pes(molecule , pes_params , results)
+        geom_grids = geometry_on_pes(molecule, pes_params, results)
         while geom_grids:
-            jobs = launch_tasks(geom_grids , results_path)
-            for key , fut in jobs.items():
+            jobs = launch_tasks(geom_grids, results_path)
+            for key, fut in jobs.items():
                 try:
                     result = fut.result(fut._timeout)
                 except TimeoutError:
                     result = 'timeout'
                 results[key] = result
-            geom_grids = geometry_on_pes(molecule , pes_params , results)
+            geom_grids = geometry_on_pes(molecule, pes_params, results)
 ```
 
 ```python
@@ -528,11 +528,11 @@ if __name__ == '__main__':
 RPC 服务器程序可以作为任务部署在 ECS 上。
 
 ```text
-rpc_server_config = ' ' '
-family: pes -rpc -server
+rpc_server_config = '''
+family: pes-rpc-server
 containerDefinitions:
-- name: rpc -server
-  image: 987654321000.dkr.ecr.us -east -1.amazonaws.com/python -qc/dft -gpu:1.0
+- name: rpc-server
+  image: 987654321000.dkr.ecr.us-east-1.amazonaws.com/python-qc/dft-gpu:1.0
   networkBindings:
   - containerPort: 5005
     hostPort: 5005
@@ -540,7 +540,7 @@ containerDefinitions:
   - python
   - pes_scan.py
   - config_file
-' ' '
+'''
 config = yaml.safe_load(rpc_server_config)
 ecs_client.register_task_definition(**config)
 ```
@@ -566,13 +566,13 @@ ecs_client.register_task_definition(**config)
 在 AWS Lambda 控制台（图 7.7）中，我们可以在图 7.7 的方框 1 中部署以下 Python 函数处理程序 [20]。
 
 ```python
-import json , hashlib , boto3
+import json, hashlib, boto3
 s3_client = boto3.client( 's3')
 ec2_client = boto3.client( 'ec2')
 ecs_client = boto3.client( 'ecs')
-def lambda_handler(event , context):
+def lambda_handler(event, context):
     # The data structure of event can be found in
-    # https://docs.aws.amazon.com/lambda/latest/dg/services -apigateway.html
+    # https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html
     method = event[ 'httpMethod']
     if method != 'POST':
         return {'statusCode': 400}
@@ -585,26 +585,26 @@ def lambda_handler(event , context):
         msg = f 'Unknown job {job}'
         results = 'N/A'
     config = json.dumps({
-        'molecule': body[ 'molecule'] , 'params': body[ 'params']
+        'molecule': body[ 'molecule'], 'params': body[ 'params']
     }).encode()
     job_id = hashlib.md5(config).hexdigest()
     resp = ec2_client.describe_subnets()
     subnets = [v[ 'SubnetId'] for v in resp['Subnets']]
-    bucket , path = 'python -qc',f 'pes -faas/{job_id}'
-    s3_client.put_object(Bucket=bucket , Key=f '{path}/config.json', Body=
+    bucket, path = 'python-qc',f 'pes-faas/{job_id}'
+    s3_client.put_object(Bucket=bucket, Key=f '{path}/config.json', Body=
     config)
     s3path = f 's3://{bucket}/{path}/config.json'
-    resp = ecs_client.run_task( cluster='python -qc', taskDefinition='pes -rpc -server', count=1 , launchType='FARGATE', networkConfiguration={'awsvpcConfiguration':{ 'subnets': subnets}} , overrides={
+    resp = ecs_client.run_task( cluster='python-qc', taskDefinition='pes-rpc-server', count=1, launchType='FARGATE', networkConfiguration={'awsvpcConfiguration':{ 'subnets': subnets}}, overrides={
             'containerOverrides':[ {
-                'name': 'rpc -server', 'command':[ 'python', 'pes_scan.py', s3path]
+                'name': 'rpc-server', 'command':[ 'python', 'pes_scan.py', s3path]
             }]
         }
     )
     msg = json.dumps(resp)
-    results = f 's3://{bucket}/pes -faas/{job_id}/results.log'
+    results = f 's3://{bucket}/pes-faas/{job_id}/results.log'
     return {
-        'statusCode': 200 , 'body':{
-            'results': results , 'detail': msg , }
+        'statusCode': 200, 'body':{
+            'results': results, 'detail': msg, }
     }
 ```
 此处理程序解码 HTTP 请求，并在 ECS 上启动势能面扫描任务。此外，可以在 AWS Lambda 控制台中图 7.7 的方框 3 处配置 Lambda 函数的触发器。如图 7.8 的方框 1 所示，将 API Gateway 指定给触发器。为简单起见，我们将 API Gateway 的安全机制设置为 Open，允许网关接受所有请求并将其转发
@@ -628,15 +628,15 @@ def lambda_handler(event , context):
 给 Lambda 函数。请注意，此设置并不安全。建议配置身份验证方法以增强服务安全性 [21]。部署 API Gateway 触发器后，会生成一个 HTTP 端点。点击图 7.9 中的方框 1 即可访问该端点，其对应的 URL 如下：
 
 ```text
-https://d8iah6mwib.execute -api.us -east -1.amazonaws.com/default/pes -scan
+https://d8iah6mwib.execute-api.us-east-1.amazonaws.com/default/pes-scan
 ```
 Lambda 函数处理程序需要访问多项 AWS 服务，包括对 S3、EC2 和 ECS 的读写权限。我们可以在 AWS Lambda 控制台中配置 Lambda 函数的权限，如图 7.9 所示。有关 IAM 策略的配置方法，请参阅第 7.1.3 节。为 Lambda 函数分配必要权限后，我们就可以通过 API Gateway 端点提供势能面扫描服务。下面是使用 JSON 文档调用 HTTP API 的示例，该文档指定了分子的几何构型和势能面参数：
 
 ```python
 import requests
 molecule = ' O000 ;H 0.757 0.587 0; H -0.757 0.587 0'
-resp = requests.post( 'https://d8iah6mwib.execute -api.us -east -1.amazonaws.com/default/pes -
-    scan', json={'job': 'pes', 'molecule': molecule , 'params': 'O ,H'}
+resp = requests.post( 'https://d8iah6mwib.execute-api.us-east-1.amazonaws.com/default/pes-
+    scan', json={'job': 'pes', 'molecule': molecule, 'params': 'O,H'}
 )
 print(resp.json()['detail'])
 ```
@@ -662,29 +662,29 @@ print(resp.json()['detail'])
 我们选择 Redis 作为代理。可以使用以下命令在本地部署它：
 
 ```bash
-$  docker run -d -p 6379:6379 redis:7.2
+$ docker run -d -p 6379:6379 redis:7.2
 ```
 相应地，我们可以安装带 Redis 扩展的 Celery 库：
 
 ```bash
-$  pip install celery[redis]
+$ pip install celery[redis]
 ```
 应用 Celery 的第一步是开发一个 Celery 应用。Celery 应用本质上是一个 Python 模块，可以在本地以及由 Celery 工作节点导入。
 
 ```bash
-$  cat dft_app.py
+$ cat dft_app.py
 import hashlib
 import pyscf
 from gpu4pyscf.dft import RKS
 from celery import Celery
-app = Celery( 'dft -pes ' , broker= 'redis://localhost:6379/0 ' , # (1)
-backend= 'redis://localhost:6379/1 ') # (2)
+app = Celery('dft-pes', broker='redis://localhost:6379/0', # (1)
+backend='redis://localhost:6379/1') # (2)
 @app.task
 def dft_energy(molecule):
-    job_id = hashlib.md5( 'f{molecule=}).hexdigest()
-    mol = pyscf.M(atom=molecule , basis= 'def2 -tzvp ' , verbose=4)
-    mf = RKS(mol , xc= 'wb97x ').density_fit().run()
-    return job_id , mf.e_tot
+    job_id = hashlib.md5('f{molecule=}).hexdigest()
+    mol = pyscf.M(atom=molecule, basis='def2-tzvp', verbose=4)
+    mf = RKS(mol, xc='wb97x').density_fit().run()
+    return job_id, mf.e_tot
 ```
 创建 Celery 应用时，通过关键字 borker 指定消息代理，如第 (1) 行所示。它只充当调度作业的任务队列。要接收远程 Celery 工作节点的输出，必须配置数据库后端，为 Celery 应用存储结果。Celery 提供多种结果后端选项 [25]。为简单起见，我们继续使用 Redis 作为结果后端。Redis 使用 URL 中的数字标识数据库。不同数字对应不同数据库。如第 (2) 行所示，结果配置为存储在单独的数据库中。
 按照 Celery 库的要求，我们应在 Celery 应用代码中使用装饰器 @app.task 注册所有远程函数。在本地环境中，我们可以导入此应用并调用远程函数的 .delay() 方法来提交任务。
@@ -694,20 +694,20 @@ In [1]: from dft_app import dft_energy
         results = [
             dft_energy.delay(' O000 ;H 0.757 0.5 0; H -0.757 0.5 0' ), dft_energy.delay(' O000 ;H 0.757 0.6 0; H -0.757 0.6 0' )]
         print(results)
-        print(results[0].status , results[1].status)
+        print(results[0].status, results[1].status)
 ```
 
 ```text
 Out[1]:
-[ <AsyncResult: 41100ef3 -2fed -4809 -b8e7 -a599b161b5a8 > , <AsyncResult: 17271
-    cc9 -6aba -4bef -a8ce -544a512f8e9a >]
+[<AsyncResult: 41100ef3-2fed-4809-b8e7-a599b161b5a8>, <AsyncResult: 17271
+    cc9-6aba-4bef-a8ce-544a512f8e9a>]
 PENDING PENDING
 ```
 返回一个 AsyncResult 对象来表示远程函数的结果。最初，提交的任务状态为 PENDING。这是因为我们尚未为该应用部署任何工作节点。
 在另一个终端中，可以通过执行以下命令启动 Celery 工作节点：
 
 ```bash
-$  celery --app=dft_app worker
+$ celery --app=dft_app worker
 ```
 由 --app 参数指定的应用必须是 Celery 工作节点能够导入的模块。在此本地设置中，由于命令在应用程序文件所在的同一目录中执行，工作节点成功加载了 Celery 应用。远程部署工作节点时，应正确安装该应用，以确保它可以被导入。为此可以使用我们在第 1 章讨论的软件包分发技术。
 工作节点从消息代理获取任务，并将结果发送到后端数据库。我们可以通过 AsyncResult 对象访问运行状态、错误消息和结果。
@@ -731,46 +731,46 @@ import boto3
 ```
 
 ```python
-app = Celery( 'dft -pes', broker= 'sqs://')
+app = Celery( 'dft-pes', broker= 'sqs://')
 s3 = boto3.client( 's3')
                                         @app.task
-def dft_energy(molecule , s3_path):
+def dft_energy(molecule, s3_path):
     output = tempfile.mktemp()
-    mol = pyscf.M(atom=molecule , basis= 'def2 -tzvp', verbose=4 , output=output)
-    mf = RKS(mol , xc= 'wb97x').density_fit().run()
-    bucket , key = s3_path.replace( 's3://', '').split('/',1 )
-    s3.upload_file(output , bucket , key)
+    mol = pyscf.M(atom=molecule, basis= 'def2-tzvp', verbose=4, output=output)
+    mf = RKS(mol, xc= 'wb97x').density_fit().run()
+    bucket, key = s3_path.replace( 's3://', '').split('/',1 )
+    s3.upload_file(output, bucket, key)
 ```
 下一步是为 Celery 工作进程配置 AWS ECS。这与我们在第 7.1.3 节讨论的过程类似。我们需要创建一个 Docker 镜像并将其上传到 AWS ECR。该 Docker 镜像的 Dockerfile 如下：
 
-```bash
-FROM nvidia/cuda:12.0.1 -runtime -ubuntu22.04
-RUN apt -get update && \
-  apt -get install -y python3 python3 -pip && \
+```text
+FROM nvidia/cuda:12.0.1-runtime-ubuntu22.04
+RUN apt-get update && \
+  apt-get install -y python3 python3-pip && \
   rm -rf /var/lib/apt/lists/ *
-RUN pip install --no -cache -dir pyscf gpu4pyscf -cuda12x boto3 celery[sqs]
+RUN pip install --no-cache-dir pyscf gpu4pyscf-cuda12x boto3 celery[sqs]
 COPY dft_app.py /app/
 WORKDIR /app
-CMD ["celery" ," -A" , "dft_app" , "worker" ," --loglevel=info"]
+CMD ["celery","-A", "dft_app", "worker"," --loglevel=info"]
 ```
 这个 Docker 镜像被标记为 python-qc/celery-dft:1.0。
 
 ```bash
-$  aws ecr create -repository --repository -name python -qc/celery -dft
-$  docker build -t 987654321000.dkr.ecr.us -east -1.amazonaws.com/python -qc/
-    celery -dft:1.0 .
-$  docker push 987654321000.dkr.ecr.us -east -1.amazonaws.com/python -qc/celery
+$ aws ecr create -repository --repository-name python-qc/celery-dft
+$ docker build -t 987654321000.dkr.ecr.us -east-1.amazonaws.com/python-qc/
+    celery-dft:1.0 .
+$ docker push 987654321000.dkr.ecr.us -east-1.amazonaws.com/python-qc/celery
     -dft:1.0
 ```
 然后，我们使用新的 Docker 镜像注册一个 ECS 任务定义。
 
 ```text
-config = yaml.safe_load( ' ' '
-family: celery -gpu -worker
+config = yaml.safe_load( '''
+family: celery-gpu-worker
 networkMode: awsvpc
 containerDefinitions:
-- name: celery -worker
-  image: 987654321000.dkr.ecr.us -east -1.amazonaws.com/python -qc/celery -dft
+- name: celery-worker
+  image: 987654321000.dkr.ecr.us-east-1.amazonaws.com/python-qc/celery-dft
     :1.0
   environment:
 ```
@@ -783,7 +783,7 @@ runtimePlatform:
   operatingSystemFamily: LINUX
 cpu: 4 vcpu
 memory: 8GB
-' ' ')
+''')
 ecs_client = boto3.client( 'ecs')
 resp = ecs_client.register_task_definition( **config)
 print(yaml.dump(resp))
@@ -794,13 +794,13 @@ print(yaml.dump(resp))
 ec2_client = boto3.client( 'ec2')
 resp = ec2_client.describe_subnets()
 subnets = [v[ 'SubnetId'] for v in resp['Subnets']]
-config = yaml.safe_load( ' ' '
-cluster: python -qc
-taskDefinition: celery -gpu -worker
+config = yaml.safe_load( '''
+cluster: python-qc
+taskDefinition: celery-gpu-worker
 count: 2
 overrides:
   containerOverrides:
-  - name: celery -worker
+  - name: celery-worker
     environment:
     - name: AWS_ACCESS_KEY_ID
       value: xxxxxxxxxxxxxxxxxxxx
@@ -812,7 +812,7 @@ overrides:
 networkConfiguration:
   awsvpcConfiguration:
     subnets: {}
-' ' '.format(subnets))
+'''.format(subnets))
 ecs_client = boto3.client( 'ecs')
 resp = ecs_client.run_task( **config)
 print(yaml.dump(resp))
@@ -827,13 +827,13 @@ In [3]: from dft_app import dft_energy
             dft_energy.delay(' O000 ;H 0.757 0.5 0; H -0.757 0.5 0' ), dft_energy.delay(' O000 ;H 0.757 0.6 0; H -0.757 0.6 0' )]
         print(results)
 Out[3]:
-[ <AsyncResult: 32f68705 -04f8 -483c -83eb -45bf2622ced3 > , <AsyncResult: 5833
-    cf35 -7fd2 -4d7d -9ef2 -f9e1acd4579a >]
+[<AsyncResult: 32f68705-04f8-483c-83eb-45bf2622ced3>, <AsyncResult: 5833
+    cf35-7fd2-4d7d-9ef2-f9e1acd4579a>]
 ```
 请注意，Celery 工作进程在完成所有计算任务后不会自动关闭。要终止 Celery 工作进程，可以通过命令行界面（CLI）使用
 
 ```text
-aws ecs stop -task
+aws ecs stop-task
 ```
 命令停止相应的 ECS 任务，也可以通过网页控制台删除已分配的资源。不要忘记这一步清理，否则 ECS 计算资源会持续产生费用。可以实现一些函数来监控任务队列的状态，并在任务完成后自动终止 Celery 工作进程。然而，实现这一功能需要协调多种 AWS 云服务，超出了 Python 编程的范围。本书不讨论这一主题。
 如本例所示，使用 Celery 通常并不复杂。如果有大量类似的计算任务需要执行，Celery 是批处理的绝佳选择。
@@ -859,7 +859,7 @@ aws ecs stop -task
 提供 dask.distributed 模块，用于在 Dask 集群上进行分布式计算。如图 7.10 所示，Dask 集群由一个调度器（scheduler）和若干工作进程组成。要安装 Dask 分布式执行器所需的组件，可以执行
 
 ```bash
-$  pip install dask distributed bokeh
+$ pip install dask distributed bokeh
 ```
 其中，distributed 软件包提供管理 Dask 集群所需的工具，bokeh 则提供用于监控 Dask 集群状态的可视化仪表板。
 
@@ -870,8 +870,8 @@ $  pip install dask distributed bokeh
 我们先在本地环境中探索 dask.distributed 的功能。可以通过运行两个命令启动 Dask 集群：
 
 ```bash
-$  dask scheduler
-$  dask worker localhost:8786
+$ dask scheduler
+$ dask worker localhost:8786
 ```
 命令 dask-scheduler 初始化 Dask 集群的调度器。命令 dask-worker 启动工作进程。
 集群初始化后，dask-scheduler 充当服务器。然后我们可以创建一个 Client 来连接调度器。Dask 客户端的 .submit() 方法
@@ -882,11 +882,11 @@ import pyscf
 from dask.distributed import Client
 client = Client( 'localhost:8786')
 def dft_energy(molecule):
-    mol = pyscf.M(atom=molecule , basis= 'def2 -tzvp', verbose=4)
+    mol = pyscf.M(atom=molecule, basis= 'def2-tzvp', verbose=4)
     mf = mol.RKS(xc= 'wb97x').density_fit().run()
     return mf.e_tot
 molecules = [ ' O000 ;H 0.757 0.5 0; H -0.757 0.5 0' , ' O000 ;H 0.757 0.6 0; H -0.757 0.6 0' ]
-results = [client.submit(dft_energy ,x ) for x in molecules]
+results = [client.submit(dft_energy,x ) for x in molecules]
 print(client.gather(results))
 ```
 默认情况下，启动调度器时会自动在同一台机器的 8787 端口提供 bokeh 仪表板。在本地环境中，可以通过以下地址访问仪表板：
@@ -899,12 +899,12 @@ http://localhost:8787/status
 如果使用 ECS 部署 Dask 调度器，还需要进行额外的网络配置，以确保 Dask 调度器可访问。为简单起见，我们可以启动一个 EC2 实例来托管 Dask 调度器。EC2 实例可以同时拥有公共和私有 IP 地址。在 EC2 实例中安装 dask、distributed 和 bokeh 等必要的软件包后，我们可以像在本地环境中那样启动 dask-scheduler。
 另一方面，对于 Dask 工作进程，我们仍可使用容器化服务。与 Celery 的 ECS 部署方法类似，我们可以创建一个 Docker 镜像
 
-```bash
-FROM nvidia/cuda:12.0.1 -runtime -ubuntu22.04
-RUN apt -get update && \
-  apt -get install -y python3 python3 -pip && \
+```text
+FROM nvidia/cuda:12.0.1-runtime-ubuntu22.04
+RUN apt-get update && \
+  apt-get install -y python3 python3-pip && \
   rm -rf /var/lib/apt/lists/ *
-RUN pip install --no -cache -dir gpu4pyscf -cuda12x boto3 dask distributed
+RUN pip install --no-cache-dir gpu4pyscf-cuda12x boto3 dask distributed
 ```
 工作进程的 ECS 任务定义与 Celery 工作进程的基本相同，可以在这里复用。
 一个 ECS 工作进程可能被分配多个 IP 地址。为确保 Dask 工作进程绑定到私有地址，我们应在启动 dask-worker 命令时指定该地址。可以从 AWS 网页控制台或通过 boto3 库获取此地址。然后，我们覆盖任务定义中的镜像和命令，得到如下 ECS 任务配置来启动 Dask 工作进程：
@@ -913,19 +913,19 @@ RUN pip install --no -cache -dir gpu4pyscf -cuda12x boto3 dask distributed
 ec2_client = boto3.client( 'ec2')
 resp = ec2_client.describe_subnets()
 subnets = [v[ 'SubnetId'] for v in resp['Subnets']]
-private_ip = ec2_client.describe_instances( Filters=[{'Name': 'tag:Name', 'Values':[ 'dask -server']}]
+private_ip = ec2_client.describe_instances( Filters=[{'Name': 'tag:Name', 'Values':[ 'dask-server']}]
 )['Reservations'][0]['Instances'][0]['PrivateIpAddress']
-config = yaml.safe_load( ' ' '
-cluster: python -qc
-taskDefinition: celery -gpu -worker
+config = yaml.safe_load( '''
+cluster: python-qc
+taskDefinition: celery-gpu-worker
 count: 2
 overrides:
   containerOverrides:
-  - name: dask -gpu -worker
-    image: 987654321000.dkr.ecr.us -east -1.amazonaws.com/python -qc/dask -dft
+  - name: dask-gpu-worker
+    image: 987654321000.dkr.ecr.us-east-1.amazonaws.com/python-qc/dask-dft
     :1.0
     command:
-    - dask -worker
+    - dask-worker
     - "{0}:port"
     resourceRequirements:
     - type: GPU
@@ -933,7 +933,7 @@ overrides:
 networkConfiguration:
   awsvpcConfiguration:
     subnets: {1}
-' ' '.format(private_ip , subnets}))
+'''.format(private_ip, subnets}))
 ecs_client = boto3.client( 'ecs')
 resp = ecs_client.run_task( **config)
 print(yaml.dump(resp))
@@ -954,7 +954,7 @@ print(yaml.dump(resp))
 以 AWS 云为例，要在 AWS 云上部署 Ray 集群，应安装以下软件包：
 
 ```bash
-$  pip install -U ray[default ,aws] boto3
+$ pip install -U ray[default ,aws] boto3
 ```
 依赖 boto3 库访问 AWS API，因此需要安装该库。
 要将计算任务卸载到 Ray 集群，我们需要准备并提交一个 Ray 作业。Ray 作业通常由以下部分组成：
@@ -964,28 +964,28 @@ $  pip install -U ray[default ,aws] boto3
 - 为确保完成，使用该函数获取 Future 对象的结果。下面是适用于上述 DFT 计算任务的 Ray 作业示例。
 
 ```bash
-$  cat dft_job.py
+$ cat dft_job.py
 import pyscf
 import ray
                                         @ray.remote
 def dft_energy(molecule):
-    mol = pyscf.M(atom=molecule , basis= 'def2 -tzvp ' , verbose=4)
-    mf = mol.RKS(xc= 'wb97x ').density_fit().run()
+    mol = pyscf.M(atom=molecule, basis='def2-tzvp', verbose=4)
+    mf = mol.RKS(xc='wb97x').density_fit().run()
     return mf.e_tot
-molecules = [ ' O000 ;H 0.757 0.5 0; H -0.757 0.5 0 ' , ' O000 ;H 0.757 0.6 0; H -0.757 0.6 0  ']
+molecules = [' O000 ;H 0.757 0.5 0; H -0.757 0.5 0 ', ' O000 ;H 0.757 0.6 0; H -0.757 0.6 0 ']
 futures = [dft_energy.remote(x) for x in molecules]
 print(ray.get(futures))
 ```
 为体验 Ray 作业的基本用法，我们可以先运行以下命令，在本地环境中启动一个 Ray 集群：
 
 ```bash
-$  ray start --head
+$ ray start --head
 ```
 根据输出中显示的说明，可以使用以下命令提交 Ray 作业：
 
 ```bash
-$  export RAY_ADDRESS= 'http://127.0.0.1:8265 '
-$  ray job submit --working -dir . -- python3 dft_job.py
+$ export RAY_ADDRESS= 'http://127.0.0.1:8265'
+$ ray job submit --working -dir . -- python3 dft_job.py
 ```
 双横线 -- 是分隔符，用于将 Ray 选项与要远程执行的作业命令分开。working-dir 是本地目录，我们可以在其中存放作业脚本和必要的输入数据。
 请注意 --working-dir 路径，它经常引起混淆。云环境不像高性能计算（HPC）环境那样具有共享文件系统。我们在本地开发的脚本文件，例如 dft_job.py，不会自动在工作节点上可用。为解决文件共享问题，命令
@@ -1000,28 +1000,28 @@ ray job submit
 接下来设置 AWS 上的 Ray 集群。下面是 AWS 上 Ray 集群的示例配置，我们已将其保存在一个 YAML 文件中，文件名为
 
 ```text
-cluster_name: dft -ray
+cluster_name: dft-ray
 provider:
   type: aws
-  region: us -east -1
-  availability_zone: us -east -1a
+  region: us-east-1
+  availability_zone: us-east-1a
 available_node_types:
   ray.head.default:
     node_config:
       InstanceType: m5.xlarge
-      ImageId: ami -080e1f13689e07408 # Ubuntu 22.04
+      ImageId: ami-080e1f13689e07408 # Ubuntu 22.04
   ray.worker.default:
     max_workers: 3
     node_config:
       InstanceType: p3.2xlarge # GPU instance
-      ImageId: ami -0b54855df82eef3a3 # Ubuntu 22.04 with Deep learning
+      ImageId: ami-0b54855df82eef3a3 # Ubuntu 22.04 with Deep learning
     tools
 setup_commands:
 ```
 
 ```text
-- sudo apt install -y python3 -pip
-- pip install ray[default] boto3 pyscf gpu4pyscf -cuda12x
+- sudo apt install -y python3-pip
+- pip install ray[default] boto3 pyscf gpu4pyscf-cuda12x
 ```
 此配置指定了几个关键设置：
 
@@ -1034,12 +1034,12 @@ setup_commands:
 定义集群配置后，我们可以使用 ray up 命令创建或更新集群。
 
 ```bash
-$  ray up -y config.yaml
+$ ray up -y config.yaml
 ```
 所有计算完成后，可以使用以下命令关闭 Ray 集群：
 
 ```bash
-$  ray down -y config.yaml
+$ ray down -y config.yaml
 ```
 执行该命令时，Ray 会向云平台发送请求，以释放和清理已分配的资源。然而，该命令不会完全跟踪这些请求是否成功。为避免潜在的资源浪费和意外账单，建议登录网页控制台，手动核实每项资源的状态。
 

@@ -31,13 +31,13 @@ CUDA 工具包的安装过程已在 Nvidia 官方文档 [4] 中介绍，此处�
 到另一个版本，我们可以修改 PATH 和 LD_LIBRARY_PATH 环境变量。
 
 ```bash
-$  export PATH=/usr/local/cuda -12.0/bin: $ {PATH}
-$  export LD_LIBRARY_PATH=/usr/local/cuda -12.0/lib64: $ {LD_LIBRARY_PATH}
+$ export PATH=/usr/local/cuda -12.0/bin:${PATH}
+$ export LD_LIBRARY_PATH=/usr/local/cuda -12.0/lib64:${LD_LIBRARY_PATH}
 ```
 或者，我们可以修改默认 CUDA 安装位置 /usr/local/cuda 的符号链接 [5]：
 
 ```bash
-$  sudo ln -fs /usr/local/cuda -12.0 /usr/local/cuda
+$ sudo ln -fs /usr/local/cuda -12.0 /usr/local/cuda
 ```
 
 #### 为 Docker 容器配置运行时环境
@@ -48,7 +48,7 @@ Python 应用经常在 Docker 容器中执行。然而，仅使用默认 Docker 
 {
     "runtimes": {
         "nvidia": {
-            "path": "/usr/bin/nvidia -container -runtime" , "runtimeArgs": []
+            "path": "/usr/bin/nvidia-container-runtime", "runtimeArgs": []
         }
     }
 }
@@ -56,12 +56,12 @@ Python 应用经常在 Docker 容器中执行。然而，仅使用默认 Docker 
 然后，我们可以指定 --runtime 选项来使用 CUDA 运行时：
 
 ```bash
-docker run --runtime=nvidia
+docker run--runtime=nvidia
 ```
 如果使用云端的 GPU 实例，Docker 所需的 CUDA 运行时可能已预装在虚拟机镜像中。要确认是否启用了 Docker 的 CUDA 运行时工具包，可以检查以下可执行文件是否存在：
 
 ```bash
-$  which nvidia -container -toolkit
+$ which nvidia -container-toolkit
 ```
 
 #### 检查计算能力
@@ -70,7 +70,7 @@ GPU 应用可以设计为针对多个计算能力类别，从而包含每个类�
 保硬件支持所需的计算能力 [2]。可以使用以下命令列出 CUDA 库中支持的 PTX 文件 [7]：
 
 ```bash
-$  cuobjdump --all -fatbin /path/to/library.so
+$ cuobjdump --all -fatbin /path/to/library.so
 ```
 
 #### 选择合适的软件版本
@@ -83,15 +83,15 @@ $  cuobjdump --all -fatbin /path/to/library.so
 为了说明这一过程，让我们重新看一下第 10 章介绍的 get_j 函数。这个函数可以简单地使用 einsum 函数计算。然而，为了展示各个 Python GPU 软件包的功能以及 GPU 应用的优化过程，我们在本例中特意没有使用 einsum。
 
 ```python
-def get_j(eri , dm):
-    ' ' 'Perform einsum("ijkl ,ji ->kl" , eri , dm)' ' '
+def get_j(eri, dm):
+    '''Perform einsum("ijkl,ji->kl", eri, dm)'''
     n = dm.shape[0]
-    output = np.zeros((n ,n ) )
+    output = np.zeros((n,n ) )
     for k in range (n):
         for l in range (n):
             for i in range (n):
                 for j in range (n):
-                    output[k ,l] += eri[i ,j ,k ,l] * dm[j ,i]
+                    output[k,l] += eri[i,j,k,l] * dm[j,i]
     return output
 ```
 请注意，对这个函数使用 GPU 计算未必能显著提高性能。在这种情况下，瓶颈是主机与 GPU 设备之间的数据传输，它限制了 GPU 计算能力的发挥。
@@ -101,9 +101,9 @@ def get_j(eri , dm):
 将基于 NumPy 的程序转换为使用 CuPy 的程序十分简单。CuPy 提供 NumPy 中的大多数功能。有关 CuPy API 与对应 NumPy API 的详细比较，可以参考 CuPy 文档 [11,12]。在大多数情况下，我们只需将模块名从 numpy 改为 cupy，例如
 
 ```python
-np.dot -> cupy.dot
-np.zeros -> cupy.zeros
-np.stack -> cupy.stack
+np.dot-> cupy.dot
+np.zeros-> cupy.zeros
+np.stack-> cupy.stack
 np.transpose -> cupy.transpose
 ```
 与 NumPy 之间一个值得注意的 API 差异 [12] 是 cupy.count_nonzero、cupy.sum、cupy.max 和 cupy.argmax 等归约函数的返回类型。调用 NumPy 归约函数时，它返回标量，而对应的 CuPy 函数返回零维数组。混合使用 CuPy 和 NumPy 代码时，这种差异可能导致兼容性问题，主要是由于标量和零维数组之间的区别，如第 2 章第 2.2.2 节所述。这并不是 CuPy 的缺陷，而是为了减少 CPU 与 GPU 之间同步开销而有意作出的设计选择。CPU 和 GPU 可以异步执行计算。当归约结果作为标量用于 CPU 上的计算时，必须将它们从 GPU 同步到 CPU。这种同步会阻塞 CPU 或 GPU 的执行。这些归约结果经常作为后续 GPU 张量运算的中间数据。CuPy 的零维数组不会影响 GPU 上的这些计算。
@@ -111,16 +111,16 @@ np.transpose -> cupy.transpose
 
 ```python
 import cupy as cp
-def get_j(eri , dm):
+def get_j(eri, dm):
     n = dm.shape[0]
 eri = cp.asarray(eri) # Transfer to memory on GPU
     dm = cp.asarray(dm)
-    output = cp.zeros((n ,n ) )
+    output = cp.zeros((n,n ) )
     for k in range (n):
         for l in range (n):
             for i in range (n):
                 for j in range (n):
-                    output[k ,l] += eri[i ,j ,k ,l] * dm[j ,i]
+                    output[k,l] += eri[i,j,k,l] * dm[j,i]
     return cp.asnumpy(output)
 ```
 使用 CuPy 时，可能会遇到基于 NumPy 的程序中不存在的某些问题：
@@ -147,7 +147,7 @@ cupy.get_default_memory_pool().free_all_blocks()
 - 除非显式配置 torch.set_default_tensor_type 函数，否则 PyTorch 张量对象的默认数据类型为 float32，而 NumPy 的默认数据类型为 float64。例如，torch.zeros(5)、
 
 ```text
-torch.rand(5) , and torch.as_tensor([1. , 2. , 3.]) all yield float32 tensors by
+torch.rand(5),and torch.as_tensor([1., 2., 3.])allyieldfloat32tensorsby
 ```
 默认情况下都会产生 float32 张量。
 
@@ -160,16 +160,16 @@ torch.rand(5) , and torch.as_tensor([1. , 2. , 3.]) all yield float32 tensors by
 ```python
 import torch
 torch.set_default_tensor_type(torch.float64)
-def get_j(eri , dm):
+def get_j(eri, dm):
     n = dm.shape[0]
-eri = torch.as_tensor(eri , device= 'cuda') # Transfer to GPU
-    dm = torch.as_tensor(dm , device= 'cuda')
-    output = torch.zeros((n , n), device= 'cuda')
+eri = torch.as_tensor(eri, device= 'cuda') # Transfer to GPU
+    dm = torch.as_tensor(dm, device= 'cuda')
+    output = torch.zeros((n, n), device= 'cuda')
     for k in range (n):
         for l in range (n):
             for i in range (n):
                 for j in range (n):
-                    output[k ,l] += eri[i ,j ,k ,l] * dm[j ,i]
+                    output[k,l] += eri[i,j,k,l] * dm[j,i]
     return output.to(device='cpu').numpy()
 ```
 与 CuPy 库类似，为减少内存分配开销，PyTorch 也会缓存并复用为 GPU 设备上创建的张量对象分配的内存。
@@ -184,8 +184,8 @@ eri = torch.as_tensor(eri , device= 'cuda') # Transfer to GPU
 import jax.numpy as jnp
 jax.config.update('jax_enable_x64', True)
 @jax.jit
-def get_j(eri , dm):
-    return (eri.transpose(2 ,3 ,1 ,0 ) * dm).sum(axis=(2 , 3))
+def get_j(eri, dm):
+    return (eri.transpose(2,3 ,1 ,0 ) * dm).sum(axis=(2, 3))
 ```
 请注意，与 PyTorch 类似，JAX 函数默认使用 float32 数据类型。要使用 float64 精度，必须使用以下语句配置库：
 
@@ -213,20 +213,20 @@ jax.config.update('jax_enable_x64', True)
 ```python
 import cupy as cp
 import cupyx
-pinned_buffer = cupyx.empty_pinned((n ,n ,n ,n))
+pinned_buffer = cupyx.empty_pinned((n,n,n,n))
 rng = np.random.default_rng()
-eri_cpu = rng.random((n ,n ,n , n), out=pinned_buffer)
+eri_cpu = rng.random((n,n ,n , n), out=pinned_buffer)
 # host to device transfer
 eri_gpu = cp.empty_like(eri_cpu)
 eri_gpu.set(eri_cpu)
-output = get_j(eri_gpu , dm)
+output = get_j(eri_gpu, dm)
 ```
 在这个例子中，我们使用随机数生成器 rng 的 random() 方法填充 pinned_buffer。接着，在 GPU 上创建所需大小的 CuPy 数组，并使用 .set() 方法将数据从固定内存传输到设备。
 创建空数组并调用 .set() 方法的两行代码可能显得不够简洁，但它们对使用固定内存至关重要。我们不能使用 cupy.asarray(eri_cpu) 等函数将创建 CuPy 数组和数据传输合并为一步来简化这个过程。这是因为 cupy.asarray 函数是一种异步操作。数据传输完成之前，输入数组中的数据可能被写入。为避免这些异步操作中潜在的竞态条件（race conditions），CuPy 始终在 cupy.asarray 函数中创建输入 NumPy 数组的副本，即使使用固定内存也是如此。这给数据传输增加了开销。
 要将数据从设备传输到固定内存，可以创建一个固定缓冲区并使用 CuPy 数组对象的 .get() 方法，通过 out 关键字选项指定数据的目标位置。
 
 ```text
-output_cpu = output.get(out=cupyx.empty_pinned((n , n)))
+output_cpu = output.get(out=cupyx.empty_pinned((n, n)))
 ```
 除了优化数据传输，固定内存还用于各种其他场景。例如，它是异步数据传输和零复制（zero-copy）技术的先决条件；零复制技术允许 GPU 直接访问主机内存的地址。然而，使用固定内存也有一些缺点。固定内存始终驻留在物理内存中，这可能减少其他应用可用的分页内存。此外，固定系统内存是一项资源密集型操作，比普通系统内存分配的开销更大。传输小型数组时，无须使用固定内存。
 
@@ -242,15 +242,15 @@ CUDA 使用一个称为 NULL 流的默认流。GPU 上的所有处理器都执�
 以将巨大的 eri 张量从主机传输到设备为例。下面的代码片段展示了异步数据传输的过程：
 
 ```python
-pinned_buffer = cupyx.empty_pinned((n ,n ,n ,n))
+pinned_buffer = cupyx.empty_pinned((n,n,n,n))
 rng = np.random.default_rng()
-eri_cpu = rng.random((n ,n ,n , n), out=pinned_buffer)
+eri_cpu = rng.random((n,n ,n , n), out=pinned_buffer)
 sm = cp.cuda.stream.Stream(non_blocking=True)
 eri_gpu = cp.empty_like(eri_cpu)
-eri_gpu.set(eri_cpu , stream=sm)
+eri_gpu.set(eri_cpu, stream=sm)
 ...
 sm.synchronize() # (1)
-output = get_j(eri_gpu , dm)
+output = get_j(eri_gpu, dm)
 ```
 这里创建了一个设置为 non_blocking=True 的新流。这使该流能够与默认流一起异步运行。将新流赋给 stream 关键字参数，即可配置 CuPy 函数使用这个新流。在本例中，数据传输放在新流上，而 get_j 的计算放在默认流上。如果两个流并发执行，默认流可能尝试访问尚未填入所需数据的内存地址，导致先读后写错误。为确保缓冲区中的数据已准备好，如第 (1) 行所示，在继续执行 get_j 函数之前对新流进行同步。
 或者，我们可以使用 Stream 类提供的上下文管理器来管理流的执行。在 Stream 上下文中，无须为 CuPy 函数指定 stream 关键字。除非显式关联到其他流对象，否则 CuPy 函数将在新流上执行。
@@ -259,7 +259,7 @@ output = get_j(eri_gpu , dm)
 with cp.cuda.stream.Stream(non_blocking=True) as sm:
     eri_gpu = cp.empty_like(eri_cpu)
     eri_gpu.set(eri_cpu)
-    output = get_j(eri_gpu , dm)
+    output = get_j(eri_gpu, dm)
 sm.synchronize()
 ```
 在这个代码示例中，get_j 函数在新创建的流的上下文中调用。与另外两个 CuPy 操作类似，get_j 中的函数也被加入新流的队列。同一流中的函数按顺序执行。
@@ -291,8 +291,8 @@ ctypes 模块可以与原生 CUDA C++ 项目结合使用。这种组合在 GPU �
 我们的初始版本源自第 11.2 节介绍的 CPU 代码。在这个版本中，循环索引 i 和 j 被映射到 CUDA 线程。高维数组用一维数组表示，其寻址方式由多维格式转换而来。这是在 CUDA 内核中处理多维数组的常用技术。确保 Python 端数组的连续性至关重要。
 
 ```text
-#include <cuda_runtime.h >
-__global__ void _kernel_v1(double *output , double *eri , double *dm , int n)
+#include <cuda_runtime.h>
+__global__ void _kernel_v1(double *output, double *eri, double *dm, int n)
 {
     size_t ij = blockIdx.x * blockDim.x + threadIdx.x;
     size_t nn = n * n;
@@ -305,7 +305,7 @@ __global__ void _kernel_v1(double *output , double *eri , double *dm , int n)
 ```
 
 ```text
-        atomicAdd(&output[kl] , eri[(i *n+j)*nn+kl] * dm_ji);
+        atomicAdd(&output[kl], eri[(i *n+j)*nn+kl] * dm_ji);
     }
 }
 ```
@@ -313,12 +313,12 @@ __global__ void _kernel_v1(double *output , double *eri , double *dm , int n)
 为了消除跨线程归约，第二个版本的 CUDA 内核交换了 ij 和 kl 的循环顺序。随后，索引 k 和 l 被映射到 CUDA 线程。通过这些修改，归约求和在每个线程内的寄存器中累积。
 
 ```text
-__global__ void _kernel_v2(double *output , double *eri , double *dm , int n)
+__global__ void _kernel_v2(double *output, double *eri, double *dm, int n)
 {
     size_t kl = blockIdx.x * blockDim.x + threadIdx.x;
     size_t nn = n * n;
     if (kl > nn) return;
-    size_t i ,j ;
+    size_t i,j ;
     double s = 0.;
     for ( i=0 ;i<n ; ++i) {
         for ( j=0 ;j<n ; ++j) {
@@ -333,13 +333,13 @@ __global__ void _kernel_v2(double *output , double *eri , double *dm , int n)
 
 ```text
 #define BLOCK 16
-__global__ void _kernel_v3(double *output , double *eri , double *dm , int n)
+__global__ void _kernel_v3(double *output, double *eri, double *dm, int n)
 {
     int tx = threadIdx.x;
     int ty = threadIdx.y;
     size_t kl = blockIdx.x * blockDim.x*blockDim.y + ty * blockDim.x + tx;
     size_t nn = n * n;
-    size_t i ,j ,i 0 , j0;
+    size_t i,j ,i 0, j0;
     __shared__ double dm_t[BLOCK][BLOCK];
     double s = 0.;
     for (i0 = 0; i0 < n; i0 += BLOCK) {
@@ -360,7 +360,7 @@ __global__ void _kernel_v3(double *output , double *eri , double *dm , int n)
 这是一个简化实现，假设相关张量和数组的维度都是 BLOCK 大小 16 的整数倍。完整实现必须包含检查边界附近未对齐元素的代码。不过，使用共享内存的分块算法核心保持不变。这里，每个分块都是一个 16 × 16 矩阵。分配的共享内存缓冲区 dm_t 可容纳这个大小。为了建立二维共享内存与 CUDA 线程之间的映射，启动这个内核时，应将 CUDA 线程块配置为包含 16 × 16
 
 ```text
-dim3 threads(16 , 16);
+dim3 threads(16, 16);
 ```
 CUDA 线程块内的每个线程负责从全局内存读取一个元素，以填充共享内存。在修改共享内存时，确保对它的独占访问至关重要。为此，使用 __syncthreads() 函数同步线程块中的所有线程，确保它们执行到相同的位置。这种同步可防止同时以写入和读取模式访问共享内存。
 通过采用分块算法，读取 dm 数组所需的全局内存访问减少到。因此，GPU 内核需要访问
@@ -374,30 +374,30 @@ Numba 提供即时编译（JIT）选项，可从 Python 函数生成 GPU 内核�
 ```python
 from numba import cuda
 @cuda.jit(fastmath=True)
-def naive_kernel(output , eri , dm):
+def naive_kernel(output, eri, dm):
     n = dm.shape[0]
     for i in range (n):
         for j in range (n):
             for k in range (n):
                 for l in range (n):
-                    output[k ,l] += eri[i ,j ,k ,l] * dm[j ,i]
-def get_j(eri , dm):
+                    output[k,l] += eri[i,j,k,l] * dm[j,i]
+def get_j(eri, dm):
     n = dm.shape[0]
     output = np.empty_like(dm)
-    grids = ((n *n+255) // 256 ,)
-    threads = (256 ,)
-    naive_kernel[grids , threads](output , eri , dm)
+    grids = ((n *n+255) // 256,)
+    threads = (256,)
+    naive_kernel[grids, threads](output, eri, dm)
     return output
 ```
 JIT 生成的 GPU 内核采用以下函数签名 [27]：
 
 ```text
-func[griddim , blockdim , stream , sharedmem]( *arguments)
+func[griddim, blockdim, stream, sharedmem]( *arguments)
 ```
 内核函数与 CUDA C++ 使用的内核启动语法相同：
 
 ```text
-func < < <griddim , blockdim , sharedmem , stream > > >(*arguments)
+func<<<griddim, blockdim, sharedmem, stream>>>(*arguments)
 ```
 面向普通 Python 代码的 Numba JIT 隐藏了 GPU 并行化模型的许多细节，这通常会导致性能欠佳。可以使用 Numba JIT 获得更好的性能，但需要在 Python JIT 代码中加入更多 GPU 专用语言和特性。为了使用高级 CUDA 特性，
 Numba 通过 numba,cuda 模块提供了全面的 CUDA API [20]。例如，可以使用 cuda.atomic.add 函数执行原子加法操作，也可以使用 cuda.shared.array 函数在共享内存中分配数组。
@@ -405,49 +405,49 @@ Numba 通过 numba,cuda 模块提供了全面的 CUDA API [20]。例如，可以
 ```python
 from numba import cuda
 @cuda.jit(fastmath=True)
-def _kernel_v1(output , eri , dm):
+def _kernel_v1(output, eri, dm):
     n = dm.shape[0]
     ij = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
     if ij > n * n: return
-    i ,j= divmod(ij ,n )
+    i,j= divmod(ij ,n )
     for k in range (n):
         for l in range (n):
-            cuda.atomic.add(output ,( k ,l), eri[i ,j ,k ,l] * dm[j ,i])
-def get_j(eri , dm):
+            cuda.atomic.add(output,( k,l), eri[i,j,k,l] * dm[j,i])
+def get_j(eri, dm):
     n = dm.shape[0]
     output = np.zeros_like(dm)
-    grids = ((n *n+255) // 256 ,)
-    threads = (256 ,)
-    _kernel_v1[grids , threads](output , eri , dm)
+    grids = ((n *n+255) // 256,)
+    threads = (256,)
+    _kernel_v1[grids, threads](output, eri, dm)
     return output
 BLOCK = 16
 @cuda.jit(fastmath=True)
-def kernel_v3(output , eri , dm):
+def kernel_v3(output, eri, dm):
     n = dm.shape[0]
     tx = cuda.threadIdx.x
     ty = cuda.threadIdx.y
-    k , l = cuda.grid(2)
-    dm_t = cuda.shared.array((BLOCK , BLOCK), dtype= 'f8')
+    k, l = cuda.grid(2)
+    dm_t = cuda.shared.array((BLOCK, BLOCK), dtype= 'f8')
     s=0 .
-    for i0 in range (0 ,n , BLOCK):
-        for j0 in range (0 ,n , BLOCK):
+    for i0 in range (0,n , BLOCK):
+        for j0 in range (0,n , BLOCK):
             cuda.syncthreads()
-            dm_t[tx ,ty] = dm[j0+ty ,i0+tx]
+            dm_t[tx,ty] = dm[j0+ty,i0+tx]
             cuda.syncthreads()
             for i in range (BLOCK):
                 for j in range (BLOCK):
-                    s += eri[i0+i ,j0+j ,k ,l] * dm_t[i ,j]
-    output[k , l ]=s
+                    s += eri[i0+i,j0+j,k,l] * dm_t[i,j]
+    output[k, l ]=s
 ```
 
 ```python
-def get_j_v3(eri , dm):
+def get_j_v3(eri, dm):
     n = dm.shape[0]
     assert n % BLOCK == 0
     output = np.empty_like(dm)
-    grids = ((n **2+BLOCK**2 -1) // BLOCK **2 ,)
-    threads = (BLOCK , BLOCK)
-    kernel_v3[grids , threads](output , eri , dm)
+    grids = ((n **2+BLOCK**2-1) // BLOCK **2,)
+    threads = (BLOCK, BLOCK)
+    kernel_v3[grids, threads](output, eri, dm)
     return output
 ```
 平心而论，与编写原始 CUDA 内核代码相比，在 Python JIT 代码中使用 Numba CUDA API 并没有降低 GPU 内核开发的复杂性。它只是简化了编译配置和 Python 接口的实现。从这个角度看，使用 CuPy 或 PyCUDA 等工具实现原始 CUDA 内核的复杂程度相近。
@@ -461,14 +461,14 @@ CuPy、PyCUDA 和 CUDA-Python 都是允许我们在 Python 程序中嵌入原始
 使用第 11.4.1 节开发的原始 CUDA 内核源代码，我们可以按如下方式初始化一个 RawKernel 实例：
 
 ```python
-kernel_v2 = cupy.RawKernel( ' ' '
+kernel_v2 = cupy.RawKernel( '''
 extern "C" __global__
-void _kernel_v2(double *output , double *eri , double *dm , long long n)
+void _kernel_v2(double *output, double *eri, double *dm, long long n)
 {
     size_t kl = blockIdx.x * blockDim.x + threadIdx.x;
     size_t nn = n * n;
     if (kl > nn) return;
-    size_t i ,j ;
+    size_t i,j ;
     double s = 0.;
     f o r( i=0 ;i<n ; ++i) {
         f o r( j=0 ;j<n ; ++j) {
@@ -477,21 +477,21 @@ void _kernel_v2(double *output , double *eri , double *dm , long long n)
     }
     output[kl] = s;
 }
-' ' ', '_kernel_v2')
-def get_j(eri , dm):
+''', '_kernel_v2')
+def get_j(eri, dm):
     n = dm.shape[0]
     eri = cupy.asarray(eri)
     dm = cupy.asarray(dm)
     output = cupy.empty_like(dm)
-    grids = ((n *n+255) // 256 ,)
-    threads = (256 ,)
-    kernel_v2(grids , threads , (output , eri ,d m , n))
+    grids = ((n *n+255) // 256,)
+    threads = (256,)
+    kernel_v2(grids, threads, (output, eri,d m, n))
     return output
 ```
 生成的内核函数具有以下函数签名：
 
 ```text
-func(griddim , blockdim , args , shared_mem=0 , stream=None)
+func(griddim, blockdim, args, shared_mem=0, stream=None)
 ```
 如果打算使用多个流启动内核，方法与使用其他 CuPy 函数时类似。你可以使用上下文管理器为自定义内核设置默认流，也可以显式地向内核传入一个 Stream 实例。
 与自动处理参数数据类型的 Numba JIT 不同，我们必须根据参数在 Python 中对应的类型显式定义其数据类型。CuPy 文档 [28] 解释了这一要求。例如，整数 n 被指定为 long long 类型，以便与 Python 整数类型对应。
@@ -507,43 +507,43 @@ RawKernel、PyCUDA 和 Numba 这几种 Python 工具中，哪一种的运行时�
 
 ```bash
 $ cat get_j.cu
-#include <stdio.h >
-#include <cuda_runtime.h >
-__global__ void _kernel_v1(double *output , double *eri , double *dm , int n)
+#include <stdio.h>
+#include <cuda_runtime.h>
+__global__ void _kernel_v1(double *output, double *eri, double *dm, int n)
 ...
 extern "C"
-void kernel_v1(double *output , double *eri , double *dm , int n)
+void kernel_v1(double *output, double *eri, double *dm, int n)
 {
     int grids = (n *n+255)/256;
     int threads = 256;
-    _kernel_v1 < < <grids , threads > > >(output , eri ,d m , n);
+    _kernel_v1<<<grids, threads>>>(output, eri,d m, n);
     cudaError_t err = cudaGetLastError();
     if(err != cudaSuccess){
-        fprintf(stderr , "CUDA error %s\n" , cudaGetErrorString(err));
+        fprintf(stderr, "CUDA error %s\n" , cudaGetErrorString(err));
     }
 ```
 
 ```text
 }
 extern "C"
-void kernel_v2(double *output , double *eri , double *dm , int n)
+void kernel_v2(double *output, double *eri, double *dm, int n)
 ...
 extern "C"
-void kernel_v3(double *output , double *eri , double *dm , int n)
+void kernel_v3(double *output, double *eri, double *dm, int n)
 {
     int grids = (n *n+255)/256;
-    dim3 threads(16 ,1 6 ,1 ) ;
-    _kernel_v3 < < <grids , threads > > >(output , eri ,d m , n);
+    dim3 threads(16,1 6,1 ) ;
+    _kernel_v3<<<grids, threads>>>(output, eri,d m, n);
     cudaError_t err = cudaGetLastError();
     if(err != cudaSuccess){
-        fprintf(stderr , "CUDA error %s\n" , cudaGetErrorString(err));
+        fprintf(stderr, "CUDA error %s\n" , cudaGetErrorString(err));
     }
 }
 ```
 使用以下命令编译 CUDA 代码，会生成共享库 libget_j.so。
 
 ```bash
-$  nvcc -g -shared -Xcompiler= -fPIC -arch=sm_60 -o libget_j.so get_j.cu
+$ nvcc -g -shared -Xcompiler= -fPIC -arch=sm_60 -o libget_j.so get_j.cu
 ```
 编译标志 -shared 和 -Xcompiler=-fPIC 对创建可由 ctypes 动态加载的库至关重要。旧版本的 CUDA 计算能力（Compute Capability）不支持 atomicAdd 等原子操作。启用 _kernel_v1 中的 atomicAdd 函数需要使用 -arch=sm_60 标志（或更高版本的 sm）。随后我们可以加载编译后的共享库，并使用 ctypes 调用 C 函数 kernel_v1，后者进而启动 GPU 内核。
 ctypes 接口中剩下的问题是如何将 Python 对象，特别是 GPU 内存中数组对象的指针，传递给 C 函数。基于 GPU 的张量库 CuPy、PyTorch 和 JAX 对 GPU 内存指针的处理方式各不相同：
@@ -556,7 +556,7 @@ ctypes 接口中剩下的问题是如何将 Python 对象，特别是 GPU 内存
 
 ```python
 gpu_ext = ctypes.CDLL( './libget_j.so')
-def get_j(eri , dm):
+def get_j(eri, dm):
     n = dm.shape[0]
     eri = cp.asarray(eri)
     dm = cp.asarray(dm)
@@ -569,46 +569,46 @@ def get_j(eri , dm):
 要使用零拷贝技术，必须固定并映射主机内存。这种特殊的主机内存可以使用 cupy.cuda.runtime 模块中的底层 CUDA API 分配。随后，使用 cp.cuda.PinnedMemoryPointer 类将这块主机内存转换为 Python 缓冲区对象，并可将该对象赋给一个空的 NumPy 数组。下面的 Python 代码片段展示了这些步骤：
 
 ```python
-def empty_mapped(shape , dtype= float , order= 'C'):
+def empty_mapped(shape, dtype= float, order= 'C'):
     nbytes = np.prod(shape) * np.dtype(dtype).itemsize
-    mem = cp.cuda.PinnedMemoryPointer( cp.cuda.PinnedMemory(nbytes , cp.cuda.runtime.hostAllocMapped), 0)
-    out = np.ndarray(shape , dtype=dtype , buffer=mem , order=order)
+    mem = cp.cuda.PinnedMemoryPointer( cp.cuda.PinnedMemory(nbytes, cp.cuda.runtime.hostAllocMapped), 0)
+    out = np.ndarray(shape, dtype=dtype, buffer=mem, order=order)
     return out
 ```
 在对应的 C 函数中，需要使用 CUDA API cudaHostGetDevicePointer 将 GPU 上的内存地址绑定到主机上的内存页。随后，绑定的地址可以传递给 GPU 内核，并作为普通的设备端地址使用。
 
 ```text
 extern "C"
-void kernel_v2_mapped(double *output , double *eri_cpu , double *dm , int n)
+void kernel_v2_mapped(double *output, double *eri_cpu, double *dm, int n)
 {
     double *eri_gpu;
-    cudaError_t err = cudaHostGetDevicePointer(&eri_gpu , eri_cpu , 0);
+    cudaError_t err = cudaHostGetDevicePointer(&eri_gpu, eri_cpu, 0);
     if(err != cudaSuccess){
-        fprintf(stderr , "CUDA error %s\n" , cudaGetErrorString(err));
+        fprintf(stderr, "CUDA error %s\n" , cudaGetErrorString(err));
     }
-    kernel_v2(output , eri_gpu ,d m , n);
+    kernel_v2(output, eri_gpu,d m, n);
     err = cudaGetLastError();
     if(err != cudaSuccess){
-        fprintf(stderr , "CUDA error %s\n" , cudaGetErrorString(err));
+        fprintf(stderr, "CUDA error %s\n" , cudaGetErrorString(err));
     }
 }
 ```
 最后，在 Python 函数中，我们删除 CuPy 数组转换代码。现在，将锁页的 NumPy 数组地址直接传给 CUDA 内核。
 
 ```python
-def get_j_zero_copy(eri ,d m ) :
+def get_j_zero_copy(eri,d m ) :
     n = dm.shape[0]
     dm = cp.asarray(dm)
     output = cp.zeros_like(dm)
-    gpu_ext.kernel_v2_mapped( ctypes.c_void_p(output.data.ptr), eri.ctypes , ctypes.c_void_p(dm.data.ptr), ctypes.c_int(n))
+    gpu_ext.kernel_v2_mapped( ctypes.c_void_p(output.data.ptr), eri.ctypes, ctypes.c_void_p(dm.data.ptr), ctypes.c_int(n))
     return output
 if __name__ == '__main__':
     n = 160
     rng = np.random.default_rng(seed=1)
-    eri = empty_mapped((n ,n ,n , n))
-    rng.random((n ,n ,n , n), out=eri)
-    dm = np.random.rand(n ,n )
-    output = get_j_zero_copy(eri , dm)
+    eri = empty_mapped((n,n ,n , n))
+    rng.random((n,n ,n , n), out=eri)
+    dm = np.random.rand(n,n )
+    output = get_j_zero_copy(eri, dm)
 ```
 为了评估不同计算内核的性能，我们使用 V100 GPU 卡对 kernel_v1、kernel_v2 和 kernel_v3 及其零拷贝版本进行了基准测试，系统大小设为 n = 160。结果详见表 11.1。kernel_v2 的性能优于 kernel_v1，因为它确保了对 eri 张量的合并内存访问（coalesced memory access）[32,33]，并且不再使用 atomicAdd。合并内存事务是相邻线程同时访问相邻内存地址的过程。kernel_v3 的性能略好
 

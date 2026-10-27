@@ -98,21 +98,21 @@ class CGTO:
 class CGTO:
     ... # Code omitted for brevity
     @classmethod
-    def from_dict(cls , dic: dict):
+    def from_dict(cls, dic: dict):
         angular_momentum = int(dic['angular_momentum'])
-        exponents = np.asarray(dic[ 'exponents'] , dtype= float)
-        coefficients = np.asarray(dic[ 'coefficients'] , dtype= float)
-        coordinates = np.asarray(dic[ 'coordinates'] , dtype= float)
+        exponents = np.asarray(dic[ 'exponents'], dtype= float)
+        coefficients = np.asarray(dic[ 'coefficients'], dtype= float)
+        coordinates = np.asarray(dic[ 'coordinates'], dtype= float)
         assert angular_momentum >= 0
         assert all (exponents > 0)
         assert exponents.ndim == 1
         assert coefficients.ndim == 1
-        assert coordinates.shape == (3 ,)
-        return cls(angular_momentum , exponents , coefficients , coordinates)
+        assert coordinates.shape == (3,)
+        return cls(angular_momentum, exponents, coefficients, coordinates)
     @classmethod
-    def from_yaml(cls , conf: str) -> List[CGTO]:
-        ' ' 'Creates CGTOs from yaml configuration' ' '
-        conf = yaml.load(conf , Loader=yaml.SafeLoader)
+    def from_yaml(cls, conf: str) -> List[CGTO]:
+        '''Creates CGTOs from yaml configuration'''
+        conf = yaml.load(conf, Loader=yaml.SafeLoader)
         return [cls.from_dict(x) for x in conf]
 ```
 Basis Set Exchange [1]（BSE）数据库是获取量子化学基组的标准资源。基于 BSE 数据库为 CGTO 类实现一个 from_bse 方法是很有用的。
@@ -127,14 +127,14 @@ import basis_set_exchange as bse
 class CGTO:
     ... # Code omitted for brevity
     @classmethod
-    def from_bse(cls , name , element , coordinates) -> List[CGTO]:
-        ' ' 'Creates CGTOs from BSE database' ' '
-        return [cls.from_dict({'coordinates': coordinates , **basis})
-                for basis in bse_basis(name , element)]
+    def from_bse(cls, name, element, coordinates) -> List[CGTO]:
+        '''Creates CGTOs from BSE database'''
+        return [cls.from_dict({'coordinates': coordinates, **basis})
+                for basis in bse_basis(name, element)]
 @lru_cache(1000)
-def bse_basis(name: str , element: str) -> List[ dict]:
-    ' ' 'Reads and converts BSE GTO basis' ' '
-data = bse.get_basis(name , elements=[element]) # (1)
+def bse_basis(name: str, element: str) -> List[ dict]:
+    '''Reads and converts BSE GTO basis'''
+data = bse.get_basis(name, elements=[element]) # (1)
     basis = []
     for elem_basis in data['elements'].values():
         for raw_basis in elem_basis['electron_shells']:
@@ -142,29 +142,29 @@ data = bse.get_basis(name , elements=[element]) # (1)
             coefs = np.array(raw_basis[ 'coefficients']).astype(float)
             ls = raw_basis[ 'angular_momentum']
             if len (ls) == len(coefs): # SP basis
-                for l ,c in zip (ls , coefs):
+                for l,c in zip (ls, coefs):
                     basis.append({
-                        'angular_momentum': int(l), 'exponents': exps , 'coefficients':c , })
+                        'angular_momentum': int(l), 'exponents': exps, 'coefficients':c , })
             else:
                 for c in coefs:
                     basis.append({
-                        'angular_momentum': int(ls[0]), 'exponents': exps , 'coefficients':c , })
+                        'angular_momentum': int(ls[0]), 'exponents': exps, 'coefficients':c , })
     return basis
 ```
 可以通过 Python 包 basis-set-exchange 访问 BSE 数据库。在 bse_basis 函数中，我们将所有 BSE 基组数据转换为与 CGTO 类属性一致的数据类型。第 (1) 行的 BSE API bse.get_basis 返回一个嵌套的 Python dict 对象，其中所有数据都以字符串格式存储。然后，我们使用 CGTO.from_bse 方法创建一个 CGTO 对象列表，表示某一位置处一个原子的所有 GTO 壳层。
 对于收缩 GTO，式 (12.5) 中的归一化因子可以按如下方式计算：
 
 ```python
-def gaussian_int(n , alpha):
-    r' ' 'int_0^inf x^n exp( -alpha x^2) dx' ' '
+def gaussian_int(n, alpha):
+    r'''int_0^inf x^n exp(-alpha x^2) dx'''
     assert n> =0
     n 1=( n+1 ) * .5
     return scipy.special.gamma(n1) / (2. * alpha**n1)
-def gto_norm(l , expnt):
-    ' ' 'Radial part normalization' ' '
+def gto_norm(l, expnt):
+    '''Radial part normalization'''
     assert l> =0
-    norm = (gaussian_int(l *2+2 ,2 *expnt)) ** -.5
-    # Racah normalization , assuming angular part is normalized to unity
+    norm = (gaussian_int(l *2+2,2 *expnt)) ** -.5
+    # Racah normalization, assuming angular part is normalized to unity
     norm *= ((2 *l+1)/(4*np.pi))**.5
     return norm
 @dataclass
@@ -172,7 +172,7 @@ class CGTO:
     ... # Code omitted for brevity
     @property
 def norm_coefficients(self): # (1)
-        return gto_norm(self.momentum , self.exponents) * self.coefficients
+        return gto_norm(self.momentum, self.exponents) * self.coefficients
 ```
 如第 (1) 行的属性 norm_coefficients 所示，归一化因子随后与收缩系数（contraction coefficients）结合，形成一个复合系数，用于缩放原始高斯型轨道（primitive GTO）积分。
 式 (12.1) 中的球面高斯型轨道（spherical GTO）可以用笛卡尔高斯型轨道（Cartesian GTO）函数表示：
@@ -196,14 +196,14 @@ def n_cart(l):
     return (l+1) * (l+2) // 2
 def iter_cart_xyz(l):
     for t in reversed (range(l+1)):
-        for u in reversed (range(l+1 -t)):
+        for u in reversed (range(l+1-t)):
             v=l-t-u
-            yield t ,u ,v
+            yield t,u ,v
 ```
 例如，d 型高斯型轨道壳层中的 6 个笛卡尔函数按以下顺序排列
 
 ```python
-In [1]: for t ,u ,v in iter_cart_xyz(2):
+In [1]: for t,u ,v in iter_cart_xyz(2):
             print(f'x^{t}y^{u}z^{v}')
 Out[1]:
 x^2y^0z^0
@@ -217,12 +217,12 @@ x^0y^0z^2
 
 ```python
 def gto_offsets(gtos):
-    ' ' 'Offsets are the position of the first GTO function for each GTO
+    '''Offsets are the position of the first GTO function for each GTO
     shell inside all GTO basis functions. The last element of the offsets
     is the total number of basis functions.
-    ' ' '
+    '''
     dims = [n_cart(b.angular_momentum) for b in gtos]
-    return np.append(0 , np.cumsum(dims))
+    return np.append(0, np.cumsum(dims))
 ```
 除了用于积分计算的基础类 CGTO 之外，我们还引入了 Molecule 类来管理分子的几何结构和基组（basis set）。Molecule.assign_basis 方法为指定的基组生成分子的所有高斯型轨道壳层。
 
@@ -232,7 +232,7 @@ class Molecule:
     elements: List[ str]
     coordinates: np.ndarray
     @classmethod
-    def from_xyz(cls , xyz: str):
+    def from_xyz(cls, xyz: str):
         elements = []
         coordinates = []
         for line in xyz.splitlines():
@@ -244,13 +244,13 @@ class Molecule:
         # In atomic unit
         coordinates = np.array(coordinates).astype( float) / 0.52917721
         assert coordinates.shape[1] == 3
-        return cls(elements=elements , coordinates=coordinates)
-    def assign_basis(self , basis_set: Dict[ str , str]) -> List[CGTO]:
-        ' ' 'Creates a list of CGTOs for the molecule in xyz geometry
-        ' ' '
+        return cls(elements=elements, coordinates=coordinates)
+    def assign_basis(self, basis_set: Dict[ str, str]) -> List[CGTO]:
+        '''Creates a list of CGTOs for the molecule in xyz geometry
+        '''
         gtos = []
-        for elem ,r in zip (self.elements , self.coordinates):
-            gtos.extend(CGTO.from_bse(basis_set[elem] , elem , r))
+        for elem,r in zip (self.elements, self.coordinates):
+            gtos.extend(CGTO.from_bse(basis_set[elem], elem, r))
     return gtos
 ```
 
@@ -354,41 +354,41 @@ XAB 和 XPA 分别表示位移向量 RAB 和 RPA 的一个笛卡尔方向。参�
 我们可以使用动态规划的自顶向下方法，直接将递推关系公式转换为重叠积分代码。首先，创建一个接受两个参数的递归函数 get_S，对应于递推关系公式 (12.21)。
 
 ```python
-def get_S(i: int ,j : int):
+def get_S(i: int,j : int):
     if j= =0 :
-        return Rpa * get_S(i -1 ,j )+( i -1)/(2*aij) * get_S(i -2 ,j )
-    return get_S(i+1 ,j -1) + Rab * get_S(i ,j -1)
+        return Rpa * get_S(i-1,j )+( i-1)/(2*aij) * get_S(i-2,j )
+    return get_S(i+1,j-1) + Rab * get_S(i,j-1)
 ```
 get_S 函数同时计算三个笛卡尔分量。接下来，将起点和边界条件纳入递归动态规划函数。
 
 ```python
 @lru_cache(1000)
-def get_S(i: int ,j : int):
+def get_S(i: int,j : int):
     if i<0 or j<0 :
         return 0.
     if i == j == 0:
-        return (np.pi/aij)**.5 * np.exp( -theta_ij*Rab**2)
+        return (np.pi/aij)**.5 * np.exp(-theta_ij*Rab**2)
     if j= =0 :
-        return (i -1)/(2*aij) * get_S(i -2 , j) + Rpa * get_S(i -1 ,j )
-    return Rab * get_S(i ,j -1) + get_S(i+1 ,j -1)
+        return (i-1)/(2*aij) * get_S(i-2, j) + Rpa * get_S(i-1,j )
+    return Rab * get_S(i,j -1) + get_S(i+1,j -1)
 ```
 在递归过程中，某些动态规划状态可能会被多次访问。为了避免重复计算中间状态，我们可以使用 lru_cache 函数对这些状态进行记忆化。
 根据这个动态规划函数，可以按照式 (12.18) 计算重叠积分。
 
 ```text
-for i , (ix ,i y , iz) in enumerate (iter_cart_xyz(li)):
-    for j ,( j x ,j y , jz) in enumerate (iter_cart_xyz(lj)):
-        S[i ,j] = get_S(ix ,jx)[0] * get_S(iy ,jy)[1] * get_S(iz ,jz)[2]
+for i, (ix,i y, iz) in enumerate (iter_cart_xyz(li)):
+    for j,( j x,j y, jz) in enumerate (iter_cart_xyz(lj)):
+        S[i,j] = get_S(ix,jx)[0] * get_S(iy,jy)[1] * get_S(iz,jz)[2]
 ```
 这里，指标 0、1 和 2 表示三个笛卡尔方向。为了遍历左矢和右矢壳层中的所有笛卡尔高斯型轨道，我们使用 iter_cart_xyz 函数来
 
 ```text
-generate their Cartesian powers (ix , iy , iz) and (jx , jy , jz) .
+generatetheirCartesianpowers (ix, iy, iz)and (jx, jy, jz).
 ```
 将上述所有部分组合起来，我们得到一个计算一对原始笛卡尔高斯型轨道之间重叠积分的函数。
 
 ```python
-def primitive_overlap(li: int , lj: int ,a i : float , aj: float , Ra: np.ndarray , Rb: np.ndarray) -> np.ndarray:
+def primitive_overlap(li: int, lj: int,a i : float, aj: float, Ra: np.ndarray, Rb: np.ndarray) -> np.ndarray:
     aij = ai + aj
     Rab = Ra - Rb
     Rp = (ai * R a+a j * Rb) / aij
@@ -398,23 +398,23 @@ def primitive_overlap(li: int , lj: int ,a i : float , aj: float , Ra: np.ndarra
 Rpa = Rp - Ra
 theta_ij = ai * aj / aij
 @lru_cache(1000)
-def get_S(i: int ,j : int):
+def get_S(i: int,j : int):
 if i<0 or j<0 :
 return 0
 if j>0 :
-return get_S(i+1 ,j -1) + Rab * get_S(i ,j -1)
+return get_S(i+1,j -1) + Rab * get_S(i,j-1)
 if i>1 :
-return Rpa * get_S(i -1 ,j )+( i -1)/(2*aij) * get_S(i -2 ,j )
+return Rpa * get_S(i-1,j )+( i -1)/(2*aij) * get_S(i-2,j )
 if i= =1 :
-return Rpa * get_S(i -1 ,j )
-return (np.pi/aij)**.5 * np.exp( -theta_ij * Rab**2)
+return Rpa * get_S(i-1,j )
+return (np.pi/aij)**.5 * np.exp(-theta_ij * Rab**2)
 nfi = n_cart(li)
 nfj = n_cart(lj)
-overlap = np.zeros((nfi , nfj))
-for i ,( i x ,i y , iz) in enumerate (iter_cart_xyz(li)):
-for j , (jx ,j y , jz) in enumerate (iter_cart_xyz(lj)):
-overlap[i ,j] = (get_S(ix ,jx)[0] * get_S(iy ,jy)[1] *
-get_S(iz ,jz)[2])
+overlap = np.zeros((nfi, nfj))
+for i,( i x,i y, iz) in enumerate (iter_cart_xyz(li)):
+for j, (jx,j y, jz) in enumerate (iter_cart_xyz(lj)):
+overlap[i,j] = (get_S(ix,jx)[0] * get_S(iy,jy)[1] *
+get_S(iz,jz)[2])
 return overlap
 ```
 
@@ -457,30 +457,30 @@ return overlap
 与重叠积分（overlap integrals）所用的方法类似，我们可以创建一个递归动态规划（DP）函数 get_R，应用递推关系公式和边界条件。这个递归函数接收四个整数作为输入，分别对应 R 张量的下标 t、u、v 和阶数索引 n。
 
 ```python
-def get_R_tensor(l , theta , Rpq):
+def get_R_tensor(l, theta, Rpq):
     @lru_cache(4000)
-    def get_R(n ,t ,u , v):
+    def get_R(n,t ,u , v):
         if t<0 or u<0 or v<0 :
             return 0.
         elif t>0 :
-            return ((t -1) * get_R(n+1 ,t -2 ,u ,v )+
-                    Rpq[0] * get_R(n+1 ,t -1 ,u , v))
+            return ((t-1) * get_R(n+1,t-2,u ,v )+
+                    Rpq[0] * get_R(n+1,t-1,u , v))
         elif u>0 :
-            return ((u -1) * get_R(n+1 ,t ,u -2 ,v )+
-                    Rpq[1] * get_R(n+1 ,t ,u -1 , v))
+            return ((u-1) * get_R(n+1,t ,u -2,v )+
+                    Rpq[1] * get_R(n+1,t ,u -1, v))
         elif v>0 :
-            return ((v -1) * get_R(n+1 ,t ,u ,v -2) +
-                    Rpq[2] * get_R(n+1 ,t ,u ,v -1))
+            return ((v-1) * get_R(n+1,t ,u ,v-2) +
+                    Rpq[2] * get_R(n+1,t ,u ,v-1))
         #t= =u= =v= =0 :
-        return ( -2*theta)**n * boys(n , theta *np.array(Rpq).dot(Rpq))
-    Rt = np.zeros((l+1 , l+1 , l+1))
+        return (-2*theta)**n * boys(n, theta *np.array(Rpq).dot(Rpq))
+    Rt = np.zeros((l+1, l+1, l+1))
     for t in range (l+1):
         for u in range (l+1):
             for v in range (l+1):
 ```
 
 ```python
-Rt[t ,u ,v] = get_R(0 ,t ,u ,v )
+Rt[t,u,v] = get_R(0,t ,u ,v )
 return Rt
 ```
 式 (12.27) 中的 E 张量是三个笛卡尔分量的乘积。
@@ -494,7 +494,7 @@ return Rt
 这些递推关系可以转换为递归动态规划函数。
 
 ```python
-def get_E_cart_components(li ,l j ,a i ,a j ,R a , Rb):
+def get_E_cart_components(li,l j,a i,a j,R a, Rb):
 aij = ai + aj
 Rab = Ra - Rb
 Rp = (ai * R a+a j * Rb) / aij
@@ -502,60 +502,60 @@ Rpa = Rp - Ra
 Rpb = Rp - Rb
 theta_ij = ai * aj / aij
 @lru_cache(1000)
-def get_E(i ,j , t):
+def get_E(i,j , t):
 if t<0 or i<0 or j<0 or t > li+lj:
 return 0.
 if t>0 :
-return (i*get_E(i -1 ,j ,t - 1 )+j *get_E(i ,j -1 ,t -1)) / (2 *aij*t)
+return (i*get_E(i-1,j,t- 1 )+j *get_E(i,j-1,t-1)) / (2 *aij*t)
 if j>0 : #t=0
-return Rpb * get_E(i ,j -1 ,0) + get_E(i ,j -1 ,1)
+return Rpb * get_E(i,j-1,0) + get_E(i,j-1,1)
 if i>0 : #t=0
-return Rpa * get_E(i -1 ,j ,0) + get_E(i -1 ,j ,1)
+return Rpa * get_E(i-1,j,0) + get_E(i-1,j,1)
 #i= =j= =t= =0
-return np.exp( -theta_ij * Rab**2)
-E_cart = np.zeros((li+1 , lj+1 , li+lj+1 , 3))
+return np.exp(-theta_ij * Rab**2)
+E_cart = np.zeros((li+1, lj+1, li+lj+1, 3))
 for i in range (li+1):
 for j in range (lj+1):
 for t in range (li+lj+1):
 ```
 
 ```python
-                E_cart[i ,j ,t] = get_E(i ,j ,t )
+                E_cart[i,j,t] = get_E(i,j ,t )
     return E_cart
 ```
 然后，我们用笛卡尔分量构造 E 张量 (12.38)：
 
 ```python
-def get_E_tensor(li ,l j ,a i ,a j ,R a , Rb):
-    E_cart = get_E_cart_components(li ,l j ,a i ,a j ,R a ,R b )
-    Ex = E_cart[: ,: ,: ,0]
-    Ey = E_cart[: ,: ,: ,1]
-    Ez = E_cart[: ,: ,: ,2]
-    ix ,i y , iz = np.array( list(iter_cart_xyz(li))).T
-    jx ,j y , jz = np.array( list(iter_cart_xyz(lj))).T
-    return np.einsum('ijx ,ijy ,ijz ->ijxyz', Ex[ix[: ,np.newaxis] ,jx] , Ey[iy[: ,np.newaxis] ,jy] , Ez[iz[: ,np.newaxis] ,jz])
+def get_E_tensor(li,l j,a i,a j,R a, Rb):
+    E_cart = get_E_cart_components(li,l j,a i,a j,R a,R b )
+    Ex = E_cart[:,:,:,0]
+    Ey = E_cart[:,:,:,1]
+    Ez = E_cart[:,:,:,2]
+    ix,i y, iz = np.array( list(iter_cart_xyz(li))).T
+    jx,j y, jz = np.array( list(iter_cart_xyz(lj))).T
+    return np.einsum('ijx,ijy,ijz->ijxyz', Ex[ix[:,np.newaxis],jx], Ey[iy[:,np.newaxis],jy], Ez[iz[:,np.newaxis],jz])
 ```
 求得 E 和 R 张量后，我们可以用张量收缩代码构造电子排斥积分张量 (12.27)：
 
 ```python
 from itertools import product
-def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
+def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     aij = ai + aj
     akl = ak + al
     theta = aij * akl / (aij + akl)
     Rp = (ai * R a+a j * Rb) / aij
     Rq = (ak * R c+a l * Rd) / akl
     Rpq = Rp - Rq
-    Rt = get_R_tensor(li+lj+lk+ll , theta , Rpq)
+    Rt = get_R_tensor(li+lj+lk+ll, theta, Rpq)
     l i j 1=l i+l j+1
     l k l 1=l k+l l+1
-    Rt2 = np.zeros((lij1 ,lij1 ,lij1 , lkl1 ,lkl1 ,lkl1))
-    for e ,f ,g in product(range(lkl1), range(lkl1), range(lkl1)):
-        Rt2[: ,: ,: ,e ,f ,g] = ( -1)**(e+f+g) * Rt[e:e+lij1 ,f:f+lij1 ,g:g+lij1]
-    Etab = get_E_tensor(li ,l j ,a i ,a j ,R a , Rb)
-    Etcd = get_E_tensor(lk ,l l ,a k ,a l ,R c , Rd)
+    Rt2 = np.zeros((lij1,lij1,lij1, lkl1,lkl1,lkl1))
+    for e,f ,g in product(range(lkl1), range(lkl1), range(lkl1)):
+        Rt2[:,:,:,e,f,g] = (-1)**(e+f+g) * Rt[e:e+lij1,f:f+lij1,g:g+lij1]
+    Etab = get_E_tensor(li,l j,a i,a j,R a, Rb)
+    Etcd = get_E_tensor(lk,l l,a k,a l,R c, Rd)
     e r i=( 2 *np.pi**2.5/(aij*akl*(aij+akl)**.5) *
-           np.einsum('abtuv ,tuvefg ,cdefg ->abcd', Etab , Rt2 , Etcd))
+           np.einsum('abtuv,tuvefg,cdefg->abcd', Etab, Rt2, Etcd))
     return eri
 ```
 在这个示例中，使用 itertools.product 函数生成嵌套循环结构。
@@ -580,7 +580,7 @@ OS 算法从 Boys 函数开始，依次进行三个递推步骤：垂直递推�
 这些垂直递推方程可以实现为一个动态规划函数，它接收式 (12.45) 中的阶数 n 作为一个输入参数，以及代表第一中心三个笛卡尔幂次的三个整数输入。g 的其余九个下标在垂直递推方程中全为零，因此省略。
 
 ```python
-def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
+def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     aij = ai + aj
     Rp = (ai * R a+a j * Rb) / aij
     theta_ij = ai * aj / aij
@@ -593,36 +593,36 @@ def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
     theta = aij * akl / (aij + akl)
     theta_r2 = theta * Rpq.dot(Rpq)
     Kabcd = 2 *np.pi**2.5/(aij*akl*(aij+akl)**.5)
-    Kabcd *= np.exp( -theta_ij*Rab.dot(Rab) - theta_kl *Rcd.dot(Rcd))
-    Xpq , Ypq , Zpq = Rpq
-    Xpa , Ypa ,Z p a=R p-R a
+    Kabcd *= np.exp(-theta_ij*Rab.dot(Rab) - theta_kl *Rcd.dot(Rcd))
+    Xpq, Ypq, Zpq = Rpq
+    Xpa, Ypa,Z p a=R p-R a
 ```
 
 ```python
     @lru_cache(10000)
-    def vrr(n ,i x ,i y , iz):
+    def vrr(n,i x,i y, iz):
         if iz > 0:
-            val = Zpa *vrr(n ,i x ,i y ,i z -1)
-            val -= theta/aij *Zpq*vrr(n+1 ,i x ,i y ,i z -1)
+            val = Zpa *vrr(n,i x,i y,i z-1)
+            val -= theta/aij *Zpq*vrr(n+1,i x,i y,i z-1)
             if i z>1 :
-                val += (iz -1)*.5/aij * (vrr(n ,i x ,i y ,i z -2) -
-                                        theta/aij*vrr(n+1 ,i x ,i y ,i z -2))
+                val += (iz-1)*.5/aij * (vrr(n,i x,i y,i z-2) -
+                                        theta/aij*vrr(n+1,i x,i y,i z-2))
             return val
         if iy > 0:
-            val = Ypa *vrr(n ,i x ,i y -1 , iz)
-            val -= theta/aij *Ypq*vrr(n+1 ,i x ,i y -1 , iz)
+            val = Ypa *vrr(n,i x,i y-1, iz)
+            val -= theta/aij *Ypq*vrr(n+1,i x,i y-1, iz)
             if i y>1 :
-                val += (iy -1)*.5/aij * (vrr(n ,i x ,i y -2 , iz) -
-                                        theta/aij*vrr(n+1 ,i x ,i y -2 , iz))
+                val += (iy-1)*.5/aij * (vrr(n,i x,i y-2, iz) -
+                                        theta/aij*vrr(n+1,i x,i y-2, iz))
             return val
         if ix > 0:
-            val = Xpa *vrr(n ,i x -1 ,i y , iz)
-            val -= theta/aij *Xpq*vrr(n+1 ,i x -1 ,i y , iz)
+            val = Xpa *vrr(n,i x-1,i y, iz)
+            val -= theta/aij *Xpq*vrr(n+1,i x-1,i y, iz)
             if i x>1 :
-                val += (ix -1)*.5/aij * (vrr(n ,i x -2 ,i y , iz) -
-                                        theta/aij*vrr(n+1 ,i x -2 ,i y , iz))
+                val += (ix-1)*.5/aij * (vrr(n,i x-2,i y, iz) -
+                                        theta/aij*vrr(n+1,i x-2,i y, iz))
             return val
-        return Kabcd * boys(n , theta *Rpq.dot(Rpq))
+        return Kabcd * boys(n, theta *Rpq.dot(Rpq))
 ```
 第二步使用电子转移递推关系，将笛卡尔幂次从第一个电子（第一中心）转移到第二个电子（第三中心）。x 方向的电子转移递推方程为：
 
@@ -633,40 +633,40 @@ def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
 y 和 z 方向也有类似的电子转移递推方程。当笛卡尔幂次到达 kx = ky = kz = 0 的边界时，就到达了电子转移递推的起点，它对应于式 (12.45) 中垂直递推公式的结果。电子转移递推方程的递归动态规划函数为：
 
 ```python
-def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
+def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     ... # Code omitted for brevity
 ```
 
 ```python
-    Xab , Yab , Zab = Rab
-    Xcd , Ycd , Zcd = Rcd
+    Xab, Yab, Zab = Rab
+    Xcd, Ycd, Zcd = Rcd
     @lru_cache(10000)
-    def trr(ix ,i y ,i z ,k x ,k y , kz):
+    def trr(ix,i y,i z,k x,k y, kz):
         if kz > 0:
-            val = -(aj *Zab+al*Zcd)/akl * trr(ix ,i y ,i z ,k x ,k y ,k z -1)
-            val -= aij/akl * trr(ix ,i y ,i z + 1 ,k x ,k y ,k z -1)
+            val = -(aj *Zab+al*Zcd)/akl * trr(ix,i y,i z,k x,k y,k z-1)
+            val -= aij/akl * trr(ix,i y,i z + 1,k x,k y,k z-1)
             if k z>1 :
-                val += (kz -1)*.5/akl * trr(ix ,i y ,i z ,k x ,k y ,k z -2)
+                val += (kz-1)*.5/akl * trr(ix,i y,i z,k x,k y,k z-2)
             if i z>0 :
-                val += iz *.5/akl * trr(ix ,i y ,i z -1 ,k x ,k y ,k z -1)
+                val += iz *.5/akl * trr(ix,i y,i z-1,k x,k y,k z-1)
             return val
         if ky > 0:
-            val = -(aj *Yab+al*Ycd)/akl * trr(ix ,i y ,i z ,k x ,k y -1 , kz)
-            val -= aij/akl * trr(ix , iy+1 ,i z ,k x ,k y -1 , kz)
+            val = -(aj *Yab+al*Ycd)/akl * trr(ix,i y,i z,k x,k y-1, kz)
+            val -= aij/akl * trr(ix, iy+1,i z,k x,k y-1, kz)
             if k y>1 :
-                val += (ky -1)*.5/akl * trr(ix ,i y ,i z ,k x ,k y -2 , kz)
+                val += (ky-1)*.5/akl * trr(ix,i y,i z,k x,k y-2, kz)
             if i y>0 :
-                val += iy *.5/akl * trr(ix ,i y -1 ,i z ,k x ,k y -1 , kz)
+                val += iy *.5/akl * trr(ix,i y-1,i z,k x,k y-1, kz)
             return val
         if kx > 0:
-            val = -(aj *Xab+al*Xcd)/akl * trr(ix ,i y ,i z ,k x -1 ,k y , kz)
-            val -= aij/akl * trr(ix+1 ,i y ,i z ,k x -1 ,k y , kz)
+            val = -(aj *Xab+al*Xcd)/akl * trr(ix,i y,i z,k x-1,k y, kz)
+            val -= aij/akl * trr(ix+1,i y,i z,k x-1,k y, kz)
             if k x>1 :
-                val += (kx -1)*.5/akl * trr(ix ,i y ,i z ,k x -2 ,k y , kz)
+                val += (kx-1)*.5/akl * trr(ix,i y,i z,k x-2,k y, kz)
             if i x>0 :
-                val += ix *.5/akl * trr(ix -1 ,i y ,i z ,k x -1 ,k y , kz)
+                val += ix *.5/akl * trr(ix-1,i y,i z,k x-1,k y, kz)
             return val
-        return vrr(0 ,i x ,i y , iz)
+        return vrr(0,i x,i y, iz)
     ... # Code omitted for brevity
 ```
 请注意，当该因子较大时，TRR 公式 (12.47) 可能出现数值稳定性问题。该因子可能放大某些中间变量，导致大数相减，从而产生舍入误差。为缓解数值稳定性问题，可以使用另一种 TRR 方程：
@@ -681,53 +681,53 @@ def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
 
 ```python
 @lru_cache(100000)
-def hrr(ix ,i y ,i z ,j x ,j y ,j z ,k x ,k y ,k z ,l x ,l y , lz):
+def hrr(ix,i y,i z,j x,j y,j z,k x,k y,k z,l x,l y, lz):
     if lz > 0:
-        return (hrr(ix ,i y ,i z ,j x ,j y ,j z ,k x ,k y , kz+1 ,l x ,l y ,l z -1) +
-Zcd * hrr(ix ,i y ,i z ,j x ,j y ,j z ,k x ,k y ,k z ,l x ,l y ,l z -1))
+        return (hrr(ix,i y,i z,j x,j y,j z,k x,k y, kz+1,l x,l y,l z-1) +
+Zcd * hrr(ix,i y,i z,j x,j y,j z,k x,k y,k z ,l x ,l y,l z-1))
     if ly > 0:
-        return (hrr(ix ,i y ,i z ,j x ,j y ,j z ,k x , ky+1 ,k z ,l x ,l y -1 , lz) +
-Ycd * hrr(ix ,i y ,i z ,j x ,j y ,j z ,k x ,k y ,k z ,l x ,l y -1 , lz))
+        return (hrr(ix,i y,i z,j x,j y,j z,k x, ky+1,k z,l x,l y-1, lz) +
+Ycd * hrr(ix,i y,i z,j x,j y,j z,k x,k y ,k z ,l x,l y-1, lz))
     if lx > 0:
-        return (hrr(ix ,i y ,i z ,j x ,j y ,j z , kx+1 ,k y ,k z ,l x -1 ,l y , lz) +
-Xcd * hrr(ix ,i y ,i z ,j x ,j y ,j z ,k x ,k y ,k z ,l x -1 ,l y , lz))
+        return (hrr(ix,i y,i z,j x,j y,j z, kx+1,k y,k z,l x-1,l y, lz) +
+Xcd * hrr(ix,i y,i z,j x,j y,j z,k x ,k y ,k z,l x-1,l y, lz))
     if jz > 0:
-        return (hrr(ix ,i y , iz+1 ,j x ,j y ,j z -1 ,k x ,k y ,k z ,l x ,l y , lz) +
-Zab * hrr(ix ,i y ,i z ,j x ,j y ,j z -1 ,k x ,k y ,k z ,l x ,l y , lz))
+        return (hrr(ix,i y, iz+1,j x,j y,j z-1,k x,k y,k z,l x,l y, lz) +
+Zab * hrr(ix,i y,i z ,j x ,j y,j z-1,k x,k y,k z,l x,l y, lz))
     if jy > 0:
-        return (hrr(ix , iy+1 ,i z ,j x ,j y -1 ,j z ,k x ,k y ,k z ,l x ,l y , lz) +
-Yab * hrr(ix ,i y ,i z ,j x ,j y -1 ,j z ,k x ,k y ,k z ,l x ,l y , lz))
+        return (hrr(ix, iy+1,i z,j x,j y-1,j z,k x,k y,k z,l x,l y, lz) +
+Yab * hrr(ix,i y ,i z ,j x,j y-1,j z,k x,k y,k z,l x,l y, lz))
     if jx > 0:
-        return (hrr(ix+1 ,i y ,i z ,j x -1 ,j y ,j z ,k x ,k y ,k z ,l x ,l y , lz) +
-Xab * hrr(ix , iy ,i z ,j x -1 ,j y ,j z ,k x ,k y ,k z ,l x ,l y , lz))
-    return trr(ix ,i y ,i z ,k x ,k y , kz)
+        return (hrr(ix+1,i y,i z,j x-1,j y,j z,k x,k y,k z,l x,l y, lz) +
+Xab * hrr(ix , iy ,i z,j x-1,j y,j z,k x,k y,k z,l x,l y, lz))
+    return trr(ix,i y,i z,k x,k y, kz)
 ```
 将前面提到的所有递推关系（RR）函数组合起来，得到 OS 算法的 ERI 函数：
 
 ```python
-def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
+def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     ... # Code omitted for brevity
     @lru_cache(10000)
-    def vrr(n ,i x ,i y , iz):
+    def vrr(n,i x,i y, iz):
         ...
 ```
 
 ```python
     @lru_cache(10000)
-    def trr(ix ,i y ,i z ,k x ,k y , kz):
+    def trr(ix,i y,i z,k x,k y, kz):
         ...
-        return vrr(0 ,i x ,i y , iz)
+        return vrr(0,i x,i y, iz)
     @lru_cache(100000)
-    def hrr(ix ,i y ,i z ,j x ,j y ,j z ,k x ,k y ,k z ,l x ,l y ,l z ) :
+    def hrr(ix,i y,i z,j x,j y,j z,k x,k y,k z,l x,l y,l z ) :
         ...
-        return trr(ix ,i y ,i z ,k x ,k y , kz)
-    nfi , nfj , nfk , nfl = map(n_cart , (li ,l j ,l k , ll))
-    eri = np.empty((nfi , nfj , nfk , nfl))
-    for i ,( i x ,i y , iz) in enumerate (iter_cart_xyz(li)):
-        for j , (jx ,j y , jz) in enumerate (iter_cart_xyz(lj)):
-            for k , (kx ,k y , kz) in enumerate (iter_cart_xyz(lk)):
-                for l , (lx ,l y , lz) in enumerate (iter_cart_xyz(ll)):
-                    eri[i ,j ,k ,l] = hrr(ix ,iy ,iz ,jx ,jy ,jz ,kx ,ky ,kz ,lx ,ly ,lz)
+        return trr(ix,i y,i z,k x,k y, kz)
+    nfi, nfj, nfk, nfl = map(n_cart, (li,l j,l k, ll))
+    eri = np.empty((nfi, nfj, nfk, nfl))
+    for i,( i x,i y, iz) in enumerate (iter_cart_xyz(li)):
+        for j, (jx,j y, jz) in enumerate (iter_cart_xyz(lj)):
+            for k, (kx,k y, kz) in enumerate (iter_cart_xyz(lk)):
+                for l, (lx,l y, lz) in enumerate (iter_cart_xyz(ll)):
+                    eri[i,j,k,l] = hrr(ix,iy,iz,jx,jy,jz,kx,ky,kz,lx,ly,lz)
     return eri
 ```
 
@@ -764,7 +764,7 @@ wnIx (un)Iy (un)Iz (un). (12.50)
 Ix = Ix XC DIx, (12.56)。张量 Iy 和 Iz 也可以用类似的 RR 方程计算。将这些方程转换为计算程序，得到以下 DP 函数：
 
 ```python
-def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
+def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
 aij = ai + aj
 Rab = Ra - Rb
 Rp = (ai * R a+a j * Rb) / aij
@@ -777,52 +777,52 @@ Rpq = Rp - Rq
 theta = aij * akl / (aij + akl)
 theta_r2 = theta * Rpq.dot(Rpq)
 Kabcd = 2 *np.pi**2.5/(aij*akl*(aij+akl)**.5)
-Kabcd *= np.exp( -theta_ij*Rab.dot(Rab) - theta_kl *Rcd.dot(Rcd))
+Kabcd *= np.exp(-theta_ij*Rab.dot(Rab) - theta_kl *Rcd.dot(Rcd))
 lij = li + lj
 lkl = lk + ll
 nroots = (lij + lkl + 2) // 2
-rt , wt = rys_roots_weights(nroots , theta_r2)
+rt, wt = rys_roots_weights(nroots, theta_r2)
 wt *= Kabcd
-Rpq = Rpq[: ,np.newaxis]
-R p a=R p [ : ,np.newaxis] - Ra[: ,np.newaxis]
-R q c=R q [ : ,np.newaxis] - Rc[: ,np.newaxis]
+Rpq = Rpq[:,np.newaxis]
+R p a=R p [ :,np.newaxis] - Ra[:,np.newaxis]
+R q c=R q [ :,np.newaxis] - Rc[:,np.newaxis]
 @lru_cache(10000)
-def trr(i , k):
+def trr(i, k):
 if i<0 or k<0 :
 return 0.
 if i= =k= =0 :
-return np.ones((3 , nroots))
+return np.ones((3, nroots))
 if k= =0 :
 ```
 
 ```python
-            return ((Rpa - Rpq *theta/aij*rt) * trr(i -1 ,k )+
-                    (i -1)*.5/aij*(1 -theta/aij*rt) * trr(i -2 , k))
+            return ((Rpa - Rpq *theta/aij*rt) * trr(i-1,k )+
+                    (i-1)*.5/aij*(1-theta/aij*rt) * trr(i-2, k))
         if i= =0 :
-            return ((Rqc + Rpq *theta/akl*rt) * trr(i ,k -1) +
-                    (k -1)*.5/akl*(1 -theta/akl*rt) * trr(i ,k -2))
+            return ((Rqc + Rpq *theta/akl*rt) * trr(i,k-1) +
+                    (k-1)*.5/akl*(1-theta/akl*rt) * trr(i,k-2))
         else:
-            val = (Rqc + Rpq *theta/akl*rt) * trr(i ,k -1)
-            val += (k -1)*.5/akl*(1 -theta/akl*rt) * trr(i ,k -2)
-            val += i *.5/(aij+akl)*rt * trr(i -1 ,k -1)
+            val = (Rqc + Rpq *theta/akl*rt) * trr(i,k-1)
+            val += (k-1)*.5/akl*(1-theta/akl*rt) * trr(i,k -2)
+            val += i *.5/(aij+akl)*rt * trr(i-1,k-1)
         return val
     @lru_cache(10000)
-    def hrr(i ,j ,k , l):
+    def hrr(i,j ,k , l):
 if j>0 :
-            return hrr(i+1 ,j -1 ,k ,l) + Rab[: ,np.newaxis] * hrr(i ,j -1 ,k ,l)
+            return hrr(i+1,j-1,k,l) + Rab[:,np.newaxis] * hrr(i,j-1,k,l)
         if l>0 :
-            return hrr(i ,j ,k+1 ,l -1) + Rcd[: ,np.newaxis] * hrr(i ,j ,k ,l -1)
-        return trr(i ,k )
-    nfi , nfj , nfk , nfl = map(n_cart , (li ,l j ,l k , ll))
-    eri = np.empty((nfi , nfj , nfk , nfl))
-    for i ,( i x ,i y , iz) in enumerate (iter_cart_xyz(li)):
-        for j , (jx ,j y , jz) in enumerate (iter_cart_xyz(lj)):
-            for k , (kx ,k y , kz) in enumerate (iter_cart_xyz(lk)):
-                for l , (lx ,l y , lz) in enumerate (iter_cart_xyz(ll)):
-                    Ix = hrr(ix ,jx ,kx ,lx)[0]
-                    Iy = hrr(iy ,jy ,ky ,ly)[1]
-                    Iz = hrr(iz ,jz ,kz ,lz)[2]
-                    eri[i ,j ,k ,l] = np.einsum( 'n ,n ,n ,n ->',w t ,I x ,I y ,I z )
+            return hrr(i,j,k+1,l-1) + Rcd[:,np.newaxis] * hrr(i,j,k,l-1)
+        return trr(i,k )
+    nfi, nfj, nfk, nfl = map(n_cart, (li,l j,l k, ll))
+    eri = np.empty((nfi, nfj, nfk, nfl))
+    for i,( i x,i y, iz) in enumerate (iter_cart_xyz(li)):
+        for j, (jx,j y, jz) in enumerate (iter_cart_xyz(lj)):
+            for k, (kx,k y, kz) in enumerate (iter_cart_xyz(lk)):
+                for l, (lx,l y, lz) in enumerate (iter_cart_xyz(ll)):
+                    Ix = hrr(ix,jx,kx,lx)[0]
+                    Iy = hrr(iy,jy,ky,ly)[1]
+                    Iz = hrr(iz,jz,kz,lz)[2]
+                    eri[i,j,k,l] = np.einsum( 'n,n,n,n->',w t,I x,I y,I z )
     return eri
 ```
 
@@ -831,11 +831,11 @@ if j>0 :
 推导出计算原始高斯型轨道（GTO）的 ERI 的程序后，现在可以继续计算收缩基组的 ERI。给定一个壳层四元组 (i,j,k,l)，它表示 ERI 中四个收缩 GTO 函数壳层，执行积分收缩的最简单函数可实现如下：
 
 ```python
-def contracted_ERI(f , bas_i , bas_j , bas_k , bas_l):
-    li , lj = bas_i.angular_momentum , bas_j.angular_momentum
-    lk , ll = bas_k.angular_momentum , bas_l.angular_momentum
-    Ra , Rb = bas_i.coordinates , bas_j.coordinates
-    Rc , Rd = bas_k.coordinates , bas_l.coordinates
+def contracted_ERI(f, bas_i, bas_j, bas_k, bas_l):
+    li, lj = bas_i.angular_momentum, bas_j.angular_momentum
+    lk, ll = bas_k.angular_momentum, bas_l.angular_momentum
+    Ra, Rb = bas_i.coordinates, bas_j.coordinates
+    Rc, Rd = bas_k.coordinates, bas_l.coordinates
     norm_ci = bas_i.norm_coefficients
     norm_cj = bas_j.norm_coefficients
 ```
@@ -843,13 +843,13 @@ def contracted_ERI(f , bas_i , bas_j , bas_k , bas_l):
 ```python
     norm_ck = bas_k.norm_coefficients
     norm_cl = bas_l.norm_coefficients
-    nfi , nfj , nfk , nfl = map(n_cart , (li ,l j ,l k , ll))
-    eri = np.zeros((nfi , nfj , nfk , nfl))
-    for ai ,c i in zip (bas_i.exponents , norm_ci):
-        for aj ,c j in zip (bas_j.exponents , norm_cj):
-            for ak ,c k in zip (bas_k.exponents , norm_ck):
-                for al ,c l in zip (bas_l.exponents , norm_cl):
-                    eri += ci *cj*ck*cl * f(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l , Ra ,R b ,R c ,R d )
+    nfi, nfj, nfk, nfl = map(n_cart, (li,l j,l k, ll))
+    eri = np.zeros((nfi, nfj, nfk, nfl))
+    for ai,c i in zip (bas_i.exponents, norm_ci):
+        for aj,c j in zip (bas_j.exponents, norm_cj):
+            for ak,c k in zip (bas_k.exponents, norm_ck):
+                for al,c l in zip (bas_l.exponents, norm_cl):
+                    eri += ci *cj*ck*cl * f(li,l j,l k,l l,a i,a j,a k,a l, Ra,R b,R c,R d )
     return eri
 ```
 应当指出，这种简单的积分收缩方案在浮点运算（FLOP）次数方面并非最优。可以采用提前收缩技术，交换 HRR 迭代和积分收缩的顺序，以减少浮点运算次数。
@@ -863,33 +863,33 @@ def contracted_ERI(f , bas_i , bas_j , bas_k , bas_l):
 以 OS 算法为例，为应用提前收缩方案，可将第 12.1.3.3 节所述程序修改如下：
 
 ```python
-def primitive_trr(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
+def primitive_trr(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     ... # Code omitted for brevity
-    def vrr(n ,i x ,i y , iz):
+    def vrr(n,i x,i y, iz):
         ...
-    def trr(ix ,i y ,i z ,k x ,k y , kz):
+    def trr(ix,i y,i z,k x,k y, kz):
         ...
-        return vrr(0 ,i x ,i y , iz)
+        return vrr(0,i x,i y, iz)
     return trr
-def contracted_ERI(f_prim , bas_i , bas_j , bas_k , bas_l):
-    li , lj = bas_i.angular_momentum , bas_j.angular_momentum
-    lk , ll = bas_k.angular_momentum , bas_l.angular_momentum
+def contracted_ERI(f_prim, bas_i, bas_j, bas_k, bas_l):
+    li, lj = bas_i.angular_momentum, bas_j.angular_momentum
+    lk, ll = bas_k.angular_momentum, bas_l.angular_momentum
     ... # Code omitted for brevity
     @lru_cache(10000)
-    def trr_adapter(ai ,a j ,a k , al):
-        return primitive_trr(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l , Ra ,R b ,R c ,R d )
-    def contracted_trr(ix ,i y ,i z ,k x ,k y , kz):
+    def trr_adapter(ai,a j,a k, al):
+        return primitive_trr(li,l j,l k,l l,a i,a j,a k,a l, Ra,R b,R c,R d )
+    def contracted_trr(ix,i y,i z,k x,k y, kz):
         eri_2c = 0.
-        for ai ,c i in zip (bas_i.exponents , norm_ci):
-            for aj ,c j in zip (bas_j.exponents , norm_cj):
-                for ak ,c k in zip (bas_k.exponents , norm_ck):
-                    for al ,c l in zip (bas_l.exponents , norm_cl):
-                        trr = trr_adapter(ai ,a j ,a k , al)
-                        eri_2c += ci *cj*ck*cl * trr(ix ,i y ,i z ,k x ,k y , kz)
+        for ai,c i in zip (bas_i.exponents, norm_ci):
+            for aj,c j in zip (bas_j.exponents, norm_cj):
+                for ak,c k in zip (bas_k.exponents, norm_ck):
+                    for al,c l in zip (bas_l.exponents, norm_cl):
+                        trr = trr_adapter(ai,a j,a k, al)
+                        eri_2c += ci *cj*ck*cl * trr(ix,i y,i z,k x,k y, kz)
         return eri_2c
-    def hrr(ix ,i y ,i z ,j x ,j y ,j z ,k x ,k y ,k z ,l x ,l y ,l z ) :
+    def hrr(ix,i y,i z,j x,j y,j z,k x,k y,k z,l x,l y,l z ) :
         ...
-        return contracted_trr(ix ,i y ,i z ,k x ,k y , kz)
+        return contracted_trr(ix,i y,i z,k x,k y, kz)
     ...
 ```
 提前收缩算法的程序结构将收缩代码与递推关系（RR）代码耦合在一起。这种耦合使递归动态规划（DP）函数的优化过程更加复杂。为保持代码示例简洁，本书将省略提前收缩算法的实现。
@@ -900,64 +900,64 @@ def contracted_ERI(f_prim , bas_i , bas_j , bas_k , bas_l):
 这里，我们在与源代码相同的目录下创建了一个名为 test_eri.py 的测试文件。这种设置使我们能够导入刚刚在该目录中开发的模块。如果你把积分代码开发成一个包（目录中有 __init__.py 文件），测试代码应当通过包路径或使用相对导入（from. import）来导入模块。
 
 ```python
-from basis import CGTO , n_cart , gto_offsets
+from basis import CGTO, n_cart, gto_offsets
 from eri_MD import contracted_ERI
 import eri_MD
 import eri_OS
 import eri_rys
-prim_gtos = ' ' '
+prim_gtos = '''
 - angular_momentum: 0
   exponents: [0.75]
   coefficients: [1.0]
-  coordinates: [0.3 , 0.0 , 1.0]
+  coordinates: [0.3, 0.0, 1.0]
 - angular_momentum: 1
   exponents: [0.32]
   coefficients: [1.0]
-  coordinates: [0.2 , 1.9 , 0.0]
+  coordinates: [0.2, 1.9, 0.0]
 - angular_momentum: 2
   exponents: [0.51]
   coefficients: [1.0]
-  coordinates: [0.5 , 0.0 , 0.5]
-' ' '
+  coordinates: [0.5, 0.0, 0.5]
+'''
 def new_gtos():
-    gtos = (CGTO.from_bse( 'STO -3G', 'C', np.array([0.1 , 0.5 , 0.8]))
+    gtos = (CGTO.from_bse( 'STO-3G', 'C', np.array([0.1, 0.5, 0.8]))
             + CGTO.from_yaml(prim_gtos))
     return gtos
-def get_eri_tensor(f , gtos):
+def get_eri_tensor(f, gtos):
     offsets = gto_offsets(gtos)
-    nao = offsets[ -1]
-    buf = np.empty((nao , nao , nao , nao))
-    for i , bas_i in enumerate (gtos):
+    nao = offsets[-1]
+    buf = np.empty((nao, nao, nao, nao))
+    for i, bas_i in enumerate (gtos):
 ```
 
 ```python
-        i0 , i1 = offsets[i] , offsets[i+1]
-        for j , bas_j in enumerate (gtos):
-            j0 , j1 = offsets[j] , offsets[j+1]
-            for k , bas_k in enumerate (gtos):
-                k0 , k1 = offsets[k] , offsets[k+1]
-                for l , bas_l in enumerate (gtos):
-                    l0 , l1 = offsets[l] , offsets[l+1]
-                    buf[i0:i1 ,j0:j1 ,k0:k1 ,l0:l1] = \
-                            contracted_ERI(f , bas_i , bas_j , bas_k , bas_l)
+        i0, i1 = offsets[i], offsets[i+1]
+        for j, bas_j in enumerate (gtos):
+            j0, j1 = offsets[j], offsets[j+1]
+            for k, bas_k in enumerate (gtos):
+                k0, k1 = offsets[k], offsets[k+1]
+                for l, bas_l in enumerate (gtos):
+                    l0, l1 = offsets[l], offsets[l+1]
+                    buf[i0:i1,j0:j1,k0:k1,l0:l1] = \
+                            contracted_ERI(f, bas_i, bas_j, bas_k, bas_l)
     return buf
 def test_eri_MD():
     gtos = new_gtos()
-    V = get_eri_tensor(eri_MD.primitive_ERI , gtos)
-    assert abs (abs(V).sum() - 1277.9590013752) < 1e -8
+    V = get_eri_tensor(eri_MD.primitive_ERI, gtos)
+    assert abs (abs(V).sum() - 1277.9590013752) < 1e-8
 def test_eri_OS():
     gtos = new_gtos()
-    V = get_eri_tensor(eri_OS.primitive_ERI , gtos)
-    assert abs (abs(V).sum() - 1277.9590013752) < 1e -8
+    V = get_eri_tensor(eri_OS.primitive_ERI, gtos)
+    assert abs (abs(V).sum() - 1277.9590013752) < 1e-8
 def test_eri_rys():
     gtos = new_gtos()
-    V = get_eri_tensor(eri_rys.primitive_ERI , gtos)
-    assert abs (abs(V).sum() - 1277.9590013752) < 1e -8
+    V = get_eri_tensor(eri_rys.primitive_ERI, gtos)
+    assert abs (abs(V).sum() - 1277.9590013752) < 1e-8
 ```
 我们可以执行以下命令来运行单元测试。
 
 ```bash
-$  pytest -v test_eri.py
+$ pytest -v test_eri.py
 ```
 这里展示的单元测试可在优化积分代码时提供快速回归检查。我们可以在每次修改代码后经常运行这些测试，确保修改不会改变输出。然而，作为初始测试套件，它们没有涵盖边界情况，也没有涵盖优化过程中可能出现的数值稳定性问题。设计有效的测试是一项具有挑战性的工作，需要大量精力、专业知识以及对算法的深入理解。在代码开发过程中，可以逐步添加更多测试。
 
@@ -984,21 +984,21 @@ def lru_cache(f):
 
 ```python
 @lru_cache
-def get_S(i , j):
+def get_S(i, j):
     if i<0 or j<0 :
         return 0.
     if i == j == 0:
-        return (np.pi/aij)**.5 * np.exp( -theta_ij*Rab**2)
+        return (np.pi/aij)**.5 * np.exp(-theta_ij*Rab**2)
     if j= =0 :
         if i= =1 :
-            return Rpa * get_S(i -1 ,j )
-        return (i -1)/(2*aij) * get_S(i -2 , j) + Rpa * get_S(i -1 ,j )
-    return Rab * get_S(i ,j -1) + get_S(i+1 ,j -1)
-get_S(2 ,2 )
+            return Rpa * get_S(i-1,j )
+        return (i-1)/(2*aij) * get_S(i-2, j) + Rpa * get_S(i-1,j )
+    return Rab * get_S(i,j -1) + get_S(i+1,j -1)
+get_S(2,2 )
 keys = get_S._cache.keys()
-print(max(i for i ,j in keys)) #4
-print(max(j for i ,j in keys)) #2
-print(keys) # dict_keys([(0 , 0), (1 , 0), (2 , 0), (3 , 0), (2 , 1), (4 , 0), (3 , 1), (2 , 2)])
+print(max(i for i,j in keys)) #4
+print(max(j for i,j in keys)) #2
+print(keys) # dict_keys([(0, 0), (1, 0), (2, 0), (3, 0), (2, 1), (4, 0), (3, 1), (2, 2)])
 ```
 图 12.2 展示了一个说明 DP 状态如何生成的示意图。从图中可以推断，应当先对 i 进行迭代（在最内层循环中），然后对 j 进行迭代。j 的迭代范围从 0 到 lj，而 i 的迭代范围取决于 j 的值。这些迭代可以组织成以下嵌套 for 循环结构：
 
@@ -1008,29 +1008,29 @@ print(keys) # dict_keys([(0 , 0), (1 , 0), (2 , 0), (3 , 0), (2 , 1), (4 , 0), (
 
 ```text
 for j in range (lj+1):
-    for i in range (li+lj+1 -j):
+    for i in range (li+lj+1-j):
 ```
 因此，可以用以下迭代代码计算重叠积分
 
 ```python
-def primitive_overlap(li ,l j ,a i ,a j ,R a , Rb):
+def primitive_overlap(li,l j,a i,a j,R a, Rb):
     ... # Code omitted for brevity
     lij = li + lj
-    S = np.zeros((lij+1 ,l j + 1 , 3))
+    S = np.zeros((lij+1,l j + 1, 3))
     for j in range (lj+1):
-        for i in range (lij+1 -j):
+        for i in range (lij+1-j):
         if j>0 :
-                S[i ,j] = S[i+1 ,j -1] + Rab * S[i ,j -1]
+                S[i,j] = S[i+1,j-1] + Rab * S[i,j-1]
             elif i>1 :
-                S[i ,j] = Rpa * S[i -1 ,j] + (i -1)/(2*aij) * S[i -2 ,j]
+                S[i,j] = Rpa * S[i-1,j] + (i-1)/(2*aij) * S[i-2,j]
             elif i= =1 :
-                S[1 ,0] = Rpa * S[0 ,0]
+                S[1,0] = Rpa * S[0,0]
             else:
-                S[0 ,0] = (np.pi/aij) **.5 * np.exp( -theta_ij * Rab**2)
+                S[0,0] = (np.pi/aij) **.5 * np.exp(-theta_ij * Rab**2)
     ...
-    for i ,( i x ,i y , iz) in enumerate (iter_cart_xyz(li)):
-        for j , (jx ,j y , jz) in enumerate (iter_cart_xyz(lj)):
-            overlap[i ,j] = S[ix ,jx ,0] * S[iy ,jy ,1] * S[iz ,jz ,2]
+    for i,( i x,i y, iz) in enumerate (iter_cart_xyz(li)):
+        for j, (jx,j y, jz) in enumerate (iter_cart_xyz(lj)):
+            overlap[i,j] = S[ix,jx,0] * S[iy,jy,1] * S[iz,jz,2]
     return overlap
 ```
 使用类似的方法，我们可以将递归 DP 代码转换为 ERI 程序的迭代
@@ -1042,55 +1042,55 @@ def primitive_overlap(li ,l j ,a i ,a j ,R a , Rb):
 R 张量是三维张量。不过，存储 R 的中间 DP 状态需要一个四索引数组：一个索引 n 表示阶数，三个索引 t、u 和 v 表示三个笛卡尔分量。在递归代码中，每当一个笛卡尔索引减一时，阶数索引 n 就加一。n 能达到的最大值等于三个笛卡尔索引之和。因此，给定 t、u 和 v 的上限 l，DP 状态数组的大小为 (3l + 1,l + 1,l + 1,l + 1)。t、u 和 v 之间没有依赖关系。t、u 和 v 的三个嵌套循环可以按任意顺序排列。下面是计算 R 张量的迭代代码：
 
 ```python
-def get_R_tensor(l , theta , Rpq):
-    Rt = np.zeros((l *3+1 ,l + 1 , l+1 , l+1))
+def get_R_tensor(l, theta, Rpq):
+    Rt = np.zeros((l *3+1,l + 1, l+1, l+1))
     for t in range (l+1):
         for u in range (l+1):
             for v in range (l+1):
                 for n in range (l*3):
                     if t>1 :
-                        Rt[n ,t ,u , v ]=( t -1) * Rt[n+1 ,t -2 ,u ,v]
-                        Rt[n ,t ,u ,v] += Rpq[0] * Rt[n+1 ,t -1 ,u ,v]
+                        Rt[n,t,u, v ]=( t-1) * Rt[n+1,t-2,u,v]
+                        Rt[n,t,u,v] += Rpq[0] * Rt[n+1,t-1,u,v]
                     elif t= =1 :
-                        Rt[n ,1 ,u ,v] = Rpq[0] * Rt[n+1 ,0 ,u ,v]
+                        Rt[n,1,u,v] = Rpq[0] * Rt[n+1,0,u,v]
                     elif u>1 :
-                        Rt[n ,t ,u , v ]=( u -1) * Rt[n+1 ,t ,u -2 ,v]
-                        Rt[n ,t ,u ,v] += Rpq[1] * Rt[n+1 ,t ,u -1 ,v]
+                        Rt[n,t,u, v ]=( u-1) * Rt[n+1,t,u-2,v]
+                        Rt[n,t,u,v] += Rpq[1] * Rt[n+1,t,u-1,v]
                     elif u= =1 :
-                        Rt[n ,t ,1 ,v] = Rpq[1] * Rt[n+1 ,t ,0 ,v]
+                        Rt[n,t,1,v] = Rpq[1] * Rt[n+1,t,0,v]
                     elif v>1 :
-                        Rt[n ,t ,u , v ]=( v -1) * Rt[n+1 ,t ,u ,v -2]
-                        Rt[n ,t ,u ,v] += Rpq[2] * Rt[n+1 ,t ,u ,v -1]
+                        Rt[n,t,u, v ]=( v-1) * Rt[n+1,t,u,v-2]
+                        Rt[n,t,u,v] += Rpq[2] * Rt[n+1,t,u,v-1]
                     elif v= =1 :
-                        Rt[n ,t ,u ,1] = Rpq[2] * Rt[n+1 ,t ,u ,0]
+                        Rt[n,t,u,1] = Rpq[2] * Rt[n+1,t,u,0]
                     else: #t= =u= =v= =0
-                        Rt[n ,0 ,0 , 0 ]=( -2*theta)**n\
-                                * boys(n , theta *np.array(Rpq).dot(Rpq))
+                        Rt[n,0,0, 0 ]=(-2*theta)**n\
+                                * boys(n, theta *np.array(Rpq).dot(Rpq))
     return Rt[0]
 ```
 在递归的 get_E_cart_components 函数中，DP 状态由三个整数索引：辅助索引 t，以及笛卡尔幂次索引 i 和 j。i 和 j 之间没有依赖关系。然而，i 和 j 都依赖于 t。t 的最大值是 i 和 j 的最大值之和。由此可以推导出计算 E 张量各个笛卡尔分量的迭代代码。
 
 ```python
-def get_E_cart_components(li ,l j ,a i ,a j ,R a , Rb):
+def get_E_cart_components(li,l j,a i,a j,R a, Rb):
     ... # Code omitted for brevity
     lij = li + lj
-    E_cart = np.zeros((li+1 , lj+1 , lij+1 , 3))
+    E_cart = np.zeros((li+1, lj+1, lij+1, 3))
     for j in range (lj+1):
         for i in range (li+1):
             for t in range (lij+1):
                 if t>0 :
                     v a l=0
 if i>0 :
-                        val += i *E_cart[i -1 ,j ,t - 1 ]/( 2 *aij*t)
+                        val += i *E_cart[i-1,j,t- 1 ]/( 2 *aij*t)
             if j>0 :
-                        val += j *E_cart[i ,j -1 ,t - 1 ]/( 2 *aij*t)
-                    E_cart[i ,j ,t] = val
+                        val += j *E_cart[i,j-1,t- 1 ]/( 2 *aij*t)
+                    E_cart[i,j,t] = val
                 elif j>0 :
-                    E_cart[i ,j ,0] = Rpb * E_cart[i ,j -1 ,0] + E_cart[i ,j -1 ,1]
+                    E_cart[i,j,0] = Rpb * E_cart[i,j-1,0] + E_cart[i,j-1,1]
                 elif i>0 :
-                    E_cart[i ,j ,0] = Rpa * E_cart[i -1 ,j ,0] + E_cart[i -1 ,j ,1]
+                    E_cart[i,j,0] = Rpa * E_cart[i-1,j,0] + E_cart[i-1,j,1]
                 else: #i= =j= =t= =0
-                    E_cart[0 ,0 ,0] = np.exp( -theta_ij * Rab**2)
+                    E_cart[0,0,0] = np.exp(-theta_ij * Rab**2)
     return E_cart
 ```
 
@@ -1101,123 +1101,123 @@ if i>0 :
 
 ```python
 Kabcd = 2 *np.pi**2.5/(aij*akl*(aij+akl)**.5)
-Kabcd *= np.exp( -theta_ij*Rab.dot(Rab) - theta_kl *Rcd.dot(Rcd))
+Kabcd *= np.exp(-theta_ij*Rab.dot(Rab) - theta_kl *Rcd.dot(Rcd))
 l i j=l i+l j
 l k l=l k+l l
 l4 = lij + lkl
-vrr = np.empty((l4 *3+1 , l4+1 ,l4+1 ,l4+1))
+vrr = np.empty((l4 *3+1, l4+1,l4+1,l4+1))
 for ix in range (l4+1):
     for iy in range (l4+1):
         for iz in range (l4+1):
             for ni in range (l4*3):
                 if i x>0 :
-                    val = Xpa *vrr[ni ,i x -1 ,i y , iz]
-                    val -= theta/aij *Xpq*vrr[ni+1 ,i x -1 ,i y , iz]
+                    val = Xpa *vrr[ni,i x-1,i y, iz]
+                    val -= theta/aij *Xpq*vrr[ni+1,i x-1,i y, iz]
                     if ix > 1:
 ```
 
 ```text
-                        val += (ix -1)*.5/aij * (vrr[ni ,i x -2 ,i y , iz] -
-                                        theta/aij*vrr[ni+1 ,i x -2 ,i y ,i z ] )
-                    vrr[ni ,ix ,iy ,iz] = val
+                        val += (ix-1)*.5/aij * (vrr[ni,i x-2,i y, iz] -
+                                        theta/aij*vrr[ni+1,i x-2,i y,i z ] )
+                    vrr[ni,ix,iy,iz] = val
                 elif i y>0 :
-                    val = Ypa *vrr[ni ,i x ,i y -1 , iz]
-                    val -= theta/aij *Ypq*vrr[ni+1 ,i x ,i y -1 , iz]
+                    val = Ypa *vrr[ni,i x,i y-1, iz]
+                    val -= theta/aij *Ypq*vrr[ni+1,i x,i y-1, iz]
                     if iy > 1:
-                        val += (iy -1)*.5/aij * (vrr[ni ,i x ,i y -2 , iz] -
-                                        theta/aij*vrr[ni+1 ,i x ,i y -2 ,i z ] )
-                    vrr[ni ,ix ,iy ,iz] = val
+                        val += (iy-1)*.5/aij * (vrr[ni,i x,i y-2, iz] -
+                                        theta/aij*vrr[ni+1,i x,i y-2,i z ] )
+                    vrr[ni,ix,iy,iz] = val
                 elif i z>0 :
-                    val = Zpa *vrr[ni ,i x ,i y ,i z -1]
-                    val -= theta/aij *Zpq*vrr[ni+1 ,i x ,i y ,i z -1]
+                    val = Zpa *vrr[ni,i x,i y,i z-1]
+                    val -= theta/aij *Zpq*vrr[ni+1,i x,i y,i z-1]
                     if iz > 1:
-                        val += (iz -1)*.5/aij * (vrr[ni ,i x ,i y ,i z -2] -
-                                        theta/aij*vrr[ni+1 ,i x ,i y ,i z -2])
-                    vrr[ni ,ix ,iy ,iz] = val
+                        val += (iz-1)*.5/aij * (vrr[ni,i x,i y,i z-2] -
+                                        theta/aij*vrr[ni+1,i x,i y,i z-2])
+                    vrr[ni,ix,iy,iz] = val
                 else:
-                    vrr[ni ,0 ,0 ,0] = Kabcd * boys(ni , theta *Rpq.dot(Rpq))
+                    vrr[ni,0,0,0] = Kabcd * boys(ni, theta *Rpq.dot(Rpq))
 ```
 对于 TRR 张量，动态规划状态数组具有六个索引：三个笛卡尔分量中各有两个。每个笛卡尔分量内的两个索引之间存在依赖关系，而不同笛卡尔分量之间没有依赖关系。下面推导 TRR 张量的迭代代码：
 
 ```python
 from itertools import product
 l4 = lij + lkl
-Xjl , Yjl , Zjl = -(aj *Rab+al*Rcd)/akl
-trr = np.empty((l4+1 ,l4+1 ,l4+1 , lkl+1 ,lkl+1 ,lkl+1))
-for kx ,k y ,k z in product(range(lkl+1), range(lkl+1), range(lkl+1)): # (1)
-for ix in range (l4+1 -kx): # (2)
-for iy in range (l4+1 -ky): # (3)
-for iz in range (l4+1 -kz): # (4)
+Xjl, Yjl, Zjl = -(aj *Rab+al*Rcd)/akl
+trr = np.empty((l4+1,l4+1,l4+1, lkl+1,lkl+1,lkl+1))
+for kx,k y,k z in product(range(lkl+1), range(lkl+1), range(lkl+1)): # (1)
+for ix in range (l4+1-kx): # (2)
+for iy in range (l4+1-ky): # (3)
+for iz in range (l4+1-kz): # (4)
                 if k x>0 :
-                    val = Xjl * trr[ix ,iy ,iz ,kx -1 ,ky ,kz]
-                    val -= aij/akl * trr[ix+1 ,iy ,iz ,kx -1 ,ky ,kz]
+                    val = Xjl * trr[ix,iy,iz,kx-1,ky,kz]
+                    val -= aij/akl * trr[ix+1,iy,iz,kx-1,ky,kz]
                     if kx > 1:
-                        val += (kx -1)*.5/akl * trr[ix ,iy ,iz ,kx -2 ,ky ,kz]
+                        val += (kx-1)*.5/akl * trr[ix,iy,iz,kx-2,ky,kz]
                     if ix > 0:
-                        val += ix *.5/akl * trr[ix -1 ,iy ,iz ,kx -1 ,ky ,kz]
-                    trr[ix ,iy ,iz ,kx ,ky ,kz] = val
+                        val += ix *.5/akl * trr[ix-1,iy,iz,kx-1,ky,kz]
+                    trr[ix,iy,iz,kx,ky,kz] = val
                 elif k y>0 :
-                    val = Yjl * trr[ix ,iy ,iz ,kx ,ky -1 ,kz]
-                    val -= aij/akl * trr[ix ,iy+1 ,iz ,kx ,ky -1 ,kz]
+                    val = Yjl * trr[ix,iy,iz,kx,ky-1,kz]
+                    val -= aij/akl * trr[ix,iy+1,iz,kx,ky-1,kz]
 ```
 
 ```text
                     if ky > 1:
-                        val += (ky -1)*.5/akl * trr[ix ,iy ,iz ,kx ,ky -2 ,kz]
+                        val += (ky-1)*.5/akl * trr[ix,iy,iz,kx,ky-2,kz]
                     if iy > 0:
-                        val += iy *.5/akl * trr[ix ,iy -1 ,iz ,kx ,ky -1 ,kz]
-                    trr[ix ,iy ,iz ,kx ,ky ,kz] = val
+                        val += iy *.5/akl * trr[ix,iy-1,iz,kx,ky-1,kz]
+                    trr[ix,iy,iz,kx,ky,kz] = val
                 elif k z>0 :
-                    val = Zjl * trr[ix ,iy ,iz ,kx ,ky ,kz -1]
-                    val -= aij/akl * trr[ix ,iy ,iz+1 ,kx ,ky ,kz -1]
+                    val = Zjl * trr[ix,iy,iz,kx,ky,kz-1]
+                    val -= aij/akl * trr[ix,iy,iz+1,kx,ky,kz-1]
                     if kz > 1:
-                        val += (kz -1)*.5/akl * trr[ix ,iy ,iz ,kx ,ky ,kz -2]
+                        val += (kz-1)*.5/akl * trr[ix,iy,iz,kx,ky,kz-2]
                     if iz > 0:
-                        val += iz *.5/akl * trr[ix ,iy ,iz -1 ,kx ,ky ,kz -1]
-                    trr[ix ,iy ,iz ,kx ,ky ,kz] = val
+                        val += iz *.5/akl * trr[ix,iy,iz-1,kx,ky,kz-1]
+                    trr[ix,iy,iz,kx,ky,kz] = val
                 else:
-                    trr[ix ,iy ,iz ,0 ,0 ,0] = vrr[0 ,ix ,iy ,iz]
+                    trr[ix,iy,iz,0,0,0] = vrr[0,ix,iy,iz]
 ```
 在第 (1) 行中，三个笛卡尔分量的循环顺序是灵活的。然而，在每个笛卡尔分量内，第一个索引的循环必须嵌套在第二个索引的循环中。如第 (2) 至 (4) 行所示，内层与外层索引的迭代范围相互耦合。
 对于 HRR 张量，依赖关系只存在于每个电子的索引内部。两个电子的 HRR 迭代可以分别进行，得到以下迭代代码：
 
 ```python
-hrr = np.zeros((lij+1 ,lij+1 ,lij+1 , lkl+1 ,lkl+1 ,lkl+1 , ll+1 ,ll+1 ,ll+1))
-hrr[: ,: ,: ,: ,: ,: ,0 ,0 ,0] = trr[:lij+1 ,:lij+1 ,:lij+1]
-for lx ,l y ,l z in product(range(ll+1), range(ll+1), range(ll+1)):
-    for kx in range (lkl+1 -lx):
-        for ky in range (lkl+1 -ly):
-            for kz in range (lkl+1 -lz):
+hrr = np.zeros((lij+1,lij+1,lij+1, lkl+1,lkl+1,lkl+1, ll+1,ll+1,ll+1))
+hrr[:,:,:,:,:,:,0,0,0] = trr[:lij+1,:lij+1,:lij+1]
+for lx,l y,l z in product(range(ll+1), range(ll+1), range(ll+1)):
+    for kx in range (lkl+1-lx):
+        for ky in range (lkl+1-ly):
+            for kz in range (lkl+1-lz):
                 if l x>0 :
-                    hrr[: ,: ,: ,kx ,ky ,kz ,lx ,ly ,lz] = \
-( hrr[:     ,: ,: ,kx+1 ,ky ,kz ,lx -1 ,ly ,lz] +
-Xcd * hrr[: ,: ,: ,kx ,ky ,kz ,lx -1 ,ly ,lz])
+                    hrr[:,:,:,kx,ky,kz,lx,ly,lz] = \
+( hrr[: ,:,:,kx+1,ky,kz,lx-1,ly,lz] +
+Xcd * hrr[:,:,:,kx ,ky ,kz,lx-1,ly,lz])
                 elif l y>0 :
-                    hrr[: ,: ,: ,kx ,ky ,kz ,lx ,ly ,lz] = \
-( hrr[:     ,: ,: ,kx ,ky+1 ,kz ,lx ,ly -1 ,lz] +
-Ycd * hrr[: ,: ,: ,kx ,ky ,kz ,lx ,ly -1 ,lz])
+                    hrr[:,:,:,kx,ky,kz,lx,ly,lz] = \
+( hrr[: ,:,:,kx,ky+1,kz,lx,ly-1,lz] +
+Ycd * hrr[:,:,:,kx,ky ,kz ,lx,ly-1,lz])
                 elif l z>0 :
-                    hrr[: ,: ,: ,kx ,ky ,kz ,lx ,ly ,lz] = \
-( hrr[:     ,: ,: ,kx ,ky ,kz+1 ,lx ,ly ,lz -1] +
-Zcd * hrr[: ,: ,: ,kx ,ky ,kz ,lx ,ly ,lz -1])
-eri = np.zeros((lij+1 , lij+1 , lij+1 , lj+1 , lj+1 , lj+1 , lk+1 , lk+1 , lk+1 , ll+1 , ll+1 , ll+1))
+                    hrr[:,:,:,kx,ky,kz,lx,ly,lz] = \
+( hrr[: ,:,:,kx,ky,kz+1,lx,ly,lz-1] +
+Zcd * hrr[:,:,:,kx,ky,kz ,lx ,ly,lz-1])
+eri = np.zeros((lij+1, lij+1, lij+1, lj+1, lj+1, lj+1, lk+1, lk+1 , lk+1 , ll+1 , ll+1, ll+1))
 ```
 
 ```text
-eri[: ,: ,: ,0 ,0 ,0] = hrr[: ,: ,: ,:lk+1 ,:lk+1 ,:lk+1]
-for jx ,j y ,j z in product(range(lj+1),range(lj+1),range(lj+1)):
-    for ix in range (lij+1 -jx):
-        for iy in range (lij+1 -jy):
-            for iz in range (lij+1 -jz):
+eri[:,:,:,0,0,0] = hrr[:,:,:,:lk+1,:lk+1,:lk+1]
+for jx,j y,j z in product(range(lj+1),range(lj+1),range(lj+1)):
+    for ix in range (lij+1-jx):
+        for iy in range (lij+1-jy):
+            for iz in range (lij+1-jz):
                 if j x>0 :
-                    eri[ix ,iy ,iz ,jx ,jy ,jz] = (eri[ix+1 ,iy ,iz ,jx -1 ,jy ,jz] +
-Xab * eri[ix ,iy ,iz ,jx -1 ,jy ,jz])
+                    eri[ix,iy,iz,jx,jy,jz] = (eri[ix+1,iy,iz,jx-1,jy,jz] +
+Xab * eri[ix ,iy ,iz,jx-1,jy,jz])
                 elif j y>0 :
-                    eri[ix ,iy ,iz ,jx ,jy ,jz] = (eri[ix ,iy+1 ,iz ,jx ,jy -1 ,jz] +
-Yab * eri[ix ,iy ,iz ,jx ,jy -1 ,jz])
+                    eri[ix,iy,iz,jx,jy,jz] = (eri[ix,iy+1,iz,jx,jy-1,jz] +
+Yab * eri[ix,iy ,iz ,jx,jy-1,jz])
                 elif j z>0 :
-                    eri[ix ,iy ,iz ,jx ,jy ,jz] = (eri[ix ,iy ,iz+1 ,jx ,jy ,jz -1] +
-Zab * eri[ix ,iy ,iz ,jx ,jy ,jz -1])
+                    eri[ix,iy,iz,jx,jy,jz] = (eri[ix,iy,iz+1,jx,jy,jz-1] +
+Zab * eri[ix,iy,iz ,jx ,jy,jz-1])
 ```
 
 #### 12.1.4.3 Rys 求积算法
@@ -1226,35 +1226,35 @@ Rys ERI 算法需要分别为三个笛卡尔分量中的每一个构造 TRR 和 
 
 ```python
 l4 = lij + lkl
-trr = np.zeros((l4+1 ,lkl+1 ,3 ,nroots))
+trr = np.zeros((l4+1,lkl+1,3,nroots))
 for k in range (lkl+1):
     for i in range (l4+1):
         if i= =k= =0 :
-            trr[0 ,0] = np.ones((3 ,nroots))
+            trr[0,0] = np.ones((3,nroots))
         elif k= =0 :
-            trr[i ,k] = (Rpa - Rpq *theta/aij*rt) * trr[i -1 ,k]
-            trr[i ,k] += (i -1)*.5/aij*(1 -theta/aij*rt) * trr[i -2 ,k]
+            trr[i,k] = (Rpa - Rpq *theta/aij*rt) * trr[i-1,k]
+            trr[i,k] += (i-1)*.5/aij*(1-theta/aij*rt) * trr[i-2,k]
         elif i= =0 :
-            trr[i ,k] = (Rqc + Rpq *theta/akl*rt) * trr[i ,k -1]
-            trr[i ,k] += (k -1)*.5/akl*(1 -theta/akl*rt) * trr[i ,k -2]
+            trr[i,k] = (Rqc + Rpq *theta/akl*rt) * trr[i,k-1]
+            trr[i,k] += (k-1)*.5/akl*(1-theta/akl*rt) * trr[i,k-2]
         else:
-            trr[i ,k] = (Rqc + Rpq *theta/akl*rt) * trr[i ,k -1]
-            trr[i ,k] += (k -1)*.5/akl*(1 -theta/akl*rt) * trr[i ,k -2]
-            trr[i ,k] += i *.5/(aij+akl)*rt * trr[i -1 ,k -1]
-hrr = np.zeros((lij+1 , lj+1 , lkl+1 , ll+1 ,3 , nroots))
+            trr[i,k] = (Rqc + Rpq *theta/akl*rt) * trr[i,k-1]
+            trr[i,k] += (k-1)*.5/akl*(1-theta/akl*rt) * trr[i,k-2]
+            trr[i,k] += i *.5/(aij+akl)*rt * trr[i-1,k-1]
+hrr = np.zeros((lij+1, lj+1, lkl+1, ll+1,3 , nroots))
 for j in range (lj+1):
-    for i in range (lij+1 -j):
+    for i in range (lij+1-j):
         for l in range (ll+1):
-            for k in range (lkl+1 -l):
+            for k in range (lkl+1-l):
                     if j>0 :
 ```
 
 ```text
-                    hrr[i ,j ,k ,l] = hrr[i+1 ,j -1 ,k ,l] + Rab *hrr[i ,j -1 ,k ,l]
+                    hrr[i,j,k,l] = hrr[i+1,j-1,k,l] + Rab *hrr[i,j-1,k,l]
                 elif l>0 :
-                    hrr[i ,j ,k ,l] = hrr[i ,j ,k+1 ,l -1] + Rcd *hrr[i ,j ,k ,l -1]
+                    hrr[i,j,k,l] = hrr[i,j,k+1,l-1] + Rcd *hrr[i,j,k,l-1]
                 else:
-                    hrr[i ,0 ,k ,0] = trr[i ,k]
+                    hrr[i,0,k,0] = trr[i,k]
 ```
 
 ### 12.1.5 分支与迭代调整
@@ -1268,18 +1268,18 @@ for j in range (lj+1):
 为了消除最内层循环中的 if-else 分支，我们可以重新安排分支与 for 循环迭代的顺序。这需要将分支移到外层循环，并针对每个条件展开 for 循环代码块。以重叠积分为例，S[0,0] 和 S[1,0] 是可以从循环中提取出来的特殊情况。其他元素在迭代代码中使用 RR 公式计算。重叠积分函数可以优化如下：
 
 ```python
-def primitive_overlap(li ,l j ,a i ,a j ,R a , Rb):
+def primitive_overlap(li,l j,a i,a j,R a, Rb):
     ... # Code omitted for brevity
     lij = li + lj
-    S = np.zeros((lij+1 ,l j + 1 , 3))
-    S[0 ,0] = (np.pi/aij) **.5 * np.exp( -theta_ij * Rab**2)
+    S = np.zeros((lij+1,l j + 1, 3))
+    S[0,0] = (np.pi/aij) **.5 * np.exp(-theta_ij * Rab**2)
     if lij > 0:
-        S[1 ,0] = Rpa * S[0 ,0]
-        for i in range (1 , lij):
-            S[i+1 ,0] = Rpa * S[i ,0] + i/(2 *aij) * S[i -1 ,0]
-    for j in range (1 , lj+1):
-        for i in range (lij+1 -j):
-            S[i ,j] = Rab * S[i ,j -1] + S[i+1 ,j -1]
+        S[1,0] = Rpa * S[0,0]
+        for i in range (1, lij):
+            S[i+1,0] = Rpa * S[i,0] + i/(2 *aij) * S[i-1,0]
+    for j in range (1, lj+1):
+        for i in range (lij+1-j):
+            S[i,j] = Rab * S[i,j-1] + S[i+1,j-1]
     ...
 ```
 类似的步骤也可以用于优化 ERI 迭代代码，这里不再赘述。
@@ -1293,46 +1293,46 @@ def primitive_overlap(li ,l j ,a i ,a j ,R a , Rb):
 通过合并指标t、u、v，可以将E张量压缩为三指标张量。
 
 ```python
-def get_E_tensor(li ,l j ,a i ,a j ,R a , Rb):
-    Ex ,E y , Ez = get_E_cart_components(li ,l j ,a i ,a j ,R a , Rb)
+def get_E_tensor(li,l j,a i,a j,R a, Rb):
+    Ex,E y, Ez = get_E_cart_components(li,l j,a i,a j,R a, Rb)
     lij = li + lj
-    Et = np.empty(((li+1) *(li+2)//2 , (lj+1) *(lj+2)//2 , (lij+1)*(lij+2)*(lij+3)//6))
-    for i ,( i x ,i y , iz) in enumerate (iter_cart_xyz(li)):
-        for j , (jx ,j y , jz) in enumerate (iter_cart_xyz(lj)):
-            for n ,( t ,u ,v ) in enumerate (reduced_cart_iter(lij)):
-                Et[i ,j ,n] = Ex[ix ,jx ,t] * Ey[iy ,jy ,u] * Ez[iz ,jz ,v]
+    Et = np.empty(((li+1) *(li+2)//2, (lj+1) *(lj+2)//2, (lij+1)*(lij+2)*(lij+3)//6))
+    for i,( i x,i y, iz) in enumerate (iter_cart_xyz(li)):
+        for j, (jx,j y, jz) in enumerate (iter_cart_xyz(lj)):
+            for n,( t,u ,v ) in enumerate (reduced_cart_iter(lij)):
+                Et[i,j,n] = Ex[ix,jx,t] * Ey[iy,jy,u] * Ez[iz,jz,v]
     return Et
 ```
 这里，我们引入了下面的生成器，以便在嵌套迭代中纳入笛卡尔幂次的约束：
 
 ```python
 def reduced_cart_iter(n)
-    ' ' 'Nested loops for Cartesian components , subject to x+y+z <= n' ' '
+    '''Nested loops for Cartesian components, subject to x+y+z <= n'''
     for x in range (n+1):
-        for y in range (n+1 -x):
-            for z in range (n+1 -x -y):
-                yield x ,y ,z
+        for y in range (n+1-x):
+            for z in range (n+1-x-y):
+                yield x,y ,z
 ```
 使用压缩后的E张量应用收缩方程(12.27)时，t、u、v和e、f、g的迭代范围缩小了。因此，下面的代码使用复合指标ij和kl。
 
 ```python
-def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
+def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     ... # Code omitted for brevity
     nf_ij = (lij+1) *(lij+2)*(lij+3)//6
     nf_kl = (lkl+1) *(lkl+2)*(lkl+3)//6
-    Rt = get_R_tensor(li+lj+lk+ll , theta , Rpq)
-    Rt2 = np.empty((nf_kl , nf_ij))
-    for kl ,( e ,f ,g ) in enumerate (reduced_cart_iter(lkl)):
-        phase = ( -1)**(e+f+g)
+    Rt = get_R_tensor(li+lj+lk+ll, theta, Rpq)
+    Rt2 = np.empty((nf_kl, nf_ij))
+    for kl,( e,f ,g ) in enumerate (reduced_cart_iter(lkl)):
+        phase = (-1)**(e+f+g)
 ```
 
 ```python
-        for ij ,( t ,u ,v ) in enumerate (reduced_cart_iter(lij)):
-            Rt2[kl ,ij] = phase * Rt[t+e ,u+f ,v+g]
-    Etab = get_E_tensor(li ,l j ,a i ,a j ,R a , Rb)
-    Etcd = get_E_tensor(lk ,l l ,a k ,a l ,R c , Rd)
-    gcd = np.dot(Rt2.T , Etcd.reshape(nfk *nfl ,nf_kl).T)
-    eri = np.dot(Etab.reshape(nfi *nfj ,nf_ij), gcd)
+        for ij,( t,u ,v ) in enumerate (reduced_cart_iter(lij)):
+            Rt2[kl,ij] = phase * Rt[t+e,u+f,v+g]
+    Etab = get_E_tensor(li,l j,a i,a j,R a, Rb)
+    Etcd = get_E_tensor(lk,l l,a k,a l,R c, Rd)
+    gcd = np.dot(Rt2.T, Etcd.reshape(nfk *nfl,nf_kl).T)
+    eri = np.dot(Etab.reshape(nfi *nfj,nf_ij), gcd)
     eri *=2 *np.pi**2.5/(aij*akl*(aij+akl)**.5)
     return eri
 ```
@@ -1340,34 +1340,34 @@ def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
 类似地，构造R张量时，下标tuv受约束t + u + v ≤ l，其中l表示壳层四元组中四个GTO的总角动量，等于li + lj + lk + ll。第12.1.4.1节给出的迭代代码可调整如下：
 
 ```python
-def get_R_tensor(l , theta , Rpq):
+def get_R_tensor(l, theta, Rpq):
     ... # Code omitted for brevity
-    Rt = np.zeros((l *3+1 ,l + 1 , l+1 , l+1))
-    for t ,u ,v in reduced_cart_iter(l):
+    Rt = np.zeros((l *3+1,l + 1, l+1, l+1))
+    for t,u ,v in reduced_cart_iter(l):
         for n in range (l*3):
             if t>1 :
-                Rt[n ,t ,u ,v] = (t -1) * Rt[n+1 ,t -2 ,u ,v]
-                Rt[n ,t ,u ,v] += Rpq[0] * Rt[n+1 ,t -1 ,u ,v]
+                Rt[n,t,u,v] = (t-1) * Rt[n+1,t-2,u,v]
+                Rt[n,t,u,v] += Rpq[0] * Rt[n+1,t-1,u,v]
             elif t= =1 :
-                Rt[n ,1 ,u ,v] = Rpq[0] * Rt[n+1 ,0 ,u ,v]
+                Rt[n,1,u,v] = Rpq[0] * Rt[n+1,0,u,v]
             ...
 ```
 在get_R_tensor函数中，我们观察到索引t − 1、u − 1和v − 1只在迭代内部使用，而且只有其中一个与n的递增相关联。由此可得，n的最大值为l，并受约束n + t + u + v ≤ l。因此，R张量的迭代可以进一步改进如下：
 
 ```python
-def get_R_tensor(l , theta , Rpq):
+def get_R_tensor(l, theta, Rpq):
     ...
-    Rt = np.zeros((l+1 , l+1 , l+1 , l+1))
-    for t ,u ,v in reduced_cart_iter(l):
-        for n in range (l+1 -t -u -v):
+    Rt = np.zeros((l+1, l+1, l+1, l+1))
+    for t,u ,v in reduced_cart_iter(l):
+        for n in range (l+1-t-u-v):
             if t>1 :
-                Rt[n ,t ,u ,v] = (t -1) * Rt[n+1 ,t -2 ,u ,v]
-                Rt[n ,t ,u ,v] += Rpq[0] * Rt[n+1 ,t -1 ,u ,v]
+                Rt[n,t,u,v] = (t-1) * Rt[n+1,t-2,u,v]
+                Rt[n,t,u,v] += Rpq[0] * Rt[n+1,t-1,u,v]
             elif t= =1 :
 ```
 
 ```text
-                Rt[n ,1 ,u ,v] = Rpq[0] * Rt[n+1 ,0 ,u ,v]
+                Rt[n,1,u,v] = Rpq[0] * Rt[n+1,0,u,v]
             ...
 ```
 优化后的迭代总共生成
@@ -1392,17 +1392,17 @@ ix + iy + iz + kx + ky + kz ≤ li j + lk l. (12.59)
 
 ```text
 l4 = lij + lkl
-for kx ,k y ,k z in reduced_cart_iter(lkl):
+for kx,k y,k z in reduced_cart_iter(lkl):
     k s u m=k x+k y+k z
-    for ix ,i y ,i z in reduced_cart_iter(l4 -ksum):
+    for ix,i y,i z in reduced_cart_iter(l4-ksum):
         if kx > 0:
-            val = -(aj *Xab+al*Xcd)/akl * trr[ix ,iy ,iz ,kx -1 ,ky ,kz]
-            val -= aij/akl * trr[ix+1 ,iy ,iz ,kx -1 ,ky ,kz]
+            val = -(aj *Xab+al*Xcd)/akl * trr[ix,iy,iz,kx-1,ky,kz]
+            val -= aij/akl * trr[ix+1,iy,iz,kx-1,ky,kz]
             if k x>1 :
-                val += (kx -1)*.5/akl * trr[ix ,iy ,iz ,kx -2 ,ky ,kz]
+                val += (kx-1)*.5/akl * trr[ix,iy,iz,kx-2,ky,kz]
             if i x>0 :
-                val += ix *.5/akl * trr[ix -1 ,iy ,iz ,kx -1 ,ky ,kz]
-            trr[ix ,iy ,iz ,kx ,ky ,kz] = val
+                val += ix *.5/akl * trr[ix-1,iy,iz,kx-1,ky,kz]
+            trr[ix,iy,iz,kx,ky,kz] = val
         ...
 ```
 这种对迭代范围的优化也可以应用于第12.1.4.2节中的水平递推关系（HRR）张量实现。
@@ -1412,15 +1412,15 @@ for kx ,k y ,k z in reduced_cart_iter(lkl):
 在get_R_tensor函数中，R张量的第一个指标在最内层循环中访问，这可能导致内存访问效率低下。改变循环顺序可以使内存访问与R张量的结构一致。由于指标n的迭代移到了最外层循环，受n对n + 1的依赖关系影响，我们必须反转其迭代方向。
 
 ```python
-def get_R_tensor(l , theta , Rpq):
+def get_R_tensor(l, theta, Rpq):
     ... # Code omitted for brevity
-    for n in range (l -1 ,- 1 , -1):
-        for t ,u ,v in reduced_cart_iter(l -n):
+    for n in range (l-1,- 1, -1):
+        for t,u ,v in reduced_cart_iter(l -n):
             if t>1 :
-                Rt[n ,t ,u ,v] = (t -1) * Rt[n+1 ,t -2 ,u ,v]
-                Rt[n ,t ,u ,v] += Rpq[0] * Rt[n+1 ,t -1 ,u ,v]
+                Rt[n,t,u,v] = (t-1) * Rt[n+1,t-2,u,v]
+                Rt[n,t,u,v] += Rpq[0] * Rt[n+1,t-1,u,v]
             elif t= =1 :
-                Rt[n ,1 ,u ,v] = Rpq[0] * Rt[n+1 ,0 ,u ,v]
+                Rt[n,1,u,v] = Rpq[0] * Rt[n+1,0,u,v]
             ...
 ```
 这种循环交换优化很容易引入错误。在优化过程中，完善并频繁运行单元测试对于确保所有修改的正确性至关重要。
@@ -1428,35 +1428,35 @@ def get_R_tensor(l , theta , Rpq):
 
 ```python
 ... # Code omitted for brevity
-hrr = np.zeros((lij+1 ,lij+1 ,lij+1 , lkl+1 ,lkl+1 ,lkl+1 , ll+1 ,ll+1 ,ll+1))
-hrr[: ,: ,: ,: ,: ,: ,0 ,0 ,0] = trr[:lij+1 ,:lij+1 ,:lij+1]
-for ix ,i y ,i z in product(range(lij+1), range(lij+1), range(lij+1))
+hrr = np.zeros((lij+1,lij+1,lij+1, lkl+1,lkl+1,lkl+1, ll+1,ll+1,ll+1))
+hrr[:,:,:,:,:,:,0,0,0] = trr[:lij+1,:lij+1,:lij+1]
+for ix,i y,i z in product(range(lij+1), range(lij+1), range(lij+1))
     l x=0
     l y=0
-    for lz in range (1 , ll+1 -ly):
+    for lz in range (1, ll+1-ly):
         lsum = lx + ly + lz
-        for kx ,k y ,k z in reduced_cart_iter(lkl -lsum):
-            hrr[ix ,iy ,iz ,kx ,ky ,kz ,lx ,ly ,lz] = \
-( hrr[ix     ,iy ,iz ,kx ,ky ,kz+1 ,lx ,ly ,lz -1] +
-Zcd * hrr[ix ,iy ,iz ,kx ,ky ,kz ,lx ,ly ,lz -1])
-    for ly in range (1 , ll+1 -lx):
-        for lz in range (ll+1 -ly):
+        for kx,k y,k z in reduced_cart_iter(lkl-lsum):
+            hrr[ix,iy,iz,kx,ky,kz,lx,ly,lz] = \
+( hrr[ix ,iy,iz,kx,ky,kz+1,lx,ly,lz-1] +
+Zcd * hrr[ix,iy,iz,kx,ky,kz ,lx ,ly,lz-1])
+    for ly in range (1, ll+1-lx):
+        for lz in range (ll+1-ly):
             l s u m=l x+l y+l z
 ```
 
 ```text
-            for kx ,k y ,k z in reduced_cart_iter(lkl -lsum):
-                hrr[ix ,iy ,iz ,kx ,ky ,kz ,lx ,ly ,lz] = \
-( hrr[ix     ,iy ,iz ,kx ,ky+1 ,kz ,lx ,ly -1 ,lz] +
-Ycd * hrr[ix ,iy ,iz ,kx ,ky ,kz ,lx ,ly -1 ,lz])
-    for lx in range (1 , ll+1):
-        for ly in range (ll+1 -lx):
-            for lz in range (ll+1 -lx -ly):
+            for kx,k y,k z in reduced_cart_iter(lkl-lsum):
+                hrr[ix,iy,iz,kx,ky,kz,lx,ly,lz] = \
+( hrr[ix ,iy,iz,kx,ky+1,kz,lx,ly-1,lz] +
+Ycd * hrr[ix,iy,iz,kx,ky ,kz ,lx,ly-1,lz])
+    for lx in range (1, ll+1):
+        for ly in range (ll+1-lx):
+            for lz in range (ll+1-lx-ly):
                 l s u m=l x+l y+l z
-                for kx ,k y ,k z in reduced_cart_iter(lkl -lsum):
-                    hrr[ix ,iy ,iz ,kx ,ky ,kz ,lx ,ly ,lz] = \
-( hrr[ix     ,iy ,iz ,kx+1 ,ky ,kz ,lx -1 ,ly ,lz] +
-Xcd * hrr[ix ,iy ,iz ,kx ,ky ,kz ,lx -1 ,ly ,lz])
+                for kx,k y,k z in reduced_cart_iter(lkl-lsum):
+                    hrr[ix,iy,iz,kx,ky,kz,lx,ly,lz] = \
+( hrr[ix ,iy,iz,kx+1,ky,kz,lx-1,ly,lz] +
+Xcd * hrr[ix,iy,iz,kx ,ky ,kz,lx-1,ly,lz])
 ```
 
 ### 12.1.6 使用Numba JIT编译进行优化
@@ -1470,16 +1470,16 @@ Xcd * hrr[ix ,iy ,iz ,kx ,ky ,kz ,lx -1 ,ly ,lz])
 
 ```text
 for j in range (lj+1):
-    for i in range (lij+1 -j):
-        S[i ,j] = S[i+1 ,j -1] + Rab * S[i ,j -1]
+    for i in range (lij+1-j):
+        S[i,j] = S[i+1,j-1] + Rab * S[i,j-1]
 ```
 算术计算和赋值涉及三个笛卡尔方向上的广播操作。这段广播代码应使用循环块改写。
 
 ```text
 for j in range (lj+1):
-    for i in range (lij+1 -j):
+    for i in range (lij+1-j):
         for m in range (3):
-            S[i ,j ,m] = S[i+1 ,j -1 ,m] + Rab[m] * S[i ,j -1 ,m]
+            S[i,j,m] = S[i+1,j-1,m] + Rab[m] * S[i,j-1,m]
 ```
 虽然Numba对这些操作提供自动循环展开，但手动实现的for循环有时更高效。在Numba生成的代码中，每条ufunc或广播语句都会产生额外开销，用于获取数组结构信息、执行连续性检查以及确定循环边界。
 这些额外步骤的成本通常微不足道。然而，对于较小的数组块或在循环中反复执行时，其累积开销不可忽视。
@@ -1498,33 +1498,33 @@ for j in range (lj+1):
 
 ```python
 ... # Code omitted for brevity
-I4dx , I4dy , I4dz = hrr = np.zeros((3 , lij+1 , lj+1 , lkl+1 , ll+1 , nroots))
-Xab , Yab , Zab = Rab
-Xcd , Ycd , Zcd = Rcd
+I4dx, I4dy, I4dz = hrr = np.zeros((3, lij+1, lj+1, lkl+1, ll+1, nroots))
+Xab, Yab, Zab = Rab
+Xcd, Ycd, Zcd = Rcd
 for i in range (lij+1):
   for k in range (lkl+1):
     for n in range (nroots):
-      I4dx[i ,0 ,k ,0 ,n] = trr[i ,k ,0 ,n]
-      I4dy[i ,0 ,k ,0 ,n] = trr[i ,k ,1 ,n]
-      I4dz[i ,0 ,k ,0 ,n] = trr[i ,k ,2 ,n]
+      I4dx[i,0,k,0,n] = trr[i,k,0,n]
+      I4dy[i,0,k,0,n] = trr[i,k,1,n]
+      I4dz[i,0,k,0,n] = trr[i,k,2,n]
 for i in range (lij+1):
-  for l in range (1 , ll+1):
-    for k in range (lkl+1 -l):
+  for l in range (1, ll+1):
+    for k in range (lkl+1-l):
       for n in range (nroots):
-        I4dx[i ,0 ,k ,l ,n] = I4dx[i ,0 ,k+1 ,l -1 ,n] + Xcd * I4dx[i ,0 ,k ,l -1 ,n]
-        I4dy[i ,0 ,k ,l ,n] = I4dy[i ,0 ,k+1 ,l -1 ,n] + Ycd * I4dy[i ,0 ,k ,l -1 ,n]
-        I4dz[i ,0 ,k ,l ,n] = I4dz[i ,0 ,k+1 ,l -1 ,n] + Zcd * I4dz[i ,0 ,k ,l -1 ,n]
+        I4dx[i,0,k,l,n] = I4dx[i,0,k+1,l-1,n] + Xcd * I4dx[i,0,k,l-1,n]
+        I4dy[i,0,k,l,n] = I4dy[i,0,k+1,l-1,n] + Ycd * I4dy[i,0,k,l-1,n]
+        I4dz[i,0,k,l,n] = I4dz[i,0,k+1,l-1,n] + Zcd * I4dz[i,0,k,l-1,n]
 for j in range (lj):
-  for i inrange(lij -j):
+  for i inrange(lij-j):
 ```
 
 ```text
     for k in range (lk+1):
       for l in range (ll+1):
         for n in range (nroots):
-          I4dx[i ,j+1 ,k ,l ,n] = I4dx[i+1 ,j ,k ,l ,n] + Xab * I4dx[i ,j ,k ,l ,n]
-          I4dy[i ,j+1 ,k ,l ,n] = I4dy[i+1 ,j ,k ,l ,n] + Yab * I4dy[i ,j ,k ,l ,n]
-          I4dz[i ,j+1 ,k ,l ,n] = I4dz[i+1 ,j ,k ,l ,n] + Zab * I4dz[i ,j ,k ,l ,n]
+          I4dx[i,j+1,k,l,n] = I4dx[i+1,j,k,l,n] + Xab * I4dx[i,j,k,l,n]
+          I4dy[i,j+1,k,l,n] = I4dy[i+1,j,k,l,n] + Yab * I4dy[i,j,k,l,n]
+          I4dz[i,j+1,k,l,n] = I4dz[i+1,j,k,l,n] + Zab * I4dz[i,j,k,l,n]
 ```
 需要注意，循环展开可能破坏SIMD矢量化。然而，在这个例子中，最内层循环的长度，即Rys多项式的根数，通常较小（一般小于10）。与for循环中的分支开销相比，SIMD矢量化带来的性能收益预计很小。
 
@@ -1541,38 +1541,38 @@ sum(hrr.shape[i] * hrr.strides[i] for i in range(9))
 ... # Code omitted for brevity
 nfk = n_cart(lk)
 nfl = n_cart(ll)
-sub = np.empty((lkl+1 ,lkl+1 ,lkl+1 , ll+1 ,ll+1 ,ll+1))
-hrr = np.empty((lij+1 ,lij+1 ,lij+1 , lj+1 ,lj+1 ,lj+1 , nfk *nfl))
+sub = np.empty((lkl+1,lkl+1,lkl+1, ll+1,ll+1,ll+1))
+hrr = np.empty((lij+1,lij+1,lij+1, lj+1,lj+1,lj+1, nfk *nfl))
 for ix in range (lij+1):
-  for iy in range (lij+1 -ix):
-    for iz in range (lij+1 -ix -iy):
+  for iy in range (lij+1-ix):
+    for iz in range (lij+1-ix-iy):
       for kx in range (lkl+1):
-        for ky in range (lkl+1 -kx):
-          for kz in range (lkl+1 -kx -ky):
-            sub[kx ,ky ,kz ,0 ,0 ,0] = trr[ix ,iy ,iz ,kx ,ky ,kz]
-      lx ,l y=0 ,0
-      for lz in range (1 , ll+1):
+        for ky in range (lkl+1-kx):
+          for kz in range (lkl+1-kx-ky):
+            sub[kx,ky,kz,0,0,0] = trr[ix,iy,iz,kx,ky,kz]
+      lx,l y=0 ,0
+      for lz in range (1, ll+1):
         lsum = lx + ly + lz
-        for kx in range (lkl+1 -lsum):
-          for ky in range (lkl+1 -lsum -kx):
-            for kz in range (lkl+1 -lsum -kx -ky):
-              sub[kx ,ky ,kz ,lx ,ly ,lz] = \
-( sub[kx     ,ky ,kz+1 ,lx ,ly ,lz -1] +
+        for kx in range (lkl+1-lsum):
+          for ky in range (lkl+1-lsum-kx):
+            for kz in range (lkl+1-lsum-kx-ky):
+              sub[kx,ky,kz,lx,ly,lz] = \
+( sub[kx ,ky,kz+1,lx,ly,lz-1] +
 ```
 
 ```text
-Zcd * sub[kx ,ky ,kz ,lx ,ly ,lz -1])
-      for ly in range (1 ,l l + 1 -lx):
-        for lz in range (ll+1 -lx -ly):
+Zcd * sub[kx,ky,kz ,lx ,ly,lz-1])
+      for ly in range (1,l l + 1-lx):
+        for lz in range (ll+1-lx-ly):
       ...
       k l=0
-      for kx in range (lk ,- 1 , -1):
-        for ky in range (lk -kx ,- 1 , -1):
+      for kx in range (lk,- 1, -1):
+        for ky in range (lk-kx,- 1, -1):
           k z=l k-k x-k y
-          for lx in range (ll ,- 1 , -1):
-            for ly in range (ll -lx ,- 1 , -1):
+          for lx in range (ll,- 1, -1):
+            for ly in range (ll-lx,- 1, -1):
               l z=l l-l x-l y
-              hrr[ix ,iy ,iz ,0 ,0 ,0 ,kl] = sub[kx ,ky ,kz ,lx ,ly ,lz]
+              hrr[ix,iy,iz,0,0,0,kl] = sub[kx,ky,kz,lx,ly,lz]
               kl += 1
 ...
 ```
@@ -1589,7 +1589,7 @@ Numba对Python类的支持有限，这意味着涉及Python类的函数无法以
 @numba.experimental.jitclass([
     ('angular_momentum', numba.int64), ('exponents', numba.float64[::1]), ('coefficients', numba.float64[::1]), ('coordinates', numba.float64[::1]), ('norm_coefficients', numba.float64[::1]), ])
 class jitCGTO:
-    def __init__(self , angular_momentum: int , exponents: np.ndarray , coefficients: np.ndarray , coordinates: np.ndarray):
+    def __init__(self, angular_momentum: int, exponents: np.ndarray, coefficients: np.ndarray, coordinates: np.ndarray):
 ```
 
 ```text
@@ -1597,7 +1597,7 @@ class jitCGTO:
         self.exponents = exponents
         self.coefficients = coefficients
         self.coordinates = coordinates
-        norm = gto_norm(angular_momentum , exponents)
+        norm = gto_norm(angular_momentum, exponents)
         self.norm_coefficients = norm * coefficients
 ```
 
@@ -1613,10 +1613,10 @@ class jitCGTO:
 - 使用类型化内存视图（typed memoryviews）[7]声明所有NumPy数组的数据类型、形状和连续性。例如，Rys求积算法中的HRR张量和中间张量分配如下：
 
 ```python
-       hrr = np.zeros((3 , lij+1 , lj+1 , lkl+1 ,l l + 1 , nroots))
-       cdef double[: ,: ,: ,: ,::1] I4dx = hrr[0]
-       cdef double[: ,: ,: ,: ,::1] I4dy = hrr[1]
-       cdef double[: ,: ,: ,: ,::1] I4dz = hrr[2]
+       hrr = np.zeros((3, lij+1, lj+1, lkl+1,l l + 1, nroots))
+       cdef double[:,:,:,:,::1] I4dx = hrr[0]
+       cdef double[:,:,:,:,::1] I4dy = hrr[1]
+       cdef double[:,:,:,:,::1] I4dz = hrr[2]
 ```
 与Numba编译相比，这是Cython中额外需要完成的一步。
 
@@ -1631,7 +1631,7 @@ class jitCGTO:
 在这个改写过程中，我们可以使用命令
 
 ```text
-cython -a _tensors.pyx
+cython-a _tensors.pyx
 ```
 为.pyx文件生成注释，并检查Cython化代码是否经过适当优化。这里不明确展示Cython化代码。根据第12.1.5节开发的Python代码和Cython注释，读者应该能够开发积分程序的Cython版本。
 
@@ -1646,7 +1646,7 @@ cython -a _tensors.pyx
 我们需要设计一个唯一的名称来表示vrr函数的返回值。该名称可以根据函数参数动态生成，例如
 
 ```text
-as f 'vrr_{n}_{ix}{iy}{iz} ' .
+asf'vrr_{n}_{ix}{iy}{iz}'.
 ```
 
 2. 替换函数中的计算语句。
@@ -1661,28 +1661,28 @@ vrr代码生成器的输出如下：
 
 ```python
 @lru_cache(10000)
-def vrr(n ,i x ,i y , iz):
+def vrr(n,i x,i y, iz):
 v a l=f 'vrr_{n}_{ix}{iy}{iz}'
 if i z>0 :
- print(f'double {val} = Zpa *({vrr(n ,ix ,iy ,iz -1)}) - theta/aij *({vrr(n+1 , ix ,iy ,iz -1)});')
+ print(f'double {val} = Zpa *({vrr(n,ix,iy,iz-1)}) - theta/aij *({vrr(n+1, ix,iy,iz-1)});')
  if iz > 1:
 ```
 
 ```python
-      print(f'{val} += ({iz} -1)*.5/aij * (({vrr(n ,ix ,iy ,iz -2)}) - theta/aij
-    *({vrr(n+1 ,ix ,iy ,iz -2)}));')
+      print(f'{val} += ({iz}-1)*.5/aij * (({vrr(n,ix,iy,iz-2)}) - theta/aij
+    *({vrr(n+1,ix,iy,iz-2)}));')
     return val
   if i y>0 :
-    print(f'double {val} = Ypa *({vrr(n ,ix ,iy -1 ,iz)}) - theta/aij *({vrr(n+1 , ix ,iy -1 ,iz)});')
+    print(f'double {val} = Ypa *({vrr(n,ix,iy-1,iz)}) - theta/aij *({vrr(n+1, ix,iy-1,iz)});')
     if iy > 1:
-      print(f'{val} += ({iy} -1)*.5/aij * (({vrr(n ,ix ,iy -2 ,iz)}) - theta/aij
-    *({vrr(n+1 ,ix ,iy -2 ,iz)}));')
+      print(f'{val} += ({iy}-1)*.5/aij * (({vrr(n,ix,iy-2,iz)}) - theta/aij
+    *({vrr(n+1,ix,iy-2,iz)}));')
     return val
   if i x>0 :
-    print(f'double {val} = Xpa *({vrr(n ,ix -1 ,iy ,iz)}) - theta/aij *({vrr(n+1 , ix -1 ,iy ,iz)});')
+    print(f'double {val} = Xpa *({vrr(n,ix-1,iy,iz)}) - theta/aij *({vrr(n+1, ix-1,iy,iz)});')
     if ix > 1:
-      print(f'{val} += ({ix} -1)*.5/aij * (({vrr(n ,ix -2 ,iy ,iz)}) - theta/aij
-    *({vrr(n+1 ,ix -2 ,iy ,iz)}));')
+      print(f'{val} += ({ix}-1)*.5/aij * (({vrr(n,ix-2,iy,iz)}) - theta/aij
+    *({vrr(n+1,ix-2,iy,iz)}));')
     return val
   print(f'double {val} = Kabcd * _boys[{n}];')
   return val
@@ -1691,74 +1691,74 @@ if i z>0 :
 
 ```python
 @lru_cache(10000)
-def trr(n ,i x ,i y ,i z ,k x ,k y , kz):
+def trr(n,i x,i y,i z,k x,k y, kz):
   v a l=f 'e_trans{n}_{ix}{iy}{iz}_{kx}{ky}{kz}'
   if k z>0 :
-    print(f'double {val} = Zqc * ({trr(n ,ix ,iy ,iz ,kx ,ky ,kz -1)}) +
-    Ztheta_akl * ({trr(n+1 ,ix ,iy ,iz ,kx ,ky ,kz -1)});')
+    print(f'double {val} = Zqc * ({trr(n,ix,iy,iz,kx,ky,kz-1)}) +
+    Ztheta_akl * ({trr(n+1,ix,iy,iz,kx,ky,kz-1)});')
     if kz > 1:
-      print(f'{val} += {(kz -1)*.5}/akl * ({trr(n ,ix ,iy ,iz ,kx ,ky ,kz -2)} -
-    theta_akl*({trr(n+1 ,ix ,iy ,iz ,kx ,ky ,kz -2)}));')
+      print(f'{val} += {(kz-1)*.5}/akl * ({trr(n,ix,iy,iz,kx,ky,kz-2)} -
+    theta_akl*({trr(n+1,ix,iy,iz,kx,ky,kz-2)}));')
     if iz > 0:
-      print(f'{val} += {iz *.5}/aa * ({trr(n+1 ,ix ,iy ,iz -1 ,kx ,ky ,kz -1)});')
+      print(f'{val} += {iz *.5}/aa * ({trr(n+1,ix,iy,iz-1,kx,ky,kz-1)});')
     return val
   if k y>0 :
-    print(f'double {val} = Yqc * ({trr(n ,ix ,iy ,iz ,kx ,ky -1 ,kz)}) +
-    Ytheta_akl * ({trr(n+1 ,ix ,iy ,iz ,kx ,ky -1 ,kz)});')
+    print(f'double {val} = Yqc * ({trr(n,ix,iy,iz,kx,ky-1,kz)}) +
+    Ytheta_akl * ({trr(n+1,ix,iy,iz,kx,ky-1,kz)});')
     if ky > 1:
-      print(f'{val} += {(ky -1)*.5}/akl * ({trr(n ,ix ,iy ,iz ,kx ,ky -2 ,kz)} -
-    theta_akl*({trr(n+1 ,ix ,iy ,iz ,kx ,ky -2 ,kz)}));')
+      print(f'{val} += {(ky-1)*.5}/akl * ({trr(n,ix,iy,iz,kx,ky-2,kz)} -
+    theta_akl*({trr(n+1,ix,iy,iz,kx,ky-2,kz)}));')
     if iy > 0:
 ```
 
 ```python
-      print(f'{val} += {iy *.5}/aa * ({trr(n+1 ,ix ,iy -1 ,iz ,kx ,ky -1 ,kz)});')
+      print(f'{val} += {iy *.5}/aa * ({trr(n+1,ix,iy-1,iz,kx,ky-1,kz)});')
     return val
   if k x>0 :
-    print(f'double {val} = Xqc * ({trr(n ,ix ,iy ,iz ,kx -1 ,ky ,kz)}) +
-    Xtheta_akl * ({trr(n+1 ,ix ,iy ,iz ,kx -1 ,ky ,kz)});')
+    print(f'double {val} = Xqc * ({trr(n,ix,iy,iz,kx-1,ky,kz)}) +
+    Xtheta_akl * ({trr(n+1,ix,iy,iz,kx-1,ky,kz)});')
     if kx > 1:
-      print(f'{val} += {(kx -1)*.5}/akl * ({trr(n ,ix ,iy ,iz ,kx -2 ,ky ,kz)} -
-    theta_akl*({trr(n+1 ,ix ,iy ,iz ,kx -2 ,ky ,kz)}));')
+      print(f'{val} += {(kx-1)*.5}/akl * ({trr(n,ix,iy,iz,kx-2,ky,kz)} -
+    theta_akl*({trr(n+1,ix,iy,iz,kx-2,ky,kz)}));')
     if ix > 0:
-      print(f'{val} += {ix *.5}/aa * ({trr(n+1 ,ix -1 ,iy ,iz ,kx -1 ,ky ,kz)});')
+      print(f'{val} += {ix *.5}/aa * ({trr(n+1,ix-1,iy,iz,kx-1,ky,kz)});')
     return val
-  return vrr(n ,i x ,i y , iz)
+  return vrr(n,i x,i y, iz)
 @lru_cache(10000)
-def hrr(ix ,i y ,i z ,j x ,j y ,j z ,k x ,k y ,k z ,l x ,l y , lz):
+def hrr(ix,i y,i z,j x,j y,j z,k x,k y,k z,l x,l y, lz):
   v a l=f 'hrr_{ix}{iy}{iz}_{jx}{jy}{jz}_{kx}{ky}{kz}_{lx}{ly}{lz}'
   if l z>0 :
-    print(f'double {val} = ({hrr(ix ,iy ,iz ,jx ,jy ,jz ,kx ,ky ,kz+1 ,lx ,ly ,lz -1)})
-     + Zcd * ({hrr(ix ,iy ,iz ,jx ,jy ,jz ,kx ,ky ,kz ,lx ,ly ,lz -1)});')
+    print(f'double {val} = ({hrr(ix,iy,iz,jx,jy,jz,kx,ky,kz+1,lx,ly,lz-1)})
+     + Zcd * ({hrr(ix,iy,iz,jx,jy,jz,kx,ky,kz,lx,ly,lz-1)});')
     return val
   if l y>0 :
-    print(f'double {val} = ({hrr(ix ,iy ,iz ,jx ,jy ,jz ,kx ,ky+1 ,kz ,lx ,ly -1 ,lz)})
-     + Ycd * ({hrr(ix ,iy ,iz ,jx ,jy ,jz ,kx ,ky ,kz ,lx ,ly -1 ,lz)});')
+    print(f'double {val} = ({hrr(ix,iy,iz,jx,jy,jz,kx,ky+1,kz,lx,ly-1,lz)})
+     + Ycd * ({hrr(ix,iy,iz,jx,jy,jz,kx,ky,kz,lx,ly-1,lz)});')
     return val
   if l x>0 :
-    print(f'double {val} = ({hrr(ix ,iy ,iz ,jx ,jy ,jz ,kx+1 ,ky ,kz ,lx -1 ,ly ,lz)})
-     + Xcd * ({hrr(ix ,iy ,iz ,jx ,jy ,jz ,kx ,ky ,kz ,lx -1 ,ly ,lz)});')
+    print(f'double {val} = ({hrr(ix,iy,iz,jx,jy,jz,kx+1,ky,kz,lx-1,ly,lz)})
+     + Xcd * ({hrr(ix,iy,iz,jx,jy,jz,kx,ky,kz,lx-1,ly,lz)});')
     return val
   if j z>0 :
-    print(f'double {val} = ({hrr(ix ,iy ,iz+1 ,jx ,jy ,jz -1 ,kx ,ky ,kz ,lx ,ly ,lz)})
-     + Zab * ({hrr(ix ,iy ,iz ,jx ,jy ,jz -1 ,kx ,ky ,kz ,lx ,ly ,lz)});')
+    print(f'double {val} = ({hrr(ix,iy,iz+1,jx,jy,jz-1,kx,ky,kz,lx,ly,lz)})
+     + Zab * ({hrr(ix,iy,iz,jx,jy,jz-1,kx,ky,kz,lx,ly,lz)});')
     return val
   if j y>0 :
-    print(f'double {val} = ({hrr(ix ,iy+1 ,iz ,jx ,jy -1 ,jz ,kx ,ky ,kz ,lx ,ly ,lz)})
-     + Yab * ({hrr(ix ,iy ,iz ,jx ,jy -1 ,jz ,kx ,ky ,kz ,lx ,ly ,lz)});')
+    print(f'double {val} = ({hrr(ix,iy+1,iz,jx,jy-1,jz,kx,ky,kz,lx,ly,lz)})
+     + Yab * ({hrr(ix,iy,iz,jx,jy-1,jz,kx,ky,kz,lx,ly,lz)});')
     return val
   if j x>0 :
-    print(f'double {val} = ({hrr(ix+1 ,iy ,iz ,jx -1 ,jy ,jz ,kx ,ky ,kz ,lx ,ly ,lz)})
-     + Xab * ({hrr(ix ,iy ,iz ,jx -1 ,jy ,jz ,kx ,ky ,kz ,lx ,ly ,lz)});')
+    print(f'double {val} = ({hrr(ix+1,iy,iz,jx-1,jy,jz,kx,ky,kz,lx,ly,lz)})
+     + Xab * ({hrr(ix,iy,iz,jx-1,jy,jz,kx,ky,kz,lx,ly,lz)});')
     return val
-  return trr(ix ,i y ,i z ,k x ,k y , kz)
+  return trr(ix,i y,i z,k x,k y, kz)
 ```
 这三个递归函数构成了展开过程代码生成器的核心。
 给定四个整数，分别表示ERI中四个GTO的角动量，就可以使用下面描述的展开函数执行展开过程，生成C代码。
 
 ```python
-c_tpl = jinja2.Template( ' ' '
-void {{ name }}(double *eri , double ai , double aj , double ak , double al , double *Ra , double *Rb , double *Rc , double *Rd , void ( *boys_fn)(int , double , double [])) {
+c_tpl = jinja2.Template( '''
+void {{ name }}(double *eri, double ai, double aj, double ak, double al, double *Ra, double *Rb, double *Rc, double *Rd, void ( *boys_fn)(int, double, double [])) {
 double aij = ai + aj;
 double akl = ak + al;
 double theta = aij * akl / (aij + akl);
@@ -1771,7 +1771,7 @@ double Zcd = Rc[2] - Rd[2];
 double theta_rij = ai * aj / aij * (Xab*Xab + Yab *Yab + Zab *Zab);
 double theta_rkl = ak * al / akl * (Xcd*Xcd + Ycd *Ycd + Zcd *Zcd);
 double fac = 34.986836655249725; // 2 *pi**2.5
-double Kabcd = fac / (aij *akl*sqrt(aij+akl)) * exp( -theta_rij - theta_rkl);
+double Kabcd = fac / (aij *akl*sqrt(aij+akl)) * exp(-theta_rij - theta_rkl);
 double Xp = (ai * Ra[0] + aj * Rb[0]) / aij;
 double Yp = (ai * Ra[1] + aj * Rb[1]) / aij;
 double Zp = (ai * Ra[2] + aj * Rb[2]) / aij;
@@ -1789,19 +1789,19 @@ double Xab_cd = -(aj *Xab + al *Xcd) / akl;
 double Yab_cd = -(aj *Yab + al *Ycd) / akl;
 double Zab_cd = -(aj *Zab + al *Zcd) / akl;
 double _boys[32];
-boys_fn({{ order + 1 }} , theta_r2 , _boys);
-' ' ')
-def unrolling(li ,l j ,l k ,l l ) :
+boys_fn({{ order + 1 }}, theta_r2, _boys);
+''')
+def unrolling(li,l j,l k,l l ) :
 ```
 
 ```python
   print(c_tpl.render(name=f'run_eri_{li}{lj}{lk}{ll}', order=li+lj+lk+ll))
   n=0
-  for i , (ix ,i y , iz) in enumerate (iter_cart_xyz(li)):
-    for j ,( j x ,j y , jz) in enumerate (iter_cart_xyz(lj)):
-      for k , (kx ,k y , kz) in enumerate (iter_cart_xyz(lk)):
-        for l , (lx ,l y , lz) in enumerate (iter_cart_xyz(ll)):
-          print(f'eri[{n}] = {hrr(ix ,iy ,iz ,jx ,jy ,jz ,kx ,ky ,kz ,lx ,ly ,lz)};')
+  for i, (ix,i y, iz) in enumerate (iter_cart_xyz(li)):
+    for j,( j x,j y, jz) in enumerate (iter_cart_xyz(lj)):
+      for k, (kx,k y, kz) in enumerate (iter_cart_xyz(lk)):
+        for l, (lx,l y, lz) in enumerate (iter_cart_xyz(ll)):
+          print(f'eri[{n}] = {hrr(ix,iy,iz,jx,jy,jz,kx,ky,kz,lx,ly,lz)};')
           n+ =1
   print('}')
 if __name__ == '__main__':
@@ -1813,42 +1813,42 @@ if __name__ == '__main__':
         for ll in range (lmax):
           if li + lj + lk + ll > max_roots:
             continue
-          unrolling(li ,l j ,l k , ll)
+          unrolling(li,l j,l k, ll)
 ```
 请注意，展开高角动量基函数可能生成大量C代码。为了在代码大小和计算效率之间取得平衡，通常只需对低角动量GTO进行展开，例如li + lj + lk + ll < 6。
 我们可以用C语言创建一个驱动函数，根据每个基函数的角动量选择适当的展开后的C函数。
 
 ```yaml
-driver_tpl = jinja2.Template( ' ' '
-int run_eri_unrolled(double *eri , int li , int lj , int lk , int ll , double ai , double aj , double ak , double al , double *Ra , double *Rb , double *Rc , double *Rd , void ( *boys_fn)(int , double , double []))
+driver_tpl = jinja2.Template( '''
+int run_eri_unrolled(double *eri, int li, int lj, int lk, int ll, double ai, double aj, double ak, double al, double *Ra, double *Rb, double *Rc, double *Rd, void ( *boys_fn)(int, double, double []))
 {
-{% -s e tl 1=l m a x+1% }
+{%-s e tl 1=l m a x+1% }
     int ijkl = li *{{ l1 **3} }+l j *{{ l1 **2} }+l k *{{ l1 }} + ll;
     switch (ijkl) {
-{% - for li in range(l1) %}
-{% - for lj in range(l1) %}
-{% - for lk in range(l1) %}
-{% - for ll in range(l1) %}
-{% - if li + lj + lk + ll <= max_roots %}
-{% - set ijkl = li *l1**3+l j *l1**2+l k *l 1+l l% }
-    case {{ ijkl }}: run_eri_{{ li }}{{ lj }}{{ lk }}{{ ll }}(eri ,a i ,a j , ak ,a l ,R a ,R b ,R c ,R d , boys_fn); break;
+{%- for li in range(l1) %}
+{%- for lj in range(l1) %}
+{%- for lk in range(l1) %}
+{%- for ll in range(l1) %}
+{%- if li + lj + lk + ll <= max_roots %}
+{%- set ijkl = li *l1**3+l j *l1**2+l k *l 1+l l% }
+    case {{ ijkl }}: run_eri_{{ li }}{{ lj }}{{ lk }}{{ ll }}(eri,a i,a j, ak,a l,R a,R b,R c,R d, boys_fn); break;
 ```
 
 ```python
-{% - endif %}
-{% - endfor %}
-{% - endfor %}
-{% - endfor %}
-{% - endfor %}
+{%- endif %}
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
     default: return 1; }
     return 0;
-}' ' ')
-print(driver_tpl.render(lmax=5 , max_roots=5))
+}''')
+print(driver_tpl.render(lmax=5, max_roots=5))
 ```
 C函数的最后一个参数是指向Boys函数的函数指针，其签名定义如下：
 
 ```text
-void ( *boys_fn)(int max_order , double x , double output[]);
+void ( *boys_fn)(int max_order, double x, double output[]);
 ```
 在vrr函数中，Boys函数会被多次访问。为了提高效率，可以一次性计算直到给定阶数max_order的所有Boys函数值，并将其存储在输出缓冲区中。
 然而，Boys函数目前是用Python实现的。如何在C中访问Boys函数？可以考虑三种方法：
@@ -1867,64 +1867,64 @@ from rys_roots import boys
 liberi_OS = ctypes.CDLL( 'liberi_OS.so')
 run_eri_unrolled = liberi_OS.run_eri_unrolled
 run_eri_unrolled.argtypes = [
-ctypes.c_void_p , # eri # (1)
-ctypes.c_int , #l i
-ctypes.c_int , #l j
-ctypes.c_int , #l k
-ctypes.c_int , #l l
-    ctypes.c_double , #a i
-    ctypes.c_double , #a j
-    ctypes.c_double , #a k
-    ctypes.c_double , #a l
-ctypes.c_void_p , # Ra # (2)
-ctypes.c_void_p , # Rb # (3)
-ctypes.c_void_p , # Rc # (4)
-ctypes.c_void_p , # Rd # (5)
-ctypes.c_void_p , # boys_fn # (6)
+ctypes.c_void_p, # eri # (1)
+ctypes.c_int, #l i
+ctypes.c_int, #l j
+ctypes.c_int, #l k
+ctypes.c_int, #l l
+    ctypes.c_double, #a i
+    ctypes.c_double, #a j
+    ctypes.c_double, #a k
+    ctypes.c_double, #a l
+ctypes.c_void_p, # Ra # (2)
+ctypes.c_void_p, # Rb # (3)
+ctypes.c_void_p, # Rc # (4)
+ctypes.c_void_p, # Rd # (5)
+ctypes.c_void_p, # boys_fn # (6)
 ]
-@numba.cfunc('void(int32 , double , numba.types.CPointer(double))' , nopython=True)
-def boys_for_c(m ,t , out):
-out_array = numba.carray(out , (m+1 ,)) # (7)
-    out_array[:] = boys(m ,t )
+@numba.cfunc('void(int32, double, numba.types.CPointer(double))' , nopython=True)
+def boys_for_c(m,t , out):
+out_array = numba.carray(out, (m+1,)) # (7)
+    out_array[:] = boys(m,t )
 boys_fn = boys_for_c.address # (8)
 ```
 为了访问用 Python 实现的 Boys 函数，我们可以使用 numba.cfunc 装饰器创建一个 C 包装器。通过该 C 包装器的 address 属性可以访问函数指针，如第 (8) 行所示。请注意，运行时由 C 函数调用这个经过包装的 Python 函数。因此，Numba JIT 编译器无法准确推断该函数内部的数据类型。必须显式声明此函数所有输入参数的数据类型。此外，对于此函数中使用的数组对象，我们需要指定其形状，如第 (7) 行所示。
 对 primitive_ERI 函数应用展开优化后，GTO 收缩函数（第 12.1.3.5 节）的开销变得更加明显。为了减少其开销，我们进一步优化 contracted_ERI 函数，并使用 numba.njit 编译它。
 
 ```python
-from basis import n_cart , gto_offsets
+from basis import n_cart, gto_offsets
 from eri_rys import primitive_ERI
     @numba.njit
-def contracted_ERI(li ,l j ,l k ,l l , exps_i , exps_j , exps_k , exps_l , coef_i , coef_j , coef_k , coef_l ,R a ,R b ,R c ,R d , out ,i 0 ,j 0 ,k 0 , l0): # (1)
+def contracted_ERI(li,l j,l k,l l, exps_i, exps_j, exps_k, exps_l, coef_i, coef_j, coef_k, coef_l,R a,R b,R c,R d, out,i 0,j 0,k 0, l0): # (1)
 nfi = n_cart(li)
 nfj = n_cart(lj)
 nfk = n_cart(lk)
 nfl = n_cart(ll)
 if l i+l j+l k+l l<6 : # (2)
-buf = np.zeros((nfi , nfj , nfk , nfl))
+buf = np.zeros((nfi, nfj, nfk, nfl))
 _buf = buf.ctypes.data
 _Ra = Ra.ctypes.data
 _Rb = Rb.ctypes.data
 _Rc = Rc.ctypes.data
 _Rd = Rd.ctypes.data
-for ai ,c i in zip (exps_i , coef_i):
-for aj ,c j in zip (exps_j , coef_j):
-for ak ,c k in zip (exps_k , coef_k):
-  for al ,c l in zip (exps_l , coef_l):
+for ai,c i in zip (exps_i, coef_i):
+for aj,c j in zip (exps_j, coef_j):
+for ak,c k in zip (exps_k, coef_k):
+  for al,c l in zip (exps_l, coef_l):
     f a c=c i * cj * ck * cl
-    err = run_eri_unrolled( _buf ,l i ,l j ,l k ,l l ,a i ,a j ,a k ,a l , _Ra , _Rb , _Rc , _Rd , boys_fn)
+    err = run_eri_unrolled( _buf,l i,l j,l k,l l,a i,a j,a k,a l, _Ra, _Rb, _Rc, _Rd, boys_fn)
 for i in range (nfi): # (3)
 for j in range (nfj): # (4)
 for k in range (nfk): # (5)
 for l in range (nfl): # (6)
-out[i0+i ,j0+j ,k0+k ,l0+l] += fac * buf[i ,j ,k ,l] # (7)
+out[i0+i,j0+j,k0+k,l0+l] += fac * buf[i,j,k,l] # (7)
 else:
-for ai ,c i in zip (exps_i , coef_i):
-for aj ,c j in zip (exps_j , coef_j):
-for ak ,c k in zip (exps_k , coef_k):
-  for al ,c l in zip (exps_l , coef_l):
+for ai,c i in zip (exps_i, coef_i):
+for aj,c j in zip (exps_j, coef_j):
+for ak,c k in zip (exps_k, coef_k):
+  for al,c l in zip (exps_l, coef_l):
     f a c=c i * cj * ck * cl
-    buf = primitive_ERI( li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd)
+    buf = primitive_ERI( li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd)
 for i in range (nfi): # (8)
 for j in range (nfj): # (9)
 for k in range (nfk): # (10)
@@ -1932,32 +1932,32 @@ for l in range (nfl): # (11)
 ```
 
 ```text
-out[i0+i ,j0+j ,k0+k ,l0+l] += fac * buf[i ,j ,k ,l] # (12)
+out[i0+i,j0+j,k0+k,l0+l] += fac * buf[i,j,k,l] # (12)
 ```
 JIT 编译大幅降低了第 (3) 行至第 (12) 行代码中嵌套循环的开销和数据移动的成本。此外，为了尽量减少内存管理开销，我们将输出 ERI 张量直接传递给 contracted_ERI 函数，如第 (1) 行所示。这一改动使计算结果能够直接写入输出张量。对于满足条件 li + lj + lk + ll < 6 的 ERI 计算，执行代码展开，如第 (2) 行所示。如果不满足该条件，contracted_ERI 函数将回退到经 Numba 编译的 Rys 算法。
 在 contracted_ERI 函数之后，我们需要一个程序，为一组 GTO 基函数构建 ERI 张量。该程序在四重嵌套循环中调用 contracted_ERI()。
 
 ```python
 def pack_gto_attrs(gtos):
-    ' ' 'Pack GTO attributes , making them more efficient to load' ' '
+    '''Pack GTO attributes, making them more efficient to load'''
     offsets = gto_offsets(gtos)
     gto_params = []
-    for i , bas_i in enumerate (gtos):
+    for i, bas_i in enumerate (gtos):
         i0 = offsets[i]
         li = bas_i.angular_momentum
         Ra = bas_i.coordinates
         exps_i = bas_i.exponents
         norm_ci = bas_i.norm_coefficients
-        gto_params.append((i0 ,l i ,R a , exps_i , norm_ci))
+        gto_params.append((i0,l i,R a, exps_i, norm_ci))
     return gto_params
 def eri_OS_unrolled(gtos):
     offsets = gto_offsets(gtos)
     gto_params = pack_gto_attrs(gtos)
-    nao = offsets[ -1]
-    out = np.zeros((nao , nao , nao , nao))
-    for ((i0 ,l i ,R a , exps_i , norm_ci), (j0 ,l j ,R b , exps_j , norm_cj), (k0 ,l k ,R c , exps_k , norm_ck), (l0 ,l l ,R d , exps_l , norm_cl)) \
-                 in itertools.product(*(gto_params ,)*4):
-        contracted_ERI(li ,l j ,l k ,l l , exps_i , exps_j , exps_k , exps_l , norm_ci , norm_cj , norm_ck , norm_cl ,R a ,R b ,R c ,R d , out ,i 0 ,j 0 ,k 0 ,l 0 )
+    nao = offsets[-1]
+    out = np.zeros((nao, nao, nao, nao))
+    for ((i0,l i,R a, exps_i, norm_ci), (j0,l j,R b, exps_j, norm_cj), (k0,l k,R c, exps_k, norm_ck), (l0,l l,R d, exps_l, norm_cl)) \
+                 in itertools.product(*(gto_params,)*4):
+        contracted_ERI(li,l j,l k,l l, exps_i, exps_j, exps_k, exps_l, norm_ci, norm_cj, norm_ck, norm_cl,R a,R b,R c,R d, out,i 0,j 0,k 0,l 0 )
     return out
 ```
 我们在该程序中实现的一项特殊优化是 pack_gto_attrs 函数。这个辅助函数将 GTO 实例所需的属性打包成一个五元素元组。从单个元组中解包变量比通过单独的语句访问多个属性更简单、也更高效。将迭代器 itertools.product 与 pack_gto_attrs 函数一起使用，比使用四重嵌套 for 循环稍高效。
@@ -1969,28 +1969,28 @@ def eri_OS_unrolled(gtos):
 ```python
 import time
 import numpy as np
-from basis import CGTO , Molecule , n_cart , gto_offsets
-def build_eri_tensor(f , gtos):
+from basis import CGTO, Molecule, n_cart, gto_offsets
+def build_eri_tensor(f, gtos):
     offsets = gto_offsets(gtos)
-    nao = offsets[ -1]
-    V = np.empty((nao , nao , nao , nao))
-    for i , bas_i in enumerate (gtos):
-        i0 , i1 = offsets[i] , offsets[i+1]
-        for j , bas_j in enumerate (gtos):
-            j0 , j1 = offsets[j] , offsets[j+1]
-            for k , bas_k in enumerate (gtos):
-                k0 , k1 = offsets[k] , offsets[k+1]
-                for l , bas_l in enumerate (gtos):
-                    l0 , l1 = offsets[l] , offsets[l+1]
-                    V[i0:i1 ,j0:j1 ,k0:k1 ,l0:l1] = contracted_ERI( f , bas_i , bas_j , bas_k , bas_l)
+    nao = offsets[-1]
+    V = np.empty((nao, nao, nao, nao))
+    for i, bas_i in enumerate (gtos):
+        i0, i1 = offsets[i], offsets[i+1]
+        for j, bas_j in enumerate (gtos):
+            j0, j1 = offsets[j], offsets[j+1]
+            for k, bas_k in enumerate (gtos):
+                k0, k1 = offsets[k], offsets[k+1]
+                for l, bas_l in enumerate (gtos):
+                    l0, l1 = offsets[l], offsets[l+1]
+                    V[i0:i1,j0:j1,k0:k1,l0:l1] = contracted_ERI( f, bas_i, bas_j, bas_k, bas_l)
     return V
-def timing(f , gtos):
-build_eri_tensor(f , gtos[:1]) # warm up
+def timing(f, gtos):
+build_eri_tensor(f, gtos[:1]) # warm up
     t0 = time.perf_counter()
-    v = build_eri_tensor(f , gtos)
+    v = build_eri_tensor(f, gtos)
     t1 = time.perf_counter()
     return t1 - t0
-benzene = ' ' '
+benzene = '''
 C 0.0000 1.3990 0.0000
 C -1.2095 0.7442 0.0000
 C -1.2095 -0.7442 0.0000
@@ -2006,25 +2006,25 @@ H -2.1994 -1.3083 0.0000
 H 0.0000 -2.4939 0.0000
 H 2.1994 -1.3083 0.0000
 H 2.1994 1.3083 0.0000
-' ' '
+'''
 mol = Molecule.from_xyz(benzene)
-gtos = mol.assign_basis({ 'C': '6 -31G*', 'H': '6 -31G'})
-import eri_OS , eri_MD_numba , eri_MD_cython , ...
-for imp in (eri_OS , eri_MD_numba , ...):
-    print(f'{imp} timing:' , timing(imp.primitive_ERI , gtos))
+gtos = mol.assign_basis({ 'C': '6-31G*', 'H': '6-31G'})
+import eri_OS, eri_MD_numba, eri_MD_cython, ...
+for imp in (eri_OS, eri_MD_numba, ...):
+    print(f'{imp} timing:' , timing(imp.primitive_ERI, gtos))
 ```
 在本例中，使用 time.perf_counter 函数测量 CPU 时间来衡量性能。为了更准确地测量实际耗费的时间，包括在内核空间中花费的时间，可以使用 time.time 函数测量墙钟时间。
 基准测试评估了以下代码实现：纯 Python 实现、Numba 编译程序、Cython 编译程序以及展开后的实现。我们将前两个 Python 版本（第 12.1.3 节中的递归动态规划代码和第 12.1.4 节中的朴素迭代代码）排除在测试之外，因为它们太慢。第 12.1.5 节中采用优化迭代结构的实现代表基准测试中的纯 Python 方法。作为参考，我们还对使用 PySCF 软件包进行的积分计算进行基准测试，
 
 ```yaml
-pyscf.M(atom=benzene , basis={ 'C ': '6 -31g* ' , 'H ': '6 -31g '}).intor( 'int2e_cart ')
+pyscf.M(atom=benzene, basis={'C': '6-31g*', 'H': '6-31g'}).intor('int2e_cart')
 ```
 请注意，由于基函数归一化方式不同，PySCF 软件包计算的 ERI 数值与本书展示的 ERI 不同。PySCF 仅对 s 型和 p 型基函数应用 Racah 归一化。如果希望与 PySCF 的输出一致，可以修改第 12.1.1 节中的 gto_norm 函数
 
 ```python
-def gto_norm(l , expnt):
-    ' ' 'Radial part normalization' ' '
-    norm = (gaussian_int(l *2+2 ,2 *expnt)) ** -.5
+def gto_norm(l, expnt):
+    '''Radial part normalization'''
+    norm = (gaussian_int(l *2+2,2 *expnt)) ** -.5
     if l<2 :
         norm *= ((2 *l+1)/(4*np.pi))**.5
     return norm
@@ -2083,21 +2083,21 @@ def gto_norm(l , expnt):
 
 ```python
 l4 = lij + lkl
-hrr = np.zeros((l4+1 ,l4+1 ,l4+1 , lkl+1 ,lkl+1 ,lkl+1 , ll+1 ,ll+1 ,ll+1))
-trr = hrr[: ,: ,: ,: ,: ,: ,0 ,0 ,0]
-for kx ,k y ,k z in product(range(lkl+1), range(lkl+1), range(lkl+1)):
-    for ix in range (l4+1 -kx):
-        for iy in range (l4+1 -ky):
-            for iz in range (l4+1 -kz):
-                trr[ix ,iy ,iz ,kx ,ky ,kz] = ...
-for lx ,l y ,l z in product(range(ll+1), range(ll+1), range(ll+1)):
-    for kx in range (lkl+1 -lx):
-        for ky in range (lkl+1 -ly):
-            for kz in range (lkl+1 -lz):
+hrr = np.zeros((l4+1,l4+1,l4+1, lkl+1,lkl+1,lkl+1, ll+1,ll+1,ll+1))
+trr = hrr[:,:,:,:,:,:,0,0,0]
+for kx,k y,k z in product(range(lkl+1), range(lkl+1), range(lkl+1)):
+    for ix in range (l4+1-kx):
+        for iy in range (l4+1-ky):
+            for iz in range (l4+1-kz):
+                trr[ix,iy,iz,kx,ky,kz] = ...
+for lx,l y,l z in product(range(ll+1), range(ll+1), range(ll+1)):
+    for kx in range (lkl+1-lx):
+        for ky in range (lkl+1-ly):
+            for kz in range (lkl+1-lz):
                 if l x>0 :
-                    hrr[: ,: ,: ,kx ,ky ,kz ,lx ,ly ,lz] = \
-( hrr[:     ,: ,: ,kx+1 ,ky ,kz ,lx -1 ,ly ,lz] +
-Xcd * hrr[: ,: ,: ,kx ,ky ,kz ,lx -1 ,ly ,lz])
+                    hrr[:,:,:,kx,ky,kz,lx,ly,lz] = \
+( hrr[: ,:,:,kx+1,ky,kz,lx-1,ly,lz] +
+Xcd * hrr[:,:,:,kx ,ky ,kz,lx-1,ly,lz])
                 ...
 ```
 另一个例子是 primitive_ERI 函数返回的原始 ERI，它们作为积分收缩程序的中间量。通过融合积分收缩与原始积分的计算，我们可以不必先在缓冲区中生成原始 ERI，再将它们乘以收缩系数，最后加到输出中。假设 Np 表示原始 GTO 的数量，这种优化可以为每个积分节省至少 N 次运算。
@@ -2119,47 +2119,47 @@ RR 迭代中对元素的遍历可能涉及对高维数组元素的非顺序访�
 例如，OS 算法中的 HRR 迭代具有以下循环结构：
 
 ```python
-hrr = np.empty((lkl+1 ,lkl+1 ,lkl+1 , ll+1 ,ll+1 ,ll+1))
-hrr[: ,: ,: ,0 ,0 ,0] = trr
-for lx in range (1 , ll+1):
-    for ly in range (ll+1 -lx):
-        for lz in range (ll+1 -lx -ly):
+hrr = np.empty((lkl+1,lkl+1,lkl+1, ll+1,ll+1,ll+1))
+hrr[:,:,:,0,0,0] = trr
+for lx in range (1, ll+1):
+    for ly in range (ll+1-lx):
+        for lz in range (ll+1-lx-ly):
             l s u m=l x+l y+l z
-            for kx ,k y ,k z in reduced_cart_iter(lkl -lsum):
-                hrr[kx ,ky ,kz ,lx ,ly ,lz] = (hrr[kx+1 ,ky ,kz ,lx -1 ,ly ,lz] +
-Xcd * hrr[kx ,ky ,kz ,lx -1 ,ly ,lz])
+            for kx,k y,k z in reduced_cart_iter(lkl-lsum):
+                hrr[kx,ky,kz,lx,ly,lz] = (hrr[kx+1,ky,kz,lx-1,ly,lz] +
+Xcd * hrr[kx ,ky ,kz,lx-1,ly,lz])
 ```
 这段迭代代码可以优化为
 
 ```python
-def hrr_address(lk , ll):
+def hrr_address(lk, ll):
     lkl = lk + ll
-    def addr(kx ,k y ,k z ,l x ,l y , lz):
+    def addr(kx,k y,k z,l x,l y, lz):
 ```
 
 ```python
         k_idx = (kx * (lkl+1) + ky) * (lkl+1) + kz
         return ((k_idx * (ll+1) + lx) * (ll+1) + ly) * (ll+1) + lz
-    adr0 , adr1 ,a d r 2=[ ] ,[ ] ,[ ]
-    for lx in range (1 , ll+1):
-        for ly in range (ll+1 -lx):
-            for lz in range (ll+1 -lx -ly):
+    adr0, adr1,a d r 2=[ ],[ ],[ ]
+    for lx in range (1, ll+1):
+        for ly in range (ll+1-lx):
+            for lz in range (ll+1-lx-ly):
                 l s u m=l x+l y+l z
-                for kx ,k y ,k z in reduced_cart_iter(lkl -lsum):
-adr0.append(addr(kx , ky ,k z ,l x ,l y , lz))
-                    adr1.append(addr(kx+1 ,k y ,k z ,l x -1 ,l y , lz))
-adr2.append(addr(kx , ky ,k z ,l x -1 ,l y , lz))
-    return adr0 , adr1 , adr2
+                for kx,k y,k z in reduced_cart_iter(lkl-lsum):
+adr0.append(addr(kx , ky ,k z,l x ,l y , lz))
+                    adr1.append(addr(kx+1,k y,k z,l x-1,l y, lz))
+adr2.append(addr(kx , ky ,k z,l x-1,l y, lz))
+    return adr0, adr1, adr2
 # cache the addresses for all possible angular momentum combinations
 lmax = 5
-address_cache = {(lk , ll): hrr_address(lk , ll)
+address_cache = {(lk, ll): hrr_address(lk, ll)
                  for lk in range (lmax) for ll in range (lmax)}
-def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
+def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     ...
-    hrr = np.empty((lkl+1 ,lkl+1 ,lkl+1 , ll+1 ,ll+1 ,ll+1))
-    hrr[: ,: ,: ,0 ,0 ,0] = trr
+    hrr = np.empty((lkl+1,lkl+1,lkl+1, ll+1,ll+1,ll+1))
+    hrr[:,:,:,0,0,0] = trr
     hrr_view = hrr.ravel()
-    adr0 , adr1 , adr2 = address_cache[lk ,l l ]
+    adr0, adr1, adr2 = address_cache[lk,l l ]
     for i in range (len(adr0)):
         hrr_view[adr0[i]] = hrr_view[adr1[i]] + Xcd * hrr_view[adr2[i]]
     ...
@@ -2170,18 +2170,18 @@ def primitive_ERI(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
 即使数据位于高速 L1 缓存中，内存访问的延迟也不可忽略。在递推关系（RR）迭代中，可以通过复用存储在寄存器中的数据来降低内存访问开销。例如，重叠积分函数包含以下水平递推关系（HRR）迭代：
 
 ```text
-for j in range (1 , lj+1):
-    for i in range (lij+1 -j):
-        S[i ,j] = Xab * S[i ,j -1] + S[i+1 ,j -1]
+for j in range (1, lj+1):
+    for i in range (lij+1-j):
+        S[i,j] = Xab * S[i,j-1] + S[i+1,j-1]
 ```
 为计算一个元素 S[i,j]，这段代码需要两次内存访问来加载 S[i,j-1] 和 S[i+1,j-1]。S[i+1,j-1] 可以在相邻迭代中复用，从而将内存访问次数减少 50%。这项优化将代码转换为
 
 ```text
-for j in range (1 , lj+1):
-    s0 = S[0 ,j -1]
-    for i in range (lij+1 -j):
-        s1 = S[i+1 ,j -1]
-        S[i ,j] = Xab * s0 + s1
+for j in range (1, lj+1):
+    s0 = S[0,j-1]
+    for i in range (lij+1-j):
+        s1 = S[i+1,j-1]
+        S[i,j] = Xab * s0 + s1
         s0 = s1
 ```
 
@@ -2218,27 +2218,27 @@ for j in range (1 , lj+1):
 节点按 1/ j 缩放，如下面代码片段的第 (1) 行和第 (2) 行所示。按照求积公式，积分计算的实现如下：
 
 ```python
-def primitive_overlap(li ,l j ,a i ,a j ,R a , Rb):
+def primitive_overlap(li,l j,a i,a j,R a, Rb):
     aij = ai + aj
     Rab = Ra - Rb
     Rp = (ai * R a+a j * Rb) / aij
     Rpa = Rp - Ra
     Rpb = Rp - Rb
     theta_ij = ai * aj / aij
-    Kab = np.exp( -theta_ij * Rab**2)
-    r , w = roots_hermite((li+lj+2)//2)
+    Kab = np.exp(-theta_ij * Rab**2)
+    r, w = roots_hermite((li+lj+2)//2)
 rt = r / aij **.5 # (1)
 wt = w / aij **.5 # (2)
-    poly_i = (Rpa[: ,None ,None] + rt) **(np.arange(li+1)[: ,None])
-    poly_j = (Rpb[: ,None ,None] + rt) **(np.arange(lj+1)[: ,None])
-    I2d = np.einsum( 'x ,xin ,xjn ->xijn', Kab , poly_i , poly_j)
-    Ix ,I y , Iz = np.einsum( 'n ,xijn ->xij',w t , I2d)
+    poly_i = (Rpa[:,None,None] + rt) **(np.arange(li+1)[:,None])
+    poly_j = (Rpb[:,None,None] + rt) **(np.arange(lj+1)[:,None])
+    I2d = np.einsum( 'x,xin,xjn->xijn', Kab, poly_i, poly_j)
+    Ix,I y, Iz = np.einsum( 'n,xijn->xij',w t, I2d)
     nfi = n_cart(li)
     nfj = n_cart(lj)
-    S = np.zeros((nfi , nfj))
-    for i ,( i x ,i y , iz) in enumerate (iter_cart_xyz(li)):
-        for j , (jx ,j y , jz) in enumerate (iter_cart_xyz(lj)):
-            S[i ,j] = Ix[ix ,jx] * Iy[iy ,jy] * Iz[iz ,jz]
+    S = np.zeros((nfi, nfj))
+    for i,( i x,i y, iz) in enumerate (iter_cart_xyz(li)):
+        for j, (jx,j y, jz) in enumerate (iter_cart_xyz(lj)):
+            S[i,j] = Ix[ix,jx] * Iy[iy,jy] * Iz[iz,jz]
     return S
 ```
 
@@ -2302,23 +2302,23 @@ Boys 函数可以使用向上递推（upward recursion）公式计算
 大致而言，当 t 接近 n + 1.5 时，向上递推与向下递推的精度相当。因此，我们编写一个结合两种递推公式的程序。
 
 ```python
-def boys(n , t):
+def boys(n, t):
     assert n> =0
     assert t> =0
     if t < n + 1.5:
-        return downward(n ,t )
+        return downward(n,t )
     else:
-        return upward(n ,t )
-def upward(n , t):
+        return upward(n,t )
+def upward(n, t):
     tt = math.sqrt(t)
     f = math.sqrt(math.pi)/2 / tt * math.erf(tt)
-    e = math.exp( -t)
+    e = math.exp(-t)
     o u t=[ f ]
     for i in range (n):
         f = ((2 *i+1) * f-e )/( 2 *t)
         out.append(f)
     return out
-def downward(n ,t , prec=1e -15):
+def downward(n,t , prec=1e-15):
     b=n+. 5
     e=. 5 * math.exp( -t)
     x=e
@@ -2337,7 +2337,7 @@ def downward(n ,t , prec=1e -15):
         b- =1
         f=( e+t * f )/b
         out.append(f)
-    return out[:: -1]
+    return out[::-1]
 ```
 
 #### 12.2.2.2 求解求积节点和权重的通用程序
@@ -2358,28 +2358,28 @@ Rys 多项式记为 pi(x) = ∑ cikx，它们关于该权函数构成正交集�
 根据这些方程，我们得到 rys_roots_weights 函数，它按如下方式计算 Rys 多项式的根和权重：
 
 ```python
-def schmidt_orth(moments , nroots):
-    ' ' '
+def schmidt_orth(moments, nroots):
+    '''
     Returns the coefficients of the orthogonal polynomials
-    \sum_{kl} c_{i ,k} c_{j ,l} moments_{k+l} = \delta_{ij}
-    ' ' '
-    s = np.zeros((nroots+1 , nroots+1))
+    \sum_{kl} c_{i,k} c_{j,l} moments_{k+l} = \delta_{ij}
+    '''
+    s = np.zeros((nroots+1, nroots+1))
     for j in range (nroots+1):
 ```
 
 ```python
         for i in range (nroots+1):
-            s[i ,j] = moments[i+j]
+            s[i,j] = moments[i+j]
     return np.linalg.inv(np.linalg.cholesky(s))
-def find_polyroots(cs , nroots):
-    return np.roots(cs[:: -1])
-def rys_roots_weights(nroots , t):
-    moments = boys(nroots *2 ,t )
+def find_polyroots(cs, nroots):
+    return np.roots(cs[::-1])
+def rys_roots_weights(nroots, t):
+    moments = boys(nroots *2,t )
     cs = schmidt_orth(moments)
     roots = find_polyroots(cs[nroots])
-    rtp = roots[: ,np.newaxis]**np.arange(nroots+1)
+    rtp = roots[:,np.newaxis]**np.arange(nroots+1)
     weights = 1. / (rtp.dot(cs.T) **2).sum(axis=1)
-    return roots , weights
+    return roots, weights
 ```
 上面展示的 rys_roots_weights 代码实际上是一个通用函数，也可用于计算其他类型权重函数的求积公式。唯一需要做的改动是将 Boys 函数替换为所需的矩函数。函数中计算正交多项式系数并确定根和权重的其余部分保持不变。
 然而，在求解高阶求积根时，这种实现可能遇到严重的数值稳定性问题。数值问题源于高阶项中多项式系数的剧烈振荡。实际中，当求积阶数超过12时，具有16位有效数字的双精度所提供的精度便不足了。因此，程序可能在正交化过程或求根函数中失败。即使没有出现错误，计算得到的求积根和权重仍可能存在显著误差。
@@ -2394,7 +2394,7 @@ def rys_roots_weights(nroots , t):
 - 应使用 mpmath.mpf 函数将所有浮点常数替换为多精度数。例如，将 0.5 替换为
 
 ```text
-mpmath.mpf( '0.5 ') .
+mpmath.mpf('0.5').
 ```
 这些修改的结果见下面的代码示例：
 
@@ -2402,46 +2402,46 @@ mpmath.mpf( '0.5 ') .
 import mpmath as mp
 mp.mp.dps = 30
 mp.mp.pretty = True
-def schmidt_orth(moments , nroots):
- r' ' '
+def schmidt_orth(moments, nroots):
+ r'''
  Returns the coefficients of the orthogonal polynomials
- \sum_{kl} c_{i ,k} c_{j ,l} moments_{k+l} = \delta_{ij}
- ' ' '
- cs = np.full((nroots+1 , nroots+1), mp.mpf(0))
+ \sum_{kl} c_{i,k} c_{j,l} moments_{k+l} = \delta_{ij}
+ '''
+ cs = np.full((nroots+1, nroots+1), mp.mpf(0))
  for j in range (nroots+1):
      fac = moments[j+j]
      for k in range (j):
-         dot = cs[k ,:j+1].dot(moments[j:j+j+1])
-         cs[j ,:j] -= dot * cs[k ,:j]
+         dot = cs[k,:j+1].dot(moments[j:j+j+1])
+         cs[j,:j] -= dot * cs[k,:j]
          fac -= dot * dot
      if fac <= 0:
          raise RuntimeError(f'schmidt_orth fail. {nroots=} {fac=}' )
      fac = fac **mp.mpf('-.5')
-     cs[j ,j] = fac
-     cs[j ,:j] *= fac
+     cs[j,j] = fac
+     cs[j,:j] *= fac
  return cs
-def find_polyroots(cs , nroots):
+def find_polyroots(cs, nroots):
  assert len (cs) == nroots + 1
  if nroots == 1:
-     return np.array([ -cs[0] / cs[1]])
+     return np.array([-cs[0] / cs[1]])
  A = mp.matrix(nroots)
- for m in range (nroots -1):
+ for m in range (nroots-1):
 ```
 
 ```python
-        A[m+1 ,m] = mp.mpf(1)
+        A[m+1,m] = mp.mpf(1)
     for m in range (nroots):
-        A[0 ,m] = -cs[nroots -1 -m] / cs[nroots]
-    roots = mp.eig(A , left=False , right=False)
+        A[0,m] = -cs[nroots-1-m] / cs[nroots]
+    roots = mp.eig(A, left=False, right=False)
     return np.array([x.real for x in roots])
-def rys_roots_weights(nroots , t):
-    moments = boys(nroots *2 , mp.mpf(t))
-    cs = schmidt_orth(moments , nroots)
-    roots = find_polyroots(cs[nroots] , nroots)
-    rtp = roots[: ,np.newaxis]**np.arange(nroots+1)
+def rys_roots_weights(nroots, t):
+    moments = boys(nroots *2, mp.mpf(t))
+    cs = schmidt_orth(moments, nroots)
+    roots = find_polyroots(cs[nroots], nroots)
+    rtp = roots[:,np.newaxis]**np.arange(nroots+1)
     # Solve rtp.T.dot(diag(weights)).dot(rtp) = identity
     weights = 1. / (rtp.dot(cs.T) **2).sum(axis=1)
-    return roots , weights
+    return roots, weights
 ```
 
 ### 12.2.3 求积公式
@@ -2465,22 +2465,22 @@ def rys_roots_weights(nroots , t):
 
 ```python
 import scipy.special
-def rys_roots_weights(nroots , t):
+def rys_roots_weights(nroots, t):
     if t<1 e -8:
-        leg_r , leg_w = scipy.special.roots_legendre(nroots *2)
+        leg_r, leg_w = scipy.special.roots_legendre(nroots *2)
         roots = leg_r[nroots:] **2
 ```
 
 ```python
-        weights = leg_w[nroots:] * (1 -t*roots)
+        weights = leg_w[nroots:] * (1-t*roots)
     elif t > 50:
-        hermit_r , hermit_w = scipy.special.roots_hermite(nroots *2)
+        hermit_r, hermit_w = scipy.special.roots_hermite(nroots *2)
         roots = hermit_r[nroots:] **2/t
         weights = hermit_w[nroots:] / sqrt(t)
     else:
         # polynomial approximation
-        roots , weights = polynomial_approx(nroots ,t )
-    return roots , weights
+        roots, weights = polynomial_approx(nroots,t )
+    return roots, weights
 ```
 nroots 通常小于15，其可能取值对应的勒让德求积公式和厄米求积公式都已制成表格。在这两种情况下，通过查阅勒让德和厄米求积公式表，都可以高效地得到 Rys 求积公式的近似值。
 在区间 (1e-8, 50) 内的其余区域，我们开发 polynomial_approx 函数来近似 Rys 求积公式。有多种拟合方法可以用于近似求积根和权重。
@@ -2494,15 +2494,15 @@ from scipy.interpolate import make_interp_spline
 MAX_RYS_ROOTS = 12
 NODES = 2000
 def tabulate_bspline():
-    xs = np.linspace(0 ,5 0 , NODES)
+    xs = np.linspace(0,5 0, NODES)
     b s=[ ]
-    for nrys in range (1 , MAX_RYS_ROOTS+1):
-        rws = np.empty(( len(xs),2 ,nrys))
-        for i ,x in enumerate (xs):
-            r , w = rys_roots_weights(nrys ,x )
-            rws[i , 0 ]=r
-            rws[i , 1 ]=w
-        bs.append(make_interp_spline(xs , rws.reshape( len(xs),2*nrys)))
+    for nrys in range (1, MAX_RYS_ROOTS+1):
+        rws = np.empty(( len(xs),2,nrys))
+        for i,x in enumerate (xs):
+            r, w = rys_roots_weights(nrys,x )
+            rws[i, 0 ]=r
+            rws[i, 1 ]=w
+        bs.append(make_interp_spline(xs, rws.reshape( len(xs),2*nrys)))
     return bs
 with open ('bspline_tab.pkl', 'wb') as f:
     pickle.dump(tabulate_bspline(), f)
@@ -2512,10 +2512,10 @@ with open ('bspline_tab.pkl', 'wb') as f:
 ```python
 with open ('bspline_tab.pkl', 'rb') as f:
     bspline_tab = pickle.load(f)
-def polynomial_approx(nroots , t):
-    bs = bspline_tab[nroots -1]
+def polynomial_approx(nroots, t):
+    bs = bspline_tab[nroots-1]
     rws = bs(t)
-    return rws.reshape(2 , nroots)
+    return rws.reshape(2, nroots)
 ```
 
 #### 切比雪夫近似
@@ -2541,24 +2541,24 @@ DEGREE = 11
 def tabulate_chebfit():
     n = DEGREE + 1
     cheb_nodes = np.cos(np.pi / n * (np.arange(n) + .5))
-    intervals = [(a , a+INTERVAL) for a in np.arange(0. , 50. , INTERVAL)]
+    intervals = [(a, a+INTERVAL) for a in np.arange(0., 50., INTERVAL)]
     n_intervals = len(intervals)
     c s=[ ]
-    for nrys in range (1 , MAX_RYS_ROOTS+1):
+    for nrys in range (1, MAX_RYS_ROOTS+1):
         cs_i = []
-        for a ,b in intervals:
-            # Map chebyshev nodes between ( -1 , 1) to the sample points
+        for a,b in intervals:
+            # Map chebyshev nodes between (-1, 1) to the sample points
 ```
 
 ```python
-            # between interval (a ,b )
-            xs = cheb_nodes *(b -a)/2 + (b+a)/2
-            rws = np.empty((n ,2 ,nrys))
-            for i ,x in enumerate (xs):
-                r , w = rys_roots.rys_roots_weights(nrys ,x )
-                rws[i ,0] = r
-                rws[i ,1] = w
-            cs_i.append( np.polynomial.chebyshev.chebfit( cheb_nodes , rws.reshape(n ,2*nrys), DEGREE))
+            # between interval (a,b )
+            xs = cheb_nodes *(b-a)/2 + (b+a)/2
+            rws = np.empty((n,2,nrys))
+            for i,x in enumerate (xs):
+                r, w = rys_roots.rys_roots_weights(nrys,x )
+                rws[i,0] = r
+                rws[i,1] = w
+            cs_i.append( np.polynomial.chebyshev.chebfit( cheb_nodes, rws.reshape(n,2*nrys), DEGREE))
         cs.append(np.array(cs_i))
     return cs
 with open ('chebfit_tab.pkl', 'wb') as f:
@@ -2569,14 +2569,14 @@ with open ('chebfit_tab.pkl', 'wb') as f:
 ```python
 with open ('chebfit_tab.pkl', 'rb') as f:
     chebfit_tab = pickle.load(f)
-def polynomial_approx(nroots , t):
+def polynomial_approx(nroots, t):
     interval_id = int(t // INTERVAL)
-    c = chebfit_tab[nroots -1][interval_id]
+    c = chebfit_tab[nroots-1][interval_id]
     a = interval_id * INTERVAL
     b=a+ INTERVAL
-    x = (t - (a+b)/2) / ((b -a)/2)
-    rws = np.polynomial.chebyshev.chebval(x ,c )
-    return rws.reshape(2 ,nroots)
+    x = (t - (a+b)/2) / ((b-a)/2)
+    rws = np.polynomial.chebyshev.chebval(x,c )
+    return rws.reshape(2,nroots)
 ```
 其他正交多项式也可用于近似光滑函数。例如，要使用勒让德多项式，我们可以在上面的代码中做以下替换：
 
@@ -2588,13 +2588,13 @@ np.polynomial.chebyshev.chebval -> np.polynomial.legendre.legval
 
 ```python
 @numba.njit
-def chebval(x , c):
+def chebval(x, c):
     x 2=2 *x
-    c 0=c [ -2]
-    c 1=c [ -1]
-    for i in range (3 , len(c) + 1):
+    c 0=c [-2]
+    c 1=c [-1]
+    for i in range (3, len(c) + 1):
         tmp = c0
-        c0 = c[ - i ]-c 1
+        c0 = c[- i ]-c 1
         c1 = tmp + c1 *x2
     return c0 + c1 *x
 ```
@@ -2634,21 +2634,21 @@ def chebval(x , c):
 最终的网格点记为 kv，相应的积分权重由下面的程序生成：
 
 ```python
-def pw_3d_grids(n_r , n_theta , n_phi):
-    x , w_x = scipy.special.roots_legendre(n_r)
-    t , w_t = scipy.special.roots_legendre(n_phi)
-    theta , w_theta = scipy.special.roots_legendre(n_theta)
-    r = np.log(2/(1 -x)) / np.log(2)
-    w_r = w_x /np.log(2) / (1 -x)
+def pw_3d_grids(n_r, n_theta, n_phi):
+    x, w_x = scipy.special.roots_legendre(n_r)
+    t, w_t = scipy.special.roots_legendre(n_phi)
+    theta, w_theta = scipy.special.roots_legendre(n_theta)
+    r = np.log(2/(1-x)) / np.log(2)
+    w_r = w_x /np.log(2) / (1-x)
     theta = theta * np.pi + np.pi
     w_theta = w_theta * np.pi
     phi = np.arccos(t)
-    kv = np.zeros((w_r.size , w_t.size , w_theta.size , 3))
-    kv[: ,: ,: ,0] = einsum( 'i ,j ,k ->ijk',r , np.sin(phi), np.cos(theta)) #x
-    kv[: ,: ,: ,1] = einsum( 'i ,j ,k ->ijk',r , np.sin(phi), np.sin(theta)) #y
-kv[: ,: ,: ,2] = einsum( 'i ,j ->ij',r , np.cos(phi))[: ,: ,np.newaxis] #z
-    weights = einsum( 'i ,j ,k ->ijk',r **2 * w_r , w_t , w_theta)
-    return kv.reshape( -1 ,3), weights.ravel()
+    kv = np.zeros((w_r.size, w_t.size, w_theta.size, 3))
+    kv[:,:,:,0] = einsum( 'i,j,k->ijk',r , np.sin(phi), np.cos(theta)) #x
+    kv[:,:,:,1] = einsum( 'i,j,k->ijk',r , np.sin(phi), np.sin(theta)) #y
+kv[:,:,:,2] = einsum( 'i,j->ij',r , np.cos(phi))[:,:,np.newaxis] #z
+    weights = einsum( 'i,j,k->ijk',r **2 * w_r, w_t, w_theta)
+    return kv.reshape(-1,3), weights.ravel()
 ```
 在倒易空间中，每个积分网格 k 对应一个平面波函数（plane-wave function）。我们可以计算每个网格上轨道乘积的傅里叶变换：
 
@@ -2670,42 +2670,42 @@ S00 (kx) = e. (12.83)
 傅里叶变换程序可以按如下方式开发：
 
 ```python
-from basis import n_cart , iter_cart_xyz
-def ft_primitive_overlap(li ,l j ,a i ,a j ,R a ,R b , kv):
+from basis import n_cart, iter_cart_xyz
+def ft_primitive_overlap(li,l j,a i,a j,R a,R b, kv):
 aij = ai + aj
 Rab = Ra - Rb
 Rp = (ai * R a+a j * Rb) / aij
 Rpa = Rp - Ra - 1j/(2 *aij) * kv
 theta_ij = ai * aj / aij
 @lru_cache(1000)
-def get_S(i: int ,j : int):
+def get_S(i: int,j : int):
 if i<0 or j<0 :
   return 0
 if i= =j= =0 :
   e = -theta_ij *Rab**2-k v **2/(4*aij) - 1j *kv*Rp
   return (np.pi/aij)**.5 * np.exp(e)
 if j= =0 :
-  return Rpa * get_S(i -1 ,j )+( i -1)/(2*aij) * get_S(i -2 ,j )
-return get_S(i+1 ,j -1) + Rab * get_S(i ,j -1)
+  return Rpa * get_S(i-1,j )+( i -1)/(2*aij) * get_S(i-2,j )
+return get_S(i+1,j -1) + Rab * get_S(i,j-1)
 nfi = n_cart(li)
 nfj = n_cart(lj)
 nk = kv.shape[0]
-ft = np.zeros((nfi , nfj , nk))
-for i ,( i x ,i y , iz) in enumerate (iter_cart_xyz(li)):
-for j , (jx ,j y , jz) in enumerate (iter_cart_xyz(lj)):
-  ft[i ,j] = (get_S(ix ,jx)[: ,0] * get_S(iy ,jy)[: ,1] *
-             get_S(iz ,jz)[: ,2])
+ft = np.zeros((nfi, nfj, nk))
+for i,( i x,i y, iz) in enumerate (iter_cart_xyz(li)):
+for j, (jx,j y, jz) in enumerate (iter_cart_xyz(lj)):
+  ft[i,j] = (get_S(ix,jx)[:,0] * get_S(iy,jy)[:,1] *
+             get_S(iz,jz)[:,2])
 return ft
 ```
 现在，我们可以开发一个数值积分程序来近似计算电子排斥积分（ERIs）。
 
 ```python
-def primitive_ERI_with_ft(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c ,R d ) :
-kv , weights = pw_3d_grids(30 ,2 0 , 20)
-Fij = ft_primitive_overlap(li ,l j ,a i ,a j ,R a ,R b ,k v )
-Fkl = ft_primitive_overlap(lk ,l l ,a k ,a l ,R c ,R d , -kv)
-coul_ft = .5/np.pi **2 / einsum( 'gx ,gx ->g',k v , kv)
-return einsum('g ,g ,ijg ,klg ->ijkl', weights , coul_ft , Fij , Fkl)
+def primitive_ERI_with_ft(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c,R d ) :
+kv, weights = pw_3d_grids(30,2 0, 20)
+Fij = ft_primitive_overlap(li,l j,a i,a j,R a,R b,k v )
+Fkl = ft_primitive_overlap(lk,l l,a k,a l,R c,R d, -kv)
+coul_ft = .5/np.pi **2 / einsum( 'gx,gx->g',k v, kv)
+return einsum('g,g,ijg,klg->ijkl', weights, coul_ft, Fij, Fkl)
 ```
 
 ## 12.3 积分变换
@@ -2714,7 +2714,7 @@ return einsum('g ,g ,ijg ,klg ->ijkl', weights , coul_ft , Fij , Fkl)
 使用 np.einsum 函数正确实现这一变换通常很简单。例如，给定第 12.1 节中解析积分程序生成的四指标电子排斥积分张量，可以使用下面的 einsum 代码进行积分变换：
 
 ```python
-mo_eri = np.einsum( 'pqrs ,pi ,qj ,rk ,sl ->ijkl', eri ,m o ,m o ,m o ,m o , optimize=True)
+mo_eri = np.einsum( 'pqrs,pi,qj,rk,sl->ijkl', eri,m o,m o,m o,m o, optimize=True)
 ```
 optimize=True 参数是必需的，因为它将五个张量的缩并分解为四步，每一步变换一个指标。这使得计算复杂度随 N 变化，中间状态的内存消耗随 N 变化。变换在内存中执行，通常称为核内变换（incore transformation）。
 当系统中涉及更多原子轨道函数时，内存可能不足以容纳整个电子排斥积分张量、存储变换后的积分，或容纳 einsum 函数生成的任何中间结果。在这种情况下，我们需要使用所谓的核外方法（outcore method）来执行积分变换，利用磁盘存储处理中间张量。
@@ -2750,28 +2750,28 @@ optimize=True 参数是必需的，因为它将五个张量的缩并分解为四
 考虑上述要点后，我们可以实现积分变换程序。以下代码展示了对第一个电子的 AO 进行变换的第一步：
 
 ```python
-import tempfile , itertools , h5py , numpy as np
+import tempfile, itertools, h5py, numpy as np
 from contextlib import contextmanager
 from basis import gto_offsets
-from eri_OS_rys import contracted_ERI , pack_gto_attrs
+from eri_OS_rys import contracted_ERI, pack_gto_attrs
 IO_BUF_SIZE = 1e7 # 800 MB
-def transform_outcore(gtos , mo):
-  ' ' 'Outcore integral transformation for two -electron integrals:
-  einsum( 'pqrs ,pi ,qj ,rk ,sl ->ijkl' , eri ,m o ,m o ,m o , mo)
-  ' ' '
+def transform_outcore(gtos, mo):
+  '''Outcore integral transformation for two-electron integrals:
+  einsum('pqrs,pi,qj,rk,sl->ijkl', eri,m o,m o,m o, mo)
+  '''
   n_shells = len(gtos)
   offsets = gto_offsets(gtos)
   gto_params = pack_gto_attrs(gtos)
-  nao , nmo = mo.shape
-  ao_idx1 , ao_idx2 = np.tril_indices(nao)
-  mo_idx1 , mo_idx2 = np.tril_indices(nmo)
+  nao, nmo = mo.shape
+  ao_idx1, ao_idx2 = np.tril_indices(nao)
+  mo_idx1, mo_idx2 = np.tril_indices(nmo)
   nao_pair = len(ao_idx1)
   nmo_pair = len(mo_idx1)
   @contextmanager
   def temp_h5dat():
     with tempfile.TemporaryDirectory(dir='.') as tmpdir:
       with h5py.File(f'{tmpdir}/eri.h5', 'w') as f:
-        yield f.create_dataset('eri', (nmo_pair , nao_pair), dtype='f8', chunks=(320 ,320)) # (1)
+        yield f.create_dataset('eri', (nmo_pair, nao_pair), dtype='f8', chunks=(320,320)) # (1)
   with temp_h5dat() as dataset:
 ```
 
@@ -2780,25 +2780,25 @@ def transform_outcore(gtos , mo):
     def save_data(buf):
       nonlocal p1
       dat = np.hstack(buf)
-      p0 ,p 1=p 1 , p1 + dat.shape[1]
-      dataset[: ,p0:p1] = dat
+      p0,p 1=p 1 , p1 + dat.shape[1]
+      dataset[:,p0:p1] = dat
 with background(save_data) as write: # (2)
       buf = []
       for shell_k in range (n_shells):
-        k0 ,l k ,R c , exps_k , norm_ck = gto_params[shell_k]
+        k0,l k,R c, exps_k, norm_ck = gto_params[shell_k]
         k1 = offsets[shell_k+1]
-eri = np.empty((nao , nao ,k 1 -k0 ,k 1 ) ) # (3)
-        for ((i0 ,l i ,R a , exps_i , norm_ci), (j0 ,l j ,R b , exps_j , norm_cj)) \
-                     in itertools.product(*(gto_params ,)*2):
+eri = np.empty((nao, nao,k 1-k0,k 1 ) ) # (3)
+        for ((i0,l i,R a, exps_i, norm_ci), (j0,l j,R b, exps_j, norm_cj)) \
+                     in itertools.product(*(gto_params,)*2):
 if i0 < j0: # symmetry between ij in (ij|kl) # (4)
             continue
-          for l0 ,l l ,R d , exps_l , norm_cl in gto_params[:shell_k+1]: # (5)
-            contracted_ERI(li ,l j ,l k ,l l , exps_i , exps_j , exps_k , exps_l , norm_ci , norm_cj , norm_ck , norm_cl , Ra ,R b ,R c ,R d , eri ,i 0 ,j 0 ,0 , l0)
-eri[ao_idx2 , ao_idx1] = eri[ao_idx1 , ao_idx2] # (6)
-        for k ,l 0 in enumerate (range(k0 , k1)):
-dat = eri[: ,: ,k ,:l0+1] # (7)
-          dat = np.einsum( 'pqs ,pi ,qj ->ijs', dat ,m o ,m o , optimize=True)
-          dat = dat[mo_idx1 , mo_idx2] # symmetry between ij in (ij|kl)
+          for l0,l l,R d, exps_l, norm_cl in gto_params[:shell_k+1]: # (5)
+            contracted_ERI(li,l j,l k,l l, exps_i, exps_j, exps_k, exps_l, norm_ci, norm_cj, norm_ck, norm_cl, Ra,R b,R c,R d, eri,i 0,j 0,0 , l0)
+eri[ao_idx2, ao_idx1] = eri[ao_idx1, ao_idx2] # (6)
+        for k,l 0 in enumerate (range(k0, k1)):
+dat = eri[:,:,k,:l0+1] # (7)
+          dat = np.einsum( 'pqs,pi,qj->ijs', dat,m o,m o, optimize=True)
+          dat = dat[mo_idx1, mo_idx2] # symmetry between ij in (ij|kl)
           buf.append(dat)
           if sum (x.size for x in buf) > IO_BUF_SIZE:
             write(buf)
@@ -2813,12 +2813,12 @@ dat = eri[: ,: ,k ,:l0+1] # (7)
 def background(fn):
 with ThreadPoolExecutor(max_workers=1) as ex:
  future = None
- def bg_worker(*args , **kwargs):
+ def bg_worker(*args, **kwargs):
    nonlocal future
    # Block the IO operation to avoid using too many memory
    if future is not None:
      future.result()
-   future = ex.submit(fn , *args , **kwargs)
+   future = ex.submit(fn, *args, **kwargs)
  try:
    yield bg_worker
  finally:
@@ -2829,23 +2829,23 @@ with ThreadPoolExecutor(max_workers=1) as ex:
 
 ```python
 from pychem_book.chap09.io_utils import iterate_with_prefetch
-def transform_outcore(gtos , mo):
+def transform_outcore(gtos, mo):
 ...
 with temp_h5dat() as dataset:
  ...
 block_size = 320 # (1)
- tasks = range(0 , nmo_pair , block_size)
+ tasks = range(0, nmo_pair, block_size)
  def loader(i0):
-   i1 = min(i0 + block_size , nmo_pair)
+   i1 = min(i0 + block_size, nmo_pair)
    return dataset[i0:i1]
-out = np.empty((nmo_pair , nmo_pair)) # (2)
- for i0 , buf in iterate_with_prefetch(tasks , loader):
+out = np.empty((nmo_pair, nmo_pair)) # (2)
+ for i0, buf in iterate_with_prefetch(tasks, loader):
    di = buf.shape[0]
-   dat = np.empty((di , nao , nao))
-   dat[: , ao_idx1 , ao_idx2] = buf # fill lower triangular part
-   dat[: , ao_idx2 , ao_idx1] = buf # fill upper triangular part
-   dat = np.einsum( 'xrs ,rk ,sl ->xkl', dat ,m o ,m o , optimize=True)
-   out[i0:i0+di] = dat[: , mo_idx1 , mo_idx2]
+   dat = np.empty((di, nao, nao))
+   dat[:, ao_idx1, ao_idx2] = buf # fill lower triangular part
+   dat[:, ao_idx2, ao_idx1] = buf # fill upper triangular part
+   dat = np.einsum( 'xrs,rk,sl->xkl', dat,m o,m o, optimize=True)
+   out[i0:i0+di] = dat[:, mo_idx1, mo_idx2]
 return out
 ```
 最好使 block_size 与 HDF5 文件的分块配置对齐，如第 (1) 行所示。为简单起见，我们在第 (2) 行分配了一个 NumPy 数组作为输出容器，用于存储变换后的积分。输出也可以是 np.memmap 或普通的 HDF5 数据集。

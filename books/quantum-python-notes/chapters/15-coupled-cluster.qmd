@@ -71,34 +71,34 @@ T2 方程是一个非线性方程，可以通过不动点迭代（fixed-point it
 现在来看 CCD 的 Python 程序。首先，我们定义函数来计算 CCD 相关能，并根据式 (15.14) 更新 T2 振幅。
 
 ```python
-def get_CCD_corr_energy(H , t2):
-    return .25 * einsum('ijab ,abij ->',H [ 'oovv'] , t2)
-def update_CCD_amplitudes(H: h5py.Group ,t 2 , level_shift=0):
-    nvir , nocc = t2.shape[1:3]
+def get_CCD_corr_energy(H, t2):
+    return .25 * einsum('ijab,abij->',H [ 'oovv'], t2)
+def update_CCD_amplitudes(H: h5py.Group,t 2, level_shift=0):
+    nvir, nocc = t2.shape[1:3]
     fock = H[ 'fock']
-    foo = fock[:nocc ,:nocc]
-    fvv = fock[nocc: ,nocc:]
+    foo = fock[:nocc,:nocc]
+    fvv = fock[nocc:,nocc:]
     e_o = foo.diagonal()
     e_v = fvv.diagonal() + level_shift
-    Fvv = fvv - 0.5 *einsum('klcd ,bdkl ->bc',H [ 'oovv'] ,t 2 )
-    Foo = foo + 0.5 *einsum('klcd ,cdjl ->kj',H [ 'oovv'] ,t 2 )
+    Fvv = fvv - 0.5 *einsum('klcd,bdkl->bc',H [ 'oovv'],t 2 )
+    Foo = foo + 0.5 *einsum('klcd,cdjl->kj',H [ 'oovv'],t 2 )
     Fvv[np.diag_indices(nvir)] -= e_v
     Foo[np.diag_indices(nocc)] -= e_o
     t2out = .25 * np.asarray(H['vvoo'])
-    t2out -= einsum( 'bkcj ,acik ->abij',H [ 'vovo'] , t2)
-    t2out += .5 * einsum('bc ,acij ->abij', Fvv , t2)
-    t2out -= .5 * einsum('kj ,abik ->abij', Foo , t2)
-    t2out += .5 *einsum('klcd ,acik ,bdjl ->abij',H [ 'oovv'] ,t 2 , t2)
-    t2out = t2out - t2out.transpose(0 ,1 ,3 ,2)
-    t2out = t2out - t2out.transpose(1 ,0 ,2 ,3)
-    oooo = 0.5 *einsum('klcd ,cdij ->ijkl',H [ 'oovv'] , t2)
+    t2out -= einsum( 'bkcj,acik->abij',H [ 'vovo'], t2)
+    t2out += .5 * einsum('bc,acij->abij', Fvv, t2)
+    t2out -= .5 * einsum('kj,abik->abij', Foo, t2)
+    t2out += .5 *einsum('klcd,acik,bdjl->abij',H [ 'oovv'],t 2, t2)
+    t2out = t2out - t2out.transpose(0,1,3,2)
+    t2out = t2out - t2out.transpose(1,0,2,3)
+    oooo = 0.5 *einsum('klcd,cdij->ijkl',H [ 'oovv'], t2)
 ```
 
 ```python
     oooo += np.asarray(H[ 'oooo'])
-    t2out += 0.5 *einsum('ijkl ,abkl ->abij', oooo , t2)
-    t2out += 0.5 *einsum('abcd ,cdij ->abij',H [ 'vvvv'] , t2)
-    t2out /= e_o + e_o[: ,None] - e_v[: ,None ,None] - e_v[: ,None ,None ,None]
+    t2out += 0.5 *einsum('ijkl,abkl->abij', oooo, t2)
+    t2out += 0.5 *einsum('abcd,cdij->abij',H [ 'vvvv'], t2)
+    t2out /= e_o + e_o[:,None] - e_v[:,None,None] - e_v[:,None,None,None]
     return t2out
 ```
 CCD 方程涉及大量指标求和，可以使用张量收缩程序高效计算。这里我们使用 einsum 函数执行这些张量收缩。为了提高示例程序的可读性，我们利用 T2 振幅的反对称性质，省略这些张量中不同指标之间的约束（如 i >j 和 a >b）。这将受约束求和转换为无约束求和，例如：
@@ -111,31 +111,31 @@ CCD 程序涉及五种分子轨道（MO）积分，分别记为 vvoo、oovv、vo
 
 ```python
 import pyscf
-def mo_integrals(mol: pyscf.gto.Mole , orbitals , Hfile=None):
-    ' ' 'MO integrals in physists notation <pq||rs >' ' '
+def mo_integrals(mol: pyscf.gto.Mole, orbitals, Hfile=None):
+    '''MO integrals in physists notation <pq||rs>'''
     no = mol.nelectron
     nmo = orbitals.shape[1]
     eri = np.zeros([nmo *2]*4)
-    eri[ ::2 , ::2 , ::2 , ::2] = eri[ ::2 , ::2 ,1::2 ,1::2] = \
-    eri[1::2 ,1::2 , ::2 , ::2] = eri[1::2 ,1::2 ,1::2 ,1::2] = \
-        pyscf.ao2mo.kernel(mol , orbitals , compact=False).reshape([nmo] *4)
-    eri = eri.transpose(0 ,2 ,1 ,3) - eri.transpose(2 ,0 ,1 ,3)
+    eri[ ::2, ::2, ::2, ::2] = eri[ ::2, ::2,1::2,1::2] = \
+    eri[1::2,1::2, ::2, ::2] = eri[1::2,1::2,1::2,1::2] = \
+        pyscf.ao2mo.kernel(mol, orbitals, compact=False).reshape([nmo] *4)
+    eri = eri.transpose(0,2,1,3) - eri.transpose(2,0,1,3)
     if Hfile is None:
         Hfile = tempfile.mktemp()
-    with h5py.File(Hfile , 'w') as H:
-        H['vvoo'] = vvoo = eri[no: ,no: ,:no ,:no]
-        H['oovv'] = vvoo.conj().transpose(2 ,3 ,0 ,1)
-        H['vovo'] = eri[no: ,:no ,no: ,:no]
-        H['oooo'] = eri[:no ,:no ,:no ,:no]
-        H['vvvv'] = eri[no: ,no: ,no: ,no:]
+    with h5py.File(Hfile, 'w') as H:
+        H['vvoo'] = vvoo = eri[no:,no:,:no,:no]
+        H['oovv'] = vvoo.conj().transpose(2,3,0,1)
+        H['vovo'] = eri[no:,:no,no:,:no]
+        H['oooo'] = eri[:no,:no,:no,:no]
+        H['vvvv'] = eri[no:,no:,no:,no:]
 ```
 
 ```python
         hcore = pyscf.scf.hf.get_hcore(mol)
-        hcore = einsum( 'pq ,pi ,qj ->ij', hcore , orbitals , orbitals)
+        hcore = einsum( 'pq,pi,qj->ij', hcore, orbitals, orbitals)
         hcore_mo = np.zeros([nmo *2]*2)
-        hcore_mo[::2 ,::2] = hcore_mo[1::2 ,1::2] = hcore
-        H['fock'] = hcore_mo + einsum( 'ipiq ->pq', eri[:no ,: ,:no ,:])
+        hcore_mo[::2,::2] = hcore_mo[1::2,1::2] = hcore
+        H['fock'] = hcore_mo + einsum( 'ipiq->pq', eri[:no,:,:no,:])
     return Hfile
 ```
 为了简化分子轨道（MO）积分的计算过程，我们使用 PySCF 软件包计算整个 MO 积分张量，然后提取所需的子块。利用原子轨道（AO）积分的置换对称性，并将 I/O 操作与计算重叠，可以提高积分计算程序的效率。我们已在第 12 章介绍过这些技术主题，这里不再重复。
@@ -163,12 +163,12 @@ def mp2(H):
     fock = np.asarray(H[ 'fock'])
     e_o = fock.diagonal()[:nocc]
     e_v = fock.diagonal()[nocc:]
-    eijab = e_o + e_o[: ,None] - e_v[: ,None ,None] - e_v[: ,None ,None ,None]
+    eijab = e_o + e_o[:,None] - e_v[:,None,None] - e_v[:,None,None,None]
     t2 = np.asarray(H[ 'vvoo']) / eijab
-    e = get_CCD_corr_energy(H , t2)
-    return e ,t 2
-def CCD_solve(mf: pyscf.scf.hf.RHF , conv_tol=1e -6 , max_cycle=100):
-    ' ' 'A fixed -point iteration solver for spin -orbital CCD' ' '
+    e = get_CCD_corr_energy(H, t2)
+    return e,t 2
+def CCD_solve(mf: pyscf.scf.hf.RHF, conv_tol=1e-6, max_cycle=100):
+    '''A fixed-point iteration solver for spin-orbital CCD'''
     mol = mf.mol
 ```
 
@@ -176,23 +176,23 @@ def CCD_solve(mf: pyscf.scf.hf.RHF , conv_tol=1e -6 , max_cycle=100):
     orbitals = mf.mo_coeff
     e_hf = mf.e_tot
     with tempfile.TemporaryDirectory() as tmpdir:
-        Hfile = mo_integrals(mol , orbitals ,f '{tmpdir}/H')
+        Hfile = mo_integrals(mol, orbitals,f '{tmpdir}/H')
         diis = DIIS(f '{tmpdir}/diis')
         e_ccd = e_hf
-        with h5py.File(Hfile , 'r') as H:
-            e_corr , t2 = mp2(H) # initial guess
+        with h5py.File(Hfile, 'r') as H:
+            e_corr, t2 = mp2(H) # initial guess
             e_ccd = e_hf + e_corr
             print(f'E(MP2)={e_ccd}')
             for cycle in range (max_cycle):
-                t2 , t2_prev = update_CCD_amplitudes(H ,t 2 ) ,t 2
-                e_ccd , e_prev = get_CCD_energy(H , t2) + e_hf , e_ccd
-                print(f'{cycle=} , E(CCD)={e_ccd} , dE={e_ccd -e_prev}')
+                t2, t2_prev = update_CCD_amplitudes(H,t 2 ) ,t 2
+                e_ccd, e_prev = get_CCD_energy(H, t2) + e_hf, e_ccd
+                print(f'{cycle=}, E(CCD)={e_ccd}, dE={e_ccd-e_prev}')
                 if abs (t2 - t2_prev). max() < conv_tol:
                     break
-                t2 = diis.update(t2 - t2_prev , t2)
+                t2 = diis.update(t2 - t2_prev, t2)
     return e_ccd
 if __name__ == '__main__':
-    mol = pyscf.M(atom= 'N 0. 0 0; N 1.5 0 0' , basis= 'cc -pvdz')
+    mol = pyscf.M(atom= 'N 0. 0 0; N 1.5 0 0' , basis= 'cc-pvdz')
     mf = mol.RHF().run()
     e_ccd = CCD_solve(mf)
 ```
@@ -208,7 +208,7 @@ update_CCD_amplitudes 函数是 CCD 程序中最耗时的部分，主要有三�
 轨道数，张量收缩
 
 ```text
-   einsum( 'abcd ,cdij ->abij ' , H[ 'vvvv '] , t2)
+   einsum('abcd,cdij->abij', H['vvvv'], t2)
 ```
 的标度为 n n。由于在大多数分子 CCD 计算中 nv ≫ no，这个
 收缩是计算量最大的步骤。其他六阶收缩的开销较小，包括三个标度为 n n 的收缩和两个标度为 n n 的收缩。
@@ -261,12 +261,12 @@ def loader(key):
 ```python
 import threading
 from contextlib import contextmanager
-#Implement the readahead function using the producer -consumer model.
+#Implement the readahead function using the producer-consumer model.
 @contextmanager
 ```
 
 ```python
-def readahead(h5obj , tasks , maxsize=3):
+def readahead(h5obj, tasks, maxsize=3):
     assert maxsize > 0
     cache = {}
     # This mutex lock is shared by the prefetch function and loader.
@@ -287,7 +287,7 @@ mutex = threading.RLock() # (1)
                 not_empty.notify()
                 while len (cache) >= maxsize:
                     not_full.wait()
-    daemon = threading.Thread(target=prefetch , args=(tasks ,))
+    daemon = threading.Thread(target=prefetch, args=(tasks,))
     daemon.start()
     def loader(key):
         with not_empty:
@@ -300,7 +300,7 @@ mutex = threading.RLock() # (1)
     yield loader
     terminate = True
     with not_full
-# release any locks in prefetch , then the terminate condition in prefetch function will be triggered
+# release any locks in prefetch, then the terminate condition in prefetch function will be triggered
         not_full.notify()
     daemon.join()
 ```
@@ -308,26 +308,26 @@ mutex = threading.RLock() # (1)
 readahead 函数按照输入参数中提供的数据名称所指定的顺序读取并缓存数据。最好按照数据被使用的顺序预取数据。为了使预取顺序与 update_CCD_amplitudes 函数中的数据访问顺序一致，我们需要彻底分析和整理数据访问顺序。随后，将适当的名称列表传递给 readahead 守护线程（daemon）。顺序不匹配可能导致 readahead 守护线程中的数据加载器停滞。作为练习，鼓励读者探索可能导致这种死锁（deadlock）的原因和条件。
 
 ```python
-def update_CCD_amplitudes(H: h5py.Group ,t 2 ) :
+def update_CCD_amplitudes(H: h5py.Group,t 2 ) :
     ...
-    with readahead(H ,[
+    with readahead(H,[
         'oovv', 'vvoo', 'vovo', 'oooo', 'vvvv', ]) as load:
         oovv = load( 'oovv')
-        Fvv = fvv - 0.5 *einsum('klcd ,bdkl ->bc', oovv , t2)
-        Foo = foo + 0.5 *einsum('klcd ,cdjl ->kj', oovv , t2)
+        Fvv = fvv - 0.5 *einsum('klcd,bdkl->bc', oovv, t2)
+        Foo = foo + 0.5 *einsum('klcd,cdjl->kj', oovv, t2)
         Fvv[np.diag_indices(nvir)] -= e_v
         Foo[np.diag_indices(nocc)] -= e_o
         t2out = .25 * load('vvoo')
-        t2out -= einsum( 'bkcj ,acik ->abij', load( 'vovo'), t2)
-        t2out += .5 * einsum('bc ,acij ->abij', Fvv , t2)
-        t2out -= .5 * einsum('kj ,abik ->abij', Foo , t2)
-        t2out += .5 *einsum('klcd ,acik ,bdjl ->abij', oovv ,t 2 , t2)
-        t2out = t2out - t2out.transpose(0 ,1 ,3 ,2)
-        t2out = t2out - t2out.transpose(1 ,0 ,2 ,3)
-        oooo = 0.5 *einsum('klcd ,cdij ->ijkl', oovv , t2) + load( 'oooo')
-        t2out += 0.5 *einsum('ijkl ,abkl ->abij', oooo , t2)
-        t2out += 0.5 *einsum('abcd ,cdij ->abij', load( 'vvvv'), t2)
-    t2out /= e_o + e_o[: ,None] - e_v[: ,None ,None] - e_v[: ,None ,None ,None]
+        t2out -= einsum( 'bkcj,acik->abij', load( 'vovo'), t2)
+        t2out += .5 * einsum('bc,acij->abij', Fvv, t2)
+        t2out -= .5 * einsum('kj,abik->abij', Foo, t2)
+        t2out += .5 *einsum('klcd,acik,bdjl->abij', oovv,t 2, t2)
+        t2out = t2out - t2out.transpose(0,1,3,2)
+        t2out = t2out - t2out.transpose(1,0,2,3)
+        oooo = 0.5 *einsum('klcd,cdij->ijkl', oovv, t2) + load( 'oooo')
+        t2out += 0.5 *einsum('ijkl,abkl->abij', oooo, t2)
+        t2out += 0.5 *einsum('abcd,cdij->abij', load( 'vvvv'), t2)
+    t2out /= e_o + e_o[:,None] - e_v[:,None,None] - e_v[:,None,None,None]
     return t2out
 ```
 当前的数据预取方案有一个局限：预取顺序必须手动管理。这意味着每当访问顺序发生变化时，readahead 函数的任务列表可能也需要更新。这种手动
@@ -344,17 +344,17 @@ def readahead_jit(f):
     # modify and cache the function until the first run
     new_f = None
     @functools.wraps(f)
-    def f_with_readahead(*args , **kwargs):
-        for i ,a in enumerate (args):
-            if isinstance (a , h5py.Group):
+    def f_with_readahead(*args, **kwargs):
+        for i,a in enumerate (args):
+            if isinstance (a, h5py.Group):
                 break
 else: # (1)
-            return f(*args , **kwargs)
+            return f(*args, **kwargs)
         nonlocal new_f
         if new_f is None:
             arg_names = list(inspect.signature(f).parameters)
-            new_f = _inject_readahead(f , arg_names[i])
-        return new_f(*args , **kwargs)
+            new_f = _inject_readahead(f, arg_names[i])
+        return new_f(*args, **kwargs)
     return f_with_readahead
 ```
 第 (1) 行的 for-else 语句排除了不需要 HDF5 I/O 的情况。当调用函数时，如果输入参数中包含 h5py 对象，便将该函数传递给 _inject_readahead 函数，以分析数据访问模式。
@@ -362,23 +362,23 @@ else: # (1)
 
 ```python
 def update_CCD_amplitudes(...):
-    with readahead(h5object , [key1 , key2 , ...]) as _loader:
+    with readahead(h5object, [key1, key2, ...]) as _loader:
         ...
-        einsum(... , _loader[key1] , ...)
+        einsum(..., _loader[key1], ...)
         ...
 ```
 为了达到这一效果，我们首先扫描 AST 以识别 I/O 操作。例如，考虑 I/O 操作 H[’vvvv’]，它是一个 ast.Subscript 类型的元素。通常，ast.Subscript 操作包含三种类型内容中的一种：切片、常量或可迭代对象（例如元组或列表）。对于 H[’vvvv’]，下标是一个常量字符串。为了识别这类代码语句，我们可以遍历 AST，筛选名称与关键字（例如 H）匹配且内容为字符串常量的 ast.Subscript 元素。
 ast 模块提供了两种遍历 AST 的主要方法。其中一种是使用 ast.walk 函数。然而，通过 ast.walk 遍历 AST 时，节点出现的顺序可能与源代码中的顺序不同。这里使用 ast.NodeVisitor 更合适，因为它以深度优先的方式遍历 AST，能够保持顺序。
 
 ```python
-def _search_tasks(f , keyword):
+def _search_tasks(f, keyword):
     tasks = []
     class IdentifyTask(ast.NodeVisitor):
-        def visit_Subscript(self , node):
-            if ((isinstance(node.value , ast.Name)
+        def visit_Subscript(self, node):
+            if ((isinstance(node.value, ast.Name)
                 and node.value.id == keyword
-                and isinstance (node.slice , ast.Constant)
-                and isinstance (node.slice.value , str)):
+                and isinstance (node.slice, ast.Constant)
+                and isinstance (node.slice.value, str)):
                 tasks.append(node.slice.value)
             return self.generic_visit(node)
     IdentifyTask().visit(ast.parse(inspect.getsource(f)))
@@ -394,8 +394,8 @@ with f() as var:
 编译成 AST 节点：With(withitem("f()", var), body=code_block)。我们可以使用这种结构为 readahead 函数创建 ast.With 节点。接下来，我们需要遍历整个 AST，找到并替换与 h5py 对象相关的 I/O 操作。这个过程需要使用 ast.NodeTransformer 修改 AST。转换完成后，使用 exec 函数将 AST 转换回可执行的 Python 代码。下面是这些过程的实现。
 
 ```python
-def _inject_readahead(f , keyword):
-    tasks = _search_tasks(f , keyword)
+def _inject_readahead(f, keyword):
+    tasks = _search_tasks(f, keyword)
     loader = f '_{keyword}_loader'
     assert loader not in f.__code__.co_varnames
     tree = ast.parse(inspect.getsource(f))
@@ -403,15 +403,15 @@ def _inject_readahead(f , keyword):
     fn_node.decorator_list = [] # remove the "@readahead" decorator
     fn_node.body = [
         ast.With([
-            ast.withitem( ast.parse(f'readahead({keyword} , {tasks})' , mode='eval').body , ast.Name(loader))] , # as loader
+            ast.withitem( ast.parse(f'readahead({keyword}, {tasks})' , mode='eval').body, ast.Name(loader))], # as loader
             fn_node.body)
     ]
     class RewriteGetitem(ast.NodeTransformer):
-        def visit_Subscript(self , node):
-            if (isinstance(node.value , ast.Name)
+        def visit_Subscript(self, node):
+            if (isinstance(node.value, ast.Name)
                 and node.value.id == keyword
-                and isinstance (node.slice , ast.Constant)
-                and isinstance (node.slice.value , str)):
+                and isinstance (node.slice, ast.Constant)
+                and isinstance (node.slice.value, str)):
                 node.value.id = loader
             return self.generic_visit(node)
     new_tree = ast.fix_missing_locations(RewriteGetitem().visit(tree))
@@ -424,7 +424,7 @@ def _inject_readahead(f , keyword):
 
 ```python
 @contextmanager
-def readahead(h5obj , tasks , maxsize=3):
+def readahead(h5obj, tasks, maxsize=3):
     assert maxsize > 0
 ```
 
@@ -435,7 +435,7 @@ not_full = threading.Condition(mutex)
 new_slot = threading.Condition(mutex)
 terminate = False
 class Data:
-def __init__(self , data):
+def __init__(self, data):
     self.data = data
     self.refcount = 1
 def prefetch(tasks):
@@ -452,10 +452,10 @@ if task in cache: # (1)
         new_slot.notify()
         if len (cache) >= maxsize:
             not_full.wait()
-daemon = threading.Thread(target=prefetch , args=(tasks ,))
+daemon = threading.Thread(target=prefetch, args=(tasks,))
 daemon.start()
 class Loader:
-def __getitem__(self , key):
+def __getitem__(self, key):
     with new_slot:
         while key not in cache:
             if len (cache) >= maxsize:
@@ -481,12 +481,12 @@ if cache[key].refcount <= 0: # (3)
 
 ```python
 @readahead_jit
-def update_CCD_amplitudes(H: Union[Dict , h5py.Group] , t2: np.ndarray):
+def update_CCD_amplitudes(H: Union[Dict, h5py.Group], t2: np.ndarray):
     ...
-    Fvv = fvv - 0.5 *einsum('klcd ,bdkl ->bc',H [ 'oovv'] ,t 2 )
-    Foo = foo + 0.5 *einsum('klcd ,cdjl ->kj',H [ 'oovv'] ,t 2 )
+    Fvv = fvv - 0.5 *einsum('klcd,bdkl->bc',H [ 'oovv'],t 2 )
+    Foo = foo + 0.5 *einsum('klcd,cdjl->kj',H [ 'oovv'],t 2 )
     t2out = .25 * H['vvoo']
-    t2out -= einsum( 'bkcj ,acik ->abij',H [ 'vovo'] , t2)
+    t2out -= einsum( 'bkcj,acik->abij',H [ 'vovo'], t2)
     ...
 ```
 
@@ -515,8 +515,8 @@ def update_CCD_amplitudes(H: Union[Dict , h5py.Group] , t2: np.ndarray):
 
 ```python
 class FieldOperator:
- ' ' 'Annihilation or creation operators' ' '
- def __init__(self , label= '*'):
+ '''Annihilation or creation operators'''
+ def __init__(self, label= '*'):
      assert label in 'OV*'
      self.label = label
 class Annihilation(FieldOperator):
@@ -526,8 +526,8 @@ class Creation(FieldOperator):
  def __repr__(self):
      return f'{self.label}^+'
 class Delta:
- ' ' 'the Kronecker delta.' ' '
- def __init__(self , indices: List[FieldOpeartor]):
+ '''the Kronecker delta.'''
+ def __init__(self, indices: List[FieldOpeartor]):
      self.indices = indices
  def __repr__(self):
      ops = '' .join(op.label for op in self.indices)
@@ -536,7 +536,7 @@ class Delta:
 
 ```python
 class Tensor:
-    def __init__(self , indices: List[FieldOpeartor] , label=None):
+    def __init__(self, indices: List[FieldOpeartor], label=None):
         self.indices = indices
         self.label = label
     def __repr__(self):
@@ -567,32 +567,32 @@ class Tensor:
 
 ```python
 COMMUTABLE = { 'V': 'O', 'O': 'V', '*': ''}
-def commutable(op1: FieldOpeartor , op2: FieldOpeartor):
+def commutable(op1: FieldOpeartor, op2: FieldOpeartor):
     return (op1.__class__ == op2.__class__ or
             op1.label == COMMUTABLE[op2.label])
 ```
 然后，我们将式 (15.20) 转换为针对两个 FieldOperator 的 contract 函数，如下所示：
 
 ```python
-def _contract_fop_fop( fop1: FieldOperator , fop2: FieldOperator) -> List[String]:
+def _contract_fop_fop( fop1: FieldOperator, fop2: FieldOperator) -> List[String]:
     output = []
-    if not commutable(fop1 , fop2):
+    if not commutable(fop1, fop2):
 ```
 
 ```python
-        output.append(String([] ,1 , [Delta([fop1 , fop2])]))
-    output.append(String([fop2] ,- 1 , remaining=[fop1]))
+        output.append(String([],1 , [Delta([fop1, fop2])]))
+    output.append(String([fop2],- 1, remaining=[fop1]))
     return output
 ```
 为了便于管理多个二次量子化算符，我们引入 String 类：
 
 ```python
 class String:
-    ' ' '
-    Normal -ordered FieldOpeartors
-    ' ' '
+    '''
+    Normal-ordered FieldOpeartors
+    '''
 __slots__ = [ 'operators', 'factor', 'deltas', 'remaining'] # (1)
-    def __init__(self , operators , factor=1 , deltas=None , remaining=None):
+    def __init__(self, operators, factor=1, deltas=None, remaining=None):
         self.operators: List[FieldOperator] = operators
         self.factor = factor
         self.deltas = deltas or []
@@ -612,7 +612,7 @@ remaining 属性用于存储收缩之后任何尚未处理的算符。考虑一�
 如式 (15.20) 所示，将乘积 fˆf 转换为正规排序形式之后，可以继续对 fˆ 与后续算符进行收缩。remaining 属性记录仍可用于进一步收缩的算符。利用 remaining 属性，我们可以用以下递归函数实现式 (15.21) 中描述的正规排序过程。
 
 ```python
-def _contract_fop_string( fop: FieldOperator , string: String) -> List[String]:
+def _contract_fop_string( fop: FieldOperator, string: String) -> List[String]:
     operators = string.operators
     remaining = string.remaining
     factor = string.factor
@@ -621,17 +621,17 @@ def _contract_fop_string( fop: FieldOperator , string: String) -> List[String]:
 ```
 
 ```python
-        return [String(operators , factor , deltas , [fop]+remaining)]
-    # C(x ,a 1 *a2*...) = C(x , a1) *a2*a3*...
-# = delta(x                ,a1)*a2*a3*... + C(remaining ,a 2 *a3*...)
+        return [String(operators, factor, deltas, [fop]+remaining)]
+    # C(x,a 1 *a2*...) = C(x, a1) *a2*a3*...
+# = delta(x ,a1)*a2*a3*... + C(remaining,a 2 *a3*...)
     output = []
-    for s in _contract_fop_fop(fop , operators[0]):
+    for s in _contract_fop_fop(fop, operators[0]):
         if not s.remaining:
-            output.append(String(operators[1:] , s.factor * factor , s.deltas + deltas , remaining))
+            output.append(String(operators[1:], s.factor * factor, s.deltas + deltas, remaining))
         else:
-            substring = String(operators[1:] , factor , deltas , remaining)
-            for r in _contract_fop_string(s.remaining[0] , substring): # (1)
-                output.append(String(s.operators + r.operators , s.factor * r.factor , r.deltas , r.remaining))
+            substring = String(operators[1:], factor, deltas, remaining)
+            for r in _contract_fop_string(s.remaining[0], substring): # (1)
+                output.append(String(s.operators + r.operators, s.factor * r.factor, r.deltas, r.remaining))
     return output
 ```
 对于 _contract_fop_fop 输出的字符串，如果其 remaining 属性为空，说明该字符串不包含任何可以进一步收缩的算符。否则，我们递归调用 _contract_fop_string 函数，处理 remaining 属性内的 FieldOperator 对象后续的收缩，如第 (1) 行所示。
@@ -641,22 +641,22 @@ def _contract_fop_string( fop: FieldOperator , string: String) -> List[String]:
 import itertools
 def flatten(lst):
     return list (itertools.chain(*lst))
-def _contract_string_string(string1 , string2) -> List[String]:
-    assert isinstance (string1 , String) and not string1.remaining
-    assert isinstance (string2 , String) and not string2.remaining
+def _contract_string_string(string1, string2) -> List[String]:
+    assert isinstance (string1, String) and not string1.remaining
+    assert isinstance (string2, String) and not string2.remaining
     if not string2.operators:
-        return [String(string1.operators , string1.factor * string2.factor , string1.deltas + string2.deltas)]
-    output = [String(string2.operators , string1.factor * string2.factor , string1.deltas + string2.deltas)]
+        return [String(string1.operators, string1.factor * string2.factor, string1.deltas + string2.deltas)]
+    output = [String(string2.operators, string1.factor * string2.factor, string1.deltas + string2.deltas)]
     for fop in reversed (string1.operators):
-        #C ( x 1*x2*... ,a 1 *a2*...) = C(x1 , C(x2 , ... , C(xn ,a 1 *a2*...)))
+        #C ( x 1*x2*...,a 1 *a2*...) = C(x1, C(x2, ..., C(xn,a 1 *a2*...)))
 ```
 
 ```python
-        output = flatten(_contract_fop_string(fop ,s ) for s in output)
+        output = flatten(_contract_fop_string(fop,s ) for s in output)
     return output
-def contract(string1 , string2):
-    return [String(s.operators + s.remaining , s.factor , s.deltas)
-            for s in _contract_string_string(string1 , string2)]
+def contract(string1, string2):
+    return [String(s.operators + s.remaining, s.factor, s.deltas)
+            for s in _contract_string_string(string1, string2)]
 ```
 到目前为止，我们已经完成了 FieldOperator 和 String 类所需的代数运算。接下来，我们将使用这些基础元素定义 CCD 理论中的哈密顿算符（Hamiltonian operator）和 Tˆ 算符。二次量子化的哈密顿量表示如下：
 
@@ -676,26 +676,26 @@ def contract(string1 , string2):
 []{#eq-15-021}
 
 ```python
-def _make_operator(factor , indices , label=None):
+def _make_operator(factor, indices, label=None):
     n= len(indices)
     assert n%2= =0
     operators_c = [Creation(x) for x in indices[:n//2].upper()]
     operators_a = [Annihilation(x) for x in indices[n//2:].upper()]
-    operators = operators_c + operators_a[:: -1]
-    tensor = Tensor(operators_c + operators_a , label)
-    return tensor , String(operators , factor)
-def hamiltonian(n , factor):
-    return _make_operator(factor , '**'*n ,f 'h{n}')
+    operators = operators_c + operators_a[::-1]
+    tensor = Tensor(operators_c + operators_a, label)
+    return tensor, String(operators, factor)
+def hamiltonian(n, factor):
+    return _make_operator(factor, '**'*n,f 'h{n}')
 def excitation(n):
-    return _make_operator(.25 , 'V'*n+ 'O'*n ,f 'T{n}')
+    return _make_operator(.25, 'V'*n+ 'O'*n ,f 'T{n}')
 def deexcitation(n):
 ```
 
 ```python
-    return _make_operator(.25 , 'O'*n+ 'V'*n ,f 'T{n}')
+    return _make_operator(.25, 'O'*n+ 'V'*n ,f 'T{n}')
 def bra_projector(n):
-    bra_tensor , bra = _make_operator(.25 , 'O'*n+ 'V'*n)
-    return bra_tensor.indices[:: -1] , bra
+    bra_tensor, bra = _make_operator(.25, 'O'*n+ 'V'*n)
+    return bra_tensor.indices[::-1], bra
 ```
 在这些算符中，我们对张量指标和算符串使用同一组 FieldOperator 对象。为了建立 FieldOperator 与张量指标之间的对应关系，每个 FieldOperator 都需要一个唯一标识符。随后用这些标识符来识别张量指标。由于 Python 本身会为每个不同的 FieldOperator 对象生成唯一 ID，为简单起见，我们使用 FieldOperator 对象本身作为张量指标的标识符。这种方法意味着每个 FieldOperator 对象都是唯一的，不能被克隆，因为任何 copy() 方法都会产生一个具有不同 ID 的新 FieldOperator 对象。
 得到哈密顿量和 Tˆ 算符的符号表示后，我们现在可以计算 Hˆ。这个有效哈密顿量（effective Hamiltonian）可以通过 Baker-Campbell-Hausdorff 展开求得：
@@ -708,24 +708,24 @@ def bra_projector(n):
 
 ```python
 def apply_BCH(truncation=4):
-    hs = [hamiltonian(1 , 1), hamiltonian(2 , .25)]
+    hs = [hamiltonian(1, 1), hamiltonian(2, .25)]
     for order in range (truncation+1):
         factor = 1./math.factorial(order)
-        for htensor , hstring in hs:
+        for htensor, hstring in hs:
             ht_tensors = [htensor]
-            ht_strings = [String(hstring.operators , hstring.factor * factor)]
+            ht_strings = [String(hstring.operators, hstring.factor * factor)]
             for i in range (order):
-                amplitudes , t = excitation(2)
+                amplitudes, t = excitation(2)
                 ht_tensors.append(amplitudes)
-                ht_strings = flatten(commutate(ht ,t ) for ht in ht_strings)
+                ht_strings = flatten(commutate(ht,t ) for ht in ht_strings)
             for ht_string in ht_strings:
-                yield ht_tensors , ht_string
+                yield ht_tensors, ht_string
 ```
 该程序中的 commutate 函数计算两个串之间的对易子（commutator）。
 
 ```python
-def commutate(string1 , string2) -> List[String]:
-    output = contract(string1 , string2)
+def commutate(string1, string2) -> List[String]:
+    output = contract(string1, string2)
     n_deltas = len(string1.deltas) + len(string2.deltas)
     return [s for s in output if len (s.deltas) > n_deltas]
 ```
@@ -739,35 +739,35 @@ def commutate(string1 , string2) -> List[String]:
 ```python
 VSYMBOLS = 'abcdefghvwxyzABCDEFGHVWXYZ'
 OSYMBOLS = 'ijklmnopqrstuIJKLMNOPQRSTU'
-def on_HF_reference(string , tensors , output_indices=None) -> List[ str]:
-    ' ' '<HF|string|HF >' ' '
+def on_HF_reference(string, tensors, output_indices=None) -> List[ str]:
+    '''<HF|string|HF>'''
     h_ops = []
     for op in string.operators:
         if op.label == '*':
             h_ops.append(op)
             continue
         # Creation or annihilation operators in T are normal ordered.
-        # They must be zero when applied either on |HF > or on <HF|
+        # They must be zero when applied either on |HF> or on <HF|
         return ''
     deltas = string.deltas
     if h_ops:
         # The remaining operators in Hamiltonian
         if (len(h_ops) == 2 and
-            isinstance(h_ops[0] , Creation) and
-            isinstance(h_ops[1] , Annihilation)):
+            isinstance(h_ops[0], Creation) and
+            isinstance(h_ops[1], Annihilation)):
             deltas = deltas + [Delta(h_ops)]
         elif len (h_ops) == 4:
-            return f'{string.factor*2} * einsum("ijij ->" , h2_oooo)'
+            return f'{string.factor*2} * einsum("ijij->", h2_oooo)'
         else:
             return ''
 ```
 
 ```python
- vsymbols , osymbols = iter(VSYMBOLS),iter(OSYMBOLS)
+ vsymbols, osymbols = iter(VSYMBOLS),iter(OSYMBOLS)
  symbol_table = {}
 for delta in deltas: # (1)
-     op1 , op2 = delta.indices
-     label1 , label2 = op1.label , op2.label
+     op1, op2 = delta.indices
+     label1, label2 = op1.label, op2.label
      if label1 == 'V' or label2 == 'V':
          symbol_table[op1] = symbol_table[op2] = next(vsymbols)
         else:
@@ -786,9 +786,9 @@ for delta in deltas: # (1)
              ''.join('v' if x in VSYMBOLS else 'o' for x in s))
  else:
          operands.append(tensor.label)
- subscripts = f '{" ,".join(scripts)} ->{output_script}'
+ subscripts = f '{",".join(scripts)}->{output_script}'
  operands = ', ' .join(operands)
- return f'{string.factor} * einsum("{subscripts}" , {operands})'
+ return f'{string.factor} * einsum("{subscripts}", {operands})'
 ```
 这个函数的要点包括：
 
@@ -809,15 +809,15 @@ for delta in deltas: # (1)
 ```python
 def CCD_energy(truncation=4):
     output = []
-    for ht_tensors , ht_string in apply_BCH(truncation):
-        output.append(on_HF_reference(ht_string , ht_tensors))
+    for ht_tensors, ht_string in apply_BCH(truncation):
+        output.append(on_HF_reference(ht_string, ht_tensors))
     return [x for x in output if x]
 def CCD_equations(truncation=4):
-    output_indices , bra = bra_projector(2)
+    output_indices, bra = bra_projector(2)
     output = []
-    for ht_tensors , ht_string in apply_BCH(truncation):
-        for s in contract(bra , ht_string):
-            output.append(on_HF_reference(s , ht_tensors , output_indices))
+    for ht_tensors, ht_string in apply_BCH(truncation):
+        for s in contract(bra, ht_string):
+            output.append(on_HF_reference(s, ht_tensors, output_indices))
     return [x for x in output if x]
 if __name__ == '__main__':
     for x in CCD_energy(2):
@@ -828,15 +828,15 @@ if __name__ == '__main__':
 输出为
 
 ```text
-E+ =1 . 0 * einsum("ii ->", h1_oo)
-E+ =0 . 5 * einsum("ijij ->", h2_oooo)
-E += 0.0625 * einsum("ijba ,baij ->", h2_oovv , T2)
-E += -0.0625 * einsum("ijba ,baji ->", h2_oovv , T2)
-E += -0.0625 * einsum("ijba ,abij ->", h2_oovv , T2)
-E += 0.0625 * einsum("ijba ,abji ->", h2_oovv , T2)
-F2 += 0.0625 * einsum("baij ->abji", h2_vvoo)
-F2 += -0.0625 * einsum("baji ->abji", h2_vvoo)
-F2 += -0.0625 * einsum("abij ->abji", h2_vvoo)
+E+ =1 . 0 * einsum("ii->", h1_oo)
+E+ =0 . 5 * einsum("ijij->", h2_oooo)
+E += 0.0625 * einsum("ijba,baij->", h2_oovv, T2)
+E += -0.0625 * einsum("ijba,baji->", h2_oovv, T2)
+E += -0.0625 * einsum("ijba,abij->", h2_oovv, T2)
+E += 0.0625 * einsum("ijba,abji->", h2_oovv, T2)
+F2 += 0.0625 * einsum("baij->abji", h2_vvoo)
+F2 += -0.0625 * einsum("baji->abji", h2_vvoo)
+F2 += -0.0625 * einsum("abij->abji", h2_vvoo)
 ... # 705 more lines for F2
 ```
 你可能注意到，对于更高阶的截断，符号程序运行得很慢。这主要是由于程序生成了大量中间串。事实上，对于这些中间串中的绝大多数，最左侧的算符是 Annihilation(’O’) 或 Creation(’V’)。无论串的其余部分是什么，也无论它们随后经历怎样的收缩，它们在 HF 参考态上的期望值都为零。我们可以及早检测出这些中间串，并将它们排除在最终表达式之外。
@@ -860,12 +860,12 @@ FieldOperator 对象和 FOpGroup 对象。
 class FOpGroup(tuple):
     pass
 class String:
-    ' ' '
-    Normal -ordered FieldOpeartors
-    ' ' '
+    '''
+    Normal-ordered FieldOpeartors
+    '''
     __slots__ = [ 'operators', 'factor', 'deltas', 'remaining']
-    def __init__(self , operators , factor=1 , deltas=None , remaining=None):
-        self.operators: List[Union[FieldOperator , FOpGroup]] = operators
+    def __init__(self, operators, factor=1, deltas=None, remaining=None):
+        self.operators: List[Union[FieldOperator, FOpGroup]] = operators
 ```
 
 ```python
@@ -887,14 +887,14 @@ class String:
 如果一个 FieldOperator 对象与 FOpGroup 对象内的算符不对易，_contract_fop_fgroup 函数将产生由 m + 1 个串组成的输出。在这 m + 1 个串中，有 m 个是包含 Delta 对象的收缩串。鉴于 FOpGroup 内 m 个算符之间的置换对称性，这 m 个收缩串对结果的贡献相同。因此，输出中只需考虑其中一种情况，其他 m − 1 个收缩串的贡献可以合并并计入 factor 属性。
 
 ```python
-def _contract_fop_fgroup(fop: FieldOperator , fgroup: FOpGroup) -> List[
+def _contract_fop_fgroup(fop: FieldOperator, fgroup: FOpGroup) -> List[
     String]:
     degeneracy = len(fgroup)
     op = fgroup[0]
-    if not commutable(fop , op):
-        yield _fgroup2str(fgroup[1:] , degeneracy , [Delta([fop , op])])
-    yield String([fgroup] ,( -1)**degeneracy , remaining=[fop])
-def _fgroup2str(fgroup , factor , deltas , remaining=None):
+    if not commutable(fop, op):
+        yield _fgroup2str(fgroup[1:], degeneracy, [Delta([fop, op])])
+    yield String([fgroup],( -1)**degeneracy, remaining=[fop])
+def _fgroup2str(fgroup, factor, deltas, remaining=None):
     if len (fgroup) > 1:
         operators = [FOpGroup(fgroup)]
      else:
@@ -907,19 +907,19 @@ def _fgroup2str(fgroup , factor , deltas , remaining=None):
 ```
 
 ```python
-    return String(operators , factor , deltas , remaining)
+    return String(operators, factor, deltas, remaining)
 ```
 输出串中的算符可能包含 FOpGroup 的一个子集。该子集仍可能构成一个 FOpGroup 对象。这里引入辅助函数 _fgroup2str 来处理 FOpGroup 的子集，它根据该子集构造适当的 String 对象。
 _contract_fgroup_fop 函数与 _contract_fop_fgroup 类似。它的输出也包含一个 m 重简并的串，对应于 FOpGroup 中的 m 个算符与一个 FieldOperator 对象之间的收缩。
 
 ```python
-def _contract_fgroup_fop(fgroup: FOpGroup , fop: FieldOperator) -> List[
+def _contract_fgroup_fop(fgroup: FOpGroup, fop: FieldOperator) -> List[
     String]:
     degeneracy = len(fgroup)
-    op = fgroup[ -1]
-    if not commutable(fop , op):
-        yield _fgroup2str([] , degeneracy , [Delta([op , fop])] , fgroup[: -1])
-    yield String([fop] ,( -1)**degeneracy , remaining=[fgroup])
+    op = fgroup[-1]
+    if not commutable(fop, op):
+        yield _fgroup2str([], degeneracy, [Delta([op, fop])], fgroup[:-1])
+    yield String([fop],(-1)**degeneracy, remaining=[fgroup])
 ```
 _contract_fgroup_fgroup 函数更复杂。由于两个 FOpGroup 中各有多个 FieldOperator 对象，它可能产生多种收缩串。然而，我们可以通过直接考虑收缩输出的最终状态来简化实现。由于 FOpGroup 内部的置换对称性，收缩输出最多可以包含 t 个不同的收缩串，其中 t 是不超过输入 FOpGroup 对象大小的最大整数。这 t 个不同的收缩串可以通过 Delta 对象的数量加以区分，数量从一个到 t 个不等。对于每个收缩串，我们可以使用最简单的收缩模式构造它，然后赋予适当的乘数以计入简并度（degeneracy）。简并度等于形成 Delta 对象的不同可能组合的数量。例如，包含 k 个 Delta 对象的收缩串可以涉及
 
@@ -932,47 +932,47 @@ n
 乘以 k!。
 
 ```python
-def _contract_fgroup_fgroup(fgroup1: FOpGroup , fgroup2: FOpGroup) -> List[
+def _contract_fgroup_fgroup(fgroup1: FOpGroup, fgroup2: FOpGroup) -> List[
     String]:
     degen1 = len(fgroup1)
     degen2 = len(fgroup2)
-    if not commutable(fgroup1[0] , fgroup2[0]):
-        for k in range (1 , min(degen1 , degen2)+1):
-            deltas = [Delta([x1 , x2])
-                    for x1 ,x 2 in zip (reversed(fgroup1[:k]), fgroup2[:k])]
-            factor = (math.comb(degen1 ,k ) * math.comb(degen2 ,k )
-                      * math.factorial(k) * ( -1)**((degen1 -k)*degen2))
-            yield _fgroup2str(fgroup2[k:] , factor , deltas , fgroup1[k:])
+    if not commutable(fgroup1[0], fgroup2[0]):
+        for k in range (1, min(degen1, degen2)+1):
+            deltas = [Delta([x1, x2])
+                    for x1,x 2 in zip (reversed(fgroup1[:k]), fgroup2[:k])]
+            factor = (math.comb(degen1,k ) * math.comb(degen2,k )
+                      * math.factorial(k) * (-1)**((degen1-k)*degen2))
+            yield _fgroup2str(fgroup2[k:], factor, deltas, fgroup1[k:])
 ```
 
 ```text
-    yield String([fgroup2] ,( -1)**(degen1*degen2), remaining=[fgroup1])
+    yield String([fgroup2],( -1)**(degen1*degen2), remaining=[fgroup1])
 ```
 在 FieldOperator 和 FOpGroup 的四个收缩函数基础上，我们可以实现 _contract_fop_string 函数。
 
 ```python
-def _contract_fop_string(fop: Union[FieldOperator , FOpGroup] , string:
+def _contract_fop_string(fop: Union[FieldOperator, FOpGroup], string:
     String) -> List[String]:
     operators = string.operators
     remaining = string.remaining
     factor = string.factor
     deltas = string.deltas
     if len (operators) == 0:
-        yield String(operators , factor , deltas , [fop]+remaining)
+        yield String(operators, factor, deltas, [fop]+remaining)
         return
     op = operators[0]
-    match ( isinstance(fop , FOpGroup), isinstance(op , FOpGroup)):
-        case (True , True): fcontract = _contract_fgroup_fgroup
-        case (True , False): fcontract = _contract_fgroup_fop
-        case (False , True): fcontract = _contract_fop_fgroup
-        case (False , False): fcontract = _contract_fop_fop
-    for s in fcontract(fop , op):
+    match ( isinstance(fop, FOpGroup), isinstance(op, FOpGroup)):
+        case (True, True): fcontract = _contract_fgroup_fgroup
+        case (True, False): fcontract = _contract_fgroup_fop
+        case (False, True): fcontract = _contract_fop_fgroup
+        case (False, False): fcontract = _contract_fop_fop
+    for s in fcontract(fop, op):
         if not s.remaining:
-            yield String(s.operators + operators[1:] , s.factor * factor , s.deltas + deltas , remaining)
+            yield String(s.operators + operators[1:], s.factor * factor, s.deltas + deltas, remaining)
         else:
-            substring = String(operators[1:] , s.factor * factor , s.deltas + deltas , remaining)
-            for r in _contract_fop_string(s.remaining[0] , substring):
-                yield String(s.operators + r.operators , r.factor , r.deltas , r.remaining)
+            substring = String(operators[1:], s.factor * factor, s.deltas + deltas, remaining)
+            for r in _contract_fop_string(s.remaining[0], substring):
+                yield String(s.operators + r.operators, r.factor, r.deltas, r.remaining)
 ```
 接下来构造哈密顿量（Hamiltonian）、Tˆ 算符和左矢投影算符时，我们也需要利用 FOpGroup 类纳入有关置换对称性的信息。需要注意的是，CCD 方程中的投影算符 μ 具有反对称的置换对称性。它也可以表示为反对称形式。
 
@@ -981,7 +981,7 @@ def _contract_fop_string(fop: Union[FieldOperator , FOpGroup] , string:
 []{#eq-15-025}
 
 ```python
-def _make_operator(factor , indices , label=None , symmetric=False):
+def _make_operator(factor, indices, label=None, symmetric=False):
     n= len(indices)
     assert n%2= =0
     operators_c = [Creation(x) for x in indices[:n//2].upper()]
@@ -990,56 +990,56 @@ def _make_operator(factor , indices , label=None , symmetric=False):
 ```python
     operators_a = [Annihilation(x) for x in indices[n//2:].upper()]
     if symmetric and n>2 :
-        operators = [FOpGroup(operators_c), FOpGroup(operators_a[:: -1])]
+        operators = [FOpGroup(operators_c), FOpGroup(operators_a[::-1])]
         else:
-        operators = operators_c + operators_a[:: -1]
-    tensor = Tensor(operators_c + operators_a , label)
-    return tensor , String(operators , factor)
-def hamiltonian(n , factor):
-    return _make_operator(factor , '**'*n ,f 'h{n}', symmetric=True)
+        operators = operators_c + operators_a[::-1]
+    tensor = Tensor(operators_c + operators_a, label)
+    return tensor, String(operators, factor)
+def hamiltonian(n, factor):
+    return _make_operator(factor, '**'*n,f 'h{n}', symmetric=True)
 def excitation(n):
-    return _make_operator(.25 , 'V'*n+ 'O'*n ,f 'T{n}', symmetric=True)
+    return _make_operator(.25, 'V'*n+ 'O'*n ,f 'T{n}', symmetric=True)
 def deexcitation(n):
-    return _make_operator(.25 , 'O'*n+ 'V'*n ,f 'T{n}', symmetric=True)
+    return _make_operator(.25, 'O'*n+ 'V'*n ,f 'T{n}', symmetric=True)
 def bra_projector(n):
-    bra_tensor , bra = _make_operator(.25 , 'O'*n+ 'V'*n , symmetric=True)
-    return bra_tensor.indices[:: -1] , bra
+    bra_tensor, bra = _make_operator(.25, 'O'*n+ 'V'*n , symmetric=True)
+    return bra_tensor.indices[::-1], bra
 ```
 运行考虑对称性的符号程序后，我们可以得到简洁的符号输出。不难验证，结果中正确处理了哈密顿量和 Tˆ 的置换对称性。
 
 ```text
-E+ =1 . 0 * einsum("ii ->", h1_oo)
-E+ =0 . 5 * einsum("ijij ->", h2_oooo)
-E += 0.25 * einsum("jiab ,abji ->", h2_oovv , t2)
-F2 += 0.25 * einsum("abji ->baij", h2_vvoo)
-F2 += -0.5 * einsum("ac ,cbji ->abij", h1_vv , t2)
-F2 += 0.5 * einsum("ki ,abjk ->baji", h1_oo , t2)
-F2 += -1.0 * einsum("kaic ,cbjk ->abji", h2_ovov , t2)
-F2 += 0.5 * einsum("akkc ,cbji ->abij", h2_voov , t2)
-F2 += 0.125 * einsum("abcd ,cdji ->baij", h2_vvvv , t2)
-F2 += -0.5 * einsum("klli ,abjk ->baji", h2_oooo , t2)
-F2 += 0.125 * einsum("lkji ,ablk ->baij", h2_oooo , t2)
-F2 += 0.5 * einsum("lkcd ,dail ,cbjk ->abji", h2_oovv ,t 2 ,t 2 )
-F2 += -0.125 * einsum("lkcd ,dalk ,cbji ->abij", h2_oovv ,t 2 , t2)
-F2 += -0.125 * einsum("lkcd ,daji ,cblk ->abij", h2_oovv ,t 2 , t2)
-F2 += -0.125 * einsum("lkcd ,cdil ,abjk ->baji", h2_oovv ,t 2 , t2)
-F2 += 0.03125 * einsum("lkcd ,cdji ,ablk ->baij", h2_oovv ,t 2 , t2)
-F2 += -0.125 * einsum("lkcd ,abil ,cdjk ->baji", h2_oovv ,t 2 , t2)
-F2 += 0.03125 * einsum("lkcd ,ablk ,cdji ->baij", h2_oovv ,t 2 , t2)
+E+ =1 . 0 * einsum("ii->", h1_oo)
+E+ =0 . 5 * einsum("ijij->", h2_oooo)
+E += 0.25 * einsum("jiab,abji->", h2_oovv, t2)
+F2 += 0.25 * einsum("abji->baij", h2_vvoo)
+F2 += -0.5 * einsum("ac,cbji->abij", h1_vv, t2)
+F2 += 0.5 * einsum("ki,abjk->baji", h1_oo, t2)
+F2 += -1.0 * einsum("kaic,cbjk->abji", h2_ovov, t2)
+F2 += 0.5 * einsum("akkc,cbji->abij", h2_voov, t2)
+F2 += 0.125 * einsum("abcd,cdji->baij", h2_vvvv, t2)
+F2 += -0.5 * einsum("klli,abjk->baji", h2_oooo, t2)
+F2 += 0.125 * einsum("lkji,ablk->baij", h2_oooo, t2)
+F2 += 0.5 * einsum("lkcd,dail,cbjk->abji", h2_oovv,t 2,t 2 )
+F2 += -0.125 * einsum("lkcd,dalk,cbji->abij", h2_oovv,t 2, t2)
+F2 += -0.125 * einsum("lkcd,daji,cblk->abij", h2_oovv,t 2, t2)
+F2 += -0.125 * einsum("lkcd,cdil,abjk->baji", h2_oovv,t 2, t2)
+F2 += 0.03125 * einsum("lkcd,cdji,ablk->baij", h2_oovv,t 2, t2)
+F2 += -0.125 * einsum("lkcd,abil,cdjk->baji", h2_oovv,t 2, t2)
+F2 += 0.03125 * einsum("lkcd,ablk,cdji->baij", h2_oovv,t 2, t2)
 ```
 由于我们假定左矢投影算符（bra projectors）具有反对称性，这意味着在实际的CCD程序中使用F2张量之前，应先对其进行反对称化。
 
 ```text
-F2 = F2 - F2.transpose(0 ,1 ,3 ,2)
-F2 = F2 - F2.transpose(1 ,0 ,2 ,3)
+F2 = F2 - F2.transpose(0,1,3,2)
+F2 = F2 - F2.transpose(1,0,2,3)
 ```
 此外，尽管我们没有使用任何耦合簇（coupled cluster，CC）图解法来参数化正规序哈密顿量（normal-ordered Hamiltonian），仍然可以在结果中找到它的踪迹。利用双电子张量的反对称性，可以在以下代码中辨认出Fock矩阵：
 
 ```text
-F2 += -0.5 * einsum("ac ,cbji ->abij", h1_vv , t2)
-F2 += 0.5 * einsum("akkc ,cbji ->abij", h2_voov , t2)
-F2 += 0.5 * einsum("ki ,abjk ->baji", h1_oo , t2)
-F2 += -0.5 * einsum("klli ,abjk ->baji", h2_oooo , t2)
+F2 += -0.5 * einsum("ac,cbji->abij", h1_vv, t2)
+F2 += 0.5 * einsum("akkc,cbji->abij", h2_voov, t2)
+F2 += 0.5 * einsum("ki,abjk->baji", h1_oo, t2)
+F2 += -0.5 * einsum("klli,abjk->baji", h2_oooo, t2)
 ```
 在这个输出中，我们仍然观察到重复的张量收缩，它们源于不同Tˆ之间的对称性。通过重新排列t2张量并合并同类项，可以重现CCD方程(15.10)。尽管更加复杂，不同t2串之间的对称性也可以用与处理FieldOperators之间对称性类似的方式处理。本书不打算进一步讨论这种对称性。
 我们可以扩展这个符号程序，使其适用于其他量子化学方法的形式体系。

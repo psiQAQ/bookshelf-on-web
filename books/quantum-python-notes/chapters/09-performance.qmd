@@ -73,18 +73,18 @@ C/C++中相应的操作通常只消耗几个CPU周期。对于这些操作，原
 **表 9.1** Python 操作的开销估算。
 
 ```text
-Single arithmetic expr.              *, /, &, ==, abs(), ...           - 100
+Singlearithmeticexpr. *, /, &, ==, abs(), ... - 100
 ```
 
 ```text
-List comprehension                     for x in ...]                   -5 0
-Dict comprehension                    ... for x in ...}
+Listcomprehension for x in ...] -5 0
+Dictcomprehension ... for x in ...}
 ```
 
 ```text
-Enumerate                             i, _ in enumerate(...)
-zip                                   x, y in zip(xs, ys)
-Branching                            ... else ...                      -2 0
+Enumerate i, _ in enumerate(...)
+zip x, y in zip(xs, ys)
+Branching ... else ... -2 0
 ```
 
 #### 字典查找
@@ -147,12 +147,12 @@ Python中数据类型转换的开销差异很大。算术表达式中的隐式�
 程序通过小的页面与主存交互，当所需页面不在主存中时就会发生缺页（page fault）[3,4]。发生缺页时，操作系统和硬件必须执行开销很大的工作来初始化页面，可能消耗数千个CPU周期（约数微秒）。访问新分配的内存中的数据时，常常遇到缺页，例如访问由numpy.empty函数创建的数据缓冲区。填充新分配的数据缓冲区比复用先前分配的缓冲区需要更多时间。在下面的基准测试中，可以观察到向新分配的数组填充数据的开销。
 
 ```python
-In [1]: buf = np.empty((1000 ,1000 ,1000))
+In [1]: buf = np.empty((1000,1000,1000))
 In [2]: %time buf[:] = 0.0
-CPU times: user 193 ms , sys: 1.73 s , total: 1.93 s
+CPU times: user 193 ms, sys: 1.73 s, total: 1.93 s
 Wall time: 1.95 s
 In [3]: %time buf[:] = 0.0
-CPU times: user 582 ms ,s y s :0n s , total: 582 ms
+CPU times: user 582 ms,s y s :0n s, total: 582 ms
 Wall time: 581 ms
 ```
 第一次赋值触发了大量缺页，在执行数据填充操作之前频繁暂停以初始化页面。第二次测试主要涉及CPU和内存之间的数据传输，反映了内存带宽。这些测试中的开销差异可以归因于缺页的影响。
@@ -255,23 +255,23 @@ L1缓存专门针对速度进行了优化，数据索引只产生4到5个周期�
 
 ```python
 np.transpose(a).copy()
-695.31 msec task -clock # 0.999 CPUs utilized
-2 context     -switches # 0.003 K/sec
-0 cpu     -migrations # 0.000 K/sec
-6 ,039 page    -faults # 0.009 M/sec
-2 ,126 ,239 ,844 cycles # 3.058 GHz
-1 ,097 ,502 ,672 instructions # 0.52 insn per cycle
-152 ,534 ,052 branches # 219.376 M/sec
-2 ,655 ,018 branch   -misses # 1.74% of all
+695.31 msec task-clock # 0.999 CPUs utilized
+2 context -switches # 0.003 K/sec
+0 cpu -migrations # 0.000 K/sec
+6,039 page -faults # 0.009 M/sec
+2,126,239,844 cycles # 3.058 GHz
+1,097,502,672 instructions # 0.52 insn per cycle
+152,534,052 branches # 219.376 M/sec
+2,655,018 branch -misses # 1.74% of all
                         branches
 ```
 
 ```text
-228 ,338 ,188 L1   -dcache -loads # 328.398 M/sec
-182 ,549 ,765 L1   -dcache -load -misses # 79.95% of all L1    -
+228,338,188 L1 -dcache-loads # 328.398 M/sec
+182,549,765 L1 -dcache-load-misses # 79.95% of all L1 -
     dcache accesses
-80 ,043 ,333 LLC   -loads # 115.119 M/sec
-15 ,678 ,968 LLC   -load -misses # 19.59% of all LL           -
+80,043,333 LLC -loads # 115.119 M/sec
+15,678,968 LLC -load-misses # 19.59% of all LL -
     cache accesses
 ```
 在这次性能分析中，我们观察到较低的IPC（标记为insn per cycle）和极高的L1缓存未命中率。显然，这样的矩阵转置操作是一项内存受限任务。我们将在第9.2.4节更详细地探讨perf。
@@ -293,7 +293,7 @@ np.transpose(a).copy()
 如前所示，使用朴素实现转置矩阵，
 
 ```text
-a.T.copy(order= 'C ')
+a.T.copy(order='C')
 ```
 对大矩阵而言不利于缓存。在对10000 × 10000的测试中，L1缓存的未命中率约为80%。这一高缓存未命中率表明CPU必须频繁从内存访问数据。
 循环分块（loop tiling）是解决高缓存未命中率问题的有效技术。循环分块将巨大的矩阵划分为较小的块，并在每个小块内执行矩阵转置。如果单个块能放入缓存，就很可能在缓存中找到该块内的数据。这提高了缓存利用率并降低了内存访问延迟。
@@ -302,15 +302,15 @@ a.T.copy(order= 'C ')
 ```python
 def transpose(a):
     block_size = 200
-    arow , acol = a.shape
-    out = np.empty((acol ,arow), a.dtype)
-    for c0 in range (0 , acol , block_size):
-        c1 = min(acol , c0 + block_size)
-        for r0 in range (0 , arow , block_size):
-            r1 = min(arow , r0 + block_size)
-            out[c0:c1 ,r0:r1] = a[r0:r1 ,c0:c1].T
+    arow, acol = a.shape
+    out = np.empty((acol,arow), a.dtype)
+    for c0 in range (0, acol, block_size):
+        c1 = min(acol, c0 + block_size)
+        for r0 in range (0, arow, block_size):
+            r1 = min(arow, r0 + block_size)
+            out[c0:c1,r0:r1] = a[r0:r1,c0:c1].T
     return out
-a = np.ones((10000 , 10000))
+a = np.ones((10000, 10000))
 b = a.T.copy( 'C') # 479 ms
 b = transpose(a) # 311 ms
 ```
@@ -334,58 +334,58 @@ import numpy as np
 from transpose import transpose
 import numba
 @numba.njit
-def matmul_nn_v1(a , b):
-    arow , acol = a.shape
-    brow , bcol = b.shape
+def matmul_nn_v1(a, b):
+    arow, acol = a.shape
+    brow, bcol = b.shape
     assert acol == brow
-    c = np.zeros((arow , bcol))
+    c = np.zeros((arow, bcol))
     for i in range (arow):
         for j in range (bcol):
             c_ij = 0
             for k in range (acol):
-c_ij += a[i ,k] * b[k ,j] # (1)
-            c[i ,j] = c_ij
+c_ij += a[i,k] * b[k,j] # (1)
+            c[i,j] = c_ij
     return c
-def matmul_nn_v2(a , b):
-    arow , acol = a.shape
-    brow , bcol = b.shape
+def matmul_nn_v2(a, b):
+    arow, acol = a.shape
+    brow, bcol = b.shape
     assert acol == brow
 b_t = transpose(b) #(2)
-    return matmul_nt(a , b_t)
+    return matmul_nt(a, b_t)
 ```
 
 ```python
 @numba.njit(cache=True)
-def matmul_nt(a , b):
-    arow , acol = a.shape
-    brow , bcol = b.shape
+def matmul_nt(a, b):
+    arow, acol = a.shape
+    brow, bcol = b.shape
     assert acol == bcol
-    c = np.zeros((arow , brow))
+    c = np.zeros((arow, brow))
     for i in range (arow):
         for j in range (brow):
             c_ij = 0
             for k in range (acol):
-                c_ij += a[i ,k] * b[j ,k]
-            c[i ,j] = c_ij
+                c_ij += a[i,k] * b[j,k]
+            c[i,j] = c_ij
     return c
 @numba.njit
-def matmul_nn_v3(a , b):
-    arow , acol = a.shape
-    brow , bcol = b.shape
+def matmul_nn_v3(a, b):
+    arow, acol = a.shape
+    brow, bcol = b.shape
     assert acol == brow
-    c = np.zeros((arow , bcol))
+    c = np.zeros((arow, bcol))
     for i in range (arow):
         for k in range (acol):
-a_ik = a[i ,k] # (3)
+a_ik = a[i,k] # (3)
             for j in range (bcol):
-                c[i ,j] += a_ik * b[k ,j]
+                c[i,j] += a_ik * b[k,j]
     return c
 m=n=k= 5000
-a = np.random.rand(m ,k )
-b = np.random.rand(k ,n )
-c = matmul_nn_v1(a ,b ) # 215 s
-c = matmul_nn_v2(a ,b ) # 142 s
-c = matmul_nn_v3(a ,b ) # 77.4 s
+a = np.random.rand(m,k )
+b = np.random.rand(k,n )
+c = matmul_nn_v1(a,b ) # 215 s
+c = matmul_nn_v2(a,b ) # 142 s
+c = matmul_nn_v3(a,b ) # 77.4 s
 ```
 在matmul_nn_v1中，我们在第(1)行使用临时变量c_ij表示矩阵元素c[i,j]。这个局部变量减少了在最内层循环中访问矩阵元素c[i,j]的开销。在这个函数中，矩阵b以不连续的方式访问，导致内存访问模式效率低下。每次载入b[k,j]时，都会传输包含8个元素的整个缓存行，尽管实际上只需要一个元素。访问后续元素b[k+1,j]时，它可能不在之前为b[k,j]载入的缓存行中。除非包含b[k+1,j-1]的缓存行仍然可用，否则访问b[k+1,j]将导致
 缓存未命中，并从主存传输新的缓存行，增加计算延迟。
@@ -402,27 +402,27 @@ c = matmul_nn_v3(a ,b ) # 77.4 s
 
 ```python
 @numba.njit(cache=True)
-def matmul_nn_tiling(a , b):
+def matmul_nn_tiling(a, b):
 ```
 
 ```python
-    ' ' 'Matrix multiplication a * b with loop tiling' ' '
-    arow , acol = a.shape
-    brow , bcol = b.shape
+    '''Matrix multiplication a * b with loop tiling'''
+    arow, acol = a.shape
+    brow, bcol = b.shape
     assert acol == brow
-    c = np.zeros((arow , bcol))
+    c = np.zeros((arow, bcol))
     block_size = 200
-    for i0 in range (0 , arow , block_size):
-        i1 = min(i0 + block_size , arow)
-        for j0 in range (0 , bcol , block_size):
-            j1 = min(j0 + block_size , bcol)
-            for k0 in range (0 , acol , block_size):
-                k1 = min(k0 + block_size , acol)
-                for i in range (i0 , i1):
-                    for k in range (k0 , k1):
-            a_ik = a[i ,k]
-                        for j in range (j0 , j1):
-                            c[i ,j] += a_ik * b[k ,j]
+    for i0 in range (0, arow, block_size):
+        i1 = min(i0 + block_size, arow)
+        for j0 in range (0, bcol, block_size):
+            j1 = min(j0 + block_size, bcol)
+            for k0 in range (0, acol, block_size):
+                k1 = min(k0 + block_size, acol)
+                for i in range (i0, i1):
+                    for k in range (k0, k1):
+            a_ik = a[i,k]
+                        for j in range (j0, j1):
+                            c[i,j] += a_ik * b[k,j]
     return c
 ```
 
@@ -433,13 +433,13 @@ def matmul_nn_tiling(a , b):
 
 ```python
 from cython.parallel import prange
-def build_d(fciwfn , norb , lookup):
-    ma , mb = fciwfn.shape
-    d = np.zeros((norb ,norb ,ma ,mb))
-    for I in prange(mb , nogil=True , schedule= 'dynamic', chunksize=1):
-        for a ,i ,J , sign in lookup[I]:
+def build_d(fciwfn, norb, lookup):
+    ma, mb = fciwfn.shape
+    d = np.zeros((norb,norb,ma,mb))
+    for I in prange(mb, nogil=True, schedule= 'dynamic', chunksize=1):
+        for a,i ,J , sign in lookup[I]:
             for K in range (ma):
-                d[i ,a ,K ,I] += sign * fciwfn[K ,J]
+                d[i,a,K,I] += sign * fciwfn[K,J]
     return d
 ```
 对变量I实施多核并行时，d张量最后一个索引的缓存行由多个CPU核心共享。如果一个线程更新d张量，可能需要执行缓存同步，以确保所有核心看到一致的数据。
@@ -447,13 +447,13 @@ def build_d(fciwfn , norb , lookup):
 
 ```python
 from cython.parallel import prange
-def build_d(fciwfn , norb , lookup):
-    ma , mb = fciwfn.shape
-    d = np.zeros((norb ,norb ,ma ,mb))
-    for K in prange(ma , nogil=True , schedule= 'dynamic', chunksize=1):
+def build_d(fciwfn, norb, lookup):
+    ma, mb = fciwfn.shape
+    d = np.zeros((norb,norb,ma,mb))
+    for K in prange(ma, nogil=True, schedule= 'dynamic', chunksize=1):
         for I in prange(mb):
-            for a ,i ,J , sign in lookup[I]:
-                d[i ,a ,K ,I] += sign * fciwfn[K ,J]
+            for a,i ,J , sign in lookup[I]:
+                d[i,a,K,I] += sign * fciwfn[K,J]
     return d
 ```
 
@@ -493,22 +493,22 @@ C可以通过以下施密特正交化过程获得
 @profile
 def schmidt_orth(s):
     n = s.shape[0]
-    cs = np.zeros((n , n))
+    cs = np.zeros((n, n))
     for j in range (n):
-        fac = s[j ,j]
+        fac = s[j,j]
         for k in range (j):
-            dot_kj = np.dot(cs[: ,k] , s[: ,j])
-            cs[: ,j] -= dot_kj * cs[: ,k]
+            dot_kj = np.dot(cs[:,k], s[:,j])
+            cs[:,j] -= dot_kj * cs[:,k]
             fac -= dot_kj * dot_kj
 ```
 
 ```python
         if fac <= 0:
             raise RuntimeError(f'schmidt_orth fail. {j=} {fac=}' )
-        fac = fac ** -.5
-        cs[j ,j] = fac
+        fac = fac **-.5
+        cs[j,j] = fac
         for i in range (j):
-            cs[i ,j] *= fac
+            cs[i,j] *= fac
     return cs
 ```
 
@@ -530,17 +530,17 @@ def schmidt_orth(s):
 In [1]: from schmidt import schmidt_orth
 In [2]: s = np.eye(500)
 In [3]: %time c = schmidt_orth(s)
-CPU times: user 586 ms , sys: 20.1 ms , total: 606 ms
+CPU times: user 586 ms, sys: 20.1 ms, total: 606 ms
 Wall time: 588 ms
 In [4]: %timeit c = schmidt_orth(s)
-562 ms                                                      , 1 loop each)
+562 ms , 1 loop each)
 ```
 
 ```text
 In [5]: %%time
         for _ in range (10):
             schmidt_orth(s)
-CPU times: user 5.6 s , sys: 8.04 ms , total: 5.61 s
+CPU times: user 5.6 s, sys: 8.04 ms, total: 5.61 s
 Wall time: 5.6 s
 ```
 %time魔法命令的输出显示标记为CPU时间和墙钟时间的计时信息。CPU时间表示处理器执行程序所花费的实际时间。它不包括等待I/O操作的时间和CPU空闲的时段。CPU时间一词指处理器执行程序所花费的实际时间。它不包括等待I/O操作的时间或CPU空闲的时段。另一方面，墙钟时间表示现实世界中经过的总时间，包括花在I/O操作上的时间和任何其他延迟。此外，CPU时间的信息包括：
@@ -574,14 +574,14 @@ In [6]: %%prun
    Ordered by: internal time
 ncalls tottime percall cumtime percall filename:lineno(function)
 5 2.179 0.436 3.180 0.636 schmidt.py:3(schmidt_orth)
-623750 0.729 0.000 0.729 0.000 {built            -in method numpy.core.
+623750 0.729 0.000 0.729 0.000 {built -in method numpy.core.
     _multiarray_umath.implement_array_function}
 623750 0.218 0.000 1.001 0.000 <__array_function__ internals
     >:177(dot)
 623750 0.053 0.000 0.053 0.000 multiarray.py:740(dot)
-5 0.000 0.000 0.000 0.000 {built            -in method numpy.zeros}
-1 0.000 0.000 3.181 3.181 <string            >:1( <module >)
-1 0.000 0.000 3.181 3.181 {built            -in method builtins.
+5 0.000 0.000 0.000 0.000 {built -in method numpy.zeros}
+1 0.000 0.000 3.181 3.181 <string >:1(<module>)
+1 0.000 0.000 3.181 3.181 {built -in method builtins.
     exec}
 1 0.000 0.000 0.000 0.000 {method 'disable' of '_lsprof
     .Profiler' objects}
@@ -600,47 +600,47 @@ def schmidt_orth(s):
 然后执行以下命令：
 
 ```bash
-$  kernprof -lv schmidt_v1.py
+$ kernprof -lv schmidt_v1.py
 ```
 命令行选项-v使程序执行后显示性能统计信息。行性能分析器将分析数据保存在以.lprof为后缀的文件中。要查看已有的性能统计信息，可以使用line_profiler模块查看.lprof文件：
 
 ```bash
-$  python -m line_profiler schmidt_v1.py.lprof
+$ python -m line_profiler schmidt_v1.py.lprof
 ```
 在Jupyter notebook中，可以加载line_profiler模块并执行%lprun魔法命令来分析函数。%lprun的-f选项指定要分析的函数。可以指定多个-f选项，同时分析多个函数。以下以schmidt_orth函数为例说明如何使用行性能分析器：
 
 ```python
 In [7]: %load_ext line_profiler
 In [8]: %lprun -f schmidt_orth schmidt_orth(s)
-Timer unit: 1e -09 s
+Timer unit: 1e-09 s
 Total time: 0.812276 s
-File: /home/ubuntu/code -examples/schmidt/schmidt_v1.py
+File: /home/ubuntu/code-examples/schmidt/schmidt_v1.py
 Function: schmidt_orth at line 3
 Line # Hits Time Per Hit % Time Line Contents
 ==============================================================
 3 def schmidt_orth(s):
 4 1 5043.0 5043.0 0.0 n = s.shape[0]
-5 1 263741.0 263741.0 0.0 cs = np.zeros((n                      ,n ) )
+5 1 263741.0 263741.0 0.0 cs = np.zeros((n ,n ) )
 6 500 81657.0 163.3 0.0 for j in range(n):
-7 500 154634.0 309.3 0.0 fac = s[j                           ,j]
+7 500 154634.0 309.3 0.0 fac = s[j ,j]
 8 124750 20412051.0 163.6 2.5 for k in range(j):
 ```
 
 ```python
 9 124750 327342723.0 2624.0 40.3 dot_kj = np.
-    dot(cs[: ,k] , s[: ,j])
-10 124750 362190394.0 2903.3 44.6 cs[:                       ,j] -=
-    dot_kj * cs[: ,k]
+    dot(cs[:,k], s[:,j])
+10 124750 362190394.0 2903.3 44.6 cs[: ,j] -=
+    dot_kj * cs[:,k]
 11 124750 39026926.0 312.8 4.8 fac -= dot_kj
     * dot_kj
     12
 13 500 203630.0 407.3 0.0 if fac <= 0:
 14 raise
-    RuntimeError(f 'schmidt_orth fail. {j=} {fac=} ')
-15 500 209276.0 418.6 0.0 fac = fac **                          -.5
-16 500 163808.0 327.6 0.0 cs[j                           ,j] = fac
+    RuntimeError(f'schmidt_orth fail. {j=} {fac=}')
+15 500 209276.0 418.6 0.0 fac = fac ** -.5
+16 500 163808.0 327.6 0.0 cs[j ,j] = fac
 17 124750 17723304.0 142.1 2.2 for i in range(j):
-18 124750 44498893.0 356.7 5.5 cs[i                          ,j] *= fac
+18 124750 44498893.0 356.7 5.5 cs[i ,j] *= fac
 19 1 131.0 131.0 0.0 return cs
 ```
 逐行性能分析器（line profiler）的输出相当直观。它显示每行代码的总耗时、平均耗时和相对耗时。在这些指标中，平均耗时（标为 Per Hit）和相对耗时（标为 % Time）尤其有用。
@@ -648,12 +648,12 @@ Line # Hits Time Per Hit % Time Line Contents
 运行缓慢的 Python 语句的耗时是否符合成本估计？这里的 Per Hit 时间可以帮助我们进行分析。如 Timer unit: 1e-09 s 一行所示，Per Hit 时间以纳秒为单位。在这个例子中，语句
 
 ```python
-dot_kj = np.dot(cs[: ,k] , s[: ,j])
+dot_kj = np.dot(cs[:,k], s[:,j])
 ```
 和
 
 ```text
-cs[: ,j] -= dot_kj * cs[: ,k]
+cs[:,j]-= dot_kj * cs[:,k]
 ```
 合计消耗了总执行时间的 85%。Per Hit 时间表明，这两个 NumPy 语句的平均执行时间分别为 2600 和 2900 纳秒。考虑到此例的问题规模为 500，每个元素的成本约为 5.5 纳秒，接近 16 个 CPU 周期。这比 NumPy ufunc 语句的成本估计（3–5 个 CPU 周期）慢得多。造成这一差异的原因可能有：
 
@@ -665,18 +665,18 @@ cs[: ,j] -= dot_kj * cs[: ,k]
 ```python
                                         def schmidt_orth(s):
                                         n = s.shape[0]
-                                        cs = np.zeros((n , n))
+                                        cs = np.zeros((n, n))
                                         for j in range (n):
-                                        fac = s[j ,j]
+                                        fac = s[j,j]
                                         for k in range (j):
-dot_kj = np.dot(cs[k] , s[j]) # (1)
+dot_kj = np.dot(cs[k], s[j]) # (1)
 cs[j] -= dot_kj * cs[k] # (2)
             fac -= dot_kj * dot_kj
                                         if fac <= 0:
             raise RuntimeError(f'schmidt_orth fail. {j=} {fac=}' )
-                                        fac = fac ** -.5
-                                        cs[j ,j] = fac
-        cs[j ,:j] *= fac
+                                        fac = fac **-.5
+                                        cs[j,j] = fac
+        cs[j,:j] *= fac
     return cs.T
 ```
 接下来，我们使用一个包含 2000 × 2000 个元素的重叠矩阵对这个函数进行性能分析。第 (1) 行和第 (2) 行语句的 Per Hit 时间为 3000–3200 纳秒。每个元素的成本降至 5 个 CPU 周期，与 NumPy 函数的成本估计一致。这一成本表明，除非使用 NumPy ufunc 以外的技术，否则已没有进一步优化的空间。
@@ -694,7 +694,7 @@ cs[j] -= dot_kj * cs[k] # (2)
 采样性能分析器 py-spy [10] 同时支持 Python 代码和 C/C++ 扩展。例如，要分析 schmidt_orth 程序，我们使用以下命令。
 
 ```bash
-$p y -spy record -o profile.svg python schmidt_v2.py
+$p y-spy record -o profile.svg python schmidt_v2.py
 ```
 选项 -o profile.svg 要求将性能分析结果保存为文件名为 profile.svg 的火焰图（flame graph，图 9.1）。
 
@@ -705,13 +705,13 @@ $p y -spy record -o profile.svg python schmidt_v2.py
 性能分析图便于找出耗时较多的函数。例如，对于 schmidt_orth 函数，schmidt_v2.py 文件中的两行代码分别占总计算时间的 38% 和 51%。相对于 schmidt_orth 函数占据的 92% 耗时，这两行合计占该函数执行时间的 95%。这一时间比例高于 line-profiler 报告的结果。两者的差异很大程度上可归因于
 
 ```text
-line -profiler tool.
+line-profilertool.
 ```
 要分析 Python 中的 C/C++ 代码，必须使用 --native 选项执行 py-spy 性能分析器。与 Python 的输出类似，性能分析图可以突出显示 C 或 C++ 源代码中的特定行。
 的一个强大功能是能够分析正在运行的 Python 程序。我们可以使用以下命令将 py-spy 性能分析器附加到指定进程：
 
 ```bash
-$  py -spy record -o profile.svg --pid <PID >
+$ py-spy record -o profile.svg --pid <PID>
 ```
 收集足够的数据后，可以按 Ctrl-C 中断性能分析过程，而不终止正在运行的进程。
 
@@ -721,32 +721,32 @@ perf 性能分析器是分析 C/C++ 代码性能的强大工具 [11]。在大多
 识别慢代码的功能与 py-spy record --native 提供的功能类似。以 schmidt_orth 函数为例，以下命令分析调用栈并将采样保存到 perf.data 文件中。
 
 ```bash
-$  perf record python schmidt_v2.py
+$ perf record python schmidt_v2.py
 ```
 要查看性能分析结果，可以使用 perf report 或 perf annotate 命令。perf report 命令以文本格式显示每个函数的采样计数，概览执行最频繁的函数。另一方面，perf annotate 命令可以将采样计数归属到源代码的特定行。
 以下是 perf report 的输出示例：
 
 ```text
-# Samples: 42K of event 'cycles ' Event count (approx.): 37014407361
+# Samples: 42K of event 'cycles' Event count (approx.): 37014407361
                                         #
 # Overhead Command Shared Object
     Symbol
 # ........ ....... .................................................
     ...................................................
                                         #
-15.91% python libopenblas64_p   -r0 -15028c96.3.21.so [.]
+15.91% python libopenblas64_p -r0-15028c96.3.21.so [.]
      dot_compute
-7.59% python _multiarray_umath.cpython   -310 -x86_64 -linux -gnu.so [.]
+7.59% python _multiarray_umath.cpython -310-x86_64-linux-gnu.so [.]
      DOUBLE_subtract_AVX512F
-6.59% python _multiarray_umath.cpython   -310 -x86_64 -linux -gnu.so [.]
+6.59% python _multiarray_umath.cpython -310-x86_64-linux-gnu.so [.]
      DOUBLE_multiply_AVX512F
 6.19% python python3.10 [.]
      _PyEval_EvalFrameDefault
-3.37% python _multiarray_umath.cpython   -310 -x86_64 -linux -gnu.so [.]
+3.37% python _multiarray_umath.cpython -310-x86_64-linux-gnu.so [.]
      ufunc_generic_fastcall
-2.08% python _multiarray_umath.cpython   -310 -x86_64 -linux -gnu.so [.]
+2.08% python _multiarray_umath.cpython -310-x86_64-linux-gnu.so [.]
      PyArray_NewFromDescr_int
-1.87% python _multiarray_umath.cpython   -310 -x86_64 -linux -gnu.so [.]
+1.87% python _multiarray_umath.cpython -310-x86_64-linux-gnu.so [.]
      PyArray_DiscoverDTypeAndShape_Recursive
 [...]
 ```
@@ -760,28 +760,28 @@ dot_compute 函数由 np.dot 函数调用；line-profiler 和 py-spy 显示，�
 perf 的性能分析结果也可以使用火焰图可视化（见图 9.2）。这需要使用 -g 选项记录采样。默认情况下，perf record 只记录调用栈上函数的采样。配置 -g 选项后，perf record 还会收集调用链中所有子函数的采样。然后，我们可以使用开源工具 FlameGraph [12] 从 perf.data 文件生成火焰图：
 
 ```bash
-$  perf record -g python schmidt_v2.py
-$  git clone https://github.com/brendangregg/FlameGraph
-$  perf script | FlameGraph/stackcollapse -perf.pl > out.perf
-$  cat out.perf | FlameGraph/flamegraph.pl > perf.svg
+$ perf record -g python schmidt_v2.py
+$ git clone https://github.com/brendangregg/FlameGraph
+$ perf script | FlameGraph/stackcollapse -perf.pl > out.perf
+$ cat out.perf | FlameGraph/flamegraph.pl > perf.svg
 ```
 现在我们来查看 perf 提供的 CPU 利用率统计数据。这些统计数据表明程序利用可用 CPU 资源的效率。运行
 
 ```bash
-$  perf stat python schmidt_v2.py '
+$ perf stat python schmidt_v2.py '
 ```
 可以得到以下统计数据：
 
 ```text
-Performance counter stats for 'python schmidt_v2.py ':
-11 ,295.77 msec task -clock # 0.998 CPUs utilized
-52 context     -switches # 0.005 K/sec
-3 cpu     -migrations # 0.000 K/sec
-22 ,369 page    -faults # 0.002 M/sec
-34 ,860 ,872 ,792 cycles # 3.086 GHz
-56 ,693 ,690 ,277 instructions # 1.63 insn per cycle
-11 ,688 ,583 ,612 branches # 1034.776 M/sec
-26 ,498 ,322 branch   -misses # 0.23% of all
+Performance counter stats for 'python schmidt_v2.py':
+11,295.77 msec task-clock # 0.998 CPUs utilized
+52 context -switches # 0.005 K/sec
+3 cpu -migrations # 0.000 K/sec
+22,369 page -faults # 0.002 M/sec
+34,860,872,792 cycles # 3.086 GHz
+56,693,690,277 instructions # 1.63 insn per cycle
+11,688,583,612 branches # 1034.776 M/sec
+26,498,322 branch -misses # 0.23% of all
     branches
 ```
 
@@ -794,30 +794,30 @@ Performance counter stats for 'python schmidt_v2.py ':
 perf stat 命令提供多种事件的统计数据，可以使用 perf list 命令列出这些事件。除了上述默认配置下的统计数据，还可以使用 -d 和 -e 选项在性能分析输出中加入其他指标。例如，运行命令
 
 ```bash
-$  perf stat -d -d -e instructions ,L1 -dcache -stores ,L1 -dcache -store -misses , LLC -stores ,LLC -store -misses python schmidt_v2.py
+$ perf stat -d -d -e instructions ,L1-dcache-stores,L1-dcache-store-misses, LLC-stores,LLC-store-misses python schmidt_v2.py
 ```
 可以得到以下输出：
 
 ```text
- Performance counter stats for 'python schmidt_v2.py ':
-56 ,793 ,613 ,373 instructions
-9 ,362 ,101 ,055 L1  -dcache -stores
-<not supported >L 1    -dcache -store -misses
-600 ,183 LLC    -stores
-201 ,100 LLC    -store -misses
-16 ,468 ,021 ,779 L1  -dcache -loads
-4 ,810 ,295 ,651 L1  -dcache -load -misses # 29.21% of all L1    -
+ Performance counter stats for 'python schmidt_v2.py':
+56,793,613,373 instructions
+9,362,101,055 L1 -dcache-stores
+<not supported>L 1 -dcache-store-misses
+600,183 LLC -stores
+201,100 LLC -store-misses
+16,468,021,779 L1 -dcache-loads
+4,810,295,651 L1 -dcache-load-misses # 29.21% of all L1 -
     dcache accesses
-148 ,302 ,646 LLC   -loads
-60 ,267 ,214 LLC   -load -misses # 40.64% of all LL           -
+148,302,646 LLC -loads
+60,267,214 LLC -load-misses # 40.64% of all LL -
     cache accesses
-<not supported >L 1    -icache -loads
-2 ,777 ,017 ,686 L1  -icache -load -misses
-16 ,576 ,195 ,387 dTLB  -loads
-7 ,306 ,971 dTLB   -load -misses # 0.04% of all dTLB
+<not supported>L 1 -icache-loads
+2,777,017,686 L1 -icache-load-misses
+16,576,195,387 dTLB -loads
+7,306,971 dTLB -load-misses # 0.04% of all dTLB
     cache accesses
-144 ,804 ,462 iTLB   -loads
-137 ,492 iTLB    -load -misses # 0.09% of all iTLB
+144,804,462 iTLB -loads
+137,492 iTLB -load-misses # 0.09% of all iTLB
     cache accesses
       11.486423819 seconds time elapsed
 ```
@@ -833,9 +833,9 @@ $  perf stat -d -d -e instructions ,L1 -dcache -stores ,L1 -dcache -store -misse
 - L1 缓存的效率，包括事件
 
 ```text
--    -dcache -load -misses ,
--    -dcache -store -misses ,
--    -icache -load -misses .
+- -dcache-load-misses,
+- -dcache-store-misses,
+- -icache-load-misses.
 ```
 L1-dcache-loads 和 L1-dcache-stores 指标反映访问数据的总体成本。L1 缓存未命中包括数据缓存未命中和指令缓存未命中。当 L1 缓存未命中时，必须从 L2 缓存获取数据，其延迟超过 10 个周期。较高的缓存未命中率是 CPU 利用率不佳的信号。
 
@@ -884,7 +884,7 @@ In [2]: dis.dis( 'x * 2')
 TARGET(LOAD_FAST) {
     PyObject *value = GETLOCAL(oparg);
     if (value == NULL) {
-        format_exc_check_arg(PyExc_UnboundLocalError , UNBOUNDLOCAL_ERROR_MSG , PyTuple_GetItem(co ->co_varnames , oparg));
+        format_exc_check_arg(PyExc_UnboundLocalError, UNBOUNDLOCAL_ERROR_MSG, PyTuple_GetItem(co->co_varnames, oparg));
         goto error;
     }
     Py_INCREF(value);
@@ -899,7 +899,7 @@ LOAD_FAST 的核心是 GETLOCAL 宏，它被展开为一个简单的数组索引
 In [1]: %%timeit
         for _ in range (1000000):
             pass
-21.1 ms                                                      , 10 loops
+21.1 ms , 10 loops
     each)
 ```
 然后测试实际操作：
@@ -910,7 +910,7 @@ In [2]: %%timeit
         for _ in range (1000000):
             pass
                                         x * 2
-48.5 ms                                                      , 10 loops
+48.5 ms , 10 loops
     each)
 ```
 两次测试的差值代表执行一百万次 x * 2 的成本。总耗时为 27.4 毫秒，在 CPU 时钟频率为 3.1 GHz 的计算机上相当于 8500 万个 CPU 周期。扣除 LOAD_FAST 和 LOAD_CONST 指令消耗的 30–40 个 CPU 周期后，我们得到算术指令 BINARY_MULTIPLY 的粗略估计成本，即 40–50 个 CPU 周期。
@@ -926,23 +926,23 @@ In [2]: %%timeit
 
 ```text
 # Recommended:
-for i ,x in enumerate (a_list):
+for i,x in enumerate (a_list):
 # Not recommended:
 for i in range (len(a_list)):
 ```
 根据两种方法反汇编后的字节码可以清楚地看到，enumerate 函数只需要一条 UNPACK_SEQUENCE 指令即可同时获得 i 和 x，而使用范围索引的版本需要两次加载操作和一次索引操作。
 
 ```text
-# for i , x in enumerate(a_list):
+# for i, x in enumerate(a_list):
 # ...
-> > 8 FOR_ITER 4 (to 18)
+>> 8 FOR_ITER 4 (to 18)
 10 UNPACK_SEQUENCE 2
 12 STORE_NAME 2 (i)
 14 STORE_NAME 3 (x)
 16 JUMP_ABSOLUTE 4 (to 8)
 # for i in range(len(a_list)):
 # x = a_list[i] ...
-> > 12 FOR_ITER 6 (to 26)
+>> 12 FOR_ITER 6 (to 26)
 14 STORE_NAME 3 (i)
 3 16 LOAD_NAME 2 (a_list)
 18 LOAD_NAME 3 (i)
@@ -954,7 +954,7 @@ for i in range (len(a_list)):
 
 ```text
 # Recommended:
-for x ,y in zip (list1 , list2):
+for x,y in zip (list1, list2):
 # Not recommended:
 for i in range (len(list1)):
     x = list1[i]
@@ -993,7 +993,7 @@ for x in some_list:
 # Recommended:
 result = {k: func(k) for k in a_list}
 # Not recommended:
-result = dict((k , func(k)) for k in a_list)
+result = dict((k, func(k)) for k in a_list)
 # Not recommended:
 result = {}
 for k in a_list
@@ -1006,7 +1006,7 @@ for k in a_list
 
 ```yaml
 # Recommended:
-result = { **dict1 , **dict2}
+result = { **dict1, **dict2}
 # Not recommended:
 result = {}
 for key in dict1:
@@ -1024,7 +1024,7 @@ Python 解释器有一条专门用于交换变量的 ROT_TWO 指令，适合这�
 
 ```text
 # Recommended:
-x ,y=y  ,x
+x,y=y ,x
 # Not recommended:
 temp = x
 x=y
@@ -1099,15 +1099,15 @@ S22 = S 22 − S 12C11C S12.) 将 schmidt_orth 函数应用于 S˜，得到系�
 def schmidt_orth_vectorized(s):
     n = s.shape[0]
     m=n/ /2
-    c_block11 = schmidt_orth(s[:m ,:m])
-    s_block12 = np.dot(c_block11.T , s[:m ,m:])
-    c_block12 = -np.dot(c_block11 , s_block12)
-    s_block22 = s[m: ,m:] - np.dot(s_block12.T , s_block12)
+    c_block11 = schmidt_orth(s[:m,:m])
+    s_block12 = np.dot(c_block11.T, s[:m,m:])
+    c_block12 = -np.dot(c_block11, s_block12)
+    s_block22 = s[m:,m:] - np.dot(s_block12.T, s_block12)
     c_block22 = schmidt_orth(s_block22)
-    cs = np.zeros((n , n))
-    cs[:m ,:m] = c_block11
-    cs[m: ,m:] = c_block22
-    cs[:m ,m:] = np.dot(c_block12 , c_block22)
+    cs = np.zeros((n, n))
+    cs[:m,:m] = c_block11
+    cs[m:,m:] = c_block22
+    cs[:m,m:] = np.dot(c_block12, c_block22)
                                         return cs
 ```
 这个向量化版本利用矩阵乘法函数 np.dot 消除了 for 循环。它的性能几乎是前一个版本 schmidt_v2.py 的两倍。line-profiler 显示，函数的瓶颈在于两次调用 schmidt_orth 来计算 C11 和 C22。为了进一步提高性能，我们可以将这两次对 schmidt_orth 的调用替换为对函数自身的调用，得到如下所示的递归版本：
@@ -1119,15 +1119,15 @@ def schmidt_orth_recursive(s):
         return schmidt_orth(s)
     n = s.shape[0]
     m=n/ /2
-    c_block11 = schmidt_orth_recursive(s[:m ,:m])
-    s_block12 = np.dot(c_block11.T , s[:m ,m:])
-    c_block12 = -np.dot(c_block11 , s_block12)
-    s_block22 = s[m: ,m:] - np.dot(s_block12.T , s_block12)
+    c_block11 = schmidt_orth_recursive(s[:m,:m])
+    s_block12 = np.dot(c_block11.T, s[:m,m:])
+    c_block12 = -np.dot(c_block11, s_block12)
+    s_block22 = s[m:,m:] - np.dot(s_block12.T, s_block12)
     c_block22 = schmidt_orth_recursive(s_block22)
-    cs = np.zeros((n , n))
-    cs[:m ,:m] = c_block11
-    cs[m: ,m:] = c_block22
-    cs[:m ,m:] = np.dot(c_block12 , c_block22)
+    cs = np.zeros((n, n))
+    cs[:m,:m] = c_block11
+    cs[m:,m:] = c_block22
+    cs[:m,m:] = np.dot(c_block12, c_block22)
     return cs
 ```
 递归函数比前一个版本（schmidt_v2.py）快近 60 倍。根据 perf stat 的结果，最显著的改进来自 L1D 缓存访问和分支指令的减少。这种提升主要归功于 NumPy 库中高效的矩阵乘法函数，它有效利用了缓存和 SIMD 指令。
@@ -1138,15 +1138,15 @@ def schmidt_orth_recursive(s):
 为提高索引效率，一种策略是通过降低数组维度来简化地址计算过程。例如，在第 9.1.5.4 节讨论的矩阵乘法程序中，使用两个下标访问矩阵元素。通过引入中间向量，矩阵索引转换为一维数组索引，可以提高程序性能。
 
 ```python
-def matmul_nn_v3(a , b):
-    arow , acol = a.shape
-    brow , bcol = b.shape
+def matmul_nn_v3(a, b):
+    arow, acol = a.shape
+    brow, bcol = b.shape
     assert acol == brow
-    c = np.zeros((arow , bcol))
+    c = np.zeros((arow, bcol))
     for i in range (arow):
         c_i = c[i]
         for k in range (acol):
-                        a_ik = a[i ,k]
+                        a_ik = a[i,k]
             b_k = b[k]
             for j in range (bcol):
                 c[j] += a_ik * b[j]
@@ -1156,36 +1156,36 @@ def matmul_nn_v3(a , b):
 
 ```text
 l k l=l k+l l
-for lx in range (1 , ll+1):
-    for ly in range (ll+1 -lx):
-        for lz in range (ll+1 -lx -ly):
+for lx in range (1, ll+1):
+    for ly in range (ll+1-lx):
+        for lz in range (ll+1-lx-ly):
             l s u m=l x+l y+l z
-            for kx in range (lkl+1 -lsum):
-                for ky in range (lkl+1 -lsum -kx):
-                    for kz in range (lkl+1 -lsum -kx -ky):
-                        a[kx ,ky ,kz ,lx ,ly ,lz] = a[kx+1 ,ky ,kz ,lx -1 ,ly ,lz] \
-+ Xcd * a[kx ,ky ,kz ,lx -1 ,ly ,lz]
+            for kx in range (lkl+1-lsum):
+                for ky in range (lkl+1-lsum-kx):
+                    for kz in range (lkl+1-lsum-kx-ky):
+                        a[kx,ky,kz,lx,ly,lz] = a[kx+1,ky,kz,lx-1,ly,lz] \
++ Xcd * a[kx ,ky ,kz,lx-1,ly,lz]
 ```
 这个递归程序的计算成本主要取决于张量索引的成本。在这种情况下，可以使间接索引比直接索引更高效。具体而言，我们预先计算嵌套迭代中涉及的每个张量元素的地址。然后将张量转换为一维数组，并使用缓存的间接索引遍历一维数组。
 
 ```python
-def cache_indexing(lk ,l l , a):
+def cache_indexing(lk,l l, a):
     lkl = lk + ll
-    for lx in range (1 , ll+1):
-        for ly in range (ll+1 -lx):
-            for lz in range (ll+1 -lx -ly):
+    for lx in range (1, ll+1):
+        for ly in range (ll+1-lx):
+            for lz in range (ll+1-lx-ly):
                 l s u m=l x+l y+l z
-                for kx in range (lkl+1 -lsum):
-                    for ky in range (lkl+1 -lsum -kx):
-                        for kz in range (lkl+1 -lsum -kx -ky):
-idx0.append((kx , ky ,k z ,l x ,l y , lz))
-                            idx1.append((kx+1 ,k y ,k z ,l x -1 ,l y , lz))
-idx2.append((kx , ky ,k z ,l x -1 ,l y , lz))
-    idx0 = np.ravel_multi_index(np.array(idx0).T , a.shape)
-    idx1 = np.ravel_multi_index(np.array(idx1).T , a.shape)
-    idx2 = np.ravel_multi_index(np.array(idx2).T , a.shape)
-    return idx0 , idx1 , idx2
-idx0 , idx1 , idx2 = cache_indexing(lk ,l l ,a )
+                for kx in range (lkl+1-lsum):
+                    for ky in range (lkl+1-lsum-kx):
+                        for kz in range (lkl+1-lsum-kx-ky):
+idx0.append((kx , ky ,k z,l x ,l y , lz))
+                            idx1.append((kx+1,k y,k z,l x-1,l y, lz))
+idx2.append((kx , ky ,k z,l x-1,l y, lz))
+    idx0 = np.ravel_multi_index(np.array(idx0).T, a.shape)
+    idx1 = np.ravel_multi_index(np.array(idx1).T, a.shape)
+    idx2 = np.ravel_multi_index(np.array(idx2).T, a.shape)
+    return idx0, idx1, idx2
+idx0, idx1, idx2 = cache_indexing(lk,l l,a )
 assert sub.flags.c_contiguous
 a_view = a.ravel()
 a_view[idx0] = a_view[idx1] + Xcd * a_view[idx2]
@@ -1202,9 +1202,9 @@ a_view[idx0] = a_view[idx1] + Xcd * a_view[idx2]
 如 Numba 文档 [20] 所述，Numba 利用 llvmlite 库 [21] 将 Python 代码转换为 LLVM 中间表示（Intermediate Representation，IR）。然后使用 LLVM（Low-Level Virtual Machine，低级虚拟机）编译器执行生成的中间表示。在此过程中，它不会生成任何 C 或 C++ 代码文件作为中间层。因此，传统的代码检查工具，如 GDB（GNU Debugger）或 perf 注释，并不适用。可以使用以下 Numba 命令转储 LLVM 中间表示：
 
 ```bash
-$  numba --annotate --dump -llvm coulomb_2e_OS.py
-$  numba --dump -optimized coulomb_2e_OS.py
-$  numba coulomb_2e_OS.py --annotate -html coulomb_2e_OS.html
+$ numba --annotate --dump -llvm coulomb_2e_OS.py
+$ numba --dump -optimized coulomb_2e_OS.py
+$ numba coulomb_2e_OS.py --annotate -html coulomb_2e_OS.html
 ```
 原则上，可以分析 LLVM 中间表示，以确定即时编译是否生成了合理的机器码。然而，我们将跳过这项分析，因为它需要深入理解 LLVM，超出了本书的范围。
 即时编译装饰器有几个可能影响运行性能的关键字选项 [22]：
@@ -1244,39 +1244,39 @@ $  numba coulomb_2e_OS.py --annotate -html coulomb_2e_OS.html
 
 ```python
 @numba.njit(cache=True)
-def matmul_nn_tiling_unrolled(a , b):
-    ' ' 'Matrix multiplication a * b with loop tiling' ' '
-    arow , acol = a.shape
-    brow , bcol = b.shape
+def matmul_nn_tiling_unrolled(a, b):
+    '''Matrix multiplication a * b with loop tiling'''
+    arow, acol = a.shape
+    brow, bcol = b.shape
     assert acol == brow
-    c = np.zeros((arow , bcol))
+    c = np.zeros((arow, bcol))
     block_size = 200
-    for i0 in range (0 , arow , block_size):
-        i1 = min(i0 + block_size , arow)
-        for j0 in range (0 , bcol , block_size):
-            j1 = min(j0 + block_size , bcol)
-            for k0 in range (0 , acol , block_size):
-                k1 = min(k0 + block_size , acol)
-                for i in range (i0 ,i 1 -3 ,4 ) :
-                    for k in range (k0 , k1):
-                        a_ik0 = a[i+0 ,k]
-                        a_ik1 = a[i+1 ,k]
-                        a_ik2 = a[i+2 ,k]
-                        a_ik3 = a[i+3 ,k]
-                        for j in range (j0 , j1):
-                            b_kj = b[k ,j]
-                            c[i+0 ,j] += a_ik0 * b_kj
-                            c[i+1 ,j] += a_ik1 * b_kj
-                            c[i+2 ,j] += a_ik2 * b_kj
-                            c[i+3 ,j] += a_ik3 * b_kj
+    for i0 in range (0, arow, block_size):
+        i1 = min(i0 + block_size, arow)
+        for j0 in range (0, bcol, block_size):
+            j1 = min(j0 + block_size, bcol)
+            for k0 in range (0, acol, block_size):
+                k1 = min(k0 + block_size, acol)
+                for i in range (i0,i 1-3,4 ) :
+                    for k in range (k0, k1):
+                        a_ik0 = a[i+0,k]
+                        a_ik1 = a[i+1,k]
+                        a_ik2 = a[i+2,k]
+                        a_ik3 = a[i+3,k]
+                        for j in range (j0, j1):
+                            b_kj = b[k,j]
+                            c[i+0,j] += a_ik0 * b_kj
+                            c[i+1,j] += a_ik1 * b_kj
+                            c[i+2,j] += a_ik2 * b_kj
+                            c[i+3,j] += a_ik3 * b_kj
 ```
 
 ```python
-                for i in range (i+4 , i1):
-                    for k in range (k0 , k1):
-            a_ik = a[i ,k]
-                        for j in range (j0 , j1):
-                            c[i ,j] += a_ik * b[k ,j]
+                for i in range (i+4, i1):
+                    for k in range (k0, k1):
+            a_ik = a[i,k]
+                        for j in range (j0, j1):
+                            c[i,j] += a_ik * b[k,j]
     return c
 ```
 在某些情况下，仅展开单个循环可能无法获得令人满意的性能。特别是在循环规模较小时，处理边界情况的开销可能占据计算的主要部分。在这种情况下，我们可以大幅展开整个函数，为每种可能的问题规模生成特定函数。这种穷举展开方法可以使用第 5 章讨论的元编程技术以编程方式实现。
@@ -1286,45 +1286,45 @@ def matmul_nn_tiling_unrolled(a , b):
 import jinja2
 import numpy as np
 from numba.pycc import CC
-unroll_tpl = jinja2.Template( ' ' '
+unroll_tpl = jinja2.Template( '''
 def schmidt_orth_n{{ n }}(s):
-{% - for line in code %}
+{%- for line in code %}
     {{ line }}
-{% - endfor %}
-' ' ')
+{%- endfor %}
+''')
 def unroll_schmidt_orth(n):
     code = []
-    code.append(f'cs = np.zeros(({n} , {n}))' )
+    code.append(f'cs = np.zeros(({n}, {n}))' )
     for j in range (n):
-        code.append(f'fac = s[{j} ,{j}]')
+        code.append(f'fac = s[{j},{j}]')
         for k in range (j):
             code.append('dot_kj = 0.' )
             for i in range (n):
-                code.append(f'dot_kj += cs[{k} ,{i}] * s[{j} ,{i}]')
+                code.append(f'dot_kj += cs[{k},{i}] * s[{j},{i}]')
             for i in range (n):
-                code.append(f'cs[{j} ,{i}] -= dot_kj * cs[{k} ,{i}]')
+                code.append(f'cs[{j},{i}] -= dot_kj * cs[{k},{i}]')
             code.append('fac -= dot_kj * dot_kj')
 ```
 
 ```python
-        code.append('fac = fac ** -.5')
-        code.append(f'cs[{j} ,{j}] = fac' )
+        code.append('fac = fac **-.5')
+        code.append(f'cs[{j},{j}] = fac' )
                                         for i in range (j):
-            code.append(f'cs[{j} ,{i}] *= fac' )
+            code.append(f'cs[{j},{i}] *= fac' )
     code.append('return cs.T' )
-    exec(unroll_tpl.render(n=n , code=code))
+    exec(unroll_tpl.render(n=n, code=code))
     return vars ()[f'schmidt_orth_n{n}']
 cc = CC( 'schmidt_unrolled')
 for i in range (8):
     fn = unroll_schmidt_orth(i)
     print(fn.__name__)
-    cc.export(fn.__name__ , 'f8[: ,:](f8[: ,:])')(fn)
+    cc.export(fn.__name__, 'f8[:,:](f8[:,:])')(fn)
 cc.compile()
 ```
 函数展开（function unrolling）可能产生大量代码，从而延长即时编译（JIT compilation）的预热时间。为了降低预热成本，这里使用提前编译（AOT compilation）[25]。AOT 编译会输出一个可导入的 Python 模块，在我们的 Python 3.10 环境中名为
 
 ```text
-schmidt_unrolled.cpython -310 -x86_64 -linux -gnu.so
+schmidt_unrolled.cpython-310-x86_64-linux-gnu.so
 ```
 然后，我们开发一个名为
 
@@ -1337,25 +1337,25 @@ schmidt_orth_small_size
 import numpy as np
 import schmidt_unrolled
 schmidt_orth_small_size = [
-    getattr(schmidt_unrolled ,f 'schmidt_orth_n{n}') for n in range (8)]
+    getattr(schmidt_unrolled,f 'schmidt_orth_n{n}') for n in range (8)]
 def schmidt_orth_recursive_unrolled(s):
     n = s.shape[0]
     if n<8 :
         return schmidt_orth_small_size[n](s)
     n = s.shape[0]
     m=n/ /2
-    c_block11 = schmidt_orth_recursive(s[:m ,:m])
-    s_block12 = np.dot(c_block11.T , s[:m ,m:])
+    c_block11 = schmidt_orth_recursive(s[:m,:m])
+    s_block12 = np.dot(c_block11.T, s[:m,m:])
 ```
 
 ```python
-    c_block12 = -np.dot(c_block11 , s_block12)
-    s_block22 = s[m: ,m:] - np.dot(s_block12.T , s_block12)
+    c_block12 = -np.dot(c_block11, s_block12)
+    s_block22 = s[m:,m:] - np.dot(s_block12.T, s_block12)
     c_block22 = schmidt_orth_recursive(s_block22)
-    cs = np.zeros((n , n))
-    cs[:m ,:m] = c_block11
-    cs[m: ,m:] = c_block22
-    cs[:m ,m:] = np.dot(c_block12 , c_block22)
+    cs = np.zeros((n, n))
+    cs[:m,:m] = c_block11
+    cs[m:,m:] = c_block22
+    cs[:m,m:] = np.dot(c_block12, c_block22)
     return cs
 ```
 尽管展开通常可以提高性能，但重要的是权衡展开（以及函数内联）的好处与其对指令缓存性能的潜在影响。使用内联和展开技术会显著增加 CPU 必须加载和解码的指令数量。由于解码后的指令存储在 L1I 缓存中，这可能增加缓存压力。L1I 缓存未命中的代价与 L1D 缓存未命中的代价相当，这意味着至少会产生访问 L2 缓存的延迟。因此，L1I 缓存未命中的总开销可能超过 L1D 缓存未命中的总开销。
@@ -1367,7 +1367,7 @@ def schmidt_orth_recursive_unrolled(s):
 
 ```python
 import llvmlite.binding as llvm
-llvm.set_option('', '--debug -only=loop -vectorize')
+llvm.set_option('', '--debug-only=loop-vectorize')
 ```
 该选项会提供 LLVM 如何检查矢量化的细节。例如，下面的输出表明编译器找到了一个可以矢量化的候选项，但拒绝对代码进行矢量化。
 
@@ -1382,7 +1382,7 @@ from matmul import matmul_nn_tiling
 ```
 
 ```python
-def find_instr(func , keyword , sig=0 , limit=5):
+def find_instr(func, keyword, sig=0, limit=5):
     count = 0
     for l in func.inspect_asm(func.signatures[sig]).split('\n'):
         if keyword in l:
@@ -1393,31 +1393,31 @@ def find_instr(func , keyword , sig=0 , limit=5):
     if count == 0:
         print('No instructions found' )
 matmul_nn_tiling(np.eye(3), np.eye(3))
-find_instr(matmul_nn_tiling , 'ymm')
+find_instr(matmul_nn_tiling, 'ymm')
 ```
 当数组边界在循环过程中动态生成时，矢量化常常因数组边界的不确定性而失败。目前并不清楚 LLVM 为什么无法识别数组边界。为绕过 LLVM 边界检查器的限制，一种方法是简化数组索引，例如在下面的例子中使用临时一维数组 cp。
 
 ```python
-@numba.njit(fastmath=True , cache=True)
-def matmul_nn_tiling_simd(a , b):
-    ' ' 'Matrix multiplication a * b with loop tiling' ' '
-    arow , acol = a.shape
-    brow , bcol = b.shape
+@numba.njit(fastmath=True, cache=True)
+def matmul_nn_tiling_simd(a, b):
+    '''Matrix multiplication a * b with loop tiling'''
+    arow, acol = a.shape
+    brow, bcol = b.shape
     assert acol == brow
-    c = np.zeros((arow , bcol))
+    c = np.zeros((arow, bcol))
     block_size = 200
-    for i0 in range (0 , arow , block_size):
-        i1 = min(i0 + block_size , arow)
-        for j0 in range (0 , bcol , block_size):
-            j1 = min(j0 + block_size , bcol)
-            for k0 in range (0 , acol , block_size):
-                k1 = min(k0 + block_size , acol)
-                for i in range (i0 , i1):
-                    c p=c [ i ,j0:j1]
-                    for k in range (k0 , k1):
-                        a_ik = a[i ,k]
-                        bp = b[k ,j0:j1]
-                        for j in range (j1 -j0):
+    for i0 in range (0, arow, block_size):
+        i1 = min(i0 + block_size, arow)
+        for j0 in range (0, bcol, block_size):
+            j1 = min(j0 + block_size, bcol)
+            for k0 in range (0, acol, block_size):
+                k1 = min(k0 + block_size, acol)
+                for i in range (i0, i1):
+                    c p=c [ i,j0:j1]
+                    for k in range (k0, k1):
+                        a_ik = a[i,k]
+                        bp = b[k,j0:j1]
+                        for j in range (j1-j0):
                             cp[j] += a_ik * bp[j]
     return c
 ```
@@ -1431,14 +1431,14 @@ def matmul_nn_tiling_simd(a , b):
 
 - 为每个变量声明类型，包括所有函数参数和返回值。Cython 无法准确推断数据类型。没有精确的数据类型信息时，Cython 会将这些变量视为 Python 对象。Cython 的类型声明采用 C 风格语法，以 cdef 前缀表示，例如 cdef int、
 
-```python
-cdef double , or cdef class .
+```text
+cdef double,orcdef class.
 ```
 
 - 使用带类型的内存视图（typed memoryview）指定 NumPy 数组的结构，包括数据类型、维数和步长。例如，在类型声明
 
 ```text
-   cdef double[: , ::1] a_view = a
+   cdef double[:, ::1] a_view = a
 ```
 中，double[:,::1] 表示数组为 double 类型且是二
 维的。最后一个索引中的 ::1 表示最后一个维度的步长为 1，表明该内存视图是 C 连续的。Cython 内存视图支持
@@ -1477,8 +1477,8 @@ for i in range (len(array)):
 - 使用 OpenMP 线程实现并行 [29]。要在 Cython 中启用 OpenMP 并行化，需要将 range 语句替换为 cython.parallel.prange 函数，并在 .pyx 文件中加入以下编译器指令。
 
 ```text
-#distutils: extra_compile_args= -fopenmp
-#distutils: extra_link_args= -fopenmp
+#distutils: extra_compile_args=-fopenmp
+#distutils: extra_link_args=-fopenmp
 ```
 
 - 使用其他优化技术，如 Numba 优化（第 9.4.1 节）中讨论的技术，包括但不限于优化数组步长、调整循环顺序、提高缓存利用率以及实施循环展开。
@@ -1488,7 +1488,7 @@ for i in range (len(array)):
 ```text
 cdef double v = 0
 cdef double x
-for i in cython.parallel.prange(n , nogil=True):
+for i in cython.parallel.prange(n, nogil=True):
     x=0 .
     x+ =a [ i ] * a[i]
     v+ =x
@@ -1498,7 +1498,7 @@ for i in cython.parallel.prange(n , nogil=True):
 ```text
 cdef double v = 0
 cdef double x
-for i in cython.parallel.prange(n , nogil=True):
+for i in cython.parallel.prange(n, nogil=True):
     x=0 .
     x=x+ a[i] * a[i]
     v+ =x
@@ -1511,37 +1511,37 @@ for i in cython.parallel.prange(n , nogil=True):
 #cython: overflowcheck.fold=False
 #cython: cdivision=True
 #cython: language_level=3
-#distutils: extra_compile_args= -fopenmp
-#distutils: extra_link_args= -fopenmp
+#distutils: extra_compile_args=-fopenmp
+#distutils: extra_link_args=-fopenmp
 import numpy as np
 from cython.parallel import prange
-def schmidt_orth(double[: , ::1] s):
+def schmidt_orth(double[:, ::1] s):
     cdef int n = s.shape[0]
-    _cs = np.zeros((n , n))
-    cdef double[: , ::1] cs = _cs
-    cdef int i ,j ,k
-    cdef double dot_kj , fac
+    _cs = np.zeros((n, n))
+    cdef double[:, ::1] cs = _cs
+    cdef int i,j ,k
+    cdef double dot_kj, fac
     cdef double[::1] dot_kj_buf = np.empty(n)
     for j in range (n):
-        fac = s[j ,j]
-        for k in prange(j , schedule= 'static', nogil=True):
+        fac = s[j,j]
+        for k in prange(j, schedule= 'static', nogil=True):
             dot_kj = 0.
             for i in range (n):
 ```
 
 ```python
-                dot_kj = dot_kj + cs[k ,i] * s[j ,i]
+                dot_kj = dot_kj + cs[k,i] * s[j,i]
             fac -= dot_kj * dot_kj
             dot_kj_buf[k] = dot_kj
-        for i in prange(n , schedule= 'static', nogil=True):
+        for i in prange(n, schedule= 'static', nogil=True):
         for k in range (j):
-                cs[j ,i] -= dot_kj_buf[k] * cs[k ,i]
+                cs[j,i] -= dot_kj_buf[k] * cs[k,i]
         if fac <= 0:
             raise RuntimeError(f'schmidt_orth fail. {j=} {fac=}' )
-        fac = fac ** -.5
-        cs[j ,j] = fac
+        fac = fac **-.5
+        cs[j,j] = fac
         for i in range (j):
-            cs[j ,i] *= fac
+            cs[j,i] *= fac
     return _cs.T
 ```
 
@@ -1552,7 +1552,7 @@ def schmidt_orth(double[: , ::1] s):
 我们的 Cython 代码是否实现得足够合理，即所有不必要的 Python 语句都已消除？我们可以使用 Cython 注释（annotations）分析代码：
 
 ```bash
-$  cython -a schmidt_v2_cython.pyx
+$ cython -a schmidt_v2_cython.pyx
 ```
 该命令在 HTML 文件中生成带注释的结果，可以在网页浏览器中查看（图 9.3）。Cython 注释使用颜色编码，突出显示 Cython 编译后的代码中存在的 Python 代码。黄色越深（印刷版中为灰色），Python 痕迹就越多，效率也就越低。目标是尽可能消除或减少黄色突出显示的部分。在 schmidt_orth 函数的注释中，我们可以看到对应 NumPy 数组分配、错误处理、函数签名行和返回语句的黄色行。如果问题规模足够大，这些黄色行对性能的影响并不显著，因为大部分执行时间花在循环内部。然而，对于小规模问题，这些黄色行引入的开销可能不可忽略。因此，虽然 Cython 是提高慢速 Python 函数性能的有用工具，但它可能不是小规模问题的理想选择。
 
@@ -1562,7 +1562,7 @@ $  cython -a schmidt_v2_cython.pyx
 不需要对 Python 代码进行大量修改。它只要求在 Python 代码中加入函数签名注释，称为 Pythran 指令。这些指令帮助 Pythran 推断数据类型并优化函数。例如，schmidt_orth 函数的 Pythran 指令如下：
 
 ```python
-#pythran export schmidt_orth(float64[: ,:])
+#pythran export schmidt_orth(float64[:,:])
 def schmidt_orth(s):
 ```
 显然，注释行中的 Pythran 指令不会影响原始 Python 代码的执行。在 Pythran 中使用 OpenMP 并行化时，可以将如下 OpenMP 指令
@@ -1579,7 +1579,7 @@ def schmidt_orth(s):
 
 ```text
 [compiler]
-cflags= -std=c++11 -O3 -march=native -ffast -math
+cflags=-std=c++11 -O3 -march=native -ffast-math
 ```
 
 ### 9.4.4 Cython、Pythran 和 Numba
@@ -1658,7 +1658,7 @@ double roots[8] __attribute__((aligned(32)));
 - 。-O3 标志在 -O2 级别应用的优化之外引入了几项额外优化。这些额外优化的详情可以在文档（man gcc）中找到。在量子化学应用中，以下额外选项尤其重要：
 
 ```text
--           -loops -for -strides .
+- -loops-for-strides.
 ```
 
 - -loop-vectorize 和 -ftree-slp-vectorize。这两个选项有助于在抽象语法树（Abstract Syntax Tree，AST）上检测矢量化能力。如果没有检测到指针依赖或内存重叠，编译器就会生成 SIMD 矢量化代码。请注意，这些选项只是启用 SIMD 矢量化的检测，并不保证生成 SIMD 操作。仍然需要适当的设计和实现，才能确保代码可以进行 SIMD 矢量化。
@@ -1672,22 +1672,22 @@ double roots[8] __attribute__((aligned(32)));
 - 在 setup.py 中添加编译标志，适用于 Cython 和 Pythran。
 
 ```python
-from setuptools import setup , Extension
+from setuptools import setup, Extension
 from Cython.Build import cythonize
 setup( ext_modules=cythonize([
-        Extension('schmidt',[ 'schmidt_v2_cython.pyx'] , extra_compile_args=['-fopenmp', '-O3', '-march=native'])
+        Extension('schmidt',[ 'schmidt_v2_cython.pyx'], extra_compile_args=['-fopenmp', '-O3', '-march=native'])
     ]), )
-from setuptools import setup , Extension
+from setuptools import setup, Extension
 from pythran.dist import PythranExtension
 setup( ext_modules=[
-        PythranExtension('schmidt',[ 'schmidt_v2_pythran.py'] , extra_compile_args=['-fopenmp', '-O3', '-march=native'])
-    ] , )
+        PythranExtension('schmidt',[ 'schmidt_v2_pythran.py'], extra_compile_args=['-fopenmp', '-O3', '-march=native'])
+    ], )
 ```
 
 - 添加带有 distutils: 前缀的 Cython 编译器指令。使用 setup.py 或
 
 ```text
-#distutils: extra_compile_args= -fopenmp -O3 -march=native
+#distutils: extra_compile_args=-fopenmp -O3 -march=native
 ```
 
 - Pythran 的配置文件 ~/.pythranrc。它只影响从命令行执行的 pythran 命令。setup.py 中的 PythranExtension 不会读取此配置文件中的设置。
@@ -1718,24 +1718,24 @@ HDF5 文件中的数组以行主序格式存储。这种格式有利于顺序访
 In [1]: import h5py
 In [2]: %%time
         with h5py.File('test_plain.h5', 'w') as f:
-            d = f.create_dataset( 'test', (20000 ,20000), dtype= 'f8')
-            d[: ,:600] = 1.
-CPU times: user 369 ms , sys: 1.11 s , total: 1.48 s
+            d = f.create_dataset( 'test', (20000,20000), dtype= 'f8')
+            d[:,:600] = 1.
+CPU times: user 369 ms, sys: 1.11 s, total: 1.48 s
 Wall time: 6.66 s
 In [3]: %%time
         with h5py.File('test_chunk.h5', 'w') as f:
 ```
 
 ```text
-            d = f.create_dataset( 'test', (20000 ,20000), dtype= 'f8', chunks=(200 ,200))
-            d[: ,:600] = 1.
-CPU times: user 321 ms , sys: 56.9 ms , total: 378 ms
+            d = f.create_dataset( 'test', (20000,20000), dtype= 'f8', chunks=(200,200))
+            d[:,:600] = 1.
+CPU times: user 321 ms, sys: 56.9 ms, total: 378 ms
 Wall time: 380 ms
 ```
 测试在 AWS EC2 c5d.xlarge 类型的实例上进行。这台虚拟机配备了 16 GB 物理内存和 SSD 本地存储。为了限制可用内存（在这些测试中为 2 GB），我们在运行测试前在另一个进程中分配了一个巨大的数组。为了消除文件系统缓存的影响，我们在每次测试前使用以下命令手动清除了缓存：
 
 ```bash
-$  sync; echo 1 > /proc/sys/vm/drop_caches
+$ sync; echo 1 > /proc/sys/vm/drop_caches
 ```
 虽然分块存储提高了访问数据子集的效率，但它引入了额外的复杂性和新的开销。在 HDF5 中，数据块被视为原子对象。访问块中的任何元素时，都需要从磁盘读取整个块。访问跨越块边界的数据可能导致一些开销。使访问模式与块的形状对齐有助于减少这种开销。例如，在下面的例子中，第一个测试需要读取 200 个块，而第二个测试需要读取 400 个块。这一差异导致性能相差 50%。
 
@@ -1743,12 +1743,12 @@ $  sync; echo 1 > /proc/sys/vm/drop_caches
 In [4]: %%time
         with h5py.File('test_chunk.h5', 'r') as f:
             f['test'][200:400]
-CPU times: user 13.7 ms , sys: 13.8 ms , total: 27.5 ms
+CPU times: user 13.7 ms, sys: 13.8 ms, total: 27.5 ms
 Wall time: 52.2 ms
 In [5]: %%time
         with h5py.File('test_chunk.h5', 'r') as f:
             f['test'][610:810]
-CPU times: user 14.4 ms , sys: 28.9 ms , total: 43.2 ms
+CPU times: user 14.4 ms, sys: 28.9 ms, total: 43.2 ms
 Wall time: 86.6 ms
 ```
 分块存储的第二个特性是，数据集的各个块随机存储在磁盘上。因此，顺序访问数据集时，读写操作实际上都涉及一定程度的随机性。在下面的例子中，读取 640 MB 连续数据时，与普通行主序存储相比，分块存储产生了 50% 的额外开销。
@@ -1757,7 +1757,7 @@ Wall time: 86.6 ms
 In [6]: %%time
         with h5py.File('test_plain.h5', 'r') as f:
             a=f [ 'test'][5000:9000]
-CPU times: user 38 ms , sys: 495 ms , total: 533 ms
+CPU times: user 38 ms, sys: 495 ms, total: 533 ms
 Wall time: 1.65 s
 ```
 
@@ -1765,7 +1765,7 @@ Wall time: 1.65 s
 In [7]: %%time
         with h5py.File('test_chunk.h5', 'r') as f:
             a=f [ 'test'][5000:9000]
-CPU times: user 142 ms , sys: 658 ms , total: 800 ms
+CPU times: user 142 ms, sys: 658 ms, total: 800 ms
 Wall time: 2.49 s
 ```
 
@@ -1775,29 +1775,29 @@ Wall time: 2.49 s
 
 ```python
 In [10]: %%time
-         d = np.memmap( 'test_plain.mmap', mode='w+', shape=(20000 ,20000), dtype= float)
-         d[: ,:600] = 1.
+         d = np.memmap( 'test_plain.mmap', mode='w+', shape=(20000,20000), dtype= float)
+         d[:,:600] = 1.
          d.flush()
-CPU times: user 84 ms , sys: 992 ms , total: 1.08 s
+CPU times: user 84 ms, sys: 992 ms, total: 1.08 s
 Wall time: 1.28 s
 In [11]: %%time
-         d = np.memmap( 'test_plain.mmap', mode='r+', shape=(20000 ,20000), dtype= float)
+         d = np.memmap( 'test_plain.mmap', mode='r+', shape=(20000,20000), dtype= float)
          d[5000:9000] = 0.
          d.flush()
-CPU times: user 122 ms , sys: 365 ms , total: 487 ms
+CPU times: user 122 ms, sys: 365 ms, total: 487 ms
 Wall time: 6.23 s
 In [12]: %%time
-         d = np.memmap( 'test_plain.mmap', mode='r', shape=(20000 ,20000), dtype= float)
+         d = np.memmap( 'test_plain.mmap', mode='r', shape=(20000,20000), dtype= float)
          a = d[5000:9000]
-CPU times: user 14.6 ms , sys: 19.4 ms , total: 33.9 ms
+CPU times: user 14.6 ms, sys: 19.4 ms, total: 33.9 ms
 Wall time: 33.5 ms
 In [13]: %%time
-         d = np.memmap( 'test_plain.mmap', mode='r', shape=(20000 ,20000), dtype= float)
+         d = np.memmap( 'test_plain.mmap', mode='r', shape=(20000,20000), dtype= float)
          a = d[5000:9000].copy()
 ```
 
 ```text
-CPU times: user 103 ms , sys: 378 ms , total: 481 ms
+CPU times: user 103 ms, sys: 378 ms, total: 481 ms
 Wall time: 1.81 s
 ```
 请注意 numpy.memmap 和 h5py 在处理数组切片时的区别。对 memmap 对象切片只会生成一个 memoryview。实际的 I/O 操作会推迟到显式访问数据时才进行。这一特性简化了编程，因为它无需显式调用文件读写命令。操作系统可以自动在内存和内存映射文件之间同步必要的数据。然而，这也意味着我们失去了灵活控制 I/O 操作发生时间的能力。除非复制 memmap 对象的片段，否则我们无法准确地为即将进行的计算任务预取所需数据。在某些应用中，这可能降低整体性能。
@@ -1805,23 +1805,23 @@ Wall time: 1.81 s
 
 ```python
 In [14]: %%time
-         a = np.memmap( 'test_a.mmap', mode='r', shape=(40000 ,10000), dtype= float)
-         b = np.memmap( 'test_b.mmap', mode='r', shape=(40000 ,10000), dtype= float)
+         a = np.memmap( 'test_a.mmap', mode='r', shape=(40000,10000), dtype= float)
+         b = np.memmap( 'test_b.mmap', mode='r', shape=(40000,10000), dtype= float)
          c = a.T.dot(b)
-CPU times: user 3 min 47s , sys: 9.34 s , total: 3 min 56s
+CPU times: user 3 min 47s, sys: 9.34 s, total: 3 min 56s
 Wall time: 42.2 s
 ```
 将矩阵乘法问题重构为一系列 10000 × 10000 子矩阵乘法，并使用 iterate_with_prefetch 函数（如第 9.6.3 节所述）使计算与 I/O 重叠，可以将计算时间缩短至 37 秒。
 
 ```python
-a = np.memmap( 'test_a.mmap', mode= 'r', shape=(40000 ,10000), dtype= float)
-b = np.memmap( 'test_b.mmap', mode= 'r', shape=(40000 ,10000), dtype= float)
+a = np.memmap( 'test_a.mmap', mode= 'r', shape=(40000,10000), dtype= float)
+b = np.memmap( 'test_b.mmap', mode= 'r', shape=(40000,10000), dtype= float)
 def loader(task):
     sub_a = a[task *10000:(task+1)*10000].copy()
     sub_b = b[task *10000:(task+1)*10000].copy()
-    return sub_a , sub_b
-c = np.zeros((10000 ,10000))
-for task , (sub_a , sub_b) in iterate_with_prefetch(range(4), loader):
+    return sub_a, sub_b
+c = np.zeros((10000,10000))
+for task, (sub_a, sub_b) in iterate_with_prefetch(range(4), loader):
     c += sub_a.T.dot(sub_b)
 # Wall time: 37.1 s
 ```
@@ -1847,26 +1847,26 @@ for task , (sub_a , sub_b) in iterate_with_prefetch(range(4), loader):
 ```python
 import h5py
 import hdf5plugin
-eri = np.ones((5050 , 5050))
+eri = np.ones((5050, 5050))
 with h5py.File('test_lzf.h5', 'w') as f:
-    d = f.create_dataset( 'test', eri.shape , dtype= 'f8', chunks=(100 ,100), compression='lzf')
+    d = f.create_dataset( 'test', eri.shape, dtype= 'f8', chunks=(100,100), compression='lzf')
     d[:] = eri
 with h5py.File('test_blosc.h5', 'w') as f:
-    d = f.create_dataset( 'test', eri.shape , dtype= 'f8', chunks=(100 ,100), **hdf5plugin.Blosc())
+    d = f.create_dataset( 'test', eri.shape, dtype= 'f8', chunks=(100,100), **hdf5plugin.Blosc())
     d[:] = eri
 ```
 有几种可用的无损压缩过滤器：Blosc、LZF 和 LZ4。这些压缩器使用单个 CPU 线程可达到约 1 GB/s 的吞吐量（实际上 Python 仅支持一个线程）。h5py 库原生支持 LZF 过滤器。要使用 Blosc 或 LZ4 压缩器，需要 hdf5plugin 扩展 [37]。PyTables 库提供了一份关于压缩器性能与块大小之间关系的详尽指南 [38]。一般而言，块大小对各压缩器性能的影响相对较小。
 另一种压缩数据的方法是使用 scipy.sparse 模块将数据转换为稀疏格式，例如压缩稀疏行（Compressed Sparse Row，CSR）、块稀疏行（Block Sparse Row，BSR）或坐标（Coordinate，COO）格式。稀疏格式与高维数组不兼容。在应用稀疏格式之前，必须将高维数组重塑为矩阵。稀疏数组不能直接存储在 HDF5 文件中。为了存储稀疏数组，我们需要保存非零元素以及指示非零元素位置的元数据。下面是保存和加载稀疏数组的辅助函数。
 
 ```python
-from scipy.sparse import csr_array , bsr_array , coo_array
-def save_sparse(h5obj , a):
-    if isinstance (a , (csr_array , bsr_array)):
+from scipy.sparse import csr_array, bsr_array, coo_array
+def save_sparse(h5obj, a):
+    if isinstance (a, (csr_array, bsr_array)):
         h5obj['data'] = a.data
         h5obj['indices'] = a.indices
         h5obj['indptr'] = a.indptr
         h5obj['shape'] = a.shape
-    elif isinstance (a , coo_array):
+    elif isinstance (a, coo_array):
         h5obj['data'] = a.data
         h5obj['row'] = a.row
         h5obj['col'] = a.col
@@ -1884,13 +1884,13 @@ def load_sparse(h5obj):
         indices = h5obj[ 'indices'][()]
         indptr = h5obj[ 'indptr'][()]
         if data.ndim == 1:
-            return csr_array((data , indices , indptr), shape=shape)
+            return csr_array((data, indices, indptr), shape=shape)
         else:
-            return bsr_array((data , indices , indptr), shape=shape)
+            return bsr_array((data, indices, indptr), shape=shape)
     elif 'row' in h5obj:
         row = h5obj[ 'row'][()]
         col = h5obj[ 'col'][()]
-        return coo_array((data , (row , col)), shape=shape)
+        return coo_array((data, (row, col)), shape=shape)
     else:
         raise NotImplementedError
 ```
@@ -1903,7 +1903,7 @@ def load_sparse(h5obj):
 ```python
 from concurrent.futures import ThreadPoolExecutor
 with h5py.File('test_block.h5', 'r+') as f:
-    def save_data(task_id , data):
+    def save_data(task_id, data):
         f[f'test/{task_id}'] = data
     with ThreadPoolExecutor() as worker:
         for task_id in range (100):
@@ -1911,9 +1911,9 @@ with h5py.File('test_block.h5', 'r+') as f:
 
 ```python
             # code to generate data
-            data = np.ones((10000 ,100))
+            data = np.ones((10000,100))
             # save data asynchronously
-            future = worker.submit(save_data , task_id)
+            future = worker.submit(save_data, task_id)
 ```
 使用非阻塞 I/O（non-blocking I/O），我们可以实现数据预取（data prefetching）技术，隐藏数据访问的延迟。在实际需要数据之前，我们可以启动一个线程，在后台从存储中读取数据。需要数据时，可以使用 .result() 方法获取预先加载的数据。例如：
 
@@ -1922,10 +1922,10 @@ with h5py.File('test_plain.h5', 'r') as f:
     block_size = 200
     rows = f[ 'test'].shape[0]
     def loader(row0):
-        row1 = min(row + block_size , rows)
+        row1 = min(row + block_size, rows)
         return f['test'][row0:row1]
     with ThreadPoolExecutor(max_workers=1) as worker:
-        future = worker.submit(loader , task)
+        future = worker.submit(loader, task)
         data1 = prefetch(task1)
         do_some_computation()
         data2 = prefetch(task2)
@@ -1937,23 +1937,23 @@ with h5py.File('test_plain.h5', 'r') as f:
 
 ```python
 from concurrent.futures import ThreadPoolExecutor
-def iterate_with_prefetch(tasks , loader):
+def iterate_with_prefetch(tasks, loader):
     with ThreadPoolExecutor(max_workers=1) as worker:
         task_to_run = None
         for task in tasks:
             if task_to_run is None:
-                future = worker.submit(loader , task)
+                future = worker.submit(loader, task)
                 task_to_run = task
                 continue
 ```
 
 ```text
             data = future.result()
-            future = worker.submit(loader , task)
-            yield task_to_run , data
+            future = worker.submit(loader, task)
+            yield task_to_run, data
             task_to_run = task
         data = future.result()
-        yield task_to_run , data
+        yield task_to_run, data
 ```
 使用 iterate_with_prefetch，我们可以按以下方式编写数据加载和计算任务。
 
@@ -1962,10 +1962,10 @@ with h5py.File('test_plain.h5', 'r') as f:
     block_size = 200
     rows = f[ 'test'].shape[0]
     def loader(row0):
-        row1 = min(row0 + block_size , rows)
+        row1 = min(row0 + block_size, rows)
         return f['test'][row0:row1]
-    tasks = range(0 , rows , block_size)
-    for task , data in iterate_with_prefetch(tasks , loader):
+    tasks = range(0, rows, block_size)
+    for task, data in iterate_with_prefetch(tasks, loader):
         # code to process data
 ```
 还有其他技术可以实现异步 I/O（asynchronous I/O），例如 asyncio 库，它允许计算和 I/O 操作并发执行。asyncio 可以大大简化异步代码的实现，使代码更易理解。然而，HDF5 不支持异步函数。在此我们不探讨 asyncio 的用法。
@@ -1995,7 +1995,7 @@ def cache(f):
 def factorial(n):
     if n< =1 :
         return 1
-    return factorial(n -1) * n
+    return factorial(n-1) * n
 ```
 如果不加限制地缓存所有值，缓存最终可能占用大量内存。为解决这一问题，我们需要一种策略，决定哪些数据应保留在缓存中，哪些应被逐出。管理缓存有多种可用的策略，例如：
 
@@ -2072,7 +2072,7 @@ class NotHashable:
 计算结果而不产生任何副作用（不修改非局部变量或输入参数）。通过适当定义纯函数 f1、f2 等，整个计算可以看作一系列嵌套的函数调用：
 
 ```text
-f_n(... , f_2(f_3(f_1(x) , f_2(x)) , f_4(x)) , ...)
+f_n(..., f_2(f_3(f_1(x), f_2(x)), f_4(x)), ...)
 ```
 这种编程风格称为函数式编程（functional programming，FP）。
 FP 在程序优化方面有几个优点：
@@ -2094,10 +2094,10 @@ FP 在程序优化方面有几个优点：
 像纯 FP 风格所要求的那样完全放弃赋值语句，在 Python 中可能不太方便。实际上，我们只需确保赋值不会引入副作用。如果赋值语句仅用于创建局部变量，而不修改任何已有对象，就可以认为它没有副作用。事实上，这类赋值可以转换为函数调用，使代码与不含赋值的 FP 风格等价。例如，在下面的代码中，我们不使用赋值语句 dx = point1 - point2，而是通过一个绑定局部变量 dx 的辅助函数得到相同的结果。
 
 ```python
-def euclidean_distance(point1: ndarray , point2: ndarray) -> float:
+def euclidean_distance(point1: ndarray, point2: ndarray) -> float:
                         dx = point1 - point2
     return sum (dx * dx) ** .5
-def euclidean_distance_assignment_free(point1 , point2):
+def euclidean_distance_assignment_free(point1, point2):
     def norm(dx):
         return sum (dx * dx) ** .5
     return norm(point1 - point2)
@@ -2109,9 +2109,9 @@ def schmidt_orth(s):
 n = s.shape[0] # (1)
 cs = np.eye(n) # (2)
     for j in range (n):
-fac = s[j ,j] # (3)
+fac = s[j,j] # (3)
             for k in range (j):
-dot_kj = np.dot(cs[k] , s[j]) # (4)
+dot_kj = np.dot(cs[k], s[j]) # (4)
 cs[j] -= dot_kj * cs[k] # (5)
 fac -= dot_kj * dot_kj # (6)
 cs[j] /= fac **.5 # (7)
@@ -2120,7 +2120,7 @@ cs[j] /= fac **.5 # (7)
 第 (1) 至 (4) 行的语句创建了不受任何副作用影响的局部变量。第 (5) 行和第 (7) 行涉及原位操作，它们会修改 cs 数组，因此引入副作用。根据局部变量 fac 与输入元素 s[j,j] 的关联机制，第 (6) 行可能改变 s[j,j] 的值并引入副作用。为消除第 (5) 至 (7) 行的副作用，我们可以使用普通赋值语句代替原位修改，例如：
 
 ```text
-fac = fac - dot_kj * dot_kj
+fac = fac- dot_kj * dot_kj
 ```
 虽然赋值语句两侧使用了相同的变量名 fac，但左侧的实例现在指向一个新的局部对象，而不是表达式 fac - dot_kj * dot_kj 中的那个对象。由此得到无副作用的实现。
 
@@ -2130,10 +2130,10 @@ def schmidt_orth_side_effects_free(s):
     c s=[ ]
     guess = np.eye(n)
     for j in range (n):
-        fac = s[j ,j]
+        fac = s[j,j]
         vec = guess[j]
         for k in range (j):
-            dot_kj = np.dot(cs[k] , s[j])
+            dot_kj = np.dot(cs[k], s[j])
             vec = vec - dot_kj * cs[k]
             fac = fac - dot_kj * dot_kj
         cs = cs + [vec / fac **.5]
@@ -2150,8 +2150,8 @@ def schmidt_orth_side_effects_free(s):
 ```
 
 ```python
-dot_kj = [np.dot(cs[k] , s[j]) for k in range (j)] # (1)
-fac = s[j ,j] - sum(x * x for x in dot_kj) # (2)
+dot_kj = [np.dot(cs[k], s[j]) for k in range (j)] # (1)
+fac = s[j,j] - sum(x * x for x in dot_kj) # (2)
 vec = guess[j] - sum(dot_kj[k] * cs[k] for k in range (j)) # (3)
 cs = cs + [vec / fac **.5] # (4)
     return np.array(cs).T
@@ -2189,7 +2189,7 @@ cs = cs + [vec / fac **.5] # (4)
 ```python
 from typing import List
 class Determinant:
- def __init__(self , occupied_orbitals: List):
+ def __init__(self, occupied_orbitals: List):
      self.occupied_orbitals = occupied_orbitals
  def __repr__(self):
 ```
@@ -2200,20 +2200,20 @@ class Determinant:
     def vacuum(cls):
         return cls([])
     @classmethod
-    def fully_occupied(cls , n):
+    def fully_occupied(cls, n):
         return cls(list(range(n)))
-    def add_occupancy(self , orbital_id):
+    def add_occupancy(self, orbital_id):
         assert orbital_id not in self.occupied_orbitals
         return Determinant(sorted(self.occupied_orbitals + [orbital_id]))
 @lru_cache(1000)
-def dets(n , m) -> List[Determinant]:
+def dets(n, m) -> List[Determinant]:
     assert n> =m
     if m= =0 :
         return [Determinant.vacuum()]
     elif n= =m :
         return [Determinant.fully_occupied(n)]
-    return (dets(n -1 ,m )+
-            [det.add_occupancy(n -1) for det in dets(n -1 ,m -1)])
+    return (dets(n-1,m )+
+            [det.add_occupancy(n-1) for det in dets(n-1,m -1)])
 ```
 到目前为止，我们展示了使用递归和记忆化的自顶向下 DP 方法。DP 问题也可以使用自底向上（迭代）的方法求解。这种方法从较小的子问题开始，迭代地构建原始问题的解。在自底向上方法中，DP 中间状态通常存储在数组中。然后使用嵌套循环遍历数组，系统地生成 DP 状态。表 9.6 对比了自顶向下和自底向上方法。
 自顶向下方法只在需要时计算必要的 DP 中间状态。相比之下，自底向上方法通常需要计算几乎所有子问题才能得到最终的解。这有时会带来额外的不必要工作量。然而，自顶向下方法中的递归涉及大量函数调用、调用栈规模增大、哈希成本以及缓存表中的查找操作成本，因此开销很高。就效率而言，现代计算机处理循环和数组索引操作比处理函数调用和字典查找更高效。因此，自底向上方法往往比自顶向下方法更高效。
@@ -2249,16 +2249,16 @@ for 循环的顺序。为了避免访问未初始化的动态规划状态，可�
 现在，我们可以将 FCI 递归程序转换为迭代程序：
 
 ```python
-dets = np.empty((n_orbitals+1 , n_electrons+1), dtype= object)
+dets = np.empty((n_orbitals+1, n_electrons+1), dtype= object)
 for m in range (n_electrons+1):
-    for n in range (m , n_orbitals+1):
+    for n in range (m, n_orbitals+1):
         if m= =0 :
-            dets[n ,m] = [Determinant.vacuum()]
+            dets[n,m] = [Determinant.vacuum()]
         elif n= =m :
-            dets[n ,m] = [Determinant.fully_occupied(n)]
+            dets[n,m] = [Determinant.fully_occupied(n)]
         else:
-            dets[n ,m] = dets[n -1 , m ]+[
-                    det.add_occupancy(n -1) for det in dets[n -1 ,m -1]]
+            dets[n,m] = dets[n-1, m ]+[
+                    det.add_occupancy(n-1) for det in dets[n-1,m-1]]
 ```
 
 ## 9.8 使用惰性求值优化
@@ -2269,7 +2269,7 @@ for m in range (n_electrons+1):
 （例如 debug、info、warning），以推迟日志消息的构造。采用这种方法是因为格式化某些对象或将其转换为字符串可能是资源密集型操作。通过在自定义日志方法中推迟消息构造，我们可以跳过一些不必要的格式化操作。
 
 ```python
-def debug(message , args):
+def debug(message, args):
     if LOGLEVEL >= DEBUG:
         print(message.format(args))
 ```
@@ -2289,26 +2289,26 @@ def debug(message , args):
 
 ```python
 import numpy as np
-def defer(func , *args):
+def defer(func, *args):
     promise = lambda: func( *[force_eval(x) for x in args])
     return promise
 def force_eval(x):
     if callable (x):
         x = x()
     return x
-def dot(a ,b ) :
-    return defer(np.dot ,a ,b )
-def subtract(a , b):
-    return defer(np.subtract ,a ,b )
-def multiply(a , b):
+def dot(a,b ) :
+    return defer(np.dot,a ,b )
+def subtract(a, b):
+    return defer(np.subtract,a ,b )
+def multiply(a, b):
 ```
 
 ```python
-    return defer(np.multiply ,a ,b )
-def divide(a , b):
-    return defer(np.divide ,a ,b )
-def power(a , b):
-    return defer(np.power ,a ,b )
+    return defer(np.multiply,a ,b )
+def divide(a, b):
+    return defer(np.divide,a ,b )
+def power(a, b):
+    return defer(np.power,a ,b )
 def array(a):
     return defer(lambda: np.array([x() for x in a]))
 def schmidt_orth_lazy(s):
@@ -2316,14 +2316,14 @@ def schmidt_orth_lazy(s):
     c s=[ ]
     guess = np.eye(n)
     for j in range (n):
-        fac = s[j ,j]
+        fac = s[j,j]
         vec = guess[j]
         for k in range (j):
-            dot_kj = dot(cs[k] , s[j])
-            vec = subtract(vec , multiply(dot_kj , cs[k]))
-            fac = subtract(fac , multiply(dot_kj , dot_kj))
-        cs = cs + [divide(vec , power(fac , .5))]
-    return defer(np.transpose , array(cs))
+            dot_kj = dot(cs[k], s[j])
+            vec = subtract(vec, multiply(dot_kj, cs[k]))
+            fac = subtract(fac, multiply(dot_kj, dot_kj))
+        cs = cs + [divide(vec, power(fac, .5))]
+    return defer(np.transpose, array(cs))
 if __name__ == '__main__':
     s = np.eye(3)
     cs = schmidt_orth_lazy(s)
@@ -2334,7 +2334,7 @@ if __name__ == '__main__':
 ```python
 class Promise:
     count = 0
-    def __init__(self , func , *args):
+    def __init__(self, func, *args):
         self._func = func
         self._args = args
 ```
@@ -2349,32 +2349,32 @@ Promise.count += 1
 args = [force_eval(x) for x in self._args]
 return self._func(*args)
 def force_eval(x):
-if isinstance (x , Promise):
+if isinstance (x, Promise):
 x = x.compute()
 return x
 def array(a):
 def build_array(a):
-if isinstance (a , Promise):
+if isinstance (a, Promise):
     return np.array(a.compute())
-if not isinstance (a ,( tuple , list)):
+if not isinstance (a,( tuple, list)):
     return np.array(a)
 # Nested list should be considered for a complete implementation.
-# For simplicity , we only consider a plain list.
+# For simplicity, we only consider a plain list.
 return np.array([force_eval(x) x for x in a])
-return Promise(build_array ,a )
-def schmidt_orth_lazy(s , idx= slice(None)):
+return Promise(build_array,a )
+def schmidt_orth_lazy(s, idx= slice(None)):
     n = s.shape[0]
 c s=[ ]
 guess = np.eye(n)
     for j in range (n):
-        fac = s[j ,j]
+        fac = s[j,j]
 vec = guess[j]
         for k in range (j):
-    dot_kj = dot(cs[k] , s[j])
-    vec = subtract(vec , multiply(dot_kj , cs[k]))
-    fac = subtract(fac , multiply(dot_kj , dot_kj))
-cs = cs + [divide(vec , power(fac , .5))]
-return Promise(np.transpose , array(cs[idx]))
+    dot_kj = dot(cs[k], s[j])
+    vec = subtract(vec, multiply(dot_kj, cs[k]))
+    fac = subtract(fac, multiply(dot_kj, dot_kj))
+cs = cs + [divide(vec, power(fac, .5))]
+return Promise(np.transpose, array(cs[idx]))
 if __name__ == '__main__':
 s = np.eye(3)
 cs = schmidt_orth_lazy(s)
@@ -2384,7 +2384,7 @@ cs = schmidt_orth_lazy(s)
     cs()
     print(Promise.count) # 113
     Promise.count = 0
-    cs = schmidt_orth_lazy(s , idx= -1)
+    cs = schmidt_orth_lazy(s, idx=-1)
     cs()
     print(Promise.count) #9 4
 ```
@@ -2394,19 +2394,19 @@ cs = schmidt_orth_lazy(s)
 
 ```python
 import time
-from concurrent.futures import ThreadPoolExecutor , Future
+from concurrent.futures import ThreadPoolExecutor, Future
 import numpy as np
 import networkx as nx
 concurrent_executor = ThreadPoolExecutor(max_workers=4)
 class Promise:
     _edges = []
-    def __init__(self , func , *args):
+    def __init__(self, func, *args):
         self._func = func
         self._args = args
         self._future = None
         Promise._edges.extend(
-            # A directed edge , means self depends on x
-            [(x , self) for x in args if isinstance (x , Promise)])
+            # A directed edge, means self depends on x
+            [(x, self) for x in args if isinstance (x, Promise)])
     def __repr__(self):
         return f'Deferred {self._func}'
 ```
@@ -2416,8 +2416,8 @@ def compute(self):
 return self._func(*[force_eval(x) for x in self._args])
 def __call__(self):
 return self.compute()
-# Many features can be done in lazy evaluation mode , such as automatic
-# differentiation , visualization of the call graph , etc
+# Many features can be done in lazy evaluation mode, such as automatic
+# differentiation, visualization of the call graph, etc
 def submit(self):
 def task():
     time.sleep(0.1)
@@ -2438,9 +2438,9 @@ Promise._edges.clear()
 futures = [task.submit() for task in nx.topological_sort(tree)]
 print(f'{len(futures)} tasks to execute' )
 # self is the last task (the root) in the dependency tree.
-return futures[ -1].result()
+return futures[-1].result()
 def force_eval(x):
-if isinstance (x , Promise):
+if isinstance (x, Promise):
 return x.result()
 return x
 if __name__ == '__main__':

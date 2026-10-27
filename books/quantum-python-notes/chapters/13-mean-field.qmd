@@ -83,16 +83,16 @@ class SCFWavefunction:
  energies = None
  occupancies = None
  density_matrices = None
-def scf_iter(model , wfn: SCFWavefunction = None) -> SCFWavefunction:
- hcore , s = model.get_hcore_s()
+def scf_iter(model, wfn: SCFWavefunction = None) -> SCFWavefunction:
+ hcore, s = model.get_hcore_s()
  if wfn is not None:
      wfn = model.get_initial_guess()
  converged = False
  while not converged:
-     f = model.get_fock(wfn , hcore ,s )
-     mo_orbitals , mo_energies = model.eigen(f ,s , wfn)
-     wfn , wfn_old = model.make_wfn(mo_orbitals , mo_energies), wfn
-     if model.check_convergence(wfn , wfn_old):
+     f = model.get_fock(wfn, hcore,s )
+     mo_orbitals, mo_energies = model.eigen(f,s , wfn)
+     wfn, wfn_old = model.make_wfn(mo_orbitals, mo_energies), wfn
+     if model.check_convergence(wfn, wfn_old):
          converged = True
  return wfn
 ```
@@ -100,46 +100,46 @@ def scf_iter(model , wfn: SCFWavefunction = None) -> SCFWavefunction:
 
 ```python
 class RHF:
- def __init__(self , mol , gtos):
+ def __init__(self, mol, gtos):
      self.mol = mol
      self.gtos = gtos
-     self.threshold = 1e -6
+     self.threshold = 1e-6
  @lru_cache
  def get_hcore_s(self):
      mol = self.mol
 ```
 
 ```python
-s = overlap_MD.get_matrix(self.gtos , overlap_MD.primitive_overlap)
-t = overlap_MD.get_matrix(self.gtos , overlap_MD.primitive_kinetic)
-v= sum( -z * coulomb_1e_MD.get_matrix(self.gtos , Rc)
-        for z ,R c in zip (mol.nuclear_charges , mol.coordinates))
-return t+v ,s
+s = overlap_MD.get_matrix(self.gtos, overlap_MD.primitive_overlap)
+t = overlap_MD.get_matrix(self.gtos, overlap_MD.primitive_kinetic)
+v= sum( -z * coulomb_1e_MD.get_matrix(self.gtos, Rc)
+        for z,R c in zip (mol.nuclear_charges, mol.coordinates))
+return t+v,s
 def get_initial_guess(self):
-h , s = self.get_hcore_s()
-return self.make_wfn(*self.eigen(h , s))
+h, s = self.get_hcore_s()
+return self.make_wfn(*self.eigen(h, s))
 @property
 @lru_cache
 def eri_tensor(self):
 return eri_OS_unrolled(self.gtos)
 @lru_cache(2) # (1)
-def get_jk(self , wfn):
+def get_jk(self, wfn):
 dm = wfn.density_matrices
-j = einsum( 'ijkl ,lk ->ij', self.eri_tensor , dm)
-k = einsum( 'ijkl ,jk ->il', self.eri_tensor , dm)
-return j ,k
-def get_veff(self , wfn):
-j , k = self.get_jk(wfn)
+j = einsum( 'ijkl,lk->ij', self.eri_tensor, dm)
+k = einsum( 'ijkl,jk->il', self.eri_tensor, dm)
+return j,k
+def get_veff(self, wfn):
+j, k = self.get_jk(wfn)
 return j-k * .5
-def get_fock(self , wfn , hcore , s):
+def get_fock(self, wfn, hcore, s):
 veff = self.get_veff(wfn)
 return hcore + veff
-def eigen(self , fock , overlap):
-e , c = scipy.linalg.eigh(fock , overlap)
-return c ,e
-def make_wfn(self , orbitals , energies):
-return RestrictedCloseShell(self , orbitals , energies)
-def check_convergence(self , wfn , wfn_old):
+def eigen(self, fock, overlap):
+e, c = scipy.linalg.eigh(fock, overlap)
+return c,e
+def make_wfn(self, orbitals, energies):
+return RestrictedCloseShell(self, orbitals, energies)
+def check_convergence(self, wfn, wfn_old):
 t1 = t2 = self.threshold * 1e3
 t3 = self.threshold
 dm = wfn.density_matrices
@@ -151,22 +151,22 @@ return (np.linalg.norm(dm - dm_old) < t1
 ```python
             and abs (self.total_energy(wfn)
                     - self.total_energy(wfn_old)) < t3)
-    def total_energy(self , wfn):
-        hcore , s = self.get_hcore_s()
-        j , k = self.get_jk(wfn)
+    def total_energy(self, wfn):
+        hcore, s = self.get_hcore_s()
+        j, k = self.get_jk(wfn)
         dm = wfn.density_matrices
-        e = einsum( 'ij ,ji', hcore , dm)
-        e += einsum( 'ij ,ji',j , dm) * .5 - einsum( 'ij ,ji',k , dm) * .25
+        e = einsum( 'ij,ji', hcore, dm)
+        e += einsum( 'ij,ji',j , dm) * .5 - einsum( 'ij,ji',k , dm) * .25
         e += self.mol.nuclear_repulsion_energy()
         return e
-    def orbital_gradients(self , wfn):
-        hcore , s = self.get_hcore_s()
-        fock = self.get_fock(wfn , hcore ,s )
+    def orbital_gradients(self, wfn):
+        hcore, s = self.get_hcore_s()
+        fock = self.get_fock(wfn, hcore,s )
         fock_mo = wfn.orbitals.T.dot(fock).dot(wfn.orbitals)
         occ = wfn.occupancies
-        return fock_mo[occ!=0 , occ[: ,None]==0].ravel() * 2.
+        return fock_mo[occ!=0, occ[:,None]==0].ravel() * 2.
 class RestrictedCloseShell(SCFWavefunction):
-    def __init__(self ,m f , orbitals , energies):
+    def __init__(self,m f, orbitals, energies):
         self.gtos = mf.gtos
         self.orbitals = orbitals
         self.energies = energies
@@ -185,17 +185,17 @@ class RestrictedCloseShell(SCFWavefunction):
 
 ```python
 class RKS(RHF):
- def get_veff(self , wfn):
-     j , k = self.get_jk(wfn)
+ def get_veff(self, wfn):
+     j, k = self.get_jk(wfn)
      vxc = get_vxc(wfn)
      return j - hybrid_factor * k + vxc
- def total_energy(self , wfn):
-     hcore , s = self.get_hcore_s()
-     j , k = self.get_jk(wfn)
+ def total_energy(self, wfn):
+     hcore, s = self.get_hcore_s()
+     j, k = self.get_jk(wfn)
      exc = get_exc(wfn)
      dm = wfn.density_matrices
-     return (einsum('ij ,ji', hcore , dm) + einsum( 'ij ,ji',j , dm) * .5
-             - einsum( 'ij ,ji',k , dm) * .25 * hybrid_factor
+     return (einsum('ij,ji', hcore, dm) + einsum( 'ij,ji',j , dm) * .5
+             - einsum( 'ij,ji',k , dm) * .25 * hybrid_factor
              + exc + self.mol.nuclear_repulsion_energy())
 ```
 通过覆盖 SCF 基类的特定函数，可以将其他平均场模型适配到同一个框架中。下面我们将概述一些平均场模型，以及每种模型需要覆盖的函数。具体实现细节将被省略。
@@ -246,112 +246,112 @@ total_energy 函数也需要修改，因为采用 PBC 计算
 ```python
 from eri_OS_rys import get_eri_tensor
 eri_tensor = eri_OS_unrolled(gtos)
-jmat = einsum( 'ijkl ,ji ->kl', eri , dm)
-kmat = einsum( 'ijkl ,jk ->il', eri , dm)
+jmat = einsum( 'ijkl,ji->kl', eri, dm)
+kmat = einsum( 'ijkl,jk->il', eri, dm)
 ```
 在此过程中，积分张量 eri_tensor 的计算是计算量最大的步骤。这里我们计算整个 ERI 张量，其中包含大量冗余积分。为了提高性能，我们可以利用 ERI 的八重置换对称性：
 利用八重对称性的一种方法是修改 get_eri_tensor 函数。我们可以计算 ERI 张量中的必要积分，然后根据置换关系 (13.11) 填充张量的其余部分。然而，这种算法需要大量内存来存储 ERI 张量，并且填充整个张量会产生显著的内存访问开销。
 一种改进方法是只计算不重复的积分，并根据八重对称性通过八种缩并方式使用这些积分。以交换矩阵为例，八种缩并模式如下：
 
 ```text
-einsum('ijkl ,jk ->il', eri , dm)
-einsum('ijkl ,ik ->jl', eri , dm)
-einsum('ijkl ,jl ->ik', eri , dm)
-einsum('ijkl ,il ->jk', eri , dm)
-einsum('ijkl ,kj ->li', eri , dm)
-einsum('ijkl ,ki ->lj', eri , dm)
-einsum('ijkl ,lj ->ki', eri , dm)
-einsum('ijkl ,li ->kj', eri , dm)
+einsum('ijkl,jk->il', eri, dm)
+einsum('ijkl,ik->jl', eri, dm)
+einsum('ijkl,jl->ik', eri, dm)
+einsum('ijkl,il->jk', eri, dm)
+einsum('ijkl,kj->li', eri, dm)
+einsum('ijkl,ki->lj', eri, dm)
+einsum('ijkl,lj->ki', eri, dm)
+einsum('ijkl,li->kj', eri, dm)
 ```
 请注意，第 12 章开发的积分程序以单个高斯型轨道（Gaussian-type orbital，GTO）壳层为基本单位。给定四个 GTO 壳层的指标（一组四壳层），我们可以计算一个小型四指标 ERI 张量，并立即用八种缩并模式对其进行处理。这种方法更节省内存。
 为实现这一算法，我们先从一个不考虑任何对称性的函数开始。
 
 ```python
-def dispatch(gto_params , shell_idx):
-    ' ' 'This function gives all positions of the four GTO shells in the
-    shell -quartet' ' '
-    i ,j ,k , l = shell_idx
-    i0 , i1 = gto_params[i][:2]
-    j0 , j1 = gto_params[j][:2]
-    k0 , k1 = gto_params[k][:2]
-    l0 , l1 = gto_params[l][:2]
-    return i0 ,i 1 ,j 0 ,j 1 ,k 0 ,k 1 ,l 0 ,l 1
-def contract_k_s1(kmat , gto_params ,d m , shell_idx):
-    i0 ,i 1 ,j 0 ,j 1 ,k 0 ,k 1 ,l 0 , l1 = dispatch(gto_params , shell_idx)
-    sub_eri = get_eri_sub_tensor(gto_params , shell_idx)
-    kmat[i0:i1 ,l0:l1] += einsum( 'ijkl ,jk ->il', sub_eri , dm[j0:j1 ,k0:k1])
+def dispatch(gto_params, shell_idx):
+    '''This function gives all positions of the four GTO shells in the
+    shell-quartet'''
+    i,j ,k , l = shell_idx
+    i0, i1 = gto_params[i][:2]
+    j0, j1 = gto_params[j][:2]
+    k0, k1 = gto_params[k][:2]
+    l0, l1 = gto_params[l][:2]
+    return i0,i 1,j 0,j 1,k 0,k 1,l 0,l 1
+def contract_k_s1(kmat, gto_params,d m, shell_idx):
+    i0,i 1,j 0,j 1,k 0,k 1,l 0, l1 = dispatch(gto_params, shell_idx)
+    sub_eri = get_eri_sub_tensor(gto_params, shell_idx)
+    kmat[i0:i1,l0:l1] += einsum( 'ijkl,jk->il', sub_eri, dm[j0:j1,k0:k1])
     return
-def build_k(gtos , dm):
+def build_k(gtos, dm):
     nao = num_functions(gtos)
-    kmat = np.zeros((nao , nao))
+    kmat = np.zeros((nao, nao))
     gto_params = pack_gto_attrs(gtos)
     ngtos = len(gtos)
-    for i ,j ,k ,l in itertools.product(*[range(ngtos)]*4):
-        contract_k_s1(kmat , gto_params ,d m ,( i ,j ,k ,l))
+    for i,j ,k ,l in itertools.product(*[range(ngtos)]*4):
+        contract_k_s1(kmat, gto_params,d m,( i,j,k,l))
     return kmat
 ```
 基于这一实现，很容易应用四重置换对称性
 
 ```python
-def contract_k_s4(kmat , gto_params ,d m , shell_idx):
-  ' ' 'i >=j and k >=l' ' '
-  i ,j ,k , l = shell_idx
+def contract_k_s4(kmat, gto_params,d m, shell_idx):
+  '''i>=j and k>=l'''
+  i,j ,k , l = shell_idx
   if i<j or k<l :
     return
-  i0 ,i 1 ,j 0 ,j 1 ,k 0 ,k 1 ,l 0 , l1 = dispatch(gto_params , shell_idx)
-  sub_eri = get_eri_sub_tensor(gto_params , shell_idx)
+  i0,i 1,j 0,j 1,k 0,k 1,l 0, l1 = dispatch(gto_params, shell_idx)
+  sub_eri = get_eri_sub_tensor(gto_params, shell_idx)
   if i>j and k>l :
-    kmat[i0:i1 ,l0:l1] += einsum( 'ijkl ,jk ->il', sub_eri , dm[j0:j1 ,k0:k1])
-    kmat[j0:j1 ,l0:l1] += einsum( 'ijkl ,ik ->jl', sub_eri , dm[i0:i1 ,k0:k1])
-    kmat[i0:i1 ,k0:k1] += einsum( 'ijkl ,jl ->ik', sub_eri , dm[j0:j1 ,l0:l1])
-    kmat[j0:j1 ,k0:k1] += einsum( 'ijkl ,il ->jk', sub_eri , dm[i0:i1 ,l0:l1])
+    kmat[i0:i1,l0:l1] += einsum( 'ijkl,jk->il', sub_eri, dm[j0:j1,k0:k1])
+    kmat[j0:j1,l0:l1] += einsum( 'ijkl,ik->jl', sub_eri, dm[i0:i1,k0:k1])
+    kmat[i0:i1,k0:k1] += einsum( 'ijkl,jl->ik', sub_eri, dm[j0:j1,l0:l1])
+    kmat[j0:j1,k0:k1] += einsum( 'ijkl,il->jk', sub_eri, dm[i0:i1,l0:l1])
   elif i>j : #k= =l
-    kmat[i0:i1 ,l0:l1] += einsum( 'ijkl ,jk ->il', sub_eri , dm[j0:j1 ,k0:k1])
-    kmat[j0:j1 ,l0:l1] += einsum( 'ijkl ,ik ->jl', sub_eri , dm[i0:i1 ,k0:k1])
+    kmat[i0:i1,l0:l1] += einsum( 'ijkl,jk->il', sub_eri, dm[j0:j1,k0:k1])
+    kmat[j0:j1,l0:l1] += einsum( 'ijkl,ik->jl', sub_eri, dm[i0:i1,k0:k1])
   elif k>l : #i= =j
-    kmat[i0:i1 ,l0:l1] += einsum( 'ijkl ,jk ->il', sub_eri , dm[j0:j1 ,k0:k1])
-    kmat[i0:i1 ,k0:k1] += einsum( 'ijkl ,jl ->ik', sub_eri , dm[j0:j1 ,l0:l1])
+    kmat[i0:i1,l0:l1] += einsum( 'ijkl,jk->il', sub_eri, dm[j0:j1,k0:k1])
+    kmat[i0:i1,k0:k1] += einsum( 'ijkl,jl->ik', sub_eri, dm[j0:j1,l0:l1])
   else: #i= =ja n dk= =l
-    kmat[i0:i1 ,l0:l1] += einsum( 'ijkl ,jk ->il', sub_eri , dm[j0:j1 ,k0:k1])
+    kmat[i0:i1,l0:l1] += einsum( 'ijkl,jk->il', sub_eri, dm[j0:j1,k0:k1])
   return
 ```
 条件 (ij) ≥ (k l) 的应用更为复杂，需要谨慎处理。当 i >k 时，条件 (ij)>( k l) 自然得到满足。由此得到八重对称性版本 contract_k_s8，其中可以在 contract_k_s4 实现的基础上交换 ij 和 kl。当 i = k 时，对于某些 j 和 l 的值，仍然可以施加 ij 和 kl 之间的对称性。然而，在这种情况下正确处理 ij 和 kl 之间的对称性更具挑战性。在当前实现中，我们忽略它们的对称性，直接调用 contract_k_s4 函数，尽管这种方法可能会略微牺牲性能。
 
 ```python
-def contract_k_s8(kmat , gto_params ,d m , shell_idx):
-  ' ' 'i >=j ,k >=l ,i j> =k l ' ' '
-  i ,j ,k , l = shell_idx
+def contract_k_s8(kmat, gto_params,d m, shell_idx):
+  '''i>=j,k >=l,i j> =k l '''
+  i,j ,k , l = shell_idx
   if i<j or k<l or i<k :
     return
 ```
 
 ```python
   if i= =k :
-    return contract_k_s4(kmat , gto_params ,d m , shell_idx)
-  i0 ,i 1 ,j 0 ,j 1 ,k 0 ,k 1 ,l 0 , l1 = dispatch(gto_params , shell_idx)
-  sub_eri = get_eri_sub_tensor(gto_params , shell_idx)
+    return contract_k_s4(kmat, gto_params,d m, shell_idx)
+  i0,i 1,j 0,j 1,k 0,k 1,l 0, l1 = dispatch(gto_params, shell_idx)
+  sub_eri = get_eri_sub_tensor(gto_params, shell_idx)
   if i>j and k>l :
-    kmat[i0:i1 ,l0:l1] += einsum( 'ijkl ,jk ->il', sub_eri , dm[j0:j1 ,k0:k1])
-    kmat[j0:j1 ,l0:l1] += einsum( 'ijkl ,ik ->jl', sub_eri , dm[i0:i1 ,k0:k1])
-    kmat[i0:i1 ,k0:k1] += einsum( 'ijkl ,jl ->ik', sub_eri , dm[j0:j1 ,l0:l1])
-    kmat[j0:j1 ,k0:k1] += einsum( 'ijkl ,il ->jk', sub_eri , dm[i0:i1 ,l0:l1])
-    kmat[l0:l1 ,i0:i1] += einsum( 'ijkl ,kj ->li', sub_eri , dm[k0:k1 ,j0:j1])
-    kmat[l0:l1 ,j0:j1] += einsum( 'ijkl ,ki ->lj', sub_eri , dm[k0:k1 ,i0:i1])
-    kmat[k0:k1 ,i0:i1] += einsum( 'ijkl ,lj ->ki', sub_eri , dm[l0:l1 ,j0:j1])
-    kmat[k0:k1 ,j0:j1] += einsum( 'ijkl ,li ->kj', sub_eri , dm[l0:l1 ,i0:i1])
+    kmat[i0:i1,l0:l1] += einsum( 'ijkl,jk->il', sub_eri, dm[j0:j1,k0:k1])
+    kmat[j0:j1,l0:l1] += einsum( 'ijkl,ik->jl', sub_eri, dm[i0:i1,k0:k1])
+    kmat[i0:i1,k0:k1] += einsum( 'ijkl,jl->ik', sub_eri, dm[j0:j1,l0:l1])
+    kmat[j0:j1,k0:k1] += einsum( 'ijkl,il->jk', sub_eri, dm[i0:i1,l0:l1])
+    kmat[l0:l1,i0:i1] += einsum( 'ijkl,kj->li', sub_eri, dm[k0:k1,j0:j1])
+    kmat[l0:l1,j0:j1] += einsum( 'ijkl,ki->lj', sub_eri, dm[k0:k1,i0:i1])
+    kmat[k0:k1,i0:i1] += einsum( 'ijkl,lj->ki', sub_eri, dm[l0:l1,j0:j1])
+    kmat[k0:k1,j0:j1] += einsum( 'ijkl,li->kj', sub_eri, dm[l0:l1,i0:i1])
   elif i>j : #k= =l
-    kmat[i0:i1 ,l0:l1] += einsum( 'ijkl ,jk ->il', sub_eri , dm[j0:j1 ,k0:k1])
-    kmat[j0:j1 ,l0:l1] += einsum( 'ijkl ,ik ->jl', sub_eri , dm[i0:i1 ,k0:k1])
-    kmat[l0:l1 ,i0:i1] += einsum( 'ijkl ,kj ->li', sub_eri , dm[k0:k1 ,j0:j1])
-    kmat[l0:l1 ,j0:j1] += einsum( 'ijkl ,ki ->lj', sub_eri , dm[k0:k1 ,i0:i1])
+    kmat[i0:i1,l0:l1] += einsum( 'ijkl,jk->il', sub_eri, dm[j0:j1,k0:k1])
+    kmat[j0:j1,l0:l1] += einsum( 'ijkl,ik->jl', sub_eri, dm[i0:i1,k0:k1])
+    kmat[l0:l1,i0:i1] += einsum( 'ijkl,kj->li', sub_eri, dm[k0:k1,j0:j1])
+    kmat[l0:l1,j0:j1] += einsum( 'ijkl,ki->lj', sub_eri, dm[k0:k1,i0:i1])
   elif k>l : #i= =j
-    kmat[i0:i1 ,l0:l1] += einsum( 'ijkl ,jk ->il', sub_eri , dm[j0:j1 ,k0:k1])
-    kmat[i0:i1 ,k0:k1] += einsum( 'ijkl ,jl ->ik', sub_eri , dm[j0:j1 ,l0:l1])
-    kmat[l0:l1 ,i0:i1] += einsum( 'ijkl ,kj ->li', sub_eri , dm[k0:k1 ,j0:j1])
-kmat[k0:k1 ,i0:i1] += einsum( 'ijkl ,lj ->ki', sub_eri , dm[l0:l1 ,i0:i1])
+    kmat[i0:i1,l0:l1] += einsum( 'ijkl,jk->il', sub_eri, dm[j0:j1,k0:k1])
+    kmat[i0:i1,k0:k1] += einsum( 'ijkl,jl->ik', sub_eri, dm[j0:j1,l0:l1])
+    kmat[l0:l1,i0:i1] += einsum( 'ijkl,kj->li', sub_eri, dm[k0:k1,j0:j1])
+    kmat[k0:k1,i0:i1] += einsum( 'ijkl,lj->ki', sub_eri, dm[l0:l1,j0:j1])
   else: #i= =ja n dk= =l
-    kmat[i0:i1 ,l0:l1] += einsum( 'ijkl ,jk ->il', sub_eri , dm[j0:j1 ,k0:k1])
-    kmat[l0:l1 ,i0:i1] += einsum( 'ijkl ,kj ->li', sub_eri , dm[k0:k1 ,j0:j1])
+    kmat[i0:i1,l0:l1] += einsum( 'ijkl,jk->il', sub_eri, dm[j0:j1,k0:k1])
+    kmat[l0:l1,i0:i1] += einsum( 'ijkl,kj->li', sub_eri, dm[k0:k1,j0:j1])
   return
 ```
 在对利用对称性的 J/K 构造程序进行基准测试时，我们发现它比直接使用 einsum 的实现运行得更慢，后者生成完整的 ERI 张量，然后对完整张量应用 einsum 缩并。简单的性能分析表明，contract_k_s8 中 80% 的计算时间花在 einsum 函数上。这种开销源于对 einsum 函数的频繁调用。对于 N 个 GTO 壳层，einsum 被调用 N 次。为了减少 einsum 的开销，可以考虑两种策略：
@@ -379,59 +379,59 @@ Numba JIT 编译 for 循环代码。编译后的代码具有更小的
 
 ```python
 def schwarz_halfcond(gtos):
-    ' ' 'sqrt((ij|ij)) for all GTOs' ' '
+    '''sqrt((ij|ij)) for all GTOs'''
     gto_params = pack_gto_attrs(gtos)
     nao = num_functions(gtos)
-    v = np.zeros((nao , nao))
-    for params_i , params_j in itertools.product(gto_params , gto_params):
-        i0 ,i 1 ,l i ,R a , exps_i , norm_ci = params_i
-        j0 ,j 1 ,l j ,R b , exps_j , norm_cj = params_j
-        out = np.zeros((i1 -i0 ,j 1 -j0 ,i 1 -i0 ,j 1 -j0))
-        contracted_ERI(li ,l j ,l i ,l j , exps_i , exps_j , exps_i , exps_j , norm_ci , norm_cj , norm_ci , norm_cj , Ra ,R b ,R a ,R b , out ,0 ,0 ,0 ,0 )
-        v[i0:i1 ,j0:j1] = einsum( 'ijij ->ij', out) ** .5
+    v = np.zeros((nao, nao))
+    for params_i, params_j in itertools.product(gto_params, gto_params):
+        i0,i 1,l i,R a, exps_i, norm_ci = params_i
+        j0,j 1,l j,R b, exps_j, norm_cj = params_j
+        out = np.zeros((i1-i0,j 1-j0,i 1-i0,j 1-j0))
+        contracted_ERI(li,l j,l i,l j, exps_i, exps_j, exps_i, exps_j, norm_ci, norm_cj, norm_ci, norm_cj, Ra,R b,R a,R b, out,0 ,0 ,0 ,0 )
+        v[i0:i1,j0:j1] = einsum( 'ijij->ij', out) ** .5
     return v
 ```
 为了给 contract_k 函数添加积分筛选功能，可以应用以下 screen_k 装饰器。这个筛选函数考虑了 ERI 张量中的八重置换对称性以及平均场密度矩阵的厄米对称性。
 
 ```python
-def screen_k(contract_k , gtos ,d m , threshold=1e -12):
+def screen_k(contract_k, gtos,d m, threshold=1e-12):
     sc_half = schwarz_halfcond(gtos)
     offsets = gto_offsets(gtos)
     ngtos = len(gtos)
-    sc = np.zeros((ngtos , ngtos))
-    dc = np.zeros((ngtos , ngtos))
-    for i ,( i 0 , i1) in enumerate (itertools.pairwise(offsets)):
-        for j , (j0 , j1) in enumerate (itertools.pairwise(offsets)):
-            sc[i ,j] = sc_half[i0:i1 ,j0:j1].max()
-            dc[i ,j] = dm[i0:i1 ,j0:j1].max()
+    sc = np.zeros((ngtos, ngtos))
+    dc = np.zeros((ngtos, ngtos))
+    for i,( i 0, i1) in enumerate (itertools.pairwise(offsets)):
+        for j, (j0, j1) in enumerate (itertools.pairwise(offsets)):
+            sc[i,j] = sc_half[i0:i1,j0:j1].max()
+            dc[i,j] = dm[i0:i1,j0:j1].max()
 ```
 
 ```python
-    def screen_contract_k(kmat , gto_params ,d m , shell_idx):
-        i ,j ,k , l = shell_idx
-        dm_max = max(dc[j ,k] , dc[i ,k] , dc[j ,l] , dc[i ,l])
-        if threshold > sc[i ,j]*sc[k ,l] * dm_max:
+    def screen_contract_k(kmat, gto_params,d m, shell_idx):
+        i,j ,k , l = shell_idx
+        dm_max = max(dc[j,k], dc[i,k], dc[j,l], dc[i,l])
+        if threshold > sc[i,j]*sc[k,l] * dm_max:
             return
-        return contract_k(kmat , gto_params ,d m , shell_idx)
+        return contract_k(kmat, gto_params,d m, shell_idx)
     return screen_contract_k
-def build_k_8fold(gtos , dm):
-    contract_k = screen_k(contract_k_s8 , gtos , dm)
+def build_k_8fold(gtos, dm):
+    contract_k = screen_k(contract_k_s8, gtos, dm)
     nao = num_functions(gtos)
-    kmat = np.zeros((nao , nao))
+    kmat = np.zeros((nao, nao))
     gto_params = pack_gto_attrs(gtos)
     ngtos = len(gtos)
     for i in range (ngtos):
         for j in range (i+1):
             for k in range (i+1):
                 for l in range (k+1):
-                    contract_k(kmat , gto_params ,d m ,( i ,j ,k ,l))
+                    contract_k(kmat, gto_params,d m,( i,j,k,l))
     return kmat
 ```
 为了在单个壳层四元组（shell-quartet）层面更精细地筛选电子排斥积分（ERI），可以为 contracted_ERI 或 primitive_ERI 函数开发类似的装饰器。我们不深入讨论这些装饰器的具体代码细节，因为它们的实现应该很直接。
 J/K 矩阵是密度矩阵的线性函数。这一性质使我们能够在自洽场（SCF）迭代中增量构建 J/K 矩阵。利用上一次迭代的 J/K 矩阵，以及密度矩阵相对于上一次迭代的变化，我们可以计算当前步骤的 J/K 矩阵。
 
 ```text
-kmat = build_k(gtos ,d m -dm_prev) + kmat_prev
+kmat = build_k(gtos,d m-dm_prev) + kmat_prev
 ```
 随着 SCF 迭代的进行，密度矩阵的变化逐渐减小。采用前面提到的积分筛选技术，在 SCF 接近收敛时可以省略更多积分计算。请注意，增量构建 J/K 矩阵可能导致误差累积。应适当收紧积分筛选阈值。
 
@@ -440,67 +440,67 @@ kmat = build_k(gtos ,d m -dm_prev) + kmat_prev
 在 McMurchie-Davidson ERI 算法（第 12 章第 12.1.3.2 节）中，特定高斯型轨道（GTO）壳层四元组的单个 ERI 块 sub_eri 通过中间 R 和 E 张量的张量收缩构建：
 
 ```text
-sub_eri = einsum( 'ijp ,pq ,qkl ->ijkl',E ,R ,E )
+sub_eri = einsum( 'ijp,pq,qkl->ijkl',E ,R ,E )
 ```
 这里我们暂时不考虑基函数收缩的问题。计算它对 J 矩阵的贡献时，可以得到以下收缩操作：
 
 ```text
-jmat[k0:k1 ,l0:l1] = einsum( 'ji ,ijp ,pq ,qkl ->kl', dm[j0:j1 ,i0:i1] ,E ,R ,E , optimize=True)
+jmat[k0:k1,l0:l1] = einsum( 'ji,ijp,pq,qkl->kl', dm[j0:j1,i0:i1],E ,R ,E , optimize=True)
 ```
 优化收缩顺序可以减少积分计算所需的计算量。可以先进行密度矩阵与其中一个 E 张量的收缩，然后再与 R 张量和另一个 E 张量收缩。我们可以将这一过程应用于每个 ERI 块，并按如下方式实现计算 J 矩阵的函数：
 
 ```python
-from pychem_book.chap12.analytical_integrals.v5.coulomb_1e_MD import ( get_R_tensor , get_E_tensor)
-def build_j(gtos , dm):
+from pychem_book.chap12.analytical_integrals.v5.coulomb_1e_MD import ( get_R_tensor, get_E_tensor)
+def build_j(gtos, dm):
     nao = num_functions(gtos)
-    jmat = np.zeros((nao , nao))
+    jmat = np.zeros((nao, nao))
     gto_params = pack_gto_attrs(gtos)
     ngtos = len(gtos)
     @lru_cache(ngtos*ngtos)
-    def contract_Et_dm(i ,j ) :
-        i0 ,i 1 ,l i ,R a , exps_i , norm_ci = gto_params[i]
-        j0 ,j 1 ,l j ,R b , exps_j , norm_cj = gto_params[j]
-        dm_block = dm[j0:j1 ,i0:i1]
+    def contract_Et_dm(i,j ) :
+        i0,i 1,l i,R a, exps_i, norm_ci = gto_params[i]
+        j0,j 1,l j,R b, exps_j, norm_cj = gto_params[j]
+        dm_block = dm[j0:j1,i0:i1]
         Et_dm = []
-        for ai ,c i in zip (exps_i , norm_ci):
-            for aj ,c j in zip (exps_j , norm_cj):
-                Et = get_E_tensor(li ,l j ,a i ,a j ,R a , Rb)
-                Et_dm.append(ci * cj * einsum('ijt ,ji ->t',E t , dm_block))
+        for ai,c i in zip (exps_i, norm_ci):
+            for aj,c j in zip (exps_j, norm_cj):
+                Et = get_E_tensor(li,l j,a i,a j,R a, Rb)
+                Et_dm.append(ci * cj * einsum('ijt,ji->t',E t, dm_block))
         return Et_dm
     for i in range (ngtos):
         for j in range (ngtos):
             Rt_dm = 0.
             for k in range (ngtos):
                 for l in range (ngtos):
-Et_dm = contract_Et_dm(k ,l ) # (1)
+Et_dm = contract_Et_dm(k,l ) # (1)
 Rt_dm += contract_dm_R( # (2)
-                            gto_params ,( i ,j ,k ,l), Et_dm)
-            i0 ,i 1 ,l i ,R a , exps_i , norm_ci = gto_params[i]
-            j0 ,j 1 ,l j ,R b , exps_j , norm_cj = gto_params[j]
+                            gto_params,( i,j,k,l), Et_dm)
+            i0,i 1,l i,R a, exps_i, norm_ci = gto_params[i]
+            j0,j 1,l j,R b, exps_j, norm_cj = gto_params[j]
             i j=0
 ```
 
 ```python
             jblock = 0.
-            for ai ,c i in zip (exps_i , norm_ci):
-                for aj ,c j in zip (exps_j , norm_cj):
-                    Et = get_E_tensor(li ,l j ,a i ,a j ,R a , Rb)
+            for ai,c i in zip (exps_i, norm_ci):
+                for aj,c j in zip (exps_j, norm_cj):
+                    Et = get_E_tensor(li,l j,a i,a j,R a, Rb)
                     R_cicj = ci * cj * Rt_dm[ij]
-jblock += einsum( 'ijt ,t ->ij',E t , R_cicj) # (3)
+jblock += einsum( 'ijt,t->ij',E t, R_cicj) # (3)
                     ij += 1
-            jmat[i0:i1 ,j0:j1] = jblock
+            jmat[i0:i1,j0:j1] = jblock
     return jmat
 ```
 如第 (1) 行所示，密度矩阵与 E 张量收缩得到的中间量可以预先计算并缓存。在第 (2) 行，contract_dm_R 函数执行中间量与 R 张量之间的收缩。最后，在第 (3) 行，我们使用另一个 E 张量将 R 中间量变换为 J 矩阵。为简单起见，此示例没有利用八重置换对称性。可以按照前几节所述的类似方法启用八重对称性。
 MD 算法中的 R 张量仅针对原始 GTO 构建。通过修改第 12 章的 MD 积分程序，我们可以将 R 张量程序嵌入收缩代码，得到如下 contract_dm_R 函数：
 
 ```python
-def contract_dm_R(gto_params , shell_idx , Et_dm):
-    i ,j ,k , l = shell_idx
-    i0 ,i 1 ,l i ,R a , exps_i , norm_ci = gto_params[i]
-    j0 ,j 1 ,l j ,R b , exps_j , norm_cj = gto_params[j]
-    k0 ,k 1 ,l k ,R c , exps_k , norm_ck = gto_params[k]
-    l0 ,l 1 ,l l ,R d , exps_l , norm_cl = gto_params[l]
+def contract_dm_R(gto_params, shell_idx, Et_dm):
+    i,j ,k , l = shell_idx
+    i0,i 1,l i,R a, exps_i, norm_ci = gto_params[i]
+    j0,j 1,l j,R b, exps_j, norm_cj = gto_params[j]
+    k0,k 1,l k,R c, exps_k, norm_ck = gto_params[k]
+    l0,l 1,l l,R d, exps_l, norm_cl = gto_params[l]
     o u t=[ ]
     for ai in exps_i:
         for aj in exps_j:
@@ -508,12 +508,12 @@ def contract_dm_R(gto_params , shell_idx , Et_dm):
             k l=0
             for ak in exps_k:
                 for al in exps_l:
-                    Rt = primitive_R_tensor(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l , Ra ,R b ,R c ,R d )
-                    Rt_dm += einsum( 'pq ,q ->p',R t , Et_dm[kl])
+                    Rt = primitive_R_tensor(li,l j,l k,l l,a i,a j,a k,a l, Ra,R b,R c,R d )
+                    Rt_dm += einsum( 'pq,q->p',R t, Et_dm[kl])
                     kl += 1
             out.append(Rt_dm)
     return np.array(out)
-def primitive_R_tensor(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd):
+def primitive_R_tensor(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     lij = li + lj
     aij = ai + aj
     Rp = (ai * R a+a j * Rb) / aij
@@ -525,21 +525,21 @@ def primitive_R_tensor(li ,l j ,l k ,l l ,a i ,a j ,a k ,a l ,R a ,R b ,R c , Rd
     Rq = (ak * R c+a l * Rd) / akl
     Rpq = Rp - Rq
     theta = aij * akl / (aij + akl)
-    Rt = get_R_tensor(lij + lkl , theta , Rpq)
+    Rt = get_R_tensor(lij + lkl, theta, Rpq)
     nf_ij = (lij+1) *(lij+2)*(lij+3)//6
     nf_kl = (lkl+1) *(lkl+2)*(lkl+3)//6
-    Rt2 = np.empty((nf_ij , nf_kl))
-    for ij ,( e ,f ,g ) in enumerate (reduced_cart_iter(lij)):
-        phase = ( -1)**(e+f+g)
-        for kl ,( t ,u ,v ) in enumerate (reduced_cart_iter(lkl)):
-            Rt2[ij ,kl] = phase * Rt[t+e ,u+f ,v+g]
+    Rt2 = np.empty((nf_ij, nf_kl))
+    for ij,( e,f ,g ) in enumerate (reduced_cart_iter(lij)):
+        phase = (-1)**(e+f+g)
+        for kl,( t,u ,v ) in enumerate (reduced_cart_iter(lkl)):
+            Rt2[ij,kl] = phase * Rt[t+e,u+f,v+g]
     Rt2 *=2 *np.pi**2.5/(aij*akl*(aij+akl)**.5)
     return Rt2
 @lru_cache(20)
 def reduced_cart_iter(n):
-    ' ' 'Nested loops for Cartesian components , subject to x+y+z <= n' ' '
-    return [(x ,y ,z ) for x in range (n+1)
-            for y in range (n+1 -x) for z in range (n+1 -x -y)]
+    '''Nested loops for Cartesian components, subject to x+y+z <= n'''
+    return [(x,y ,z ) for x in range (n+1)
+            for y in range (n+1-x) for z in range (n+1-x-y)]
 ```
 与先构建四指标积分张量、再进行 einsum 收缩的方法相比，上述三步收缩策略可以减少浮点运算次数（FLOP）和中间量的内存占用，从而提高 J 矩阵构建的性能。这种用于计算 J 矩阵的优化技术称为 J 引擎（J-engine）算法 [12]。
 
@@ -654,24 +654,24 @@ LibXC [13] 和 XCFun [14] 等常用 XC 泛函库采用这一约定。该积分�
 利用成熟的积分网格（integration grids），例如 Becke 网格 [15] 或均匀网格，我们可以使用 XC 导数张量和 einsum 收缩函数计算 XC 矩阵：
 
 ```python
-def get_vxc(gtos ,d m , xc_code , grids , weights):
-ao = eval_gtos(gtos , grids) # (1)
-    nao , ngrids = ao.shape[1:]
-    rho_ij = np.zeros((5 , nao , nao , ngrids))
+def get_vxc(gtos,d m, xc_code, grids, weights):
+ao = eval_gtos(gtos, grids) # (1)
+    nao, ngrids = ao.shape[1:]
+    rho_ij = np.zeros((5, nao, nao, ngrids))
 xctype = xc_family(xc_code) # (2)
-xc_tensor = xc_deriv_tensor1(density , xc_code) # (3)
+xc_tensor = xc_deriv_tensor1(density, xc_code) # (3)
     match xctype:
         case 'LDA':
-            rho_ij[0] = einsum( 'xig ,xjg ->ijg', ao[:1] , ao[:1])
+            rho_ij[0] = einsum( 'xig,xjg->ijg', ao[:1], ao[:1])
         case 'GGA':
-            rho_ij[0:4] = einsum( 'xig ,jg ->xijg', ao[:4] , ao[0])
-            rho_ij[1:4] += einsum( 'ig ,xjg ->xijg', ao[0] , ao[1:4])
+            rho_ij[0:4] = einsum( 'xig,jg->xijg', ao[:4], ao[0])
+            rho_ij[1:4] += einsum( 'ig,xjg->xijg', ao[0], ao[1:4])
         case 'MGGA':
-            rho_ij[0:4] = einsum( 'xig ,jg ->xijg', ao[:4] , ao[0])
-            rho_ij[1:4] += einsum( 'ig ,xjg ->xijg', ao[0] , ao[1:4])
-            rho_ij[4] = einsum( 'xig ,xjg ->ijg', ao[1:4] , ao[1:4]) * .5
-    density = einsum( 'xijg ,sji ->sxg', rho_ij , dm)
-    vxc = einsum( 'g ,xijg ,axg ->aij', weights , rho_ij , xc_tensor)
+            rho_ij[0:4] = einsum( 'xig,jg->xijg', ao[:4], ao[0])
+            rho_ij[1:4] += einsum( 'ig,xjg->xijg', ao[0], ao[1:4])
+            rho_ij[4] = einsum( 'xig,xjg->ijg', ao[1:4], ao[1:4]) * .5
+    density = einsum( 'xijg,sji->sxg', rho_ij, dm)
+    vxc = einsum( 'g,xijg,axg->aij', weights, rho_ij, xc_tensor)
     return vxc
 ```
 第 (1) 行的 ao 张量存储高斯型轨道（Gaussian-type orbital，GTO）函数及其导数在网格上的值。第 (2) 行的 xc_code 是 XC 泛函的缩写，例如 ’PBE’ 或 ’B3LYP’。XC 导数张量由第 (3) 行的 xc_deriv_tensor1 函数生成，我们将在后面讨论该函数。
@@ -684,30 +684,30 @@ ao 张量的第一维有四个分量，分别对应 GTO 值及其一阶导数的
 下面的实现计算 GTO 的值及其一阶导数，这些结果足以计算 XC 矩阵。
 
 ```python
-def eval_gto(gto , grids):
+def eval_gto(gto, grids):
     l = gto.angular_momentum
-    dx ,d y , dz = (grids - gto.coordinates).T
+    dx,d y, dz = (grids - gto.coordinates).T
     r 2=d x * d x+d y * dy + dz * dz
-    ao = np.zeros((4 , n_cart(l), ngrids))
-    for e ,c in zip (gto.exponents , gto.coefficients):
-        fac = c * np.exp( -e * r2)
-        gtox = dx **np.arange(0 , l+2)[: ,np.newaxis]
-        gtoy = dy **np.arange(0 , l+2)[: ,np.newaxis]
-        gtoz = dz **np.arange(0 , l+2)[: ,np.newaxis]
-        for n , (lx ,l y , lz) in enumerate (iter_cart_xyz(l)):
-            ao[0 ,n] += fac * gtox[lx] * gtoy[ly] * gtoz[lz]
-            ao[1 ,n] -= 2 * e * fac * gtox[lx+1] * gtoy[ly] * gtoz[lz]
+    ao = np.zeros((4, n_cart(l), ngrids))
+    for e,c in zip (gto.exponents, gto.coefficients):
+        fac = c * np.exp(-e * r2)
+        gtox = dx **np.arange(0, l+2)[:,np.newaxis]
+        gtoy = dy **np.arange(0, l+2)[:,np.newaxis]
+        gtoz = dz **np.arange(0, l+2)[:,np.newaxis]
+        for n, (lx,l y, lz) in enumerate (iter_cart_xyz(l)):
+            ao[0,n] += fac * gtox[lx] * gtoy[ly] * gtoz[lz]
+            ao[1,n] -= 2 * e * fac * gtox[lx+1] * gtoy[ly] * gtoz[lz]
             if l x>0 :
-                ao[1 ,n] += fac * lx * gtox[lx -1] * gtoy[ly] * gtoz[lz]
-            ao[2 ,n] -= 2 * e * fac * gtox[lx] * gtoy[ly+1] * gtoz[lz]
+                ao[1,n] += fac * lx * gtox[lx-1] * gtoy[ly] * gtoz[lz]
+            ao[2,n] -= 2 * e * fac * gtox[lx] * gtoy[ly+1] * gtoz[lz]
             if l y>0 :
-                ao[2 ,n] += fac * ly * gtox[lx] * gtoy[ly -1] * gtoz[lz]
-            ao[3 ,n] -= 2 * e * fac * gtox[lx] * gtoy[ly] * gtoz[lz+1]
+                ao[2,n] += fac * ly * gtox[lx] * gtoy[ly-1] * gtoz[lz]
+            ao[3,n] -= 2 * e * fac * gtox[lx] * gtoy[ly] * gtoz[lz+1]
             if l z>0 :
-                ao[3 ,n] += fac * lx * gtox[lx] * gtoy[ly] * gtoz[lz -1]
+                ao[3,n] += fac * lx * gtox[lx] * gtoy[ly] * gtoz[lz-1]
     return ao
-def eval_gtos(gtos , grids):
-    return np.concatenate([eval_gto(gto , grids) for gto in gtos] , axis=1)
+def eval_gtos(gtos, grids):
+    return np.concatenate([eval_gto(gto, grids) for gto in gtos], axis=1)
 ```
 在上述张量收缩方案中，主要挑战是计算 XC 导数张量 v 和 v。通常，诸如
 LibXC 或 XCFun 的 XC 库只提供关于 ρ、σ 和 τ 的偏导数，例如
@@ -737,10 +737,10 @@ LibXC 或 XCFun 的 XC 库只提供关于 ρ、σ 和 τ 的偏导数，例如
 []{#eq-13-031}
 
 ```python
-   def conversion_1(v , axis=0):
-       ' ' '[u_u , u_d , d_d] -> [[u_u , u_d] , [d_u , d_d]]' ' '
+   def conversion_1(v, axis=0):
+       '''[u_u, u_d, d_d] -> [[u_u, u_d], [d_u, d_d]]'''
        assert v.shape[axis] == 3
-       return v[(slice(None),) * axis + ([[0 ,1] ,[1 ,2]] ,)]
+       return v[(slice(None),) * axis + ([[0,1],[1,2]],)]
 ```
 
 - II 型转换处理 σ 的不同自旋分量
@@ -750,76 +750,76 @@ LibXC 或 XCFun 的 XC 库只提供关于 ρ、σ 和 τ 的偏导数，例如
 []{#eq-13-032}
 
 ```python
-   def conversion_2(v , axis=0):
-       ' ' '[uu ,u d , dd] -> [[uu *2 , ud] , [du ,d d *2]]' ' '
+   def conversion_2(v, axis=0):
+       '''[uu,u d, dd] -> [[uu *2, ud], [du,d d *2]]'''
        assert v.shape[axis] == 3
-       v = v[( slice(None),) * axis + ([[0 ,1] ,[1 ,2]] ,)]
-v[(slice(None),)*axis + (0 ,0)] *=2 # (1)
-       v[(slice(None),)*axis + (1 ,1)] *=2
+       v = v[( slice(None),) * axis + ([[0,1],[1,2]],)]
+v[(slice(None),)*axis + (0,0)] *=2 # (1)
+       v[(slice(None),)*axis + (1,1)] *=2
        return v
 ```
 在这两个转换函数中，使用 NumPy 的花式索引（fancy indexing）[[0,1],[1,2]]，将一个三元素向量重新排列为 2 × 2 数组。需要转换的索引不一定总是第一个索引。为此，我们对缺失的索引使用
 slice(None) 表示法。例如，第 (1) 行中复杂的索引代码 v[(slice(None),)*axis + (0,0)] 等价于数组索引
 
 ```text
-v[: ,: ,0 ,0] when axis=2 .
+v[:,:,0,0]when axis=2.
 ```
 如果考虑密度变量 ρ、∇ ρ 和 τ 的自旋索引，局域密度近似（local density approximation，LDA）泛函有 2 个独立变量，广义梯度近似（generalized gradient approximation，GGA）有 2 × 4 个，meta-GGA 有 2 × 5 个。这些变量决定一阶和二阶 XC 导数张量的形状。对于 LDA，其形状分别为 (2, 1) 和 (2, 1, 2, 1)。对于 GGA，其形状分别为 (2, 4) 和 (2, 4, 2, 4)。对于 meta-GGA，其形状分别为 (2, 5) 和 (2, 5, 2, 5)。
 在程序中构造 XC 导数张量时，我们可以利用 I 型转换恢复 ρ 和 τ 的导数的对称性。对于 ∇ ρ 的导数，需要用 II 型转换将 σ 的导数变为对称形式。下面给出一阶和二阶 XC 导数张量的代码。
 
 ```python
-def xc_deriv_tensor1(density , xc_code):
-raw_xc = eval_xc(xc_code , density , spin=1 , deriv=1) # (1)
+def xc_deriv_tensor1(density, xc_code):
+raw_xc = eval_xc(xc_code, density, spin=1, deriv=1) # (1)
     xctype = xc_family(xc_code)
-    ngrids = density.shape[ -1]
+    ngrids = density.shape[-1]
     if xctype == 'LDA':
-        vp = raw_xc[ 'vrho'].reshape(2 ,1 , ngrids)
+        vp = raw_xc[ 'vrho'].reshape(2,1 , ngrids)
     else:
         if xctype == 'GGA':
-            vp = np.empty((2 ,4 , ngrids))
+            vp = np.empty((2,4 , ngrids))
         else:
-            vp = np.empty((2 ,5 , ngrids))
-        vp[: ,0] = raw_xc[ 'vrho']
-        vp[: ,1:4] = einsum( 'abg ,bxg ->axg', conversion_2(raw_xc['vsigma']), density[: ,1:4])
+            vp = np.empty((2,5 , ngrids))
+        vp[:,0] = raw_xc[ 'vrho']
+        vp[:,1:4] = einsum( 'abg,bxg->axg', conversion_2(raw_xc['vsigma']), density[:,1:4])
         if xctype == 'MGGA':
-            vp[: ,4] = raw_xc[ 'vtau']
+            vp[:,4] = raw_xc[ 'vtau']
     return vp
-def xc_deriv_tensor2(density , xc_code):
-    raw_xc = eval_xc(xc_code , density , spin=1 , deriv=2)
+def xc_deriv_tensor2(density, xc_code):
+    raw_xc = eval_xc(xc_code, density, spin=1, deriv=2)
     xctype = xc_family(xc_code)
-    ngrids = density.shape[ -1]
+    ngrids = density.shape[-1]
     if xctype == 'LDA':
-        vp = conversion_1(raw_xc[ 'v2rho2']).reshape(2 ,1 ,2 ,1 , ngrids)
+        vp = conversion_1(raw_xc[ 'v2rho2']).reshape(2,1,2,1, ngrids)
     elif xctype == 'GGA':
-        vp = np.empty((2 ,4 ,2 ,4 , ngrids))
-        vp[: ,0 ,: ,0] = conversion_1(raw_xc[ 'v2rho2'])
+        vp = np.empty((2,4 ,2 ,4 , ngrids))
+        vp[:,0,:,0] = conversion_1(raw_xc[ 'v2rho2'])
         # First transforms to
-        #[[uu_uu , ud_ud , ud_dd] ,
-        # [ud_uu , ud_ud , ud_dd] ,
+        #[[uu_uu, ud_ud, ud_dd],
+        # [ud_uu, ud_ud, ud_dd],
 ```
 
 ```python
-        # [dd_uu , dd_ud , dd_dd]]
-        qgg = raw_xc[ 'v2sigma2'][[[0 ,1 ,2 ] , [1 ,3 ,4 ] , [2 ,4 , 5]]]
+        # [dd_uu, dd_ud, dd_dd]]
+        qgg = raw_xc[ 'v2sigma2'][[[0,1 ,2 ], [1,3 ,4 ], [2,4 , 5]]]
         # Expands to
-        #[[[uu_uu*2 , ud_ud] , [ud_ud , ud_dd *2]] ,
-        # [[ud_uu *2 , ud_ud] , [ud_ud , ud_dd *2]] ,
-        # [[dd_uu *2 , dd_ud] , [dd_ud , dd_dd *2]]]
-        qgg = conversion_2(qgg , axis=1)
+        #[[[uu_uu*2, ud_ud], [ud_ud, ud_dd *2]],
+        # [[ud_uu *2, ud_ud], [ud_ud, ud_dd *2]],
+        # [[dd_uu *2, dd_ud], [dd_ud, dd_dd *2]]]
+        qgg = conversion_2(qgg, axis=1)
         # Expands to
-        #[[[[uu_uu*2*2 , ud_ud *2] , [ud_ud *2 , ud_dd *2*2]] ,
-# [[ud_uu *2 , ud_ud ]  , [ud_ud , ud_dd *2 ]]] ,
+        #[[[[uu_uu*2*2, ud_ud *2], [ud_ud *2, ud_dd *2*2]],
+# [[ud_uu *2 , ud_ud ] , [ud_ud , ud_dd *2 ]]] ,
 # [[[ud_uu *2 , ud_ud ] , [ud_ud , ud_dd *2] ] ,
-# [[dd_uu *2*2 , dd_ud *2] , [dd_ud *2 , dd_dd *2*2]]]]
-        qgg = conversion_2(qgg , axis=0)
-        vp[: ,1:4 ,: ,1:4] = einsum( 'abcdg ,bxg ,dyg ->axcyg', qgg , density[: ,1:4] , density[: ,1:4])
+# [[dd_uu *2*2, dd_ud *2], [dd_ud *2, dd_dd *2*2]]]]
+        qgg = conversion_2(qgg, axis=0)
+        vp[:,1:4,:,1:4] = einsum( 'abcdg,bxg,dyg->axcyg', qgg, density[:,1:4], density[:,1:4])
         qg = conversion_2(raw_xc[ 'vsigma'])
-        for i in range (1 ,4 ) :
-            vp[: ,i ,: ,i] += qg
-        qrg = conversion_2(raw_xc[ 'v2rhosigma'].reshape(2 ,3 ,ngrids), 1)
-        qrg = einsum( 'rabg ,bxg ->raxg', qrg , density[: ,1:4])
-        vp[: ,0 ,: ,1:4] = qrg
-        vp[: ,1:4 ,: ,0] = qrg.transpose(1 ,2 ,0 ,3)
+        for i in range (1,4 ) :
+            vp[:,i,:,i] += qg
+        qrg = conversion_2(raw_xc[ 'v2rhosigma'].reshape(2,3,ngrids), 1)
+        qrg = einsum( 'rabg,bxg->raxg', qrg, density[:,1:4])
+        vp[:,0,:,1:4] = qrg
+        vp[:,1:4,:,0] = qrg.transpose(1,2,0,3)
     elif xctype == 'MGGA':
         ...
     return vp
@@ -827,22 +827,22 @@ def xc_deriv_tensor2(density , xc_code):
 第 (1) 行的辅助函数 eval_xc 用于计算 LibXC 库中的 XC 泛函。为简单起见，我们利用 PySCF 软件包提供的接口访问 LibXC 的功能。
 
 ```python
-def eval_xc(density , xc_code , order=0):
-    ' ' 'Returns the raw derivatives from XC libraries
+def eval_xc(density, xc_code, order=0):
+    '''Returns the raw derivatives from XC libraries
     exc: the energy
     vrho: first partial derivative in terms of the density
     vsigma: first partial derivative in terms of sigma
     vtau: first partial derivative in terms of the kinetic energy density
-    v2rho2 , v2rhosigma , v2sigma2 , v2rhotau , v2sigmatau , v2tau2:
+    v2rho2, v2rhosigma, v2sigma2, v2rhotau, v2sigmatau, v2tau2:
         second order partial derivatives
-    ' ' '
+    '''
     # Use pyscf libxc module to mimic the LibXC functionality
     from pyscf.dft import libxc
     assert density.ndim == 3
 ```
 
 ```python
-    exc , vxc , fxc , kxc = libxc.eval_xc(density , xc_code , deriv=order)
+    exc, vxc, fxc, kxc = libxc.eval_xc(density, xc_code, deriv=order)
     xctype = xc_family(xc_code)
     results = {}
     results['exc'] = exc * density[0]
@@ -865,8 +865,8 @@ def eval_xc(density , xc_code , order=0):
         raise NotImplementedError
     return results
 def xc_family(xc_code):
-    ' ' 'Returns the family (LDA , GGA , MGGA) of a XC functional.
-    ' ' '
+    '''Returns the family (LDA, GGA, MGGA) of a XC functional.
+    '''
     from pyscf.dft import libxc
     return libxc.xc_type(xc_code)
 ```
@@ -894,7 +894,7 @@ B21 B 22 ··· B 2n 1 ⎟⎟ c2 ⎟⎟
 将这些方程转换为 Python 程序并不困难。给定误差向量和试探向量的列表作为输入，下面的 extrapolate 函数生成一个解向量。
 
 ```python
-def extrapolate(errvecs , tvecs):
+def extrapolate(errvecs, tvecs):
 ```
 ⎟ ⎟
 
@@ -904,11 +904,11 @@ def extrapolate(errvecs , tvecs):
 ⎛
 
 ```python
-    B = np.zeros((space+1 , space+1))
+    B = np.zeros((space+1, space+1))
 ```
 
 ```text
-    B[ -1 ,: -1] = B[: -1 , -1] = 1.
+    B[-1,:-1] = B[:-1,-1] = 1.
 ```
 ⎜⎜
 
@@ -917,26 +917,26 @@ def extrapolate(errvecs , tvecs):
 ```
 
 ```text
-    g[ -1] = 1
+    g[-1] = 1
 ```
 
 ```text
-    for i ,e 1 in enumerate (errvecs):
-        for j ,e 2 in enumerate (errvecs):
+    for i,e 1 in enumerate (errvecs):
+        for j,e 2 in enumerate (errvecs):
             if j<i :
 ```
 ⎜
 
 ```text
                 continue
-            B[i ,j] = B[j ,i] = e1.dot(e2)
-    c = scipy.linalg.solve(B ,g , assume_a= 'sym')[: -1]
+            B[i,j] = B[j,i] = e1.dot(e2)
+    c = scipy.linalg.solve(B,g , assume_a= 'sym')[:-1]
     sol = tvecs[0] * c[0]
 ```
 ⎜
 
 ```text
-    for v ,x in zip (tvecs[1:] , c[1:]):
+    for v,x in zip (tvecs[1:], c[1:]):
 ```
 
 ![公式图](../assets/math/eq-13-036.png){width=47%}
@@ -964,21 +964,21 @@ def extrapolate(errvecs , tvecs):
 ```python
 from collections import deque
 class DIIS:
- def __init__(self , max_space=8):
+ def __init__(self, max_space=8):
      self.errvecs = deque(maxlen=max_space)
      self.tvecs = deque(maxlen=max_space)
- def update(self , errvec , tvec):
+ def update(self, errvec, tvec):
      self.errvecs.append(_HashableVector(errvec.ravel()))
      self.tvecs.append(_HashableVector(tvec))
-     return extrapolate(self.errvecs , self.tvecs)
+     return extrapolate(self.errvecs, self.tvecs)
 class _HashableVector:
- def __init__(self , vec):
+ def __init__(self, vec):
      self.data = vec
  @lru_cache
- def dot(self , other):
+ def dot(self, other):
      assert self.data.ndim == other.data.ndim == 1
      return self.data.dot(other.data)
- def __mul__(self , val):
+ def __mul__(self, val):
      return self.data * val
 ```
 在量子化学应用中，通常没有必要保留所有 DIIS 状态。DIIS 程序可以丢弃较旧的状态，并用最近的 n 个向量近似求解。Python 内置的数据结构 collections.deque 在这种情况下是一个
@@ -990,7 +990,7 @@ class _HashableVector:
 
 ```python
 class DIIS:
-    def __init__(self , filename , max_space=8):
+    def __init__(self, filename, max_space=8):
         self.filename = filename
 ```
 
@@ -1002,9 +1002,9 @@ class DIIS:
     @property
     def max_space(self):
         return self.keys.maxlen
-    def update(self , errvec , tvec):
-        with h5py.File(self.filename , mode= 'a') as f:
-            head , self.head = self.head , (self.head + 1) % self.max_space
+    def update(self, errvec, tvec):
+        with h5py.File(self.filename, mode= 'a') as f:
+            head, self.head = self.head, (self.head + 1) % self.max_space
             self.keys.append(head)
             if f'e{head}' in f:
                 # Reuse existing datasets
@@ -1019,16 +1019,16 @@ class DIIS:
             f.flush()
             errvecs = [_HashableVector(f[f 'e{key}']) for key in self.keys]
             tvecs = [_HashableVector(f[f 't{key}']) for key in self.keys]
-            return extrapolate(errvecs , tvecs)
+            return extrapolate(errvecs, tvecs)
     def dumps(self):
-        ' ' 'Only JSON -serializes a few necessary attributes' ' '
+        '''Only JSON-serializes a few necessary attributes'''
         return json.dumps({
-            'max_space': self.max_space , 'keys': self.keys , 'head': self.head})
+            'max_space': self.max_space, 'keys': self.keys, 'head': self.head})
     @classmethod
-    def restore(cls , filename):
-        with h5py.File(filename , mode= 'r') as f:
+    def restore(cls, filename):
+        with h5py.File(filename, mode= 'r') as f:
             attrs = json.loads(f[ 'metadata'][()])
-        obj = cls(filename , attrs[ 'max_space'])
+        obj = cls(filename, attrs[ 'max_space'])
         obj.keys = attrs[ 'keys']
         obj.head = attrs[ 'head']
         return obj
@@ -1036,13 +1036,13 @@ class DIIS:
 
 ```python
 class _HashableVector:
-    def __init__(self , vec: Union[np.ndarray , h5py.Dataset]):
+    def __init__(self, vec: Union[np.ndarray, h5py.Dataset]):
         self.data = vec
     @lru_cache
-    def dot(self , other):
+    def dot(self, other):
         assert self.data.ndim == other.data.ndim == 1
         return np.asarray(self.data).dot(np.asarray(other.data))
-    def __mul__(self , val):
+    def __mul__(self, val):
         return np.asarray(self.data) * val
 ```
 方法只需要最近的几个向量，因此可以复用 HDF5 数据集，减小 HDF5 文件的大小。为此，引入 keys 属性来跟踪误差向量和试探向量实际引用的数据集。需要注意，传给 extrapolate 函数的 errvecs 和 tvec 列表只包含对 h5py Dataset 的引用。这些引用只在 HDF5 文件打开的上下文中有效。要访问这些向量中的数据，必须使用 np.asarray 函数将数据加载到内存中。
@@ -1066,20 +1066,20 @@ class _HashableVector:
 
 ```python
 class RHFVeffClient(VeffClient):
-    def accept(self , mf):
-        j , k = mf.get_jk()
+    def accept(self, mf):
+        j, k = mf.get_jk()
         return j-. 5 * k
 ```
 
 ```python
 class KSVeffClient(VeffClient):
- def accept(self , mf):
+ def accept(self, mf):
      ...
      return j + vxc
 class DensityFittingClient(JKClient):
- def accept(self ,m f ,d m ) :
+ def accept(self,m f,d m ) :
      ...
-     return j ,k
+     return j,k
 ...
 class MeanField
  hcore_client: HcoreClient = None
@@ -1101,8 +1101,8 @@ def mean_field_factory(**configuration):
      model.set_jk_client(DensityFittingClient())
  ...
  return model
-# Perform a density -fitting RKS -DFT calculation
-df_rks_model = mean_field_factory(KS=True , DF=True)
+# Perform a density-fitting RKS-DFT calculation
+df_rks_model = mean_field_factory(KS=True, DF=True)
 scf_iter(df_rks_model)
 ```
 这种访问者模式方法有几个优点：
@@ -1118,18 +1118,18 @@ scf_iter(df_rks_model)
 例如，QM/MM 方法可以与各种 HF 或 KS DFT 模型结合。要加入 QM/MM 贡献，可以实现函数来覆盖均场对象的 get_hcore 和 total_energy 函数。下面的代码示例展示了这一点：
 
 ```python
-def apply_qmmm(mf , MM_charges , MM_coordinates):
+def apply_qmmm(mf, MM_charges, MM_coordinates):
     original_hcore_s = mf.get_hcore_s
     original_total_energy = mf.total_energy
     def custom_hcore_s():
-        hcore , s = original_hcore_s()
-        # integrals to compute <i|M M  -electrostatic potential | j >
-        v_mm = sum( -z * coulomb_1e_MD.get_matrix(self.gtos , Rc)
-                   for z ,R c in zip (MM_charges , MM_coordinates))
-        return hcore + v_mm ,s
+        hcore, s = original_hcore_s()
+        # integrals to compute <i|M M -electrostatic potential | j >
+        v_mm = sum(-z * coulomb_1e_MD.get_matrix(self.gtos, Rc)
+                   for z,R c in zip (MM_charges, MM_coordinates))
+        return hcore + v_mm,s
     def custom_total_energy():
         e_qm = original_total_energy()
-e_mm = ... # 1/2 sum_{ij} Qi * Qj / |Ri     -Rj|
+e_mm = ... # 1/2 sum_{ij} Qi * Qj / |Ri -Rj|
         return e_qm + e_mm
 mf.get_hcore_s = custom_hcore_s # (1)
 mf.total_energy = custom_total_energy # (2)
@@ -1148,7 +1148,7 @@ original_hcore_s = mf.__class__.get_hcore_s
 def custom_hcore_s(self):
     hcore = original_hcore_s(self)
     ...
-    return hcore + v_mm ,s
+    return hcore + v_mm,s
 mf.__class__.get_hcore_s = custom_hcore_s
 ```
 然而，这种补丁不仅会永久改变 mf.__class__ 引用的类的功能，还会影响从该基类派生的所有类的行为。这可能导致意料之外的后果。
@@ -1163,12 +1163,12 @@ mf.__class__.get_hcore_s = custom_hcore_s
 继续使用 QM/MM 示例说明动态类方法。在动态定义的 QMMM_MeanField 类中，我们可以使用标准的子类语法覆盖 get_hcore 和 total_energy 方法。
 
 ```python
-def apply_qmmm(mf , MM_charges , MM_coordinates):
+def apply_qmmm(mf, MM_charges, MM_coordinates):
     class QMMM_MeanField(mf.__class__):
         def get_hcore_s(self):
-            hcore ,s= super().get_hcore_s()
+            hcore,s= super().get_hcore_s()
             ...
-            return hcore + v_mm ,s
+            return hcore + v_mm,s
         def total_energy(self):
             e_qm = super().get_energy()
             ...
@@ -1182,28 +1182,28 @@ def apply_qmmm(mf , MM_charges , MM_coordinates):
 
 ```python
 class QMMM:
-    def __init__(self , MM_charges , MM_coordinates):
+    def __init__(self, MM_charges, MM_coordinates):
         self.MM_charges = MM_charges
         self.MM_coordinates = MM_coordinates
     def get_hcore_s(self):
-hcore ,s= super().get_hcore_s() # (1)
+hcore,s= super().get_hcore_s() # (1)
         ...
-        return hcore + v ,s
+        return hcore + v,s
     def total_energy(self):
         e_qm = super().get_energy()
         ...
         return e_qm + e_mm
-def apply_qmmm(mf , MM_charges , MM_coordinates):
-class QMMM_MeanField(QMMM , mf.__class__): # (2)
+def apply_qmmm(mf, MM_charges, MM_coordinates):
+class QMMM_MeanField(QMMM, mf.__class__): # (2)
         def __init__(self):
-super().__init__(MM_charges , MM_coordinates) # (3)
+super().__init__(MM_charges, MM_coordinates) # (3)
             self.__dict__.update(mf.__dict__)
     return QMMM_MeanField()
 ```
 请注意 super() 函数在此处的作用。QMMM_MeanField 类中第 (3) 行对 super() 的调用，与普通子类中的 super() 行为类似。这个 super() 调用等价于 super(QMMM_MeanField, self)。它从 QMMM_MeanField 类开始，在方法解析顺序（Method Resolution Order，MRO）中查找第一个包含 __init__ 方法的类。QMMM_MeanField 类的 MRO 类似于
 
 ```text
-(QMMM_MeanField , QMMM , mf.__class__ , ...)
+(QMMM_MeanField, QMMM, mf.__class__, ...)
 ```
 后面跟着 mf.__class__ 继承的基类。第 (3) 行的 super() 最终解析到 QMMM 类，因为该类定义了 __init__ 方法。
 在 QMMM 类的 get_hcore_s 方法中，第 (1) 行的 super() 解析为 super(QMMM, self).get_hcore_s。这个 super() 的起点是 QMMM 类，取决于 QMMM 类的继承方式，它可能位于 MRO 列表的中间。多重继承的顺序在此至关重要。为确保第 (1) 行的 super() 解析到均场方法，创建子类时必须将混入类 QMMM 放在均场类之前，如第 (2) 行所示。如果 mf.__class__ 位于 QMMM 类之前，QMMM 类中的 super() 函数可能找不到提供 get_hcore_s 方法的合适候选类，导致 AttributeError。即使这条语句没有引发错误，解析结果也可能不正确。使用混入类设计动态创建类时，这一点必须特别注意。
@@ -1211,18 +1211,18 @@ super().__init__(MM_charges , MM_coordinates) # (3)
 
 ```python
 @lru_cache(None)
-def composed_class(name , bases):
-    return type (name , bases , {})
-def compose(features , name):
+def composed_class(name, bases):
+    return type (name, bases, {})
+def compose(features, name):
     bases = tuple(feature.__class__ for feature in features)
-    new_cls = composed_class(name , bases)
+    new_cls = composed_class(name, bases)
     new_obj = new_cls.__new__(new_cls)
     for feature in reversed (features):
         new_obj.__dict__.update(feature.__dict__)
     return new_obj
-def apply_qmmm(mf , MM_charges , MM_coordinates):
-    qmmm = QMMM(MM_charges , MM_charges)
-    return compose((qmmm ,m f ) ,f 'QMMM_{mf.__class__.__name__}')
+def apply_qmmm(mf, MM_charges, MM_coordinates):
+    qmmm = QMMM(MM_charges, MM_charges)
+    return compose((qmmm,m f ) ,f 'QMMM_{mf.__class__.__name__}')
 ```
 compose 函数以对象列表为模板，使用 type 函数动态创建新类。如第 5 章第 5.1.3 节所述，type 函数需要类名、基类和类属性来组合新类。随后缓存新组合的类，以确保对同一均场模型只定义一个类。
 请注意，组合类中没有显式定义 __init__ 方法。新组合类的实例只需收集各个特性对象的属性。本例采用了不同的实例创建方法。我们使用 __new__ 方法创建新组合类的空实例 new_obj。然后调用 new_obj.__dict__.update()，将输入对象的属性转移到新实例。
@@ -1267,65 +1267,65 @@ Tpij ≈ (M)pq(q|ij),) 其中，(q|ij) 表示三中心双电子（3c2e）排斥�
 为计算 2c2e 和 3c2e 积分，我们可以改造第 12 章开发的四中心积分程序。方法是引入一个虚拟 s 型 GTO，替代壳层四元组中的某些 GTO 函数。虚拟 s 型 GTO 函数的指数设为 0，位置与壳层四元组中的一个 GTO 函数相同。下面是构建 3c2e 积分张量的示例代码。2c2e 积分张量可以用类似的方法构建。
 
 ```python
-def eval_int3c2e(aux_gtos , gtos):
+def eval_int3c2e(aux_gtos, gtos):
     ...
-    for i ,k ,l in itertools.product( range(len(aux_gtos)), range(len(gtos)), range(len(gtos))):
-        i0 ,i 1 ,k 0 ,k 1 ,l 0 , l1 = dispatch_offsets(i ,k ,l )
-        li , Ra = aux_gtos[i].angular_momentum , aux_gtos[i].coordinates
-        lk , Rc = gtos[k].angular_momentum , gtos[k].coordinates
-        ll , Rd = gtos[l].angular_momentum , gtos[l].coordinates
-        # A fictitious s -type GTO on the second index
-        lj , exps_j , norm_cj ,R b=0 , np.zeros(1), np.ones(1), Ra
-        eri[i0:i1 ,k0:k1 ,l0:l1] = contracted_ERI(...)[: ,0]
+    for i,k ,l in itertools.product( range(len(aux_gtos)), range(len(gtos)), range(len(gtos))):
+        i0,i 1,k 0,k 1,l 0, l1 = dispatch_offsets(i,k ,l )
+        li, Ra = aux_gtos[i].angular_momentum, aux_gtos[i].coordinates
+        lk, Rc = gtos[k].angular_momentum, gtos[k].coordinates
+        ll, Rd = gtos[l].angular_momentum, gtos[l].coordinates
+        # A fictitious s-type GTO on the second index
+        lj, exps_j, norm_cj,R b=0 , np.zeros(1), np.ones(1), Ra
+        eri[i0:i1,k0:k1,l0:l1] = contracted_ERI(...)[:,0]
 ```
 得到式 (13.39) 所示的 Cholesky 分解 ERI（CDERI）张量后，我们就可以构建 J 和 K 矩阵。这些矩阵
 使用 einsum 函数计算：
 
 ```python
-jmat = np.einsum( 'pij ,pkl ,ji ->kl', cderi , cderi ,d m , optimize=True)
-kmat = np.einsum( 'pij ,pkl ,jk ->il', cderi , cderi ,d m , optimize=True)
+jmat = np.einsum( 'pij,pkl,ji->kl', cderi, cderi,d m, optimize=True)
+kmat = np.einsum( 'pij,pkl,jk->il', cderi, cderi,d m, optimize=True)
 ```
 einsum 的 optimize=True 选项会优化张量收缩顺序。如果按输入中指定的顺序进行收缩，两个 cderi 张量之间的收缩规模将为 N。使用这一优化后，首先对 cderi 张量和密度矩阵 dm 进行张量收缩，生成一个中间张量。然后将这个中间张量与另一个 cderi 张量收缩。因此，J 和 K 矩阵的计算复杂度分别按 N NABF 和 N NABF 缩放，其中 NAO 表示轨道基函数的数量，NABF 表示辅助基函数的数量。
 构建 K 矩阵时，optimize=True 选项会引入两个大小为 N 的中间张量的内存开销。第一个中间张量来自收缩
 
 ```text
-tmp = einsum( 'pij ,jk ->pik ' , cderi , dm)
+tmp = einsum('pij,jk->pik', cderi, dm)
 ```
 如果 cderi 和 tmp 张量按 C 顺序存储，为满足 BLAS 库中矩阵乘法对内存连续性的要求，后续收缩
 
 ```text
-einsum( 'pik ,pkl ->il ' , tmp , cderi) requires the indices of the tmp tensor to be
+einsum('pik,pkl->il', tmp, cderi) requirestheindicesof thetmp tensortobe
 ```
 需要将 tmp 张量的索引从 pik 转置为 ipk。这次转置会创建另一个中间张量。
 为尽量减小内存占用并降低张量转置操作的开销，可以采用另一种张量排列方式。例如，构建 cderi 张量时，可以将辅助函数的索引放在两个 AO 索引之间。利用两个 AO 基之间的对称性，K 矩阵的收缩
 
 ```text
-einsum( 'ipj ,jk ,lpk ->il ' , cderi , dm , cderi)
+einsum('ipj,jk,lpk->il', cderi, dm, cderi)
 ```
 只产生一个中间张量，从而不再需要张量转置。
 
 ```text
-tmp = einsum( 'ipj ,jk ->ipk ' , cderi , dm)
-kamt = einsum( 'ipk ,lpk ->il ' , tmp , cderi)
+tmp = einsum('ipj,jk->ipk', cderi, dm)
+kamt = einsum('ipk,lpk->il', tmp, cderi)
 ```
 然而，这些优化超出了 optimize=True 设置的能力。
 在均场方法中，密度矩阵通常通过占据分子轨道的乘积计算。计算 K 矩阵时，可以先将 cderi 张量与占据轨道收缩，再使用所得张量构成 K 矩阵。例如，对于 RHF 密度矩阵
 
 ```text
-mo_occupied = mo[: ,:nocc]
-dm = einsum( 'it ,jt ->ij ' , mo_occupied , mo_occupied) * 2
+mo_occupied = mo[:,:nocc]
+dm = einsum('it,jt->ij', mo_occupied, mo_occupied) * 2
 ```
 交换矩阵可以计算为
 
 ```text
-tmp = einsum( 'jt ,pij ->tpi ' , mo_occupied , cderi)
-kmat = einsum( 'tpi ,tpj ->ij ' , tmp , tmp) * 2
+tmp = einsum('jt,pij->tpi', mo_occupied, cderi)
+kmat = einsum('tpi,tpj->ij', tmp, tmp) * 2
 ```
 基于分子轨道（MO）的收缩算法可以将计算成本从 N NABF 显著降低至 N Nocc NABF，其中 Nocc 表示占据轨道的数量。鉴于轨道基函数的数量通常是占据轨道数量的 5 到 10 倍，这种优化可以带来 5 到 10 倍的速度提升。
 均场方法中的 K 矩阵是对称的。理论上，这种对称性使我们只需计算矩阵的下三角或上三角部分。然而，einsum 和 tensordot 不能直接利用这种对称性。只有 NumPy 的 dot 函数能够识别这种对称性，并利用 BLAS *syrk 函数计算两个相同数组的内积或外积。由于 tensordot 函数最终会调用 NumPy 的 dot 函数，如果张量收缩可以表示为两个相同数组的内积或外积，它就可以利用这种对称性。具体来说，einsum 中涉及的两个张量操作数必须相同，且收缩不能要求通过转置重新排列索引。收缩
 
 ```python
-np.einsum( 'tpi ,tpj ->ij ' , tmp , tmp , optimize=True)
+np.einsum('tpi,tpj->ij', tmp, tmp, optimize=True)
 ```
 在张量 tmp 采用 C 连续存储的情况下，基于 MO 的收缩算法中的这一收缩可以满足上述要求。这是基于 MO 的收缩算法的额外计算优势。此外，即使是一般的正定 dm 矩阵，而非占据轨道的乘积，也可以通过对 dm 进行 Cholesky 分解，将 K 矩阵计算改造为基于 MO 的收缩算法。虽然额外的 Cholesky 分解步骤增加了计算量，但它有可能提高整体性能。
 除非 ERI 张量具有显著的稀疏性，否则使用 CDERI 张量计算 J/K 矩阵比第 13.2 节所述的解析四中心积分构建方法具有明显优势。然而，CDERI 张量的存储和数据访问效率是 Cholesky 分解方法面临的挑战。CDERI 张量的大小相对于系统大小 N 按 N 缩放。随着系统大小增加，张量大小迅速增长，很容易超过可用内存容量。虽然有技术可以将大型张量分布到不同节点，但使用磁盘存储的集中式方案仍然最常见。如果 CDERI 张量存储在磁盘上，加载张量可能成为限制 J/K 矩阵计算性能的主要瓶颈。在这方面，可以应用第 9 章第 9.6 节中的 I/O 优化技术来优化性能。下面是一些技术方面的考虑。
@@ -1348,14 +1348,14 @@ CDERI 张量可能过大，无法放入内存。分批加载和处理 CDERI 张�
 如果只考虑从磁盘读取 CDERI 张量的情况，由于无需访问张量的子块，分块存储并不是必需的。然而，生成这个三指标张量时，无法同时在内存中处理整个张量。我们需要将 AO 指标划分为多个块，分别生成各块的 CDERI 张量。下面的 partition_gtos 函数可以将高斯型轨道（GTO）基函数分组，使每组包含适当数量的 GTO 壳层。
 
 ```python
-def partition_gtos(gtos , block_size):
-    ' ' 'Partition GTOs and return the shell offsets of each block
-    ' ' '
+def partition_gtos(gtos, block_size):
+    '''Partition GTOs and return the shell offsets of each block
+    '''
     def get_block_dims(dims):
         if not dims:
             return []
         s=0
-        for i ,d in enumerate (dims):
+        for i,d in enumerate (dims):
             s+ =d
             if s >= block_size:
                 break
@@ -1366,8 +1366,8 @@ def partition_gtos(gtos , block_size):
 
 ```python
     dims = [n_cart(b.angular_momentum) for b in gtos]
-    block_dims = np.array(get_block_dims(dims))[:: -1]
-    return np.append(0 , np.cumsum(block_dims))
+    block_dims = np.array(get_block_dims(dims))[::-1]
+    return np.append(0, np.cumsum(block_dims))
 ```
 由于 np.memmap 不支持分块存储，我们必须将不同的块存储在独立的 mmap 文件中。加载 CDERI 张量时，需要从每个 mmap 文件读取特定的数据块，并将它们拼接成完整的 CDERI 张量。
 
@@ -1377,38 +1377,38 @@ AO 指标之间的置换对称性 Tpij = Tp ji 和 CDERI 张量中的稀疏性�
 Schwarz 不等式是识别 AO 对之间稀疏性的有效方法。使用我们在第 13.2.1 节开发的 schwarz_halfcond 函数，可以生成掩码数组，过滤掉可忽略的 AO 对。
 
 ```python
-mask = np.tril(schwarz_halfcond(gtos) > 1e -15)
+mask = np.tril(schwarz_halfcond(gtos) > 1e-15)
 idx = np.where(mask)
 ```
 idx 数组记录 AO 维度中不可忽略的元素。
 压缩 CDERI 张量所用的对称性和稀疏性也可以应用于 3c2e 积分。下面的 eval_compress_int3c2e 函数压缩的是 3c2e 积分，而不是 CDERI 张量。
 
 ```python
-def eval_compress_int3c2e(gtos , aux_gtos , gto_pair , mask):
+def eval_compress_int3c2e(gtos, aux_gtos, gto_pair, mask):
     offsets = gto_offsets(gtos)
-    gto0 , gto1 = gto_pair
+    gto0, gto1 = gto_pair
     j 3 c=[ ]
-    for shell0 , shell1 in pairwise(gto0 , gto1 , 10):
-        i0 , i1 = offsets[shell0] , offsets[shell1]
-        dat = eval_int3c2e_block(aux_gtos , gtos[shell0:shell1] , gtos)
-        j3c.append(dat[: ,mask[i0:i1]])
+    for shell0, shell1 in pairwise(gto0, gto1, 10):
+        i0, i1 = offsets[shell0], offsets[shell1]
+        dat = eval_int3c2e_block(aux_gtos, gtos[shell0:shell1], gtos)
+        j3c.append(dat[:,mask[i0:i1]])
     return np.hstack(j3c)
 ```
 为了提高可读性，我们先计算所有积分，再筛选出不可忽略的积分。然而，为提高效率，应跳过可忽略积分的计算。
 为重建三指标 CDERI 张量，我们可以使用下面的函数加载压缩数据块，并将其写入输出张量。
 
 ```python
-def decompress(cderi_blocks , idx , out):
+def decompress(cderi_blocks, idx, out):
     naux = cderi_blocks[0].shape[0]
     p 0=p 1=0
 ```
 
 ```python
     for d in cderi_blocks:
-        p0 ,p 1=p 1 , p1 + d.shape[1]
+        p0,p 1=p 1 , p1 + d.shape[1]
         idx0 = idx[0][p0:p1]
         idx1 = idx[1][p0:p1]
-        out[:naux ,idx0 ,idx1] = out[:naux ,idx1 ,idx0] = d
+        out[:naux,idx0,idx1] = out[:naux,idx1,idx0] = d
     return out[:naux]
 ```
 
@@ -1425,53 +1425,53 @@ def decompress(cderi_blocks , idx , out):
 class CDERI:
     segment_max_size = 500_000_000 #4G B
     forward = True
-    def __init__(self , gtos , aux_gtos):
+    def __init__(self, gtos, aux_gtos):
         self.gtos = gtos
         self.aux_gtos = aux_gtos
         self.nao = num_functions(gtos)
         self.naux = num_functions(aux_gtos)
         self.blocksize = 200
-        self.mask = np.tril(schwarz_halfcond(gtos) > 1e -15)
+        self.mask = np.tril(schwarz_halfcond(gtos) > 1e-15)
         c = scipy.linalg.cholesky(eval_int2c2e(aux_gtos))
         self.datafile = []
         block_size = CDERI.segment_max_size // self.nao
-        for gto_pair in itertools.pairwise( partition_gtos(gtos , block_size)):
-            int3c2e = eval_compress_int3c2e(gtos , aux_gtos , gto_pair , mask)
+        for gto_pair in itertools.pairwise( partition_gtos(gtos, block_size)):
+            int3c2e = eval_compress_int3c2e(gtos, aux_gtos, gto_pair, mask)
 ```
 
 ```python
             # Using NamedTemporaryFile for automatic deletion
-            chunk = np.memmap(NamedTemporaryFile(), mode= 'w+', shape=int3c2e.shape , dtype= float)
-            chunk[:] = scipy.linalg.solve_triangular(c , int3c2e , lower=True)
+            chunk = np.memmap(NamedTemporaryFile(), mode= 'w+', shape=int3c2e.shape, dtype= float)
+            chunk[:] = scipy.linalg.solve_triangular(c, int3c2e, lower=True)
             self.datafile.append(chunk)
 def __iter__(self): # (1)
-        blocks = pairwise(0 , self.naux , self.blocksize)
+        blocks = pairwise(0, self.naux, self.blocksize)
         if not CDERI.forward:
             blocks = reversed(list(blocks))
         # Flip the iteration direction to maximize FS cache utilization
         CDERI.forward = not CDERI.forward
         # buf0 and buf1 are reused to reduce memory allocation overhead
-        buf0 , buf1 = np.zeros((2 , self.blocksize , self.nao , self.nao))
+        buf0, buf1 = np.zeros((2, self.blocksize, self.nao, self.nao))
         def unpack(block):
-            start , end = block
+            start, end = block
             dat = [d[start:end] for d in self.datafile]
-            return decompress(dat , self.mask , buf0)
-        for _ , data in iterate_with_prefetch(blocks):
-            buf0 , buf1 = buf1 , buf0
+            return decompress(dat, self.mask, buf0)
+        for _, data in iterate_with_prefetch(blocks):
+            buf0, buf1 = buf1, buf0
             yield data
-def pairwise(start , stop , step):
-    return itertools.pairwise(np.append(range(start , stop , step), stop))
+def pairwise(start, stop, step):
+    return itertools.pairwise(np.append(range(start, stop, step), stop))
 ```
 第 (1) 行的 __iter__ 方法为这个 CDERI 类定义了一个迭代器。该迭代器使我们能够用简单的张量收缩代码计算 J/K 矩阵。
 
 ```python
-cderi = CDERI(gtos , aux_gtos)
+cderi = CDERI(gtos, aux_gtos)
 nao = num_functions(gtos)
-jmat , kmat = np.zeros((nao ,nao)), np.zeros((nao ,nao))
+jmat, kmat = np.zeros((nao,nao)), np.zeros((nao,nao))
 for sub_cderi in iter (cderi):
-    tmp = einsum( 'jt ,pij ->tpi', mo_occupied , sub_cderi)
-    kmat += einsum( 'tpi ,tpj ->ij', tmp , tmp) * 2
-    jmat += einsum( 'pij ,ji ,pkl ->pkl', sub_cderi ,d m , sub_cderi)
+    tmp = einsum( 'jt,pij->tpi', mo_occupied, sub_cderi)
+    kmat += einsum( 'tpi,tpj->ij', tmp, tmp) * 2
+    jmat += einsum( 'pij,ji,pkl->pkl', sub_cderi,d m, sub_cderi)
 ```
 
 ### 13.6.2 使用 DIIS 改善收敛
@@ -1487,13 +1487,13 @@ Hall DIIS）[18] 和 EDIIS（能量 DIIS）[19]。误差向量和解向量也有
 
 ```python
 class CDIIS(DIIS):
- def __init__(self , filename , max_space=8):
-     super().__init__(filename , max_space)
+ def __init__(self, filename, max_space=8):
+     super().__init__(filename, max_space)
      self.c = None # The orthonormal basis for error vectors
- def update(self ,f ,d , s):
-     with h5py.File(self.filename , mode= 'a') as h5f:
+ def update(self,f ,d , s):
+     with h5py.File(self.filename, mode= 'a') as h5f:
          if self.c is None:
-             _ , self.c = scipy.linalg.eigh(s)
+             _, self.c = scipy.linalg.eigh(s)
              h5f['c'] = self.c
          errvec = f.dot(d).dot(s)
          errvec = errvec - errvec.T # FDS - SDF
@@ -1502,7 +1502,7 @@ class CDIIS(DIIS):
 
 ```python
             errvec = self.c.T.dot(errvec).dot(self.c).ravel()
-            head , self.head = self.head , (self.head + 1) % self.max_space
+            head, self.head = self.head, (self.head + 1) % self.max_space
             self.keys.append(head)
             if f'e{head}' in h5f:
                 # Reuse existing datasets
@@ -1517,29 +1517,29 @@ class CDIIS(DIIS):
             h5f.flush()
             errvecs = [_HashableVector(h5f[f 'e{k}']) for k in self.keys]
             space = len(self.keys)
-            B = np.zeros((space+1 , space+1))
-            B[ -1 ,: -1] = B[: -1 , -1] = 1.
-            for i ,e 1 in enumerate (errvecs):
-                for j ,e 2 in enumerate (errvecs):
+            B = np.zeros((space+1, space+1))
+            B[-1,:-1] = B[:-1,-1] = 1.
+            for i,e 1 in enumerate (errvecs):
+                for j,e 2 in enumerate (errvecs):
                     if j<i :
                         continue
-                    B[i ,j] = B[j ,i] = e1.dot(e2)
+                    B[i,j] = B[j,i] = e1.dot(e2)
             while np.linalg.cond(B) > 1e12:
-                B = B[1: ,1:]
+                B = B[1:,1:]
                 self.keys.pop(0)
             g = np.zeros( len(self.keys)+1)
-            g[ - 1 ]=1
-            c = scipy.linalg.solve(B ,g , assume_a= 'sym')[: -1]
+            g[- 1 ]=1
+            c = scipy.linalg.solve(B,g , assume_a= 'sym')[:-1]
             sol = np.zeros_like(f)
-            for key ,x in zip (self.keys ,c ) :
+            for key,x in zip (self.keys,c ) :
                 sol += h5f[f 't{key}'][()] * x
             return sol
     @classmethod
-    def restore(cls , filename):
-        with h5py.File(filename , mode= 'r') as f:
+    def restore(cls, filename):
+        with h5py.File(filename, mode= 'r') as f:
             attrs = json.loads(f[ 'metadata'][()])
             obj = cls(filename)
-            obj.keys = deque(attrs[ 'keys'] , maxlen=attrs[ 'max_space'])
+            obj.keys = deque(attrs[ 'keys'], maxlen=attrs[ 'max_space'])
 ```
 
 ```python
@@ -1577,7 +1577,7 @@ class CDIIS(DIIS):
 
 ```python
 class InitialGuess(SCFWavefunction):
-    def __init__(self , dm):
+    def __init__(self, dm):
         self.density_matrices = dm
     @property
     def orbitals(self):
@@ -1590,10 +1590,10 @@ class InitialGuess(SCFWavefunction):
 
 ```python
 class RHF:
-    def __init__(self , mol , gtos):
+    def __init__(self, mol, gtos):
         self.mol = mol
         self.gtos = gtos
-        self.threshold = 1e -6
+        self.threshold = 1e-6
         self.chkfile = tempfile.mktemp()
         diisfile = tempfile.mktemp()
         print(f'Checkpoint file is {self.chkfile}.' )
@@ -1604,25 +1604,25 @@ class RHF:
 总结
 
 ```python
-    def make_wfn(self , orbitals , energies):
-        wfn = RestrictedCloseShell(self , orbitals , energies)
-        with open (self.chkfile , 'wb') as f:
+    def make_wfn(self, orbitals, energies):
+        wfn = RestrictedCloseShell(self, orbitals, energies)
+        with open (self.chkfile, 'wb') as f:
             pickle.dump({
-                'wfn': wfn , 'mol': self.mol , 'gtos': self.gtos
-            } ,f )
+                'wfn': wfn, 'mol': self.mol, 'gtos': self.gtos
+            },f )
         return wfn
     @classmethod
-    def restore(cls , chkfile , diisfile=None):
-        with open (chkfile , 'rb') as f:
+    def restore(cls, chkfile, diisfile=None):
+        with open (chkfile, 'rb') as f:
             attrs = pickle.load(f)
-        obj = cls(attrs[ 'mol'] , attrs[ 'gtos'])
+        obj = cls(attrs[ 'mol'], attrs[ 'gtos'])
         obj.wfn = attrs[ 'wfn']
         if diisfile is not None:
             obj.diis = CDIIS.restore(diisfile)
         return obj
 # A fully restart from a previous calculation.
 model = RHF.restore(chkfile= '/tmp/tmpw5t7yfgo', diisfile='/tmp/tmpc7_dzxad')
-scf_iter(model , model.wfn)
+scf_iter(model, model.wfn)
 ```
 
 ## 小结

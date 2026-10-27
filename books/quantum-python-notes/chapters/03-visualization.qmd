@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 这里简要演示如何使用 Figure.add_subplot 方法。如果你有兴趣了解其他方法，建议查阅 Matplotlib 官方文档或专门的书籍，例如 Jake Vanderplas 的 Python Data Science Handbook: Essential Tools for Working with Data [1]。函数调用
 
 ```text
-add_subplot(rows , cols , index)
+add_subplot(rows, cols, index)
 ```
 将图形划分为 rows × cols 个单元格。根据参数 index，将按从左上到右下的顺序选择其中一个单元格，并在那里创建一个 Axes 对象。图 3.1 add_subplot 命令的效果。
 
@@ -48,43 +48,43 @@ add_subplot(rows , cols , index)
 **图 3.2** 各种绘图函数的输出
 
 ```python
-fig , ax = plt.subplots()
+fig, ax = plt.subplots()
 # Line plots
 x = np.arange(10)
 y = np.random.rand(10).cumsum()
-ax.plot(x ,y )
+ax.plot(x,y )
 # Scatter plots
-ax.scatter(x ,y )
+ax.scatter(x,y )
 # Error bars
 yerr = .1 * np.random.rand(len(x))
-ax.errorbar(x ,y , yerr=yerr)
+ax.errorbar(x,y , yerr=yerr)
 # Vertical bars
 np.random.seed(1)
 c a t=( 'A', 'B', 'C')
 ```
 
 ```python
-weights = np.random.rand(2 ,3 )
-ax.bar(np.arange(.15 , .85 , .3) , weights[0] , width=.1)
-ax.bar(np.arange(.15 , .85 , .3)+.1 , weights[1] , width=.1)
-ax.set_xticks([.2 ,. 5 , .8] , labels=cat)
+weights = np.random.rand(2,3 )
+ax.bar(np.arange(.15, .85, .3) , weights[0] , width=.1)
+ax.bar(np.arange(.15, .85, .3)+.1, weights[1], width=.1)
+ax.set_xticks([.2,. 5, .8], labels=cat)
 # Horizontal bars
-ax.barh(np.arange(.1 ,. 7 , .25) , weights[0] , height=.1)
-ax.barh(np.arange(.1 ,. 7 , .25)+.1 , weights[1] , height=.1)
-ax.set_yticks([.15 ,. 4 , .65] , labels=cat)
+ax.barh(np.arange(.1,. 7, .25) , weights[0] , height=.1)
+ax.barh(np.arange(.1,. 7, .25)+.1, weights[1], height=.1)
+ax.set_yticks([.15,. 4, .65], labels=cat)
 # Histogram
 ax.hist(np.random.standard_normal(100), bins=10)
 # Pie plots
-ax.pie(weights , labels=cat)
+ax.pie(weights, labels=cat)
 # The value of a matrix
-xy = np.random.rand(10 ,10)
+xy = np.random.rand(10,10)
 ax.imshow(xy)
 # Contour
-X , Y = np.meshgrid(np.arange( -3.0 , 3.0 , .05), np.arange( -2.0 , 2.0 , .05))
+X, Y = np.meshgrid(np.arange(-3.0, 3.0, .05), np.arange(-2.0, 2.0, .05))
 r 0=X **2 + (Y+1.) **2
 r1 = (X+1.5) **2 + (Y+.5) **2
-Z = .32 *np.exp( -2*r0) - .65 *np.exp( -r1)
-ax.contour(X ,Y ,Z )
+Z = .32 *np.exp(-2*r0) - .65 *np.exp(-r1)
+ax.contour(X,Y ,Z )
 ```
 得到基本图形后，我们可以通过调整 Axes 对象的各种属性来改善视觉外观，包括颜色、线型和坐标轴样式等。下面概述绘图时经常调整的一些属性：
 
@@ -95,45 +95,45 @@ ax.contour(X ,Y ,Z )
 - ax.plot 方法的样式。关键字 linestyle（简称 ls）的选项包括：
 
 ```text
--          line ls= ' -. ' .
+- linels='-.'.
 ```
 可以使用 marker 关键字突出数据点、使用 color 关键字设置颜色，以及使用 linewidth 关键字调整线宽，从而改善线条的外观。除了这些关键字，Matplotlib 还支持简写字符串表示法，同时指定数据标记、线型和线条颜色。例如，简写表示法’s --r’表示带有方形标记的红色虚线。
 
 - 表示法。除了前面提到的单字母表示法，颜色也可以通过预定义名称指定，例如
 
 ```text
-color= 'darkgreen ' and color= 'tab:purple ' . Furthermore, Matplotlib supports
+color='darkgreen' and color='tab:purple'.Furthermore,Matplotlibsupports
 ```
 通过 RGB 分量定义颜色，可以使用十六进制代码’#RRGGBB’，也可以使用三个浮点数的元组 (r, g, b)。Matplotlib 配色方案的详细说明可参见 Matplotlib 文档 [2–4]。
 
 - 坐标轴。可以使用 set_xlim、set_ylim、set_xticks 和 set_yticks 函数调整坐标轴。顾名思义，它们分别用于调整坐标轴的范围和坐标轴刻度的显示。可以使用 ax.set_xlabel 和 ax.set_ylabel 方法添加坐标轴标签。要启用对数坐标，
 
 ```text
-ax.set_xscale( 'log ')
-ax.set_yscale( 'log ')
+ax.set_xscale('log')
+ax.set_yscale('log')
 ```
 可以调用这些方法。
 
 - 。如果在任何绘图函数中使用了 label 关键字，ax.legend 方法可以为这些标签生成图例。ax.legend 方法中的 loc 关键字可以设置图例的位置。例如，
 
 ```text
-ax.legend(loc= 'upper left ')
+ax.legend(loc='upper left')
 ```
 将图例放在图的左上角。其他常见位置
 
 ```text
-include 'upper center ' , 'upper right ' , 'center left ' , 'center right ' , etc.
+include'upper center','upper right','center left','center right',etc.
 ```
 
 - 和注释。ax.text 方法可以在图中插入说明文字。命令
 
 ```text
-ax.text(x , y , 'message ')
+ax.text(x, y, 'message')
 ```
 将’message’放在图中的坐标 (x, y) 处。此外，ax.annotate 方法提供了一种在文本旁插入更丰富信息元素的方法，例如箭头和其他注释符号。该方法需要指定文本和箭头的位置。例如，下面的语句将文本’message’放在坐标 (2, 2) 处，并绘制一个从 (2, 2) 指向 (1, 3) 的箭头。
 
 ```text
-   ax.annotate('message', xy=(1 , 3), xytext=(2 , 2), arrowprops=dict(arrowstyle='->'))
+   ax.annotate('message', xy=(1, 3), xytext=(2, 2), arrowprops=dict(arrowstyle='->'))
 ```
 
 - 格式。在与文本相关的方法中，例如 ax.text、ax.annotate 以及前面提到的 ax.set_xlabel、ax.set_xticks 等，可以使用 fontfamily、fontsize 和 rotation 等参数调整文本外观。
@@ -146,10 +146,10 @@ ax.text(x , y , 'message ')
 保存图像有两种常见方法。在显示图像的交互式窗口中，可以单击 Save 按钮并选择一种格式来保存图形。要在非交互式环境中保存图像，可以使用 Figure.savefig 函数，例如
 
 ```text
-fig.savefig( 'result.png ')
-fig.savefig( 'result.jpg ')
-fig.savefig( 'result.svg ')
-fig.savefig( 'result.pdf ')
+fig.savefig('result.png')
+fig.savefig('result.jpg')
+fig.savefig('result.svg')
+fig.savefig('result.pdf')
 ```
 可以根据文件名的后缀自动选择合适的后端，以所需的图像格式渲染图形。
 为帮助你快速找到 Matplotlib 图形的基本配置，我们在图 3.3 中总结了 Matplotlib 的常用功能。
@@ -167,15 +167,15 @@ API 的功能。具体而言，对于 DataFrame 对象，它可以自动选择�
 Pandas.plot 方法支持 Matplotlib 提供的大多数绘图类型，例如 area、barh、density、hist、line、scatter、bar、box、hexbin、kde 和 pie。这些绘图函数的用法很直接。只需访问 DataFrame 对象的特定绘图函数.plot.{function_name}。例如，通过此 API 执行以下代码，可以生成图 3.4 所示的图形。
 
 ```python
-fig , axs = plt.subplots(3 ,3 , figsize=(9 , 8))
-df = pd.DataFrame(np.random.rand(5 ,3), columns=[ 'x', 'y', 'z'])
-for i , key in enumerate (['line', 'density', 'box', 'area', 'bar', 'barh']):
-    getattr(df.plot , key)(ax=axs[i//3 ,i%3] , title=key)
-data = np.random.rand(200 ,3).cumsum(axis=1)
-df = pd.DataFrame(data , columns=[ 'x', 'y', 'z'])
-df.plot.hist(ax=axs[2 ,0] , title= 'hist')
-df.plot.scatter('x', 'y', ax=axs[2 ,1] , title= 'scatter')
-df.plot.hexbin('x', 'y', 'z', ax=axs[2 ,2] , title= 'scatter')
+fig, axs = plt.subplots(3,3 , figsize=(9, 8))
+df = pd.DataFrame(np.random.rand(5,3), columns=[ 'x', 'y', 'z'])
+for i, key in enumerate (['line', 'density', 'box', 'area', 'bar', 'barh']):
+    getattr(df.plot, key)(ax=axs[i//3,i%3], title=key)
+data = np.random.rand(200,3).cumsum(axis=1)
+df = pd.DataFrame(data, columns=[ 'x', 'y', 'z'])
+df.plot.hist(ax=axs[2,0], title= 'hist')
+df.plot.scatter('x', 'y', ax=axs[2,1], title= 'scatter')
+df.plot.hexbin('x', 'y', 'z', ax=axs[2,2], title= 'scatter')
 ```
 
 ![](../assets/figures/fig-3-4.png)
@@ -210,8 +210,8 @@ $ sudo apt install -y libqt5core5a libqt5gui5 libqt5svg5 libqt5widgets5 \
 要在 IPython 或 Jupyter Notebook 中使用 Mayavi，可能需要额外的配置步骤 [10]。在 IPython shell 中，可以使用 IPython 魔术命令 %gui qt 将 GUI 后端更改为 QT。要在 Jupyter Notebook 中使用 Mayavi，可能需要安装最新版本的 node.js，以及以下用于 Jupyter Notebook 的 IPython 扩展。
 
 ```bash
-$ jupyter -labextension enable widgetsnbextension
-$ jupyter -labextension enable ipyenvents
+$ jupyter-labextension enable widgetsnbextension
+$ jupyter-labextension enable ipyenvents
 ```
 为验证 Mayavi 的安装，我们可以运行该库提供的内置测试：
 
@@ -229,17 +229,17 @@ mayavi.mlab 可以渲染各种三维图形，包括曲面、等值线、点、�
 
 ```python
 from mayavi import mlab
-x , y = np.mgrid[ -10:10:100j , -10:10:100j] # (1)
+x, y = np.mgrid[-10:10:100j, -10:10:100j] # (1)
 r = np.sqrt(x **2+y **2)
 z = np.sin(r)/r
 mlab.clf() # clear the current figure
-mlab.surf(x ,y ,z , warp_scale= 'auto')
+mlab.surf(x,y ,z , warp_scale= 'auto')
 mlab.show()
 ```
 np.mgrid 函数经常用于 Mayavi 三维可视化。它可以创建密集的多维网格。例如，第 (1) 行的语句生成一个由二维点组成的均匀 100 × 100 网格。这些点可以直接用于 Mayavi 函数。np.mgrid 使用索引语法（[]）和切片来指定均匀网格。切片 start:stop:step 定义起点和终点。step 参数可以是实数，表示点之间的间距；也可以是虚数，表示起点和终点之间的区间数。对于实数 step，切片的工作方式与 np.arange(start, stop, step) 相同。对于虚数 step，它等同于
 
-```python
-to np.linspace(start , stop , step.imag) .
+```text
+tonp.linspace(start, stop, step.imag).
 ```
 
 ![](../assets/figures/fig-3-6.png)
@@ -250,7 +250,7 @@ to np.linspace(start , stop , step.imag) .
 
 ```python
 mole = pd.DataFrame({
-    'symbol':[ 'O', 'H', 'H'] , 'x': [0.5009 , 1.4049 , -0.0934] , 'y': [2.7238 , 2.4390 , 1.9786] , 'z': [0.8464 , 0.6938 , 0.7321] , 'Q':[ -0.64 , 0.32 , 0.32] , })
+    'symbol':[ 'O', 'H', 'H'], 'x': [0.5009, 1.4049, -0.0934], 'y': [2.7238, 2.4390, 1.9786], 'z': [0.8464, 0.6938, 0.7321], 'Q':[-0.64, 0.32, 0.32], })
 ```
 我们可以先用 mlab.points3d 和 mlab.plot3d 函数绘制分子中的原子和键。下面的脚本生成如图 3.6 所示的分子视图：
 
@@ -261,27 +261,27 @@ B=( 0 ,0 ,1 )
 W=( 1 ,1 ,1 )
 K=( 0 ,0 ,0 )
 color_map = pd.Series({
-    'H': (.8 ,. 8 , .8), 'C': (.6 ,. 6 , .6), 'N':B , 'O':R , })
+    'H': (.8,. 8, .8), 'C': (.6,. 6, .6), 'N':B , 'O':R , })
 covalent_radius = pd.Series({
-    'H': 0.31 , 'C': 0.73 , 'N': 0.71 , 'O': 0.66 ,
+    'H': 0.31, 'C': 0.73, 'N': 0.71, 'O': 0.66,
 ```
 
 ```python
 })
 def plot_mole(mole):
- geom = mole.loc[: ,'x':'z']
- for symbol , xyz in geom.groupby(mole.symbol):
-     x ,y , z = xyz.to_numpy().T
-     mlab.points3d(x ,y ,z , scale_factor=covalent_radius[symbol] , resolution=30 , color=color_map[symbol])
+ geom = mole.loc[:,'x':'z']
+ for symbol, xyz in geom.groupby(mole.symbol):
+     x,y , z = xyz.to_numpy().T
+     mlab.points3d(x,y ,z , scale_factor=covalent_radius[symbol], resolution=30, color=color_map[symbol])
  # Bonds between atoms
- geom = mole.loc[: ,'x':'z'].to_numpy()
+ geom = mole.loc[:,'x':'z'].to_numpy()
  radii = covalent_radius[mole.symbol].to_numpy()
- dist = np.linalg.norm(geom[: ,None] - geom , axis=2)
- conn = dist < radii[: ,None] + radii
- for i ,j in np.argwhere(conn):
+ dist = np.linalg.norm(geom[:,None] - geom, axis=2)
+ conn = dist < radii[:,None] + radii
+ for i,j in np.argwhere(conn):
      if i<j :
-         xyz = geom[[i ,j]]
-         mlab.plot3d(xyz[: ,0] , xyz[: ,1] , xyz[: ,2] , tube_radius=0.06)
+         xyz = geom[[i,j]]
+         mlab.plot3d(xyz[:,0], xyz[:,1], xyz[:,2], tube_radius=0.06)
 plot_mole(mole)
 ```
 在这个绘图脚本中，我们使用了以下技术：
@@ -309,38 +309,38 @@ $|s − r | r ζ$
 将分子中所有原子的贡献相加，我们可以得到一个 Python 函数，用于计算指定网格上的电势。
 
 ```python
-def eval_potential(mole , grids):
-    assert grids.shape[0] == 3 # the x ,y , z components
-    xyz = mole.loc[: ,'x':'z'].to_numpy()
-    r = np.linalg.norm(grids.reshape(3 , -1) - xyz[: ,: ,None] , axis=1)
+def eval_potential(mole, grids):
+    assert grids.shape[0] == 3 # the x,y , z components
+    xyz = mole.loc[:,'x':'z'].to_numpy()
+    r = np.linalg.norm(grids.reshape(3,-1) - xyz[:,:,None], axis=1)
     radii = covalent_radius[mole.symbol].to_numpy()
-    v = np.einsum( 'q ,qv ->v', mole.Q , erf(r/radii[: ,None]) / r)
+    v = np.einsum( 'q,qv->v', mole.Q, erf(r/radii[:,None]) / r)
     return v.reshape(grids.shape[1:])
 ```
 然后，我们使用 mlab.contour3d 函数可视化静电势的等值线。此函数需要使用空间中的三维网格对电势进行采样。我们将分子放在一个 4 × 4 × 4 的中心，并调用 np.mgrid 函数在这个盒子内部生成均匀网格。这种均匀采样方案对 mlab.contour3d 函数生成平滑等值线至关重要。网格被传入 eval_potential 函数以计算电势值。必须确保输出形状与网格形状相匹配。此外，采样网格的坐标和电势值都应组织为三维数组。默认情况下，mlab.contour3d 函数生成五个等值面。为了控制绘制哪些曲面，我们可以向 contour 关键字参数提供一个值列表来选择曲面。静电势的等值线如图 3.7 所示。
 
 ```python
-def view_contour(mole ,f n , contours=5 , resolution=(80 ,80 ,80)):
-    mlab.figure(1 , bgcolor=W , fgcolor=K , size=(500 , 500))
+def view_contour(mole,f n, contours=5, resolution=(80,80,80)):
+    mlab.figure(1, bgcolor=W, fgcolor=K, size=(500, 500))
     mlab.clf()
     plot_mole(mole)
-    xyz = mole.loc[: ,'x':'z'].to_numpy()
+    xyz = mole.loc[:,'x':'z'].to_numpy()
     xyz_center = xyz.mean(axis=0)
     # Create mesh in cubic
     box_size = abs(xyz - xyz_center). max() * 2+4 .
-    nx ,n y , nz = resolution
-    xmin , ymin , zmin = xyz_center - box_size/2
-    xmax , ymax , zmax = xyz_center + box_size/2
-    grids = np.array(np.mgrid[xmin:xmax: complex(0 , nx), ymin:ymax:complex(0 , ny), zmin:zmax:complex(0 , nz)])
+    nx,n y, nz = resolution
+    xmin, ymin, zmin = xyz_center - box_size/2
+    xmax, ymax, zmax = xyz_center + box_size/2
+    grids = np.array(np.mgrid[xmin:xmax: complex(0, nx), ymin:ymax:complex(0, ny), zmin:zmax:complex(0, nz)])
 ```
 
 ```text
-    v = fn(mole , grids)
-    mlab.contour3d(grids[0] , grids[1] , grids[2] ,v , contours=contours , transparent=True)
-    mlab.view(75 ,0 ,7 )
+    v = fn(mole, grids)
+    mlab.contour3d(grids[0], grids[1], grids[2],v , contours=contours, transparent=True)
+    mlab.view(75,0 ,7 )
     mlab.show()
-view_contour(mole , eval_potential)
-view_contour(mole , eval_potential ,[ -.1 , .1])
+view_contour(mole, eval_potential)
+view_contour(mole, eval_potential,[-.1, .1])
 ```
 
 ![](../assets/figures/fig-3-7.png)
@@ -351,30 +351,30 @@ Mayavi 支持可视化给定曲面上的电势值。这一可视化任务可以�
 我们使用 np.mgrid 为球体的极角和方位角生成均匀网格。随后将这些网格转换为笛卡尔坐标。这些网格上的电势值及其坐标被输入 mlab.mesh 函数。
 
 ```python
-def view_sph_surface(mole ,f n , contours=5):
-    mlab.figure(1 , bgcolor=W , fgcolor=K , size=(500 , 500))
+def view_sph_surface(mole,f n, contours=5):
+    mlab.figure(1, bgcolor=W, fgcolor=K, size=(500, 500))
     mlab.clf() # Clear figure
     plot_mole(mole)
-    xyz = mole.loc[: ,'x':'z'].to_numpy()
+    xyz = mole.loc[:,'x':'z'].to_numpy()
     xyz_center = xyz.mean(axis=0)
 ```
 
 ```python
     # Create a sphere surface
     radii = covalent_radius[mole.symbol].to_numpy()
-    r = (np.linalg.norm(xyz - xyz_center , axis=1) + radii). max()
-    phi , theta = np.mgrid[0:np.pi:80j , 0:2 *np.pi:80j]
+    r = (np.linalg.norm(xyz - xyz_center, axis=1) + radii). max()
+    phi, theta = np.mgrid[0:np.pi:80j, 0:2 *np.pi:80j]
     x=r * np.sin(phi) * np.cos(theta)
     y=r * np.sin(phi) * np.sin(theta)
     z=r * np.cos(phi)
     # The grids of the surface in Cartesian coordinates representation.
-    grids = np.array([x ,y ,z]) + xyz_center[: ,None ,None]
-    v = fn(mole , grids)
-    surface = mlab.mesh(grids[0] , grids[1] , grids[2] , scalars=v , transparent=True)
-    mlab.scalarbar(surface , orientation= 'vertical', label_fmt= '%.2f', nb_labels=5)
-    mlab.view(75 ,0 ,7 )
+    grids = np.array([x,y,z]) + xyz_center[:,None,None]
+    v = fn(mole, grids)
+    surface = mlab.mesh(grids[0], grids[1], grids[2], scalars=v, transparent=True)
+    mlab.scalarbar(surface, orientation= 'vertical', label_fmt= '%.2f', nb_labels=5)
+    mlab.view(75,0 ,7 )
     mlab.show()
-view_sph_surface(mole , eval_potential)
+view_sph_surface(mole, eval_potential)
 ```
 
 ![](../assets/figures/fig-3-8.png)
@@ -384,17 +384,17 @@ view_sph_surface(mole , eval_potential)
 作为另一个例子，我们为圆柱体表面构造二维网格。这个二维网格由三部分组成：底面、侧壁和顶面。对于两个端面，我们根据径向距离和方位角生成网格。对于侧壁，则根据方位角和高度创建网格。下面的代码展示了网格坐标。
 
 ```python
-nx , ny = resolution
-r ,z=1 . 1 , 0.7
-h , theta = np.mgrid[ -z:z:complex(0 , nx), 0:2 *np.pi:complex(0 , ny)]
-u , theta = np.mgrid[0:r: complex(0 , nx), 0:2 *np.pi:complex(0 , ny)]
+nx, ny = resolution
+r,z=1 . 1 , 0.7
+h, theta = np.mgrid[-z:z:complex(0, nx), 0:2 *np.pi:complex(0, ny)]
+u, theta = np.mgrid[0:r: complex(0, nx), 0:2 *np.pi:complex(0, ny)]
 grids = np.concatenate([
     # top plate
-    [u * np.cos(theta), u * np.sin(theta), np.full((nx , ny), -z)] ,
+    [u * np.cos(theta), u * np.sin(theta), np.full((nx, ny), -z)],
     # side wall
-    [r * np.cos(theta), r * np.sin(theta), h] ,
+    [r * np.cos(theta), r * np.sin(theta), h],
     # bottom plate
-    [u * np.cos(theta), u * np.sin(theta), np.full((nx ,n y ) ,z ) ] , ] , axis=1) + xyz_center[: ,None ,None]
+    [u * np.cos(theta), u * np.sin(theta), np.full((nx,n y ) ,z ) ], ], axis=1) + xyz_center[:,None,None]
 ```
 球面和圆柱面及其上的电势值如图 3.8 所示。这些可视化结果可以提供一些信息，例如另一个分子可能从哪些方向接近当前分子。
 对于三维空间中的一般曲面，创建二维曲面网格可能是一项困难的任务。在这种情况下，我们可能必须使用三角形网格定义曲面，然后调用 mlab.triangular_mesh 函数渲染曲面。为三维对象生成合适的三角形网格的过程超出了本书范围。这里不作详细讨论。
@@ -449,18 +449,18 @@ Out[1]:
 控制语句由符号 {%%} 表示。Jinja 支持几种常见的控制语句，例如 if-else、for 循环、赋值等。if-else 语句可用于处理缺失值。例如，
 
 ```yaml
-In [2]: jinja2.Template( ' ' '\
+In [2]: jinja2.Template( '''\
         {% if key %}{{ key }}{% endif %}
-        {% if absent %}{{ absent }}{% endif %}' ' ').render(key='a')
+        {% if absent %}{{ absent }}{% endif %}''').render(key='a')
 Out[2]:
 'a\n'
 ```
 由 set 表示的赋值语句允许我们定义临时变量。这些变量可以在 Jinja 表达式中作为普通变量使用。例如，
 
 ```yaml
-In [3]: jinja2.Template( ' ' '\
-        {% set x ,y , z = item.split() %}
-        { {z} }{ {y} }{ {x} } ' ' ').render(items=' abc ' )
+In [3]: jinja2.Template( '''\
+        {% set x,y , z = item.split() %}
+        { {z} }{ {y} }{ {x} } ' '').render(items=' abc ' )
 Out[3]:
 '\nc b a'
 ```
@@ -470,9 +470,9 @@ Out[3]:
 空白字符控制与表达式或控制语句结合使用，例如 {%-, -%}、{{- 和 -}}。这些模板标签中的减号用于消除前导和尾随空白字符，以及控制语句引入的空行。例如，
 
 ```yaml
-In [4]: jinja2.Template( ' ' '\
-        {% set x ,y , z = item.split() %}
-        {{ - z }} {{ y }} {{ x }}' ' ').render(items=' abc ' )
+In [4]: jinja2.Template( '''\
+        {% set x,y , z = item.split() %}
+        {{- z }} {{ y }} {{ x }}''').render(items=' abc ' )
 Out[4]:
 ' cba '
 ```
@@ -484,28 +484,28 @@ Molden 格式的结构有完善的文档记录，可以参考在线文档 https:
 Molden 格式由一系列用方括号表示的区段组成，例如 [Molden Format]、[Atoms]、[GTO] 等。这些区段将 Molden 文件组织为不同的部分。
 
 ```text
-molden_tpl = jinja2.Template( ' ' '\
+molden_tpl = jinja2.Template( '''\
 [Molden Format]
 Comment lines
 [Atoms] ({{ unit or 'Ang' }})
-{% - for element , atom_number ,x ,y , z in atoms %}
+{%- for element, atom_number,x ,y , z in atoms %}
 {{ element }} {{ loop.index }} {{ atom_number }} {{ x }} {{ y }} {{ z }}
-{% - endfor %}
+{%- endfor %}
 ```
 
 ```text
 [GTO]
-{% - for gto_shells in gtos %}
+{%- for gto_shells in gtos %}
 {{ loop.index }} 0
 {{ gto_shells }}
 {% endfor %}
 [5d]
 [7f]
 [MO]
-{% - for mo in mos %}
+{%- for mo in mos %}
 {{ mo }}
-{% - endfor %}
-' ' ')
+{%- endfor %}
+''')
 ```
 分子几何结构详述于 Molden 格式的 [Atoms] 区段。在这个区段中，每一行对应分子中的一个原子。
 要表示电子轨道，应同时提供基组信息和轨道系数。基组的详细信息包含在 [GTO] 区段中。在这里，Molden 格式要求分别指定每个原子的基组信息。请注意上述模板中的 {% endfor%} 符号。按照 Molden 格式规范，不同原子的基组之间必须插入空行。因此，Jinja 代码 {% for loop%} 中的尾随空白字符被有意保留，以满足这一要求。
@@ -514,24 +514,24 @@ Comment lines
 ```python
 from basis_set_exchange import get_basis
 from basis_set_exchange.manip import uncontract_general
-gto_shell_tpl = jinja2.Template( ' ' '\
+gto_shell_tpl = jinja2.Template( '''\
 {{ spdf_shell }} {{ len(exponents) }} 1.00
-{% - for e_cs in zip(exponents , *coefficients) %}
+{%- for e_cs in zip(exponents, *coefficients) %}
 {{ ' '.join(e_cs) }}
-{% - endfor %}' ' ')
+{%- endfor %}''')
 def bse_to_gto_shell(shell):
     spdfg = 'spdfg'
     exponents = shell[ 'exponents']
     coefficients = shell[ 'coefficients']
     spdf_shell = ''.join(spdfg[l] for l in shell['angular_momentum'])
-    return gto_shell_tpl.render( spdf_shell=spdf_shell , exponents=exponents , coefficients=coefficients , len=len , zip=zip)
+    return gto_shell_tpl.render( spdf_shell=spdf_shell, exponents=exponents, coefficients=coefficients, len=len, zip=zip)
 ```
 
 ```python
-def gto_session(basis_name , element):
-    bse_data = get_basis(basis_name , element)
+def gto_session(basis_name, element):
+    bse_data = get_basis(basis_name, element)
     bse_data = uncontract_general(bse_data)
-    _ , basis = bse_data[ 'elements'].popitem()
+    _, basis = bse_data[ 'elements'].popitem()
     return '\n'.join([bse_to_gto_shell(shell)
                       for shell in basis['electron_shells']])
 ```
@@ -539,19 +539,19 @@ def gto_session(basis_name , element):
 接下来，可以在 [MO] 区段中包含电子轨道。如下面的 mo_tpl 模板所示，对于每个轨道，MO 区段允许指定各种属性，包括对称性、轨道能量和占据数等，随后是一列轨道系数。处理轨道系数时，请注意 D、F 和 G 函数的顺序。例如，球面 D 函数
 
 ```text
-arranged as D0 , D+1 , D -1 , D+2 , D -2 . For simplicity, we have omitted the reordering
+arrangedasD0, D+1, D-1, D+2, D-2.Forsimplicity,we haveomittedthereordering
 ```
 过程。
 
 ```python
-mo_tpl = jinja2.Template( ' ' '\
+mo_tpl = jinja2.Template( '''\
 Sym= {{ symmetry or 'A' }}
 Ene= {{ energy or 0.0 }}
 Spin= {{ spin or 'Alpha' }}
 Occup= {{ occupancy or 0.0 }}
-{% - for c in coefficients %}
+{%- for c in coefficients %}
 {{ loop.index }} {{ c }}
-{% - endfor %}' ' ')
+{%- endfor %}''')
 def mo_session(orbitals):
     return [mo_tpl.render(coefficients=c) for c in orbitals]
 ```
@@ -559,11 +559,11 @@ def mo_session(orbitals):
 
 ```python
 from basis_set_exchange.lut import element_Z_from_sym
-def render_molden(elements , coordinates , basis_name , orbitals):
-    x ,y , z = coordinates.T
+def render_molden(elements, coordinates, basis_name, orbitals):
+    x,y , z = coordinates.T
     atom_numbers = [element_Z_from_sym(ele) for ele in elements]
-    atoms = list(zip(elements , atom_numbers ,x ,y , z))
-    return molden_tpl.render( Z=element_Z_from_sym , atoms=atoms , gtos=[gto_session(basis_name , atom[0]) for atom in atoms] , mos=mo_session(orbitals))
+    atoms = list(zip(elements, atom_numbers,x ,y , z))
+    return molden_tpl.render( Z=element_Z_from_sym, atoms=atoms, gtos=[gto_session(basis_name, atom[0]) for atom in atoms], mos=mo_session(orbitals))
 ```
 例如，我们可以使用以下代码将一个分子的所有原子轨道输出到 Molden 文件中。
 
@@ -571,13 +571,13 @@ def render_molden(elements , coordinates , basis_name , orbitals):
 import pandas as pd
 import pyscf
 mole = pd.DataFrame({
-    'symbol':[ 'O', 'H', 'H'] , 'x': [0.5009 , 1.4049 , -0.0934] , 'y': [2.7238 , 2.4390 , 1.9786] , 'z': [0.8464 , 0.6938 , 0.7321] , })
-basis = 'sto -3g'
+    'symbol':[ 'O', 'H', 'H'], 'x': [0.5009, 1.4049, -0.0934], 'y': [2.7238, 2.4390, 1.9786], 'z': [0.8464, 0.6938, 0.7321], })
+basis = 'sto-3g'
 AOs = np.identity(5)
 elements = mole.symbol
-coordinates = mole.loc[: ,'x':'z'].to_numpy()
+coordinates = mole.loc[:,'x':'z'].to_numpy()
 with open ('demo.molden', 'w') as f:
-    f.write(render_molden(elements , coordinates , basis , AOs))
+    f.write(render_molden(elements, coordinates, basis, AOs))
 ```
 
 ### 3.4.3 格式
@@ -587,14 +587,14 @@ Gaussian 手册简要描述了 Cube 格式的结构。一些在线文档中可�
 以下 Jinja 模板展示了 Cube 格式的结构。
 
 ```text
-cube_tpl = jinja2.Template( ' ' '\
+cube_tpl = jinja2.Template( '''\
 Comment line 1
 Comment line 2
 {{ '%5d' % len(atoms) }} {{ '%12.6f' % origin[0] }} {{ '%12.6f' % origin[1]
      }} {{ '%12.6f' % origin[2] }}
-{% - set vx = voxel[0] %}
-{% - set vy = voxel[1] %}
-{% - set vz = voxel[2] %}
+{%- set vx = voxel[0] %}
+{%- set vy = voxel[1] %}
+{%- set vz = voxel[2] %}
 {{ '%5d' % n_voxels[0] }} {{ '%12.6f' % vx[0] }} {{ '%12.6f' % vx[1] }} {{
     '%12.6f' % vx[2] }}
 {{ '%5d' % n_voxels[1] }} {{ '%12.6f' % vy[0] }} {{ '%12.6f' % vy[1] }} {{
@@ -604,53 +604,53 @@ Comment line 2
 ```python
 {{ '%5d' % n_voxels[2] }} {{ '%12.6f' % vz[0] }} {{ '%12.6f' % vz[1] }} {{
     '%12.6f' % vz[2] }}
-{% - set charge = 0 %}
-{% for atom_number ,x ,y , z in atoms -%}
+{%- set charge = 0 %}
+{% for atom_number,x ,y , z in atoms -%}
 {{ '%5d' % atom_number }} {{ '%12.6f' % charge }} {{ '%12.6f '%x} }{ {
     '%12.6f' % y }} {{ '%12.6f' % z }}
 {% endfor -%}
 {% for data in volumetric_data -%}
 {{ data }}
 {% endfor -%}
-' ' ')
-def render_cube(elements , coordinates , voxel , origin , data):
+''')
+def render_cube(elements, coordinates, voxel, origin, data):
     atom_numbers = [element_Z_from_sym(ele) for ele in elements]
-    x ,y , z = coordinates.T
-    atoms = list(zip(atom_numbers ,x ,y ,z ) )
+    x,y , z = coordinates.T
+    atoms = list(zip(atom_numbers,x ,y ,z ) )
     n_voxels = data.shape
     formatted_data = []
     for ix in range (n_voxels[0]):
         for iy in range (n_voxels[1]):
-            for iz in range (0 , n_voxels[2] , 6):
-                # In each line , writes up to 6 floats in the 13.5E format
-                formatted_data.append( ''.join(f'{v:13.5E}' for v in data[ix ,iy ,iz:iz+6]))
-    return cube_tpl.render( atoms=atoms , len=len , n_voxels=n_voxels , voxel=voxel , origin=origin , volumetric_data=formatted_data)
+            for iz in range (0, n_voxels[2], 6):
+                # In each line, writes up to 6 floats in the 13.5E format
+                formatted_data.append( ''.join(f'{v:13.5E}' for v in data[ix,iy,iz:iz+6]))
+    return cube_tpl.render( atoms=atoms, len=len, n_voxels=n_voxels, voxel=voxel, origin=origin, volumetric_data=formatted_data)
 ```
 要可视化电子性质，可以创建网格，计算其在网格上的值，并使用此模板渲染 Cube 文件。
 例如，我们可以按如下方式创建一个 Cube 文件来可视化 p 型原子轨道。体素网格是一个 0.3 × 0.3 × 0.3 的立方体体积，沿 x、y 和 z 轴各分配了 60 个体素。为简单起见，我们使用量子化学程序 PySCF [17,18] 计算 p 轨道在这些网格上的值。请注意对分子几何结构进行的单位转换。Cube 文件中的所有距离数据都必须以玻尔为单位。
 
 ```text
 # NOTE: all units are in Bohr
-boundary = [[ -9. , 9.] , [ -9. , 9.] ,
+boundary = [[-9., 9.], [-9., 9.],
 ```
 
 ```python
-            [ -9. , 9.]]
-mesh = [60 ,6 0 , 60]
-mgrids = np.mgrid[[ slice(r[0] , r[1] ,m *1j)
-                   for r ,m in zip (boundary , mesh)]]
-grids = mgrids.reshape(3 , -1).T
-origin = mgrids[: ,0 ,0 ,0]
-voxel = np.array([mgrids[: ,1 ,0 ,0] - origin , mgrids[: ,0 ,1 ,0] - origin , mgrids[: ,0 ,0 ,1] - origin])
+            [-9., 9.]]
+mesh = [60,6 0, 60]
+mgrids = np.mgrid[[ slice(r[0], r[1],m *1j)
+                   for r,m in zip (boundary, mesh)]]
+grids = mgrids.reshape(3, -1).T
+origin = mgrids[:,0,0,0]
+voxel = np.array([mgrids[:,1,0,0] - origin, mgrids[:,0,1,0] - origin, mgrids[:,0,0,1] - origin])
 # AO values on given grids
-basis = 'sto -3g'
-mol = pyscf.M(atom= list(mole.to_numpy()), basis=basis , verbose=0)
+basis = 'sto-3g'
+mol = pyscf.M(atom= list(mole.to_numpy()), basis=basis, verbose=0)
 ao = mol.eval_gto( 'GTOval', grids)
-ao_2pz = ao[: ,4].reshape(mesh)
+ao_2pz = ao[:,4].reshape(mesh)
 elements = mole.symbol
-coordinates = mole.loc[: ,'x':'z'].to_numpy() / 0.529177249
+coordinates = mole.loc[:,'x':'z'].to_numpy() / 0.529177249
 with open ('demo.cub', 'w') as f:
-    f.write(render_cube(elements , coordinates , voxel , origin , ao_2pz))
+    f.write(render_cube(elements, coordinates, voxel, origin, ao_2pz))
 ```
 
 ## 小结

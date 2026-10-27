@@ -3,8 +3,8 @@
 润色由 `agy`（`gemini-3.8-flash-low`，`--effort low`）按 `.local/polish_prompt.md` 逐章执行，提示词只给译文、不给原文；每章跑完立刻用 `.local/check_qmd.py` 做结构闸门（代码块、参考文献、图片、标题、图注、公式锚点逐条相同，汉字数比例 0.85–1.20，段落偏差 ≤ max(3, 1%)），不通过就回退到润色前副本并重试一次。
 
 - 润色前修订：`fe35636`（`books/quantum-python-notes/chapters/*.qmd` 的直译稿）
-- 润色后修订：`fe3563623fdabe2cdc3da4b3bed9ebdd2d5cf0d6`
-- 润色前后逐章 diff：`git diff fe35636..fe3563623fda -- books/quantum-python-notes/chapters/`
+- 润色后修订：`6b32f9fce59a19b82af1e87f379d51d8a11488aa`
+- 润色前后逐章 diff：`git diff fe35636..6b32f9fce59a -- books/quantum-python-notes/chapters/`
 - 机器可读证据：`docs/reviews/quantum-python-polish-evidence.json`（逐章 before/after 计数与 SHA-256、行级增删数、调用起止时间）
 - 调用日志：`.local/logs/polish3-<chapter>.log`（含 agy 的 rc、闸门输出）；逐章耗时见下表
 

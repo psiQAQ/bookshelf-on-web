@@ -1,13 +1,13 @@
 # 后 Hartree-Fock 方法 II：耦合簇 {#ch15 .unnumbered}
 
-耦合簇（coupled cluster，CC）理论是描述电子相关效应极其成功的后 Hartree-Fock 方法。CC 计算结果常作为基准，用于评估其他理论方法的精度。尽管耦合簇理论中的方程非常复杂，但借助 NumPy 库与 Python 中的各类张量收缩工具，开发包含单激发与双激发的基础 CC 程序（CCSD）并不算特别困难。
-从工程实现来看，CC 程序属于典型的后 HF 实现，需要结合多种软硬件技术方能发挥出最佳性能。CC 程序采用的手段与第 14 章讨论的完全 CI 程序大不相同。我们以双激发耦合簇（Coupled Cluster with double excitation，CCD）程序为案例，探讨 CC 程序中独特的关键技术。我们将展示如何使用第 10 章介绍的互斥锁（mutex）和条件变量（condition variable），在异步执行期间保护共享资源。我们将运用第 5 章的代码生成技术开发一个即时（just-in-time，JIT）编译器，编译 CCD 代码以支持数据预取功能。此外，我们还将构建一套符号编程方法自动推导 CC 方程与程序，进一步拓展第 5 章关于符号计算的讨论。
-本章着重探讨适用于耦合簇程序的关键技术。我们简要交代耦合簇理论的基本公式与理论背景，不深入铺开其庞大理论体系。已有若干优秀教材详尽阐述了耦合簇理论，读者可参考 Shavitt 与 Bartlett 的专著 *Many-Body Methods in Chemistry and Physics, MBPT and Coupled-Cluster Theory* [1]，以及 Crawford 与 Schaefer 的导论文章 *An Introduction to Coupled Cluster Theory for Computational Chemists* [2]。
-低激发耦合簇方法（如 CCSD、含微扰三重激发的 CCSD(T)、二阶线性响应耦合簇 CC2 及运动方程 CCSD 即 EOMCCSD）均为量子化学的标准手段。若对这些 CC 方法的 Python 实现感兴趣，建议参考开源量子化学软件包 PySCF [3] 中的具体实现。这些方法的 Python 实现核心在于调用 einsum 函数，逻辑直观易懂。
+耦合簇（coupled cluster，CC）理论是一种非常成功的后 Hartree-Fock 方法，用于描述电子相关效应。CC 计算的结果常被用作评估其他理论方法精度的基准。尽管耦合簇理论中的方程很复杂，但借助 NumPy 库和 Python 中的各种张量收缩工具，开发一个包含单激发和双激发的基本 CC 程序（CCSD）并不十分困难。
+从技术角度看，CC 程序是一种典型的后 HF 实现，需要使用各种技术才能达到最佳性能。CC 程序中使用的技术与第 14 章讨论的完全 CI 程序所用的技术截然不同。我们将以双激发耦合簇（Coupled Cluster with double excitation，CCD）程序为案例，探讨 CC 程序中使用的一些独特技术。我们将展示如何使用第 10 章介绍的互斥锁（mutex）和条件变量（condition variable），在异步执行期间保护共享资源。我们将运用第 5 章的代码生成技术开发一个即时（just-in-time，JIT）编译器，编译 CCD 代码以实现数据预取功能。此外，我们还将开发一种符号编程方法，自动推导 CC 方程和程序，扩展第 5 章关于符号计算的讨论。
+本章重点讨论适用于耦合簇程序的技术。我们将简要介绍耦合簇理论的基本公式和理论背景，但不打算深入探讨其理论框架。有几本优秀的教材更详细地介绍了耦合簇理论。读者可以参考 Shavitt 和 Bartlett 的著作 *Many-Body Methods in Chemistry and Physics, MBPT and Coupled-Cluster Theory* [1]，以及 Crawford 和 Schaefer 的入门文章 *An Introduction to Coupled Cluster Theory for Computational Chemists* [2]。
+低激发耦合簇方法，如 CCSD、CCSD(T)（含微扰三重激发的 CCSD）、CC2（二阶线性响应耦合簇）和 EOMCCSD（运动方程 CCSD），都是量子化学中的标准方法。如果你对这些 CC 方法的 Python 实现感兴趣，也可以研究开源量子化学软件包 PySCF [3] 中的实现。这些方法的 Python 实现主要涉及使用 einsum 函数，易于理解。
 
 ## 15.1 簇理论
 
-在耦合簇理论中，波函数采用指数试探形式（exponential ansatz）表示。这种试探形式提供了一套系统途径，用来刻画超出平均场近似的电子相关效应，逼近完全组态相互作用（Full Configuration Interaction）波函数，其具体表达式为
+在耦合簇理论中，波函数使用指数试探形式（exponential ansatz）描述。这一试探形式提供了一种系统的方法，用于描述超出平均场近似的电子相关效应，并逼近完全组态相互作用（Full Configuration Interaction）波函数，其表达式为
 
 ![公式图](../assets/math/eq-15-001.png){width=41%}
 
@@ -21,7 +21,7 @@
 
 **公式 (15.3)(15.4)(15.5)**[]{#eq-15-003}
 
-利用簇算符的指数形式对哈密顿量作相似变换，便能得出有效哈密顿量：
+使用簇算符的指数对哈密顿量进行相似变换，可以得到有效哈密顿量：
 
 ![公式图](../assets/math/eq-15-004.png){width=42%}
 
@@ -31,12 +31,12 @@
 
 **公式 (15.7)(15.8)**[]{#eq-15-005}
 
-若在 CCSD 中剔除单激发振幅 Tˆ，便得到 CCD（双激发耦合簇）方法。虽然 CCD 计算开销与 CCSD 相近，但因缺失 Tˆ 振幅，其计算精度相对较低。
-因此 CCD 方法在实际化学应用中远不如其他方法普遍。但从编程角度来看，CCD 方法足以展现 CC 程序面对的各类工程挑战。为简化问题并展示核心计算技术，后文我们将重点围绕 CCD 方法展开讨论。
+如果从 CCSD 中排除单激发振幅 Tˆ，就得到 CCD（双激发耦合簇）方法。虽然 CCD 的计算成本与 CCSD 相近，但由于缺少 Tˆ 振幅，其精度较低。
+因此，CCD 方法在实际化学应用中并不像其他方法那样广泛使用。然而，从编程角度看，CCD 方法足以说明 CC 程序中遇到的技术挑战。为了简化问题并展示计算技术，下面我们将重点讨论 CCD 方法。
 
 ## 15.2 CCD 程序
 
-CCD 与 CCSD 的方程在文献 [4–6] [1,2] 中已有详尽讨论。鉴于已有参考资料极为丰富，本文略去推导细节，直接列出相关计算方程。CCD 相关能由下式给出：
+CCD 和 CCSD 的方程已在文献 [4–6] [1,2] 中得到广泛讨论。鉴于现有资料十分丰富，我们将省略推导过程，直接列出下面的相关方程。CCD 相关能由下式给出：
 
 ![公式图](../assets/math/eq-15-006.png){width=30%}
 
@@ -101,13 +101,13 @@ def update_CCD_amplitudes(H: h5py.Group ,t 2 , level_shift=0):
     t2out /= e_o + e_o[: ,None] - e_v[: ,None ,None] - e_v[: ,None ,None ,None]
     return t2out
 ```
-CCD 方程包含大量的指标求和，适合借助张量收缩例程高效运算。此处我们调用 einsum 函数完成这些张量收缩。为了提升示例程序的可读性，我们利用 T2 振幅的反对称性质，省略各指标间的约束关系（如 i >j 与 a >b），从而把有约束求和化为无约束求和，例如：
+CCD 方程涉及大量指标求和，可以使用张量收缩程序高效计算。这里我们使用 einsum 函数执行这些张量收缩。为了提高示例程序的可读性，我们利用 T2 振幅的反对称性质，省略这些张量中不同指标之间的约束（如 i >j 和 a >b）。这将受约束求和转换为无约束求和，例如：
 
 ![公式图](../assets/math/eq-15-013.png){width=50%}
 
 []{#eq-15-013}
 
-CCD 程序需要五类分子轨道（MO）积分，分别记为 vvoo、oovv、vovo、oooo 与 vvvv。其中 o 与 v 分别指代 ⟨pq||rs⟩ 四个指标中的占据轨道与虚轨道指标。下方函数展示了这些积分的具体计算方法。
+CCD 程序涉及五种分子轨道（MO）积分，分别记为 vvoo、oovv、vovo、oooo 和 vvvv。在这些记号中，o 和 v 分别表示 ⟨pq||rs⟩ 四个指标中的占据轨道和虚轨道指标。下面的函数展示了这些积分的计算方法。
 
 ```python
 import pyscf
@@ -138,8 +138,8 @@ def mo_integrals(mol: pyscf.gto.Mole , orbitals , Hfile=None):
         H['fock'] = hcore_mo + einsum( 'ipiq ->pq', eri[:no ,: ,:no ,:])
     return Hfile
 ```
-为简化分子轨道（MO）积分的计算流程，我们借助 PySCF 软件包求出完整 MO 积分张量，再截取所需子块。充分利用原子轨道（AO）积分的置换对称性，并使 I/O 操作与数值计算相互重叠，能显著提升计算效率。第 12 章已详细讨论过相关主题，此处不再赘述。
-PySCF 中的 ao2mo 模块只生成空间轨道上的 MO 积分，采用化学记号 (pr|qs)。上方给出的 mo_integrals 函数将 MO 积分从 PySCF 的约定转换为自旋轨道基组中的物理学记号：
+为了简化分子轨道（MO）积分的计算过程，我们使用 PySCF 软件包计算整个 MO 积分张量，然后提取所需的子块。利用原子轨道（AO）积分的置换对称性，并将 I/O 操作与计算重叠，可以提高积分计算程序的效率。我们已在第 12 章介绍过这些技术主题，这里不再重复。
+PySCF 中的 ao2mo 模块只生成空间轨道上的 MO 积分，采用化学记号 (pr|qs)。上面给出的 mo_integrals 函数将 MO 积分从 PySCF 的约定转换为自旋轨道基组中的物理学记号：
 
 ![公式图](../assets/math/eq-15-014.png){width=37%}
 
@@ -196,7 +196,7 @@ if __name__ == '__main__':
     mf = mol.RHF().run()
     e_ccd = CCD_solve(mf)
 ```
-运行 CCD 求解器需要以平均场波函数（mean-field wave function）为起点。为简明起见，我们使用 PySCF 软件包生成平均场对象。通常，CCD 求解器的初始猜测由 MP2 波函数得到。这个初始猜测等价于将 CCD T2 设为零，并执行单步不动点迭代。
+要使用 CCD 求解器，需要以平均场波函数（mean-field wave function）为起点。为简单起见，我们使用 PySCF 软件包生成平均场对象。通常，CCD 求解器的初始猜测由 MP2 波函数得到。这个初始猜测等价于将 CCD T2 设为零，并执行一步不动点迭代。
 
 ## 15.3 数据传输
 
@@ -218,8 +218,8 @@ update_CCD_amplitudes 函数是 CCD 程序中最耗时的部分，主要有三�
 读取 8n 字节的数据，假设数据以双精度存储。3. einsum 函数中张量转置的效率以及其他数据
 移动操作。与前两个瓶颈相比，这一因素通常
 不那么突出。
-张量收缩中的 N 规模看起来相当庞大。然而在实际中，计算瓶颈往往源自读取 vvvv 张量的磁盘 I/O。最大的张量收缩需执行 2n n 次浮点运算并传输 8n 字节数据。因此，计算负载与数据传输量之比（FLOPs/bytes）为。在现代多核处理器上，计算能力很容易超过 1 TFLOPs（每秒万亿次浮点运算），而使用 SSD 存储的典型 Linux 文件系统能够提供每秒数 GB 的数据传输带宽。这意味着每传输一字节约有 500 次浮点运算。对于一个有 50 个占据轨道的系统，I/O 和张量收缩所需的时间非常接近（× 1 1.25）。如果将张量收缩卸载到性能可超过 10 TFLOPs 的 GPU 上，I/O 时间将是张量收缩时间的 10 倍。
-在计算之前预取数据是优化 CCD 程序性能极为有效的策略。谈及数据预取功能，固然可以考虑使用第 9 章编写的 iterate_with_prefetch 函数。但该函数并不适用于当前场景：它被设计为在单次 for 循环迭代中仅预取一种数据，而此处代码必须从磁盘同时并发预取五种不同类型的积分数据。
+张量收缩中的 N 可能看起来很可观。然而在实践中，计算瓶颈往往来自读取 vvvv 张量的 I/O。最大的张量收缩需要 2n n 次浮点运算和 8n 字节的数据传输。因此，计算负载与数据传输量之比（FLOPs/bytes）为。在现代多核处理器上，计算能力很容易超过 1 TFLOPs（每秒万亿次浮点运算），而使用 SSD 存储的典型 Linux 文件系统能够提供每秒数 GB 的数据传输带宽。这意味着每传输一字节约有 500 次浮点运算。对于一个有 50 个占据轨道的系统，I/O 和张量收缩所需的时间非常接近（× 1 1.25）。如果将张量收缩卸载到性能可超过 10 TFLOPs 的 GPU 上，I/O 时间将是张量收缩时间的 10 倍。
+在计算之前预取数据是优化 CCD 程序性能的一种特别有效的策略。对于数据预取的功能，可以考虑使用第 9 章开发的 iterate_with_prefetch 函数。然而，该函数不适用于此处，因为它设计为在一次 for 循环迭代中只预取一种数据。在当前场景中，代码需要从磁盘预取五种不同类型的数据。
 一种有效的策略是预先预取这五种数据，确保需要时它们都已在内存中就绪。要应用这一策略，需要实现以下功能：
 
 - 一个后台守护线程（daemon），持续将近期将要使用的数据读入内存缓存。
@@ -304,8 +304,8 @@ mutex = threading.RLock() # (1)
         not_full.notify()
     daemon.join()
 ```
-15.3 优化数据传输 应当注意，第 (1) 行的互斥锁（mutex lock）由两个条件变量（condition variable）not_empty 和 not_full 共享。当它们被获取时（通过 with 上下文），with 上下文作用域内的所有资源都受到同一个互斥锁保护。因此，无需引入额外的互斥锁来保护 cache 对象。同一时刻只有一个线程访问 cache 字典，直到显式调用条件变量的 wait 方法。随后 wait 方法将控制权移交其他线程。当其他线程执行 notify 方法时，它会唤醒等待条件并恢复当前线程中的执行流程。
-readahead 函数按照输入参数给定的键名顺序读取并缓存数据。最好严格按照数据被使用的顺序开展预取。为了使预取顺序与 update_CCD_amplitudes 函数中的数据访问顺序保持一致，我们需要彻底梳理和排查数据访问次序。随后，将排好序的名称列表传递给 readahead 守护线程（daemon）。顺序不匹配可能导致 readahead 守护线程中的数据加载器陷入停滞。作为练习，鼓励读者自行探索可能诱发这种死锁（deadlock）的深层原因和边界条件。
+15.3 优化数据传输 应当注意，第 (1) 行的互斥锁（mutex lock）由两个条件变量（condition variable）not_empty 和 not_full 共享。当它们被获取时（通过 with 上下文），with 上下文作用域内的所有资源都受到同一个互斥锁保护。因此，无需引入额外的互斥锁来保护 cache 对象。每次只有一个线程访问 cache 字典，直到调用条件变量的 wait 方法。随后，wait 方法将控制权交给其他线程。当其他线程执行 notify 方法时，它会唤醒等待条件，并恢复当前线程中的程序流程。
+readahead 函数按照输入参数中提供的数据名称所指定的顺序读取并缓存数据。最好按照数据被使用的顺序预取数据。为了使预取顺序与 update_CCD_amplitudes 函数中的数据访问顺序一致，我们需要彻底分析和整理数据访问顺序。随后，将适当的名称列表传递给 readahead 守护线程（daemon）。顺序不匹配可能导致 readahead 守护线程中的数据加载器停滞。作为练习，鼓励读者探索可能导致这种死锁（deadlock）的原因和条件。
 
 ```python
 def update_CCD_amplitudes(H: h5py.Group ,t 2 ) :
@@ -330,13 +330,13 @@ def update_CCD_amplitudes(H: h5py.Group ,t 2 ) :
     t2out /= e_o + e_o[: ,None] - e_v[: ,None ,None] - e_v[: ,None ,None ,None]
     return t2out
 ```
-目前的数据预取方案存在明显局限：预取顺序必须手工维护。这意味着每当访问顺序发生变动时，readahead 函数的任务列表也必须同步更新。这种人工
-调整既繁琐复杂，又容易增加出错风险。为了提高 readahead 函数的易用性，我们可以引入即时编译（Just-In-Time，JIT）技术，在运行时动态解析并确定数据预取顺序。
+当前的数据预取方案有一个局限：预取顺序必须手动管理。这意味着每当访问顺序发生变化时，readahead 函数的任务列表可能也需要更新。这种手动
+调整不仅繁琐，还会增加引入错误的风险。为了提高 readahead 函数的易用性，我们可以考虑采用即时编译（Just-In-Time，JIT）技术，在运行时动态确定数据预取顺序。
 
 ## 15.4 用于 I/O 预读的编译
 
-即时编译技术乍看起来似乎复杂，其实原理和实现策略都非常明晰。本质上，JIT 在运行时根据输入参数的数据类型优化或动态生成代码路径。此外，这些优化后的代码路径会被妥善缓存，以便后续反复重用。
-为了分析或优化代码路径，JIT 技术需要访问并修改函数的抽象语法树（Abstract Syntax Tree，AST）。这一过程涉及第 5 章介绍过的 inspect 和 ast 模块。对于使用 readahead 函数的 CCD 程序，我们可以利用 AST 搜索 update_CCD_amplitudes 函数中的全部数据访问操作。我们可以创建以下 JIT 编译器来实现这一功能。
+即时编译技术乍看起来可能很复杂。实际上，它的原理和实现策略都很简单。本质上，JIT 在运行时根据输入参数的数据类型优化或动态生成代码路径。此外，这些优化后的代码路径会被缓存，以便以后重用。
+为了分析或优化代码路径，JIT 技术需要访问和修改函数的抽象语法树（Abstract Syntax Tree，AST）。这一过程涉及使用第 5 章介绍过的 inspect 和 ast 模块。对于使用 readahead 函数的 CCD 程序，我们可以利用 AST 搜索 update_CCD_amplitudes 函数中的所有数据访问操作。我们可以创建以下 JIT 编译器来实现这一功能。
 
 ```python
 import inspect
@@ -357,8 +357,8 @@ else: # (1)
         return new_f(*args , **kwargs)
     return f_with_readahead
 ```
-第 (1) 行的 for-else 语句排除了无需 HDF5 I/O 的情况。当调用函数时，如果输入参数中包含 h5py 对象，便将该函数传递给 _inject_readahead 函数，以分析数据访问模式。
-该 JIT 编译器能够把 readahead 代码注入原函数中。例如在 CCD 程序里，_inject_readahead 函数能在 update_CCD_amplitudes 开头添加一条 with 语句，并将 h5py 对象替换为对应的缓存变量。下方代码示例展示了 JIT 编译器达成的大致效果。
+第 (1) 行的 for-else 语句排除了不需要 HDF5 I/O 的情况。当调用函数时，如果输入参数中包含 h5py 对象，便将该函数传递给 _inject_readahead 函数，以分析数据访问模式。
+这个 JIT 编译器可以将 readahead 代码注入原函数。例如，在 CCD 程序中，_inject_readahead 函数可以在 update_CCD_amplitudes 的开头添加一条 with 语句，并将 h5py 对象替换为相应的缓存变量。下面的代码示例展示了 JIT 编译器实现的大致效果。
 
 ```python
 def update_CCD_amplitudes(...):
@@ -367,8 +367,8 @@ def update_CCD_amplitudes(...):
         einsum(... , _loader[key1] , ...)
         ...
 ```
-为了达到这一效果，我们首先扫描 AST 以识别 I/O 操作。例如形如 H[’vvvv’] 的 I/O 操作属于 ast.Subscript 类型的元素。通常，ast.Subscript 操作包含三种类型内容中的一种：切片、常量或可迭代对象（如元组或列表）。针对 H[’vvvv’]，下标是一个常量字符串。为识别这类代码语句，我们可以遍历 AST，筛选名称与关键字（如 H）匹配且内容为字符串常量的 ast.Subscript 元素。
-ast 模块提供了两种遍历 AST 的主要方式。一种是使用 ast.walk 函数，但经由 ast.walk 遍历时，节点出现顺序可能与源代码不一致。此处选用 ast.NodeVisitor 更加合适，因为它采用深度优先方式递归遍历 AST，能够严格保持源码出现顺序。
+为了达到这一效果，我们首先扫描 AST 以识别 I/O 操作。例如，考虑 I/O 操作 H[’vvvv’]，它是一个 ast.Subscript 类型的元素。通常，ast.Subscript 操作包含三种类型内容中的一种：切片、常量或可迭代对象（例如元组或列表）。对于 H[’vvvv’]，下标是一个常量字符串。为了识别这类代码语句，我们可以遍历 AST，筛选名称与关键字（例如 H）匹配且内容为字符串常量的 ast.Subscript 元素。
+ast 模块提供了两种遍历 AST 的主要方法。其中一种是使用 ast.walk 函数。然而，通过 ast.walk 遍历 AST 时，节点出现的顺序可能与源代码中的顺序不同。这里使用 ast.NodeVisitor 更合适，因为它以深度优先的方式遍历 AST，能够保持顺序。
 
 ```python
 def _search_tasks(f , keyword):
@@ -385,13 +385,13 @@ def _search_tasks(f , keyword):
     print('# Readahead_jit finds tasks' , tasks)
     return tasks
 ```
-获得 I/O 操作列表后，我们基于 update_CCD_amplitudes 函数的 AST 注入 readahead 函数。查阅 with 语句的 AST 文档可知，下方代码块：
+获得 I/O 操作列表后，我们接着通过 update_CCD_amplitudes 函数的 AST 注入 readahead 函数。根据 with 语句的 AST 文档，以下代码块
 
 ```text
 with f() as var:
     code_block
 ```
-编译为 AST 节点：With(withitem("f()", var), body=code_block)。我们可以运用这种结构为 readahead 函数创建 ast.With 节点。随后需要遍历整棵 AST，查找并替换与 h5py 对象相关的 I/O 操作。这一过程借助 ast.NodeTransformer 节点修改器来完成。转换完成后，调用 exec 函数将 AST 重编为可执行的 Python 代码。下方给出具体实现：
+编译成 AST 节点：With(withitem("f()", var), body=code_block)。我们可以使用这种结构为 readahead 函数创建 ast.With 节点。接下来，我们需要遍历整个 AST，找到并替换与 h5py 对象相关的 I/O 操作。这个过程需要使用 ast.NodeTransformer 修改 AST。转换完成后，使用 exec 函数将 AST 转换回可执行的 Python 代码。下面是这些过程的实现。
 
 ```python
 def _inject_readahead(f , keyword):
@@ -476,8 +476,8 @@ if cache[key].refcount <= 0: # (3)
         not_full.notify()
     daemon.join()
 ```
-若某个任务已被缓存，我们只需增加对现有任务的引用，无须重复发起读取，正如第 (1) 行所示。与先前使用 FIFO 缓存的版本不同，该版本仅在 loader 方法中修改引用计数（见第 (2) 行）。当任务的引用计数归零时，便会及时从缓存中剔除淘汰，正如果第 (3) 行处理逻辑所示。
-至此，我们构建了一个轻巧的即时编译器（JIT compiler），有效改善了 CCD 程序底层的数据访问机制。要开启即时预取编译，只需将 readahead_jit 装饰器挂载到目标函数 update_CCD_amplitudes 上，无须对其内部业务实现作任何改动。
+如果一个任务已被缓存，我们只需添加对现有任务的引用，而不必重新读取，如第 (1) 行所示。与先前使用 FIFO 缓存的版本不同，在这个版本中，我们只在 loader 方法中修改引用计数，如第 (2) 行所示。当任务的引用计数降至零时，它将从缓存中被逐出，如第 (3) 行所处理的那样。
+到目前为止，我们实现了一个简单的即时编译器（JIT compiler），以改进 CCD 程序的数据访问机制。要启用即时编译，我们只需将 readahead_jit 装饰器应用于目标函数 update_CCD_amplitudes。不需要对其代码实现做任何修改。
 
 ```python
 @readahead_jit
@@ -492,8 +492,8 @@ def update_CCD_amplitudes(H: Union[Dict , h5py.Group] , t2: np.ndarray):
 
 ## 15.5 耦合簇理论的符号编程
 
-耦合簇（coupled cluster，CC）理论，特别是较高激发阶数的变体，涉及复杂的方程。利用关联图方法（linked diagram method）推导 CC 方程的系统方法已经确立 [1]。此外，也有能自动推导 CC 图的实用程序 [7]。
-倘若手头没有现成的理论工具，该如何推导 CC 方程？为探讨这一问题，我们以 CCD 为例，展示符号计算（symbolic computation）与代码生成相结合的技术方案。SymPy 虽提供了 secondquant 模块推导耦合簇方程，但此处介绍的方法更具通用性。依循本节梳理的开发流程，我们可以编写符号程序，为 SymPy 尚未支持的特殊代数系统自动推导方程。
+耦合簇（coupled cluster，CC）理论，特别是其较高激发阶数的变体，涉及复杂的方程。利用关联图方法（linked diagram method）推导 CC 方程的系统方法已经确立 [1]。此外，还有能够自动推导 CC 图的程序 [7]。
+假设我们没有现成的理论框架，该如何推导 CC 方程？为了探讨这个问题，我们以 CCD 为例，演示相关的符号计算（symbolic computation）和代码生成技术。SymPy 提供了 secondquant 模块，也可以用来推导耦合簇方程。然而，这里介绍的方法更加通用。按照所概述的开发过程，我们可以创建符号程序，为 SymPy 中没有提供的代数推导方程。
 从本质上说，用于 CC 方程的符号程序是一个计算机代数系统（Computer Algebra System，CAS），旨在对二次
 量子化算符执行正规排序（normal ordering）过程。一般而言，开发 CAS 程序涉及以下步骤：
 
@@ -507,7 +507,7 @@ def update_CCD_amplitudes(H: Union[Dict , h5py.Group] , t2: np.ndarray):
 
 以下类是 CCD 符号程序中的基本元素：
 
-- FieldOperator 类表示二次量子化算符。CCD 中的算符同时涉及占据轨道（occupied orbital）和虚轨道（virtual orbital）。因此我们为其指定标签：取值可为 O（占据）、V（虚轨）或 *（二者兼顾）。Annihilation 与 Creation 算符派生为 FieldOperator 的具体子类。
+- FieldOperator 类表示二次量子化算符。CCD 中的 FieldOperator 同时涉及占据轨道（occupied orbital）和虚轨道（virtual orbital）。因此，我们为 FieldOperator 指定一个标签，其值可以是 O（表示占据）、V（表示虚）或 *（表示两者）。Annihilation 和 Creation 算符被定义为 FieldOperator 的子类。
 - Delta 类表示克罗内克 δ（Kronecker delta），它由两个二次量子化算符的对易产生。
 - Tensor 类表示 Tˆ 激发算符和哈密顿量中使用的多维系数与积分。
 
@@ -609,7 +609,7 @@ remaining 属性用于存储收缩之后任何尚未处理的算符。考虑一�
 
 []{#eq-15-018}
 
-如式 (15.20) 所示，将算符乘积 fˆf 化为正规排序形式后，可继续把 fˆ 与后续各算符展开逐级收缩。remaining 属性忠实记录仍可进一步收缩的残余算符。利用 remaining 属性，下方递归函数即可完整实现式 (15.21) 规定的正规排序过程。
+如式 (15.20) 所示，将乘积 fˆf 转换为正规排序形式之后，可以继续对 fˆ 与后续算符进行收缩。remaining 属性记录仍可用于进一步收缩的算符。利用 remaining 属性，我们可以用以下递归函数实现式 (15.21) 中描述的正规排序过程。
 
 ```python
 def _contract_fop_string( fop: FieldOperator , string: String) -> List[String]:
@@ -634,7 +634,7 @@ def _contract_fop_string( fop: FieldOperator , string: String) -> List[String]:
                 output.append(String(s.operators + r.operators , s.factor * r.factor , r.deltas , r.remaining))
     return output
 ```
-对于 _contract_fop_fop 输出的字符串，如果其 remaining 属性为空，说明该字符串不包含任何可进一步收缩的算符。否则，递归调用 _contract_fop_string 函数，处理 remaining 属性内的 FieldOperator 对象的后续收缩（如第 (1) 行所示）。
+对于 _contract_fop_fop 输出的字符串，如果其 remaining 属性为空，说明该字符串不包含任何可以进一步收缩的算符。否则，我们递归调用 _contract_fop_string 函数，处理 remaining 属性内的 FieldOperator 对象后续的收缩，如第 (1) 行所示。
 在 _contract_fop_string 函数的基础上，我们可以轻松实现一个函数来模拟字符串之间的收缩。
 
 ```python
@@ -658,13 +658,13 @@ def contract(string1 , string2):
     return [String(s.operators + s.remaining , s.factor , s.deltas)
             for s in _contract_string_string(string1 , string2)]
 ```
-到目前为止，我们已经完成了 FieldOperator 和 String 类所需的各项代数运算。接下来，我们将使用这些基础元素定义 CCD 理论中的哈密顿算符（Hamiltonian operator）和 Tˆ 算符。二次量子化的哈密顿量表示如下：
+到目前为止，我们已经完成了 FieldOperator 和 String 类所需的代数运算。接下来，我们将使用这些基础元素定义 CCD 理论中的哈密顿算符（Hamiltonian operator）和 Tˆ 算符。二次量子化的哈密顿量表示如下：
 
 ![公式图](../assets/math/eq-15-019.png){width=30%}
 
 []{#eq-15-019}
 
-请注意，我们采用的是反对称化形式的双电子积分张量（two-electron integral tensor）。使用反对称张量的原因会在后续讨论中更加清楚。利用 String 类和 Tensor 类，可以轻松构造出哈密顿量的符号表示。
+请注意，我们采用的是反对称化形式的双电子积分张量（two-electron integral tensor）。使用反对称张量的原因将在后续讨论中变得更加清楚。利用 String 类和 Tensor 类，可以轻松构造哈密顿量的符号表示。
 类似的方法可用于构造 Tˆ
 
 ![公式图](../assets/math/eq-15-020.png){width=45%}
@@ -697,7 +697,7 @@ def bra_projector(n):
     bra_tensor , bra = _make_operator(.25 , 'O'*n+ 'V'*n)
     return bra_tensor.indices[:: -1] , bra
 ```
-在上述算符体系中，我们对张量指标和算符串共用同一组 FieldOperator 实例。为建立 FieldOperator 与张量指标之间的精确对应关系，每个 FieldOperator 都需要全局唯一的标识符，用来识别张量指标。由于 Python 会为每个独立对象分配唯一的内存 ID，为简明起见，直接使用 FieldOperator 对象本身充当张量指标标识。这种设计意味着每个 FieldOperator 都是全局唯一的独立实体，不可克隆，因为任何 copy() 操作都会衍生出 ID 不同的全新对象，从而破坏映射关系。
+在这些算符中，我们对张量指标和算符串使用同一组 FieldOperator 对象。为了建立 FieldOperator 与张量指标之间的对应关系，每个 FieldOperator 都需要一个唯一标识符。随后用这些标识符来识别张量指标。由于 Python 本身会为每个不同的 FieldOperator 对象生成唯一 ID，为简单起见，我们使用 FieldOperator 对象本身作为张量指标的标识符。这种方法意味着每个 FieldOperator 对象都是唯一的，不能被克隆，因为任何 copy() 方法都会产生一个具有不同 ID 的新 FieldOperator 对象。
 得到哈密顿量和 Tˆ 算符的符号表示后，我们现在可以计算 Hˆ。这个有效哈密顿量（effective Hamiltonian）可以通过 Baker-Campbell-Hausdorff 展开求得：
 
 ![公式图](../assets/math/eq-15-022.png){width=57%}
@@ -730,7 +730,7 @@ def commutate(string1 , string2) -> List[String]:
     return [s for s in output if len (s.deltas) > n_deltas]
 ```
 哈密顿量和 Tˆ 算符都包含偶数个 FieldOperator。使用 contract 函数完全交换两个串的位置需要偶数次置换，因此总因子为 1.0。这会抵消对易子中的另一项。
-因此，我们只需遍历 contract 函数的输出结果，识别两输入串已完全对换的项并将其从输出中剔除。在当前 commute 函数里，我们依据克罗内克 δ（Kronecker delta）的数量来甄别对换项：纯粹对换算符不会改变克罗内克 δ 数量，而任何有效收缩均会增加 δ 数量。
+因此，我们只需扫描 contract 函数的输出，找到两个输入串已完全交换的项，并将其从输出中移除。在这个 commute 函数中，我们根据克罗内克 δ（Kronecker delta）的数量来识别交换后的串，因为交换两个串不会改变克罗内克 δ 的数量，而任何收缩都会增加这个数量。
 
 ### 15.5.3 符号化求值表达式
 
@@ -804,7 +804,7 @@ for delta in deltas: # (1)
 
 ### 15.5.4 符号化生成 CCD 方程
 
-遍历 apply_BCH 输出中的各个算符串，直接调用 on_HF_reference 即可求得 CCD 能量表达式。为推导 CCD 振幅方程，我们先将这些算符串投影至双激发左矢空间，随后调用 on_HF_reference 求值，代码实现如下：
+对于 apply_BCH 输出中的每个串，我们可以调用 on_HF_reference 函数来获得 CCD 能量表达式。为了推导 CCD 振幅方程，我们先将这些串投影到双激发左矢投影算符上，然后调用 on_HF_reference，如以下代码所示。
 
 ```python
 def CCD_energy(truncation=4):
@@ -839,13 +839,13 @@ F2 += -0.0625 * einsum("baji ->abji", h2_vvoo)
 F2 += -0.0625 * einsum("abij ->abji", h2_vvoo)
 ... # 705 more lines for F2
 ```
-读者可能发现，阶数更高时符号程序运行耗时明显增加。这主要是程序产生了海量中间算符串所致。在这类中间串里，绝大多数最左侧的算符均为 Annihilation(’O’) 或 Creation(’V’)。无论算符串后续包含什么内容、经历何种收缩，它们在 HF 参考态上的期望值都恒为零。若能及早侦测出这些中间串并提前短路排除，就能显著减少无效运算。
-此类优化可通过惰性求值（lazy evaluation）优雅达成。完全没有必要一次性生成全部算符串后再批量转交 on_HF_reference。相反，串中各个 FieldOperator 的收缩操作可以由 on_HF_reference 内部循环逐项按需触发。一旦触碰零值截断条件，便能安全跳过 contract 函数的后续收缩。在 Python 中可借助生成器（generator）与 yield 语句实现惰性求值，后续代码将深度运用该机制。
-从输出中还可以观察到，它包含的项明显多于 CCD 方程 (15.10) 中给出的项。额外的项是由于收缩阶段未处理置换对称性（permutation symmetry）而产生的。接下来，我们将考虑 CCD 张量的置换对称性，以系统改进符号程序。
+你可能注意到，对于更高阶的截断，符号程序运行得很慢。这主要是由于程序生成了大量中间串。事实上，对于这些中间串中的绝大多数，最左侧的算符是 Annihilation(’O’) 或 Creation(’V’)。无论串的其余部分是什么，也无论它们随后经历怎样的收缩，它们在 HF 参考态上的期望值都为零。我们可以及早检测出这些中间串，并将它们排除在最终表达式之外。
+这种优化可以通过惰性求值（lazy evaluation）实现。没有必要一次性生成所有串，交给 on_HF_reference 处理。相反，串中每个 FieldOperator 对象的操作可以由 on_HF_reference 函数内的 for 循环逐步触发。一旦满足 on_HF_reference 中的零值条件，就可以安全地跳过 contract 函数中的后续操作。惰性求值技术可以使用生成器（generator）和 yield 语句实现。后续代码示例将广泛使用这项技术。
+从输出中还可以观察到，它包含的项明显多于 CCD 方程 (15.10) 中给出的项。额外的项是由于收缩过程中没有处理置换对称性（permutation symmetry）而产生的。接下来，我们将考虑 CCD 张量的置换对称性，以改进符号程序。
 
 ### 15.5.5 CCD 张量的置换对称性
 
-如何在 contract 函数中融入张量相关的置换对称性？为此我们需要在 String 对象中封装额外的对称结构信息。下方给出了表达 FieldOperator 间对称性的一种有效实现：
+如何在 contract 函数中应用与张量相关的置换对称性？为了纳入置换对称性，我们需要在 String 对象中编码额外的信息。下面是一种表示 FieldOperator 之间对称性的方法：
 
 1. 使用 FOpGroup 类，将通过
 
@@ -921,7 +921,7 @@ def _contract_fgroup_fop(fgroup: FOpGroup , fop: FieldOperator) -> List[
         yield _fgroup2str([] , degeneracy , [Delta([op , fop])] , fgroup[: -1])
     yield String([fop] ,( -1)**degeneracy , remaining=[fgroup])
 ```
-_contract_fgroup_fgroup 函数更复杂。由于两个 FOpGroup 中各有多个 FieldOperator 对象，它可能产生多种收缩串。然而，我们可以直接通过考虑收缩输出的最终状态来简化实现。依托 FOpGroup 内部的置换对称性，收缩输出最多可以包含 t 个不同的收缩串，其中 t 是不超过输入 FOpGroup 对象大小的最大整数。这 t 个不同的收缩串可以通过 Delta 对象的数量加以区分，数量从一个到 t 个不等。对于每个收缩串，我们可以使用最简单的收缩模式构造它，然后赋予适当的乘数以计入简并度（degeneracy）。简并度等于形成 Delta 对象的不同可能组合的数量。例如，包含 k 个 Delta 对象的收缩串可以涉及
+_contract_fgroup_fgroup 函数更复杂。由于两个 FOpGroup 中各有多个 FieldOperator 对象，它可能产生多种收缩串。然而，我们可以通过直接考虑收缩输出的最终状态来简化实现。由于 FOpGroup 内部的置换对称性，收缩输出最多可以包含 t 个不同的收缩串，其中 t 是不超过输入 FOpGroup 对象大小的最大整数。这 t 个不同的收缩串可以通过 Delta 对象的数量加以区分，数量从一个到 t 个不等。对于每个收缩串，我们可以使用最简单的收缩模式构造它，然后赋予适当的乘数以计入简并度（degeneracy）。简并度等于形成 Delta 对象的不同可能组合的数量。例如，包含 k 个 Delta 对象的收缩串可以涉及
 
 ![公式图](../assets/math/eq-15-024.png){width=30%}
 
@@ -974,7 +974,7 @@ def _contract_fop_string(fop: Union[FieldOperator , FOpGroup] , string:
             for r in _contract_fop_string(s.remaining[0] , substring):
                 yield String(s.operators + r.operators , r.factor , r.deltas , r.remaining)
 ```
-接下来构造哈密顿量（Hamiltonian）、Tˆ 算符和左矢投影算符时，我们也需要利用 FOpGroup 类纳入有关置换对称性的信息。需要注意的是，CCD 方程中的投影算符 μ 具有反对称的置换对称性，同样可以表示为反对称形式。
+接下来构造哈密顿量（Hamiltonian）、Tˆ 算符和左矢投影算符时，我们也需要利用 FOpGroup 类纳入有关置换对称性的信息。需要注意的是，CCD 方程中的投影算符 μ 具有反对称的置换对称性。它也可以表示为反对称形式。
 
 ![公式图](../assets/math/eq-15-025.png){width=50%}
 
@@ -1005,7 +1005,7 @@ def bra_projector(n):
     bra_tensor , bra = _make_operator(.25 , 'O'*n+ 'V'*n , symmetric=True)
     return bra_tensor.indices[:: -1] , bra
 ```
-运行考量对称性的符号程序后，能够得到紧凑的符号解析式；结果严密保留并正确处理了哈密顿量与 Tˆ 的置换对称性。
+运行考虑对称性的符号程序后，我们可以得到简洁的符号输出。不难验证，结果中正确处理了哈密顿量和 Tˆ 的置换对称性。
 
 ```text
 E+ =1 . 0 * einsum("ii ->", h1_oo)
@@ -1027,13 +1027,13 @@ F2 += 0.03125 * einsum("lkcd ,cdji ,ablk ->baij", h2_oovv ,t 2 , t2)
 F2 += -0.125 * einsum("lkcd ,abil ,cdjk ->baji", h2_oovv ,t 2 , t2)
 F2 += 0.03125 * einsum("lkcd ,ablk ,cdji ->baij", h2_oovv ,t 2 , t2)
 ```
-由于我们预先假定左矢投影算符（bra projectors）具有反对称性，这意味着在实际 CCD 程序中使用 F2 张量前，须先行对其施加反对称化。
+由于我们假定左矢投影算符（bra projectors）具有反对称性，这意味着在实际的CCD程序中使用F2张量之前，应先对其进行反对称化。
 
 ```text
 F2 = F2 - F2.transpose(0 ,1 ,3 ,2)
 F2 = F2 - F2.transpose(1 ,0 ,2 ,3)
 ```
-此外，尽管推导中未采用任何耦合簇（coupled cluster，CC）图解法来参数化正规序哈密顿量（normal-ordered Hamiltonian），结果中仍能清晰辨认其结构。利用双电子张量的反对称性，可在下方代码段中识别出 Fock 矩阵：
+此外，尽管我们没有使用任何耦合簇（coupled cluster，CC）图解法来参数化正规序哈密顿量（normal-ordered Hamiltonian），仍然可以在结果中找到它的踪迹。利用双电子张量的反对称性，可以在以下代码中辨认出Fock矩阵：
 
 ```text
 F2 += -0.5 * einsum("ac ,cbji ->abij", h1_vv , t2)
@@ -1041,7 +1041,7 @@ F2 += 0.5 * einsum("akkc ,cbji ->abij", h2_voov , t2)
 F2 += 0.5 * einsum("ki ,abjk ->baji", h1_oo , t2)
 F2 += -0.5 * einsum("klli ,abjk ->baji", h2_oooo , t2)
 ```
-在上述输出中，仍可观察到部分重复的张量收缩项，这源于多重 Tˆ 激发算符之间的置换对称性。通过重新排列 t2 张量指标并合并同类项，便可完全复现 CCD 方程 (15.10)。虽然机制更加复杂，不同 t2 串间的对称性同样可循相似逻辑系统处理。本书对此不再展开。
+在这个输出中，我们仍然观察到重复的张量收缩，它们源于不同Tˆ之间的对称性。通过重新排列t2张量并合并同类项，可以重现CCD方程(15.10)。尽管更加复杂，不同t2串之间的对称性也可以用与处理FieldOperators之间对称性类似的方式处理。本书不打算进一步讨论这种对称性。
 我们可以扩展这个符号程序，使其适用于其他量子化学方法的形式体系。
 
 - 使用自旋求迹激发算符（spin-traced excitation operators）定义哈密顿量
@@ -1062,7 +1062,7 @@ F2 += -0.5 * einsum("klli ,abjk ->baji", h2_oooo , t2)
 
 这个符号程序就可以适用于无自旋CC理论（spin-free CC theory）。
 
-- 编写一个 on_MCSCF_reference 函数，以支持多组态自洽场（Multi-Configuration Self-Consistent Field，MCSCF）波函数参考态，并相应地完善收缩规则，便能将符号程序扩展到多参考态 CC 理论（multireference CC theory）。
+- 实现一个on_MCSCF_reference函数，以支持多组态自洽场（Multi-Configuration Self-Consistent Field，MCSCF）波函数参考态，并相应地完善收缩规则，就可以将符号程序扩展到多参考态CC理论（multireference CC theory）。
 - 哈密顿算符（Hamiltonian operator）可以作为微扰算符递归地作用于参考态，从而得到用于多体微扰方法（many-body perturbation methods）的符号程序。
 - 更新第15.5.1节中的excitation函数，以参数化T − ˆT
 
@@ -1076,15 +1076,15 @@ F2 += -0.5 * einsum("klli ,abjk ->baji", h2_oooo , t2)
 
 ## 小结
 
-本章系统探讨了开发并优化耦合簇程序的各种工程技术。耦合簇程序面临的主要瓶颈在于磁盘读取积分张量耗费的时间，这通常在整体运行时间中占据支配地位。数据预取（data prefetching）是隐藏磁盘 I/O 开销的行之有效的策略。实施数据预取时，必须剖析代码中的 I/O 行为并在合适位置植入异步加载语句，以便在后台提前读取数据。我们引入即时编译（Just-in-Time，JIT）技术来自动化该流程。在识别出适合预取的 I/O 操作后，JIT 编译器创建数据加载守护线程在后台持续读入数据；随后动态重写源代码，使其直接消费预取好的数据。为严格控制内存用量，预取数据保存在容量固定的缓存字典中。在实现该 JIT 编译器时，我们综合运用了代码生成、异步计算以及互斥锁和条件变量等高阶并发技术。
-此外，我们探讨了使用符号编程推导耦合簇方程的方法，并提供了开发符号程序的详细教程。主要步骤包括表示基础算符元素、实现这些元素的对易子规则，以及使用 Hartree-Fock 参考态对输出求值。符号程序的输出包含许多冗余项。考虑耦合簇理论中的置换对称性（permutation symmetry），便可以合并并简化这些冗余项。我们考虑了每个张量内部的置换对称性，得到的结果与图解理论推导出的结果完全一致。
+本章探讨了开发和优化耦合簇程序的各种技术。耦合簇程序面临的一个挑战是从磁盘读取积分张量所花费的时间，这通常占据计算时间的主要部分。数据预取（data prefetching）是降低磁盘读取开销的有效策略。要实现数据预取，必须分析代码中的I/O操作，并在适当的位置插入数据加载语句，以便在后台读取数据。我们引入了即时编译（Just-in-Time，JIT）技术来自动完成这一过程。识别出适合预取的I/O操作后，JIT编译器创建一个数据加载守护进程，在后台持续读取数据。随后，JIT编译器修改源代码，以使用预取的数据。为了限制内存用量，预取的数据缓存在一个固定大小的字典中。在开发JIT编译器时，我们使用了代码生成、异步计算，以及互斥锁和条件变量等高级技术。
+此外，我们探讨了使用符号编程推导耦合簇方程的方法，并提供了开发符号程序的详细教程。主要步骤包括表示基本元素、实现这些元素的对易子，以及使用Hartree-Fock参考态对输出求值。符号程序的输出包含许多冗余项。考虑耦合簇理论中的置换对称性（permutation symmetry），便可以合并和简化这些冗余项。我们考虑了每个张量内部的置换对称性，得到的结果与图解理论推导出的结果一致。
 
 ## 参考文献
 
-[1] Shavitt, R.J. Bartlett, Many-Body Methods in Chemistry and Physics: MBPT and Coupled-Cluster Theory, Cambridge Molecular Science, Cambridge University Press, 2009.
-[2] Crawford, H.F. Schaefer III, An Introduction to Coupled Cluster Theory for Computational Chemists, John Wiley & Sons, Ltd, 2000, Ch. 2, pp. 33–136, https://onlinelibrary.wiley.com/doi/pdf/10.1002/9780470125915.ch2, https:// doi.org/10.1002/9780470125915.ch2, https://onlinelibrary.wiley.com/doi/abs/10.1002/ 9780470125915.ch2.
-[3] PySCF Developers, Quantum chemistry with python, https://pyscf.org/, 2024. CHAPTER By to for = (15.32 I. T.D. The
-[4] Purvis, D. George, R.J. Bartlett, A full coupled-cluster singles and doubles model: the inclusion of disconnected triples, Journal of Chemical Physics 76 (4) (1982) 1910–1918, https://doi.org/10.1063/1.443164, https://pubs.aip.org/aip/jcp/article-pdf/76/ 4/1910/18935003/1910_1_online.pdf.
-[5] Scuseria, C.L. Janssen, Henry F. Schaefer III, An efficient reformulation of the closed-shell coupled cluster single and double excitation (CCSD) equations, Journal of Chemical Physics 89 (12) (1988) 7382–7387, https://doi.org/10.1063/1.455269, https:// pubs.aip.org/aip/jcp/article-pdf/89/12/7382/18973922/7382_1_online.pdf.
-[6] Bartlett, G.D. Purvis, Many-body perturbation theory, coupled-pair many-electron theory, and the importance of quadruple excitations for the correlation problem, Inter- national Journal of Quantum Chemistry 14 (5) (1978) 561–581, https://doi.org/10.1002/ qua.560140504, https://onlinelibrary.wiley.com/doi/pdf/10.1002/qua.560140504, https:// onlinelibrary.wiley.com/doi/abs/10.1002/qua.560140504.
-[7] Baumgartner, A. Auer, D. Bernholdt, A. Bibireata, V. Choppella, D. Cociorva, X. Gao, R. Harrison, S. Hirata, S. Krishnamoorthy, S. Krishnan, C. chung Lam, Q. Lu, M. Nooijen, R. Pitzer, J. Ramanujam, P. Sadayappan, A. Sibiryakov, Synthesis of high-performance parallel programs for a class of ab initio quantum chemistry models, Proceedings of the IEEE 93 (2) (2005) 276–292, https://doi.org/10.1109/JPROC.2004.840311. 673 I. G.E. R.J. G.
+[1] I. Shavitt, R.J. Bartlett, Many-Body Methods in Chemistry and Physics: MBPT and Coupled-Cluster Theory, Cambridge Molecular Science, Cambridge University Press, 2009.
+[2] T.D. Crawford, H.F. Schaefer III, An Introduction to Coupled Cluster Theory for Computational Chemists, John Wiley & Sons, Ltd, 2000, Ch. 2, pp. 33–136, https://onlinelibrary.wiley.com/doi/pdf/10.1002/9780470125915.ch2, https://doi.org/10.1002/9780470125915.ch2, https://onlinelibrary.wiley.com/doi/abs/10.1002/ 9780470125915.ch2.
+[3] The PySCF Developers, Quantum chemistry with python, https://pyscf.org/, 2024. References 673
+[4] I. Purvis, D. George, R.J. Bartlett, A full coupled-cluster singles and doubles model: the inclusion of disconnected triples, Journal of Chemical Physics 76 (4) (1982) 1910–1918, https://doi.org/10.1063/1.443164, https://pubs.aip.org/aip/jcp/article-pdf/76/ 4/1910/18935003/1910_1_online.pdf.
+[5] G.E. Scuseria, C.L. Janssen, Henry F. Schaefer III, An efﬁcient reformulation of the closed-shell coupled cluster single and double excitation (CCSD) equations, Journal of Chemical Physics 89 (12) (1988) 7382–7387, https://doi.org/10.1063/1.455269, https://pubs.aip.org/aip/jcp/article-pdf/89/12/7382/18973922/7382_1_online.pdf.
+[6] R.J. Bartlett, G.D. Purvis, Many-body perturbation theory, coupled-pair many-electron theory, and the importance of quadruple excitations for the correlation problem, International Journal of Quantum Chemistry 14 (5) (1978) 561–581, https://doi.org/10.1002/qua.560140504, https://onlinelibrary.wiley.com/doi/pdf/10.1002/qua.560140504, https://onlinelibrary.wiley.com/doi/abs/10.1002/qua.560140504.
+[7] G. Baumgartner, A. Auer, D. Bernholdt, A. Bibireata, V. Choppella, D. Cociorva, X. Gao, R. Harrison, S. Hirata, S. Krishnamoorthy, S. Krishnan, C. chung Lam, Q. Lu, M. Nooijen, R. Pitzer, J. Ramanujam, P. Sadayappan, A. Sibiryakov, Synthesis of high-performance parallel programs for a class of ab initio quantum chemistry models, Proceedings of the IEEE 93 (2) (2005) 276–292, https://doi.org/10.1109/JPROC.2004.840311.

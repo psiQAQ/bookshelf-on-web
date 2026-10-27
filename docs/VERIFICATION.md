@@ -60,11 +60,12 @@ uv run python scripts/check_site.py .preview --book sample-linear-algebra --book
 
 原「学习笔记」任务被整书直译取代（见 `.scratch/quantum-python-notes/revision-request.md`）。本次交付与验证结果：
 
-- 内容：Qiming Sun《Python for Quantum Chemistry: A Full Stack Programming Guide》全书中译，前言 + 16 章；59 张插图、18 张表格、228 张公式图（按版面裁剪，因 PDF 文本层公式已碎散为字形残片）、349 条参考文献（保留英文原文）、全部代码清单（逐字符照录，仅把排版弯引号折回 ASCII）。
+- 内容：Qiming Sun《Python for Quantum Chemistry: A Full Stack Programming Guide》全书中译，前言 + 16 章；59 张插图、18 张表格、228 张公式图（按版面裁剪，因 PDF 文本层公式已碎散为字形残片）、349 条参考文献（保留英文原文，逐条从页面文本重建）、全部代码清单（逐字符照录，仅把排版弯引号折回 ASCII）。
 - 来源核验：源 PDF SHA-256 `c7553b895fc4caf52359df14007190a83bc5b94162dea1d22f4dc41314e383aa`，717 页；17 章的 PDF 页范围写入 `provenance.json` 并逐章核对覆盖，`eq/ref/fig/tbl/code` 计数与源转录逐章相等（`problems=0`）。
 - 质量闸门：`uv run python -m unittest discover -s tests` → 49 项通过（2 跳过）；`scripts/validate.py --strict` → 0 问题；`scripts/build.py` → `delivered=true`，`dist/` 20 MB、18 个 HTML 与 305 张 PNG；`scripts/check_site.py dist`（不带 `--book`，自动取注册表）→ 0 问题。
 - 浏览器核验：桌面 1440 px 与移动 390 px（390 视口经 iframe 复现，因为 headless Chrome 窗口最小宽度约 480 px）逐页检查；文档级 `scrollWidth` 在 390/768 下分别为 375/753，无横向溢出，代码块在自身容器内滚动。
 - 上线：提交 `d475d5e`、`01f08e9`、`f8a1472`、`a3f8b9a`、`cad0ac7`、`09b8061`、`879b477`、`e46d7d0` 推送 `main`；手动触发 `deploy.yml`（首次 run 40497222200，公式锚点与 lightbox 的 run 40521570743，未润色版 run 40533170055，全书润色版 run 40571160852）均成功；`main` 的最新提交同样会各触发一次部署，run 号见仓库 Actions 记录，其 headSha 与该提交一致。为首次发布在仓库上启用 Pages（`build_type: workflow`，自定义域名 `notes.psiqaq.cn`）。实测 `https://notes.psiqaq.cn/bookshelf-on-web/`、`/books/quantum-python-notes/index.html`、`/books/quantum-python-notes/chapters/12-integrals.html`、`/books/quantum-python-notes/assets/math/eq-12-001.png` 均 HTTP 200；`search.json` 返回 138 条索引记录（含「高斯型轨道」「积分计算」等正文词），章页 HTML 带 `rel=prev` / `rel=next` 前后章导航。
 - 润色：17 章全部经 `gemini-3.8-flash-low`（`agy`，`--effort low`）叠加 humanizer-zh 规则润色，逐章通过结构闸门（代码块逐字符相同、标题/图片/图注/公式锚点逐条相同、汉字数比例 0.85–1.20、段落数偏差 ≤ `max(3, 1%)`）；逐章数字见 `docs/reviews/quantum-python-polish.md`，调用日志 `.local/logs/polish3-<chapter>.log`。
+- 第三次复核修正（2026-10-27，据独立审计意见）：参考文献 349 条从原始页面文本逐条重建（恢复被文本层拆散的首个缩写或机构名首词、合并单字母拆字、修断词、剥离页眉残渣）；前言「致谢」5 段从 p7 小字号正文取回并译入；第 6 章「小结」重译并修正标签错位，装配程序的标题合并增加「独立小节标题不合并」守卫。
 - 已知限制：公式以图片呈现，不可选中或搜索；正文中少量被排版拆散的符号残片按原样保留，未重新排版；代码提取会把部分代码块内的空格打散（如 `np.einsum( 'z ,gz ->g' )`），与「逐字符照录」的表述有出入，属 PDF 文本层限制；机器润色未做人工通读校对。
 - 版权：译本未获 Elsevier 授权，按用户决定「公开 Pages，自负风险」发布，`index.qmd` 的「版权」一节记录了下线承诺。

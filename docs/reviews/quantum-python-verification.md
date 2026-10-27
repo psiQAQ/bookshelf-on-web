@@ -1,5 +1,7 @@
 # 量子化学 Python 笔记：核验与本地验收
 
+> **本记录已作废，仅作历史留存。** 它描述的是已被取代的「原创学习笔记」任务（16 章自写笔记、26 个原创示例、48 道练习）。自 2026-10-27 起该任务改为对 Qiming Sun 《Python for Quantum Chemistry》的整书中文直译；当前交付与核验记录见 [quantum-python-coverage.md](quantum-python-coverage.md)、[quantum-python-translation.md](quantum-python-translation.md)、[quantum-python-polish.md](quantum-python-polish.md) 与 `docs/VERIFICATION.md`。
+
 核验日期：2026-10-27。状态：本地内容与网站核验完成，**尚未获用户公开批准**。本记录不是发布批准。
 
 ## 验收对象与证据

@@ -5,7 +5,7 @@
 
 - 。与串行程序不同，由于并行计算具有非确定性，并行程序可能产生更多错误或完全不同的结果。可复现性问题会给并行程序的调试造成很大困难。此外，并行程序中的竞态条件有时会导致错误的结果，而这些错误可能不容易察觉。
 - 。并行编程引入了新的计算模型和抽象，进而带来了竞态条件、死锁和通信问题等新的技术挑战。与串行程序相比，并行程序的代码要复杂得多，更难理解和维护。
-- 。并行程序的运行效率受硬件架构、计算模型、软件栈和操作系统等多重因素制约。在某些场景下，盲目堆砌并行资源反倒会降低执行效率。在开发高效并行程序时，硬件、操作系统及其他底层组件决不能视作完全透明。
+- 。并行程序的效率受到硬件架构、计算模型、软件和操作系统等多种因素的影响。在某些情况下，盲目增加并行资源实际上会降低并行程序的效率。对于高效并行程序的开发而言，硬件、操作系统和其他底层组件并非透明的。
 
 有多种技术和工具可用于在 Python 程序中实现并行，包括：
 
@@ -86,14 +86,14 @@ output = np.zeros((n , n))
 def get_j_task(l ,d m , output):
     output[: , l] += np.einsum( 'jik ,ij ->k', eri[: ,: ,: ,l] , dm)
 ```
-对此任务做多线程并行化时，每个线程都需要更新全局变量 output 矩阵的一列。output 矩阵按行主序存储。访问列会破坏顺序内存操作。相邻的内存地址可能被不同的 CPU 核心访问，导致 CPU 缓存中的伪共享（false sharing）[1]。这种情况迫使硬件频繁锁定并同步缓存行，显著降低内存访问效率。有关这些技术问题的更多细节，读者可参考 *What Every Programmer Should Know About Memory* 一书 [2]。
+对此任务进行多线程并行化时，每个线程都需要更新全局变量 output 矩阵的一列。output 矩阵按行主序存储。访问列会破坏顺序内存操作。相邻的内存地址可能被不同的 CPU 核心访问，导致 CPU 缓存中的伪共享（false sharing）[1]。这种情况迫使硬件频繁锁定和同步缓存行，显著降低内存访问效率。有关这些技术问题的更多细节，读者可以参考 *What Every Programmer Should Know About Memory* 一书 [2]。
 显然，threading.Thread 类有几个缺点。它缺少一种简洁的方式来监控任务的运行状态、错误和执行结果。此外，它无法管理和复用线程资源。在实践中，threading.Thread 类很少单独用于多线程并行化。它主要作为多线程并行化的基本组件。其他基于 threading 模块构建的多线程工具能够创建更加健壮的并行执行框架。concurrent.futures 模块提供的 ThreadPoolExecutor 就是一个例子。它对 threading.Thread 的功能作出了显著改进，并经常用于并行计算。
 
 ### 10.1.2 ThreadPoolExecutor
 
 类提供了 .submit() 方法来分派任务，并返回一个表示尚未完成的结果的 Future 对象。要获取结果，我们可以使用 Future 对象的 .result() 方法。显式调用该
 10.1 多线程（multithreading） 即使不需要任务的输出，我们也要对每个 Future 对象调用 .result() 方法，以确保任务执行。与错误总会显示出来的串行程序不同，ThreadPoolExecutor 不会自动抛出子线程中的错误。没有错误消息并不一定意味着子线程没有发生错误。
-为说明如何使用 ThreadPoolExecutor，我们再次以 get_j 函数为例。下面的示例代码对 eri 张量的第一个索引做并行处理，随后由 np.sum 函数汇总各个并行任务产生的部分收缩结果。
+为了说明如何使用 ThreadPoolExecutor，我们再次以 get_j 函数为例。下面的示例代码对 eri 张量的第一个索引进行并行处理。然后，由 np.sum 函数汇总各个并行任务产生的部分收缩结果。
 
 ```python
 def get_j_task(i , dm):
@@ -158,8 +158,8 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=8) as scheduler:
 
 当多个线程试图进入临界区时，每个线程都会调用 lock.acquire() 请求控制互斥锁。在任何给定时刻，只有一个线程能够持有互斥锁并执行临界区内的代码。
 对共享变量的所有操作都需要用互斥锁防范竞态条件吗？答案是否定的。并非对共享变量的所有操作都容易受到竞态条件的影响。例如，原子操作（atomic operation）可以在单个步骤中完成，不可能被中断，因此不需要互斥锁。在 Python 文档 [3] 中，我们可以找到 Python 中的一些原子操作。它们大多是对内置数据类型（例如整数、列表和字典）的操作。然而，有些看似是原子的操作，例如 i = i + 1，实际上并非如此。如有疑问，使用互斥锁总是更安全的做法。
-在 C/C++ 程序中，操作互斥锁通常被视作开销较大的操作，因为获取或释放锁时涉及系统调用，并可能引发线程上下文切换。正如我们在第 9 章中所讨论的，上下文切换是操作系统的一项基本功能，开销高昂。这种开销有时甚至高于 Python 解释器执行数百条字节码指令的代价。这引出了一个问题：在 Python 中，是否有必要尽量减少互斥锁的使用，以降低系统调用开销？
-简短的回答是不需要。实际上，Python 中的 GIL 会阻止频繁的线程上下文切换。GIL 会定期释放以允许线程切换，通常每 5 毫秒释放一次。即使频繁获取或释放互斥锁，通常也由同一个线程执行。这一操作只涉及少量 CPU 指令，在绝大多数情况下不会触发系统调用。其开销通常与执行一条或几条普通 Python 字节码指令相当。因此在 Python 中使用互斥锁对整体性能的影响极小，这是 Python 与 C/C++ 程序使用互斥锁时的一大显著区别。
+在 C/C++ 程序中，操作互斥锁通常被认为是一种开销较大的操作，因为获取或释放锁时涉及系统调用，并且可能需要进行线程上下文切换。正如我们在第 9 章中讨论的，上下文切换是操作系统的一项基本功能，其开销很高。这种开销有时可能高于 Python 解释器执行数百条字节码指令的代价。这引出了一个问题：在 Python 中，是否有必要尽量减少互斥锁的使用，以降低系统调用的开销？
+简短的回答是不需要。事实上，Python 中的 GIL 会阻止频繁的线程上下文切换。GIL 会定期释放以允许线程切换，通常每 5 毫秒释放一次。即使频繁获取或释放互斥锁，通常也是由同一个线程执行。这一操作只涉及少量 CPU 指令，在大多数情况下不会触发系统调用。其代价通常与执行一条或几条普通 Python 字节码指令相当。因此，在 Python 中使用互斥锁对整体性能的影响很小。这是 Python 和 C/C++ 程序使用互斥锁时的一个显著区别。
 
 ### 10.2.2 事件与条件变量
 
@@ -172,7 +172,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=8) as scheduler:
 
 事件和条件变量是特别有用的技术。下面探讨一些应用事件和条件变量的典型场景。
 写后读同步（read-after-write synchronization）是多线程程序中的常见场景，其中一个线程需要访问由其他线程产生的某些共享资源。在这种情况下，我们需要阻塞读取线程，直到它收到写入线程发来的信号，表明所需条件已满足。事件和条件变量可以使线程等待某个条件得到满足，也可以向其他等待中的线程发出条件已满足的信号。
-使用事件和条件变量的另一常见场景，涉及数据处理线程与数据预取线程之间的协调。在这一场景下，计算线程需要等待 I/O 线程将数据完整读入缓冲区，随后才能对数据展开操作。下面的代码片段就是该并行计算场景的一个原型。
+使用事件和条件变量的另一个场景涉及数据处理线程和数据预取线程之间的协调。在这个场景中，计算线程需要等待 I/O 线程将数据完整读入缓冲区，然后才能对数据进行操作。下面的代码片段是这一并行计算场景的一个原型。
 
 ```python
 ready_for_read = threading.Event()
@@ -270,7 +270,7 @@ class Queue:
             self.not_full.notify()
             return item
 ```
-Queue 实例将任务存储在 _queue 属性中。生产者可通过 put 方法添加任务，而消费者使用 get 方法获取任务并加以处理。条件变量 not_empty 与 not_full 可以阻塞生产者和消费者的线程，以此控制 _queue 的大小。
+Queue 实例将任务存储在 _queue 属性中。生产者可以通过 put 方法添加任务，而消费者使用 get 方法获取任务进行处理。条件变量 not_empty 和 not_full 可以阻塞生产者和消费者的线程，以控制 _queue 的大小。
 
 ## 10.3 模型
 
@@ -570,7 +570,7 @@ get_j(dm).result()
 ### 10.5.2 使用协程和 asyncio 的程序
 
 Python 中的异步编程通常与使用协程（coroutine）和 asyncio 模块的并发编码相关 [4]。这种方法使用 async 和 await 关键字，以及用于管理任务执行的事件循环（event loop）。
-协程是在函数定义中使用 async 关键字声明的函数。协程使用 await 关键字暂停执行，并将计算资源让渡给其他协程。随后，事件循环可以恢复暂停的协程继续执行。借助协程展开异步编程，是执行多个并发任务的一种优雅且高效的方案。它具备以下几项优势：
+协程是在函数定义中使用 async 关键字定义的函数。协程使用 await 关键字暂停执行，并将计算资源让给其他协程。之后，事件循环可以恢复暂停的协程并继续执行。使用协程进行异步编程是一种执行多个并发任务的优雅而有效的解决方案。它有几个优点：
 
 - 任务切换的开销。为了实现并发，协程将执行权让给其他协程，而不是通过代价高昂的线程上下文切换来暂停和恢复。
 - 异步代码的结构与传统同步代码仍然非常相似。
@@ -609,14 +609,14 @@ print(output.sum())
 multiprocessing 模块的作用与 threading 模块相似。它提供基于进程的并行化所需的基本工具。例如，multiprocessing 模块提供 Process 类来创建子进程。multiprocessing.Process 的用法与 threading.Thread 类类似。可以使用 start 方法启动子进程，并使用 join 方法同步子进程。
 multiprocessing 模块也会遇到与 threading 模块类似的任务管理问题。例如，如果子进程中发生错误，父进程无法处理该错误。为了增强多进程并行化的能力，concurrent.futures 模块还引入了 ProcessPoolExecutor 来管理进程资源和任务。ProcessPoolExecutor 和 ThreadPoolExecutor 提供类似的 API，便于将使用 ThreadPoolExecutor 的代码改为使用 ProcessPoolExecutor。
 鉴于 multiprocessing 和 threading 模块及其各自的池执行器之间的相似性，我们将省略这些多进程并行化工具的基本用法。Python 官方文档提供了有关多进程编程的全面指南 [5]。本节将重点讨论多进程环境中的数据通信。
-多进程并行计算的效率受各库所采用的进程间通信（Inter-Process Communication，IPC）机制显著影响。在 multiprocessing 模块中，默认机制是用于单向通信的匿名管道以及用于双向通信的套接字。在这两种方式中，数据传输过程均使用 pickle 完成序列化与反序列化。需要指出的是，并非所有 Python 数据类型都能跨进程传输。我们必须确保拟传输的数据与 pickle 序列化兼容，如第 6 章所讨论的那样。除管道与套接字外，共享内存和内存映射文件也常用于数据传输，不过这两种技术支持的数据类型较少。
+多进程并行计算的效率受到各库所采用的进程间通信（Inter-Process Communication，IPC）方法的显著影响。在 multiprocessing 模块中，默认方法是用于单向通信的匿名管道和用于双向通信的套接字。在这两种方法中，数据在传输过程中都使用 pickle 进行序列化和反序列化。需要注意的是，并非所有 Python 数据类型都能在进程之间传输。我们必须确保打算传输的数据与 pickle 序列化兼容，如第 6 章所讨论的。除了管道和套接字，共享内存和内存映射文件也常用于数据传输。然而，这两种技术支持的数据类型较少。
 
 ### 10.6.1 multiprocessing.Process 中的通信
 
 首先来看父进程与子进程之间的函数参数传递。当使用 multiprocessing.Process 类创建子进程时，无需通过 IPC 将函数参数从父进程传递给子进程。
 操作系统采用写时复制（copy-on-write，COW）技术，使数据能够从父进程传递给子进程。这项技术允许父进程和子进程以只读模式共享内存空间。如果某个进程需要修改共享空间，就会在其私有内存空间中创建相关
 内存页的私有副本。因此，子进程创建后，可以无额外开销地访问父进程拥有的所有数据，包括函数参数。
-COW 有效解决了向子进程传递函数参数的问题。单就函数参数的数据传输而言，multiprocessing.Process 方法与多线程并行同样高效。此外，COW 允许向子进程传递任意参数，包括无法用 pickle 序列化的对象。例如，我们可以向子进程传递迭代器。各个子进程都使用各自独立的迭代器，彼此互不干扰。这不同于多线程的情形，在多线程下迭代器的状态由不同线程所共享。
+COW 有效解决了向子进程传递函数参数的问题。就函数参数的数据传输而言，multiprocessing.Process 方法与多线程并行一样高效。此外，COW 允许向子进程传递任何参数，包括无法用 pickle 序列化的对象。例如，我们可以向子进程传递迭代器。然而，每个子进程都使用自己的迭代器，彼此不会干扰。这与多线程的情况不同，在多线程中，迭代器的状态由不同线程共享。
 
 ```python
 In [1]: import time
@@ -650,7 +650,7 @@ Out[3]:
 ...
 ```
 父进程如何获取子进程的输出？与 threading.Thread 创建的子线程类似，子进程中函数的输出无法直接返回给父进程。在多线程的情况下，子线程中的函数可以修改输入参数，从而将信息传回主线程。虽然一般不推荐这样做，但这种方法能够在主线程与子线程之间交换数据。在多进程中，当子进程内的函数修改参数时，由于 COW 机制会产生一个本地副本。因此，父进程无法访问子进程对参数所做的修改。
-为使父进程与子进程之间能够互通数据，multiprocessing 模块提供了 Manager 类。该类模拟了列表和字典等数种 Python 数据结构。子进程作出修改时，Manager 能将变更同步回父进程，从而达成进程间的数据共享。Manager 通过套接字或管道处理数据通信，自动完成服务端与客户端之间的数据传输。使用 Manager 数据传输服务时，需要正确初始化并妥善关闭 Manager，例如借助 with 上下文 [6]。
+为了使父进程与子进程之间能够交换数据，multiprocessing 模块提供了 Manager 类。这个类模拟了列表和字典等几种 Python 数据结构。当子进程进行修改时，Manager 可以将修改传回父进程，从而实现进程间的数据共享。Manager 通过套接字或管道处理数据传输，自动完成服务器与客户端之间的数据传输。要使用 Manager 数据传输服务，需要正确初始化和终止 Manager，例如使用 with 上下文 [6]。
 
 ```python
 from multiprocessing import Process , Manager
@@ -667,7 +667,7 @@ assert len (l) == 1
 Manager.list 提供的 API 与 Python 标准列表相当。然而，不应简单地将它视为标准列表的直接替代品。将其与 multiprocessing.Process 一起使用时，我们需要认识到额外的要求：
 
 - 只能在 Manager 的 with 上下文中访问。要在该作用域之外访问列表，必须将其转换为标准列表对象，如上例所示。
-- Manager.list 的元素必须能够用 pickle 序列化。Manager.list 内部通过匿名管道或套接字对直接通信。两种方式都要求元素必须支持 pickle 序列化。
+- Manager.list 的元素必须能够用 pickle 序列化。Manager.list 内部通过匿名管道或套接字对进行通信。两种方法都要求元素能够用 pickle 序列化。
 
 在量子化学程序中，经常需要在进程之间分发大量数据，尤其是 NumPy 数组。在这种情况下，multithreading.SharedMemory、multithreading.Array 和 memmap 文件都是可用于数据共享的选项。我们可以使用这些工具为 NumPy
 数组创建数据缓冲区，然后将其连同其他函数参数传递给子进程。当子进程修改这些 NumPy 数组时，修改会直接写入底层共享内存或相应的内存映射文件。下面的示例展示如何使用这些技术实现共享 NumPy 数组。
@@ -757,12 +757,12 @@ def get_j(dm):
     return output
 ```
 请注意，这种方法不能用于使用 multiprocessing.Array 缓冲区的 NumPy 数组，因为共享的 multiprocessing.Array 对象没有关联的文件名。
-对比使用 ThreadPoolExecutor 与 multiprocessing.Process 进行并行计算的情形，ProcessPoolExecutor 往往带来更高的初始化开销。若函数以大型 NumPy 数组作为参数，运用共享内存技术可以降低这项开销。然而即便使用共享内存传输大型数组，ProcessPoolExecutor 的数据共享效率仍低于
+比较使用 ThreadPoolExecutor 和 multiprocessing.Process 进行并行计算的情况时，ProcessPoolExecutor 往往产生更高的初始化开销。如果函数以大型 NumPy 数组为参数，使用共享内存技术可以降低开销。然而，即使使用共享内存传输大型数组，ProcessPoolExecutor 的数据共享效率仍低于
 使用 multiprocessing.Process 并行计算。我们将在第 10.7 节进一步分析。
 
 ### 10.6.3 多进程程序中的锁
 
-在第 10.2 节中，我们探讨了借助锁及相关同步原语实现线程同步。由于子线程共享同一内存空间，线程锁自然适用于 threading.Thread 与 ThreadPoolExecutor 并行计算。然而在多进程并行计算中情况有所不同，每个进程都拥有独立的内存空间。这就引出了一个问题：如何借助锁来保护共享资源？
+在第 10.2 节中，我们探讨了使用锁和相关同步原语进行线程同步。由于子线程共享同一内存空间，线程锁自然适用于 threading.Thread 和 ThreadPoolExecutor 并行计算。然而，多进程并行计算的情况不同，每个进程都使用自己的内存空间。这就引出了一个问题：如何使用锁保护共享资源？
 使用 multiprocessing.Process 创建子进程时，我们仍然可以使用锁和同步原语，与它们在线程并行化中的用法相似。关键区别在于，必须使用 multiprocessing 模块提供的同步原语。例如，第 10.2 节中 get_j 函数的 multiprocessing.Process 版本可以实现如下。
 
 ```python
@@ -880,7 +880,7 @@ class Guard:
         self.ready_for_write.set()
 ```
 timing 函数是一个用于测量函数执行时间的装饰器。communicate 函数建立一对分别充当服务器和客户端的进程，它们使用指定的通道交换数据。为了消除访问共享内存和 memmap 时发生竞态条件的风险，我们在 Guard 类的上下文管理器中采用第 10.2 节描述的同步算法。该类确保服务器和客户端交替访问共享资源。
-通过匿名管道传输 NumPy 数组主要有两种方式。第一种方式是发送数据缓冲区连同 NumPy 数组的形状与数据类型，随后在客户端重建数组；第二种方式则是使用 pickle 序列化直接对 NumPy 数组对象编码，然后在客户端接收并反序列化。无论采用哪种方式，受限于管道缓冲区大小，都无法一次性完成数据传输。因此，客户端需要分批次读取数据，再将其拼接到缓冲区中。分配缓冲区有多种途径，我们可以运用内存 I/O 技术（由 io.BytesIO 类提供，参见第 6 章）管理缓冲区，multiprocessing 模块同样采用这种做法。下面的示例展示了传输 NumPy 数组的第一种方式。
+通过匿名管道传输 NumPy 数组有两种方法。一种方法是发送数据缓冲区以及 NumPy 数组的形状和数据类型，然后在客户端重建数组。第二种方法使用 pickle 序列化对 NumPy 数组对象进行编码，然后在客户端接收并反序列化。无论选择哪种方法，由于管道缓冲区大小的限制，都无法一次完成数据传输。因此，客户端需要分多次读取数据，然后将它们拼接到缓冲区中。有多种分配缓冲区的方法。我们可以使用内存中 I/O 技术（由 io.BytesIO 类提供，见第 6 章）管理缓冲区。multiprocessing 模块也采用这种方法。下面的程序展示了传输 NumPy 数组的第一种方法。
 
 ```python
 import io
@@ -989,7 +989,7 @@ def shm_transfer(size , count):
     communicate(shm_send , shm_recv , shm , (size , count , Guard()))
     shm.unlink()
 ```
-为防止服务端和客户端同时修改共享内存，程序使用 Guard 类进行同步。在实际应用中，若在创建子进程之前就已将数据写入共享内存，这一步同步往往并无必要。
+为防止服务器和客户端同时修改共享内存，程序使用 Guard 类进行同步。在实际应用中，如果在创建子进程之前已将数据复制到共享内存，这一步同步可能没有必要。
 对于使用 ProcessPoolExecutor 的程序，共享内存可以通过文件系统传递。我们可以分发与共享内存关联的文件名，并在每个进程中重建共享内存对象。随后，可以将共享内存对象连接到 NumPy 数组，作为数据缓冲区。以下代码片段实现了这一过程。
 
 ```python
@@ -1058,7 +1058,7 @@ def memmap_transfer(size , count):
 ```
 
 - 共享内存和 memmap 对小数组的性能较差，很大程度上可归因于事件锁的开销。在小数组测试中，这些锁频繁获取和释放，带来不可忽略的代价。然而，如果数据在子进程开始访问之前已复制到共享内存，就不需要锁。这可以显著提高性能，尤其是在传输小数组时，如标为「shm w/o lock」的行所示。
-- 对于管道和套接字，序列化会引入显著的开销，对大型数组尤甚。pickle 序列化可能增加内存占用。对小数组而言开销微乎其微，因为反序列化所需的数据极大概率已驻留在 CPU 的 L2 缓存中。然而处理大型数组时，序列化过程需要额外开辟内存，导致内存管理成本上升且缓存未命中率提高。在这种情形下，序列化的代价甚至可能压过数据传输本身。
+- 对于管道和套接字，序列化会引入明显的开销，尤其是对大型数组而言。pickle 序列化可能增加内存使用量。对小数组而言，开销很小，因为用于反序列化的数据很可能已经位于 CPU 的 L2 缓存中。然而，对于大型数组，序列化过程需要额外的内存，导致内存管理成本增加和缓存未命中的可能性提高。在这种情况下，序列化的成本可能超过数据传输本身。
 - 管道和套接字的性能可认为相当，尽管在这些测试中管道比套接字略慢。它们的性能高度依赖系统配置。
 - 通过文件系统传输数据比直接与子进程共享对象的方法慢得多。标为「shm」和「np.memmap」的测试对应直接共享方法，而标为「shm-via-file」和「memmap-via-file」的测试对应基于文件系统的方法。直接共享方法的性能相近，比基于文件系统的方法快 2–8 倍。基于文件系统的数据传输开销可归因于两个主要因素。首先，子进程收到共享内存（或 memmap 对象）的文件名时，必须执行代价高昂的 mmap 系统调用，将文件映射到虚拟内存。其次，新创建的数据对象可能遭遇严重的内存缺页和缓存未命中，进一步拖慢后续操作。「memmap-via-file」测试的代价更大，因为其内存与磁盘上的文件相关联。
 
@@ -1102,7 +1102,7 @@ gomp.omp_set_schedule(omp_sched['guided'] , chunk_size)
 
 ## 10.9 MPI
 
-消息传递接口（Message Passing Interface，MPI）是高性能计算（high-performance computing，HPC）中构建并行程序的核心工具。它专为并行应用中的高效网络通信量身打造。MPI 能充分协同硬件与软件，最大化提升通信性能，尤其是跨节点进程间通信的性能。鉴于其对高稳定性、高性能网络的严苛要求，MPI 通常部署在 HPC 超级计算机上。当算力资源来自云端工作节点时，即便技术上可行，MPI 并行计算也往往并非首选。在此类环境中，Dask 和 Ray 等分布式执行器是更为合适的方案（详见第 7 章）。
+消息传递接口（Message Passing Interface，MPI）是高性能计算（high-performance computing，HPC）中设计并行程序的基本工具。它针对并行应用中的高效网络通信进行了优化。MPI 可以整合硬件和软件以最大限度地提高通信性能，尤其是跨不同节点的进程间通信性能。由于要求稳定的高性能网络，MPI 通常用于高性能计算超级计算机。当计算资源由云工作进程提供时，尽管技术上可行，MPI 并行计算通常不是首选。在这种环境中，Dask 和 Ray 等分布式执行器是更合适的替代方案（进一步讨论见第 7 章）。
 虽然常用的 MPI 库用 C 实现，但不必直接访问 MPI 库的 C/C++ API。Python 的 mpi4py 库 [11] 提供了全面的 MPI 接口，使我们能够完全使用 Python 实现 MPI 并行计算。
 安装 mpi4py 可能比较复杂，因为它没有预构建的 wheel。执行
 
@@ -1229,7 +1229,7 @@ $  mpirun -n 8 --host node1 ,node2 python get_j_mpi.py
 
 在许多情况下，我们只需要将少数计算密集型函数并行化，它们只占串行程序的一小部分。SPMD 设计要求从程序开始就仔细规划并行算法。这种方法可能使程序变得不必要地复杂，尤其是在涉及共享资源的部分，例如 I/O 操作。
 为了简化串行程序中的 MPI 并行计算，mpi4py 提供了 mpi4py.futures.MPIPoolExecutor 类。该类提供与 ProcessPoolExecutor 类似的功能。然而，截至 mpi4py 3.1 版本，MPIPoolExecutor 仅限于节点内 MPI 并行。
-借助多程序多数据模型，我们能在串行程序中实现节点间的 MPI 并行化。在这一方案下（图 10.5），MPI 主进程以单进程方式运行串行程序，其余 MPI 进程充当守护进程随时待命。这些任务封装了数据与待执行函数实例。进入并行执行阶段时，主进程把数据与函数派发给各工作进程以展开并行计算。守护工作进程收到任务后，解码函数并执行计算。这样一来，程序便能执行主进程派发的任意并行任务，而非局限于预先定义的 SPMD 代码。
+通过应用多程序多数据模型，我们可以在串行程序中实现节点间 MPI 并行化。在这种方法中（图 10.5），MPI 主进程作为单个进程运行串行程序，其余 MPI 进程则充当守护进程，随时准备执行任务。这些任务包含数据和待执行函数的实例。当到达并行执行阶段时，主进程将数据和函数分发给工作进程，进行并行计算。守护工作进程收到任务后，对函数进行解码，然后执行计算。因此，程序能够执行主进程发送的任何并行任务，而不只是预先定义的 SPMD 代码。
 
 ![](../assets/figures/fig-10-5.png)
 
@@ -1239,7 +1239,7 @@ $  mpirun -n 8 --host node1 ,node2 python get_j_mpi.py
 
 1. 工作进程必须运行无限循环，持续接收主进程发送的任务。
 2. 守护工作进程需要一种退出无限循环的机制。这可以通过接收主进程发出的特定终止信号来实现。
-3. 任务（包括数据和函数）应妥善序列化，以供网络通信。mpi4py 使用 Python 内置的 pickle 模块处理对象序列化。然而诸如闭包等某些函数无法用 pickle 序列化。遇到此类情形时，可改用 cloudpickle 序列化复杂对象。
+3. 任务（包括数据和函数）应当正确序列化，以便进行网络通信。mpi4py 使用 Python 内置的 pickle 模块进行对象序列化。然而，某些函数，例如闭包，无法用 pickle 序列化。遇到这类问题时，可以使用 cloudpickle 序列化复杂对象。
 4. 为避免消息意外混杂，应在 send 和 recv 函数中使用唯一的通信标签。
 
 下面的代码说明如何在文件中实现一个简单的守护工作进程：
@@ -1321,7 +1321,7 @@ reqs = [comm.isend(( 'Args', args), i , tag=TAG) # (5)
             results.append(comm.recv(source=i , tag=TAG))
     return results
 ```
-在 map 函数中，我们可能需要把第 (4) 行可迭代对象代表的任务切分为较小批次加以处理。第 (2) 行的生成器 _build_chunks 旨在依照可用的 MPI 进程数重组任务。这一过程借助第 (3) 行的 itertools.islice 函数实现：每次调用生成器时，该函数从任务列表中切出前 comm.size 个任务。这样任务分发便能与 MPI 进程数相契合，确保负载均衡。
+在 map 函数中，我们可能需要将第 (4) 行的可迭代对象所表示的任务划分为较小的批次进行处理。第 (2) 行的生成器 _build_chunks 旨在根据可用的 MPI 进程数量重新分组任务。这通过第 (3) 行的 itertools.islice 函数实现，每次调用生成器时，该函数从任务列表中选取前 comm.size 个任务。因此，任务的分配与 MPI 进程数量相匹配，确保工作负载均衡。
 如第 (5) 行所示，程序调用非阻塞函数 MPI.isend 来分发任务。由于在 MPI 数据传输期间 Python GIL 会被释放，这种方法允许多个通信操作重叠执行。非阻塞函数返回一个 MPI.Request 对象。我们可以使用其 test 方法检查发送或接收操作是否完成。必须确保所有非阻塞发送操作完成后，才能继续执行后续操作。这种同步通过 wait_all 函数实现。网络通信的一般经验是始终采用超时机制。为了避免 MPI 操作中发生死锁，如第 (1) 行所示，wait_all 会定期检查数据传输状态，直到达到超时时间。
 任务通过 MPI 点对点操作分发。对于参数较大的任务，这种传输方式效率不高。在这种情况下，我们可以考虑将数据密集型传输移到自定义函数 func 内部。这样
 一来，当工作进程执行自定义函数时，就可以利用集合通信操作高效传输大型数据集。
@@ -1377,7 +1377,7 @@ $  mpirun -n 1 python run.py : -n 7 python mpi_worker.py
 
 - MPI 与 X 混合方法。这里的 X 代表任何节点内并行化技术，例如 OpenMP、ThreadPoolExecutor、ProcessPoolExecutor。在这种混合方法中，MPI 专门用于节点间通信，而节点内并行由另一种技术管理。由于并行化由最适合节点内场景的方法处理，这种安排能够更高效地利用节点内的内存资源。
 
-## 总结
+## 小结
 
 本章简要讨论了并行计算技术。我们展示了如何在并行计算程序中使用多线程、异步编程、多进程、OpenMP 和 MPI 并行。我们还讨论了并行计算中与数据通信和同步相关的问题。讨论涵盖线程间和进程间同步、生产者—消费者模型、流水线执行器，以及进程间通信中的数据交换方法。
 Python 提供 threading 模块和 ThreadPoolExecutor 来实现多线程并行。ThreadPoolExecutor 提供了非常有用的 API，在多线程并行化中几乎可以完全替代 threading 模块。为了克服 Python 全局解释器锁（Global Interpreter Lock，GIL）对多线程效率的影响，可以使用 multiprocessing 模块或 ProcessPoolExecutor 实现多进程并行。ProcessPoolExecutor 的 API 与 ThreadPoolExecutor 类似，使用方便。然而，它不能像 ThreadPoolExecutor 替代 threading 模块那样完全替代标准 multiprocessing 库。由于写时复制技术，多进程在数据传输方面更加高效和稳健。当需要进一步使用更多节点来并行化 Python 程序时，除了第 7 章介绍的分布式作业执行器，mpi4py 软件包也能帮助我们利用 MPI 库实现跨节点并行。通过结合 Python 的动态语言特性和 MPI MPMD（多程序多数据）范式，我们可以将 MPI 集成到串行程序中。这种集成提供了传统 MPI SPMD（单程序多数据）框架之外利用 MPI 并行的新方法。
@@ -1386,19 +1386,19 @@ Python 提供 threading 模块和 ThreadPoolExecutor 来实现多线程并行。
 
 ## 参考文献
 
-[1] Contributors, False sharing, https://en.wikipedia.org/wiki/False_sharing, 2024.
-[2] Drepper, What every programmer should know about memory, https://people.freebsd. org/~lstewart/articles/cpumemory.pdf, Nov. 2007.
-[3] Software Foundation, Python frequently asked questions -w h a tkinds of global value mutation are thread-safe?, https://docs.python.org/3/faq/library.html#what-kinds- of-global-value-mutation-are-thread-safe, 2024.
-[4] Software Foundation, The Python standard library: asyncio - asynchronous I/O, https://docs.python.org/3/library/asyncio.html, 2024.
-[5] Software Foundation, multiprocessing - programming guidelines, https://docs. python.org/3/library/multiprocessing.html#programming-guidelines, 2024.
-[6] Software Foundation, multiprocessing - sharing state between processes, https:// docs.python.org/3/library/multiprocessing.html#sharing-state-between-processes, 2024.
-[7] Contributors, Inter-process communication, https://en.wikipedia.org/wiki/ Inter-process_communication, 2024.
-[8] Kerrisk, queue(7) — manual page, https://man7.org/linux/man-pages/man7/ queue.7.html, 2024.
-[9] Architecture Review Board, OpenMP API specification: environment variables, https://www.openmp.org/spec-html/5.0/openmpch6.html#openmpse50.html, 2020.
-[10] threadpoolctl: thread-pool controls, https://github.com/joblib/threadpoolctl, 2024.
-[11] Dalcin, Y. - L . L .Fang, mpi4py: status update after 12 years of development, Comput- ing in Science & Engineering 23 (4) (2021) 47–54, https://doi.org/10.1109/MCSE.2021. 3083216.
-[12] Rauber, G. Rnger, Parallel Programming: for Multicore and Cluster Systems, 1st edi- tion, Springer Publishing Company, Incorporated, 2010.
-[13] Dalcin, MPI for Python tutorial, https://mpi4py.readthedocs.io/en/stable/tutorial.html, 2024.
-[14] Price-Whelan, D. Foreman-Mackey, schwimmbad: a uniform interface to parallel processing pools in Python, The Journal of Open Source Software 2 (17) (2017) 357, https://doi.org/10.21105/joss.00357.
-[15] Dalcin, MPI for Python - one-sided communications, https://mpi4py.readthedocs.io/ en/stable/overview.html#one-sided-communications, 2024. 447 Wikipedia U. Python Python Python Python Wikipedia M. Linux OpenMP Joblib, L. T. L. A.M. L.
-[16] MPI Development Team Faq, Tuning the run-time characteristics of MPI shared memory communications, https://www.open-mpi.org/faq/?category=sm, 2024. CHAPTER Open
+[1] Wikipedia Contributors, False sharing, https://en.wikipedia.org/wiki/False_sharing, 2024.
+[2] U. Drepper, What every programmer should know about memory, https://people.freebsd. org/~lstewart/articles/cpumemory.pdf, Nov. 2007.
+[3] Python Software Foundation, Python frequently asked questions what kinds of global value mutation are thread-safe?, https://docs.python.org/3/faq/library.html#what-kindsof-global-value-mutation-are-thread-safe, 2024.
+[4] Python Software Foundation, The Python standard library: asyncio - asynchronous I/O, https://docs.python.org/3/library/asyncio.html, 2024.
+[5] Python Software Foundation, multiprocessing - programming guidelines, https://docs. python.org/3/library/multiprocessing.html#programming-guidelines, 2024.
+[6] Python Software Foundation, multiprocessing - sharing state between processes, https://docs.python.org/3/library/multiprocessing.html#sharing-state-between-processes, 2024.
+[7] Wikipedia Contributors, Inter-process communication, https://en.wikipedia.org/wiki/Inter-process_communication, 2024.
+[8] M. Kerrisk, queue(7) — Linux manual page, https://man7.org/linux/man-pages/man7/queue.7.html, 2024.
+[9] OpenMP Architecture Review Board, OpenMP API speciﬁcation: environment variables, https://www.openmp.org/spec-html/5.0/openmpch6.html#openmpse50.html, 2020.
+[10] Joblib, threadpoolctl: thread-pool controls, https://github.com/joblib/threadpoolctl, 2024.
+[11] L. Dalcin, Y. - L. L. Fang, mpi4py: status update after 12 years of development, Computing in Science & Engineering 23 (4) (2021) 47–54, https://doi.org/10.1109/MCSE.2021. 3083216.
+[12] T. Rauber, G. Rnger, Parallel Programming: for Multicore and Cluster Systems, 1st edition, Springer Publishing Company, Incorporated, 2010.
+[13] L. Dalcin, MPI for Python tutorial, https://mpi4py.readthedocs.io/en/stable/tutorial.html, 2024.
+[14] A.M. Price-Whelan, D. Foreman-Mackey, schwimmbad: a uniform interface to parallel processing pools in Python, The Journal of Open Source Software 2 (17) (2017) 357, https://doi.org/10.21105/joss.00357.
+[15] L. Dalcin, MPI for Python - one-sided communications, https://mpi4py.readthedocs.io/en/stable/overview.html#one-sided-communications, 2024.
+[16] Open MPI Development Team Faq, Tuning the run-time characteristics of MPI shared memory communications, https://www.open-mpi.org/faq/?category=sm, 2024.

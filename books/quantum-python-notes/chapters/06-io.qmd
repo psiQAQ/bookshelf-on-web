@@ -1,34 +1,34 @@
 # 输入与输出 {#ch06 .unnumbered}
 
 术语 I/O（输入与输出，Input and Output）通常指计算机核心部件（CPU 和内存）与存储磁盘、网络等辅助设备之间的通信。
-涉及计算程序中的诸多技术挑战。为解决 I/O 性能和数据可用性问题，人们投入了大量软件工程工作。尽管 I/O 技术表面看似脱离量子化学的核心算法，但在实际开发中，我们频繁面对各类 I/O 挑战，例如文件读写、数据交换与格式转换等。例如，你可能遇到过以下情况和问题：
+涉及计算程序中的诸多技术挑战。为解决 I/O 性能和数据可用性问题，人们投入了大量软件工程工作。尽管 I/O 技术看起来并非量子化学应用的核心，我们实际上经常遇到与 I/O 操作有关的挑战，例如文件读写、数据交换、数据格式转换等。例如，你可能遇到过以下情况和问题：
 
-- 有一个需要保存到磁盘的大型 NumPy 数组。有哪些存储格式可用？应该如何选择？
-- 使用 pickle 保存 Python 对象时，偶尔会弹出 PicklingError。这个问题通常由什么引起？
-- 想要以 JSON 格式存储 NumPy 数组，但 JSON 原生不支持该类型。这时应该怎么办？
-- 将程序的输出重定向到文件之后，程序运行期间在文件中却看不到内容。为什么会这样？
-- 程序异常退出后，尝试读取它生成的中间文件继续计算，文件却偶尔损坏。根源可能是什么？
+- 有一个需要保存到文件的大型 NumPy 数组。有哪些存储格式可用？应该如何选择？
+- 使用 pickle 保存 Python 对象时，偶尔会出现 PicklingError。这个问题可能由什么引起？
+- 想用 JSON 格式存储 NumPy 数组，但 JSON 不支持这一操作。该怎么办？
+- 将程序的输出重定向到文件后，程序运行时却看不到文件中有任何内容。为什么会这样？
+- 程序崩溃后，尝试使用它生成的中间文件继续计算，但文件有时会损坏。可能是什么原因？
 
-阅读本章后，你应该能全面搞清这些问题。除了与文件和数据格式有关的技术问题，本章还将探讨网络 I/O 相关技术。在量子化学程序中，开发并行运行的应用往往会涉及网络 I/O。网络 I/O 也是云计算技术的重要基础，我们将在第 7 章具体讨论云计算。如果你觉得网络 I/O 过于繁复，可以选择先关注其概念。至于涉及的工具，只要在工作中必不可少，AI 编程助手就能提供稳定支持。本章将广泛借助 AI，展示 AI 工具如何深度参与网络 I/O 程序的设计和开发。
+阅读本章后，你应该能对这些问题有所了解。除了与文件和数据格式有关的技术问题，本章还将探讨与网络 I/O 相关的技术。在量子化学程序中，开发并行运行的应用时可能会涉及网络 I/O。网络 I/O 也是云计算技术的重要基础，我们将在第 7 章讨论云计算。如果你觉得网络 I/O 很复杂，可以选择只关注其概念。至于涉及的工具，如果它们在工作中必不可少，AI 编程助手可以为我们提供支持。事实上，我们将在本章广泛利用 AI，展示 AI 工具如何参与网络 I/O 程序的设计和开发。
 
 ## 6.1 序列化
 
 数据序列化（serialization）与 I/O 密切相关。序列化是将内存中的复杂数据对象转换为流表示形式的过程。在数据保存到文件或通过网络发送之前，通常需要执行这一过程。反序列化（deserialization）是相反的过程，即从格式化的数据流中重建对象。从文件读取或从网络接收数据时，需要执行这一过程。
-在处理 I/O 场景时，数据序列化需要综合考虑几个技术维度，包括：
+在处理 I/O 场景时，数据序列化需要考虑几个技术方面，包括：
 
-- 二进制与人类可读格式的权衡。人类可读的数据更容易理解，但往往占用更多存储空间，处理开销也更高。
-- 跨平台兼容性。在不同架构的平台或不同版本的软件上反序列化数据时，可能发生解析错误。
+- 二进制格式与人类可读格式之间的选择。人类可读的数据更容易理解，但往往占用更多存储空间，处理开销也更高。
+- 跨平台兼容性。在不同架构的平台或不同版本的软件上反序列化数据时，可能发生错误。
 - 数据是否可序列化。尝试序列化 Python 中的任意对象可能导致序列化失败。JSON 序列化就是一个典型例子，它有许多序列化限制。
-- 序列化能否忠实表示数据。某些序列化方案为了减小数据体积或简化过程，可能改变数据的底层格式或精度。
+- 序列化能否忠实表示数据。某些序列化方案为了减小数据大小或简化过程，可能改变数据的格式或精度。
 - 序列化和反序列化的开销。某些方法，如 Pickle，需要额外的 CPU 资源和内存空间来进行序列化和反序列化，这可能在高性能应用中造成不可忽视的开销。
 
-Python 提供了多种数据序列化方案。其中，Pickle 是处理通用 Python 对象的首选方案。它与 Python 语言高度契合，支持大多数 Python 对象。然而在处理数组或网络 I/O 时，Pickle 往往不是最佳选择。在这些场景下，其他序列化方案能提供更好的性能。我们将在第 6.2 至 6.5 节探讨这些方案。
-提供了二进制序列化方案。在某些场景下，数据更适合采用人类可读的序列化方式。在可用选项中，JSON（JavaScript Object Notation）最受欢迎。尽管 JSON 源自 JavaScript，它与语言无关，广泛用于不同编程语言之间的数据交换。YAML 是另一种流行的格式，尤其适合存储配置数据。其他选项包括适合序列化表格或矩阵的 CSV，以及更复杂但提供更多定制能力的 XML。
-当数据以人类可读的格式序列化时，处理开销通常比二进制序列化高得多。虽然存在高性能第三方 JSON 库，但与 Python 内置的 JSON 模块相比，它们的功能通常相对有限。
+Python 提供了多种数据序列化方案。其中，Pickle 无疑是处理通用 Python 对象的最佳选择。它与 Python 语言高度兼容，支持大多数 Python 对象。然而，处理数组或网络 I/O 时，Pickle 可能不是最佳选择。在这些场景下，其他序列化方案可以提供更好的性能。我们将在第 6.2 至 6.5 节探讨这些方案。
+提供了二进制序列化方案。在某些场景下，数据更适合采用人类可读的序列化方式。在可用选项中，JSON（JavaScript Object Notation）是最流行的选择。尽管 JSON 源自 JavaScript，它与语言无关，广泛用于不同编程语言之间的数据交换。YAML 是另一种流行的格式，尤其适合存储配置数据。其他选项包括适合序列化表格或矩阵的 CSV，以及更复杂但提供更多定制能力的 XML。
+当数据以人类可读的格式序列化时，处理开销通常比二进制序列化高得多。虽然存在高性能 JSON 库，但与 Python 内置的 JSON 模块相比，它们的功能通常更有限。
 
 ### 6.1.1 Pickle
 
-在 Python 中，Pickle 序列化由内置的 pickle 模块提供。pickle 模块包含几个常用函数，包括用于序列化的 pickle.dump 与 pickle.dumps，以及用于反序列化的 pickle.load 与 pickle.loads。pickle.dumps 函数能将 Python 对象序列化为 bytes 对象，再由 pickle.loads 完成反序列化。另一方面，pickle.dump 和 pickle.load 则直接操作文件对象，无需额外开辟内存保存序列化后的 bytes 对象。
+在 Python 中，Pickle 序列化由内置的 pickle 模块提供。pickle 模块中有几个常用函数，包括用于序列化的 pickle.dump 和 pickle.dumps，以及用于反序列化的 pickle.load 和 pickle.loads。pickle.dumps 函数可以将 Python 对象序列化为 bytes 对象，然后用 pickle.loads 将其反序列化。另一方面，pickle.dump 和 pickle.load 直接处理文件对象，不需要额外的内存来保存序列化后的 bytes 对象。
 
 ```python
 In [1]: import pickle
@@ -51,7 +51,7 @@ In [2]: bytes_stream = pickle.dumps(obj)
 - 函数；
 - 在模块级别定义的类。
 
-此外，NumPy 以及 Pandas、PyTorch、Jax 和 Cupy 等类似 NumPy 的库提供的数组和类数组对象也可以用 pickle 序列化。如果类实例的所有属性都可以用 pickle 序列化，那么该实例也能直接序列化。在大多数场景下，不需要额外代码就能让这类对象支持 pickle 序列化。序列化对象时，pickle 会自动递归处理其属性的序列化。
+此外，NumPy 以及 Pandas、PyTorch、Jax 和 Cupy 等类似 NumPy 的库提供的数组和类数组对象也可以用 pickle 序列化。如果类实例的所有属性都可以用 pickle 序列化，那么该实例也可以用 pickle 序列化。在大多数场景下，不需要额外的代码就能使这样的对象支持 pickle 序列化。序列化对象时，pickle 可以自动递归处理其属性的序列化。
 确保对象能够用 pickle 序列化在 I/O 过程中至关重要，尤其是在并行计算中，所有输入参数和输出都必须用 pickle 序列化以进行数据交换。实际中，我们可能在并行程序里遇到许多无法用 pickle 序列化的对象，例如：
 
 - 闭包（closure）和 lambda 函数。
@@ -61,8 +61,8 @@ In [2]: bytes_stream = pickle.dumps(obj)
 - 迭代器对象（iterator object）。
 - 等等。
 
-如果 I/O 过程涉及这些无法用 pickle 序列化的对象，我们该怎么做？
-一种策略是用可序列化对象替代它们。例如，若想将闭包分发到远程执行，可以使用 functools.partial 生成替代品。functools.partial 可以创建绑定了参数的普通函数，使其成为支持 pickle 序列化的标准对象。
+如果 I/O 过程涉及这些无法用 pickle 序列化的对象，我们能做什么？
+一种策略是用可序列化的对象替换它们。例如，如果想将闭包分发到远程执行，可以使用 functools.partial 生成闭包的替代品。functools.partial 可以创建绑定了参数的普通函数，使其成为可用 pickle 序列化的对象。
 
 ```python
 In [3]: def pow_n(n):
@@ -83,11 +83,11 @@ b'\x80\x04\x95C\x00\x00\x00\x00\x00\x00\x00\x8...'
 #### 跨平台兼容性
 
 pickle 序列化在不同平台、不同 Python 版本之间兼容吗？
-pickle 具有跨平台兼容性。然而，使用不同协议版本创建的 pickle 文件彼此并不兼容。Python 在早期版本中引入了多个版本的 Pickle 协议。在不同 Python 版本间传输 pickle 文件，可能在旧平台上引发兼容性问题。好在自 Python 3.8 起，默认 pickle 协议（可通过 pickle.DEFAULT_PROTOCOL 访问）已统一为版本 4。鉴于 Python 3.7 已停止维护，不同 Python 版本之间的 pickle 兼容性通常不再是问题。
+具有跨平台兼容性。然而，使用不同协议版本创建的 pickle 文件彼此不兼容。Python 在早期版本中引入了多个版本的 Pickle 协议。在不同 Python 版本之间传输 pickle 文件，可能在旧平台上造成兼容性问题。幸运的是，自 Python 3.8 起，默认 pickle 协议（可通过 pickle.DEFAULT_PROTOCOL 访问）已统一为版本 4。鉴于 Python 3.7 已停止维护，不同 Python 版本之间的 pickle 兼容性通常不再是问题。
 
 #### 软件版本依赖
 
-尽管 Pickle 协议在近期 Python 版本中已趋于稳定，但这并不能解决第三方软件包中 pickle 的兼容问题。外部库的对象可能定义独有的 pickle 序列化规则。这些规则可能随版本变化，并可能导致兼容性问题。例如，Pandas DataFrame 的序列化方法在 1.1、1.3 和 2.1 版本中都有调整。由新版 Pandas 进行 pickle 序列化的 DataFrame 对象，可能无法在旧版 Pandas 中反序列化。为解决第三方库的序列化兼容性问题，我们可以固定使用第三方库的某个版本，或者避免使用 pickle 进行 I/O。我们可以不依赖 pickle，而是使用 JSON 或 HDF5 等更稳定的格式自定义序列化方法。
+尽管Pickle协议在近期Python版本中已趋于稳定，这并不能解决第三方软件包中pickle的兼容性问题。外部库的对象可能定义独有的pickle序列化规则。这些规则可能随版本变化，并可能导致兼容性问题。例如，Pandas DataFrame的序列化方法在1.1、1.3和2.1版本中都有调整。由新版Pandas进行pickle序列化的DataFrame对象，可能无法在旧版Pandas中反序列化。为解决第三方库的序列化兼容性问题，我们可以固定使用第三方库的某个版本，或者避免使用pickle进行I/O。我们可以不依赖pickle，而是使用JSON或HDF5等更稳定的格式自定义序列化方法。
 
 #### 安全问题
 
@@ -95,8 +95,8 @@ Python pickle存在已知的安全漏洞，因此建议只对来自可信来源�
 
 ### 6.1.2 JSON
 
-JSON 文档在结构上非常类似于含有嵌套字典和列表的 Python 对象。由于 JSON 格式规范随处可查，我们不在这里详述其具体规范。
-Python 内置了专门处理 JSON 文档的模块，提供 json.dump 与 json.dumps 等序列化函数，以及 json.load 与 json.loads 等反序列化函数。它们的用法与 pickle 模块中相应函数的用法十分类似：
+JSON文档非常类似于含有嵌套字典和列表的Python对象。我们不在这里详述JSON格式规范，因为这些规范可以很容易地在其他地方找到。
+Python有一个处理JSON文档的内置模块，它提供json.dump和json.dumps等序列化函数，以及json.load和json.loads等反序列化函数。它们的用法与pickle模块中相应函数的用法类似：
 
 ```python
 In [5]: import json
@@ -157,9 +157,9 @@ def np_decoder(obj):
 
 ### 6.1.3 YAML
 
-YAML 是一种清晰、直观且富有表现力的数据格式。YAML 格式是 JSON 格式的超集，YAML 文档可以完全用 JSON 格式编写。YAML 通过引入缩进来表示数据结构，并允许在文档中添加注释，从而对 JSON 格式进行了扩展。YAML 格式的规范可以在线查阅 [6]。
-如果 Python 对象序列化时优先考虑人类可读性，YAML 通常是比 JSON 更合适的数据格式。这种格式特别适合配置文件。我们在第 1 章提到的 docker-compose 文件就是一个典型例子。在第 7 章，你会看到更多用于管理云配置的 YAML 文档示例。
-Python 标准库不支持读写 YAML 格式文档，我们必须安装外部库来处理 YAML 数据。常见的选择包括 pyyaml 和 ruamel.yaml 库，两者的用法类似。以 ruamel.yaml 库为例，我们可以使用 dump() 函数序列化 Python 对象，使用 load() 函数进行反序列化。与 json 和 pickle 模块不同，YAML 库不提供 dumps() 和 loads() 函数；相反，dump() 和 load() 既用于文件也用于字符串。这与 json 和 pickle 模块的 API 惯例略有不同。
+YAML是一种清晰、直观且富有表现力的数据格式。YAML格式是JSON格式的超集。YAML文档可以完全用JSON格式编写。YAML通过引入缩进来表示数据结构，并允许在文档中添加注释，从而扩展了JSON格式。YAML格式的规范可以在线查阅 [6]。
+如果Python对象序列化时优先考虑人类可读性，YAML通常是比JSON更合适的数据格式。这种格式特别适合配置文件。我们在第1章提到的docker-compose文件就是一个典型例子。在第7章，你会看到更多用于管理云配置的YAML文档示例。
+Python标准库不支持读写YAML格式文档。我们必须安装外部库来处理YAML数据。常见的选择包括pyyaml和ruamel.yaml库。pyyaml和ruamel.yaml的用法类似。以ruamel.yaml库为例，我们可以使用它的dump()函数序列化Python对象，使用load()函数进行反序列化。与json和pickle模块不同，YAML库不提供dumps()和loads()函数。相反，dump()和load()用于序列化为字符串表示以及从字符串表示反序列化。这与json和pickle模块采用的API惯例不同。
 
 ```python
 In [8]: from ruamel import yaml
@@ -182,8 +182,8 @@ YAML如何处理二进制数据？作为基于文本的格式，YAML无法原生
 
 ## 6.2 文件输入输出
 
-在 Python 中，基本的文件 I/O 操作通常由 open() 函数及其返回的文件对象处理。我们将跳过 open() 函数的基础用法，因为 Python 编程教材已对此进行了详尽介绍。
-在量子化学应用中，I/O 通常指在文件中读写大型数组。由此产生了一个新问题：如何有效地在磁盘上存储和管理高维数组，同时确保访问简便高效？数组存储方法的选择取决于以下几种考虑：
+在Python中，基本的文件I/O操作通常由open()函数及其返回的文件对象处理。我们将跳过open()函数的用法，因为Python编程教材已对此进行了广泛介绍。
+在量子化学应用中，I/O通常指在文件中读写大型数组。由此产生了一个新问题：如何有效地在磁盘上存储和管理高维数组，同时确保访问简便高效？数组存储方法的选择取决于多种考虑：
 
 - 是否需要访问单个元素？
 - 是否可以修改文件中数组的内容？
@@ -191,7 +191,7 @@ YAML如何处理二进制数据？作为基于文本的格式，YAML无法原生
 - 是否需要在一个文件中存储多个数组？
 - 文件是否会被不同编程语言访问？
 
-目前有几种用于存储数组的高性能数据格式，例如 NumPy 的 npy 格式、内存映射以及 HDF5 存储格式。这些格式各有独特特性与特定应用场景。表 6.1 简要比较了这些格式。本节将深入探讨这些数据格式的功能，性能方面的考量留待第 9 章讨论。
+有几种用于存储数组的高性能数据格式，例如NumPy的npy格式、内存映射和HDF5格式存储。这些格式各有其独特特性和特定使用场景。表6.1简要比较了这些格式。本节将探讨这些数据格式的功能。性能方面的考虑留待第9章讨论。
 
 ![](../assets/tables/table-6-1.png)
 
@@ -199,7 +199,7 @@ YAML如何处理二进制数据？作为基于文本的格式，YAML无法原生
 
 ### 6.2.1 npy格式
 
-NumPy提供np.save函数，可将数组序列化到.npy格式文件中。可以使用np.load函数将.npy文件重新加载到内存中。
+NumPy提供np.save函数，可将数组序列化到.npy格式的文件中。可以使用np.load函数将.npy文件加载到内存中。
 
 ```python
 In [11]: np.save(np.random.rand(2 ,2 , 3), 'rand.npy')
@@ -247,15 +247,15 @@ np.load的memmap模式有一定限制。它不允许直接修改文件的内容�
 
 ### 6.2.2 存储
 
-HDF5（层次数据格式，Hierarchical Data Formats）是存储NumPy数组的绝佳选择，它提供高效的数据存储，可供不同平台和编程语言访问。.npy存储欠缺的功能，例如访问单个元素、切片数组、压缩数组以及直接在文件中编辑数组，都可以通过HDF5存储轻松搞定。
+HDF5（Hierarchical Data Formats，层次数据格式）是存储NumPy数组的绝佳选择，因为它提供高效的数据存储，可供不同平台和编程语言访问。.npy存储缺少的功能，例如访问单个元素、切片数组、压缩数组以及直接在文件中编辑数组，都可以通过HDF5存储轻松实现。
 
 ![](../assets/figures/fig-6-1.png)
 
 **图 6.1** 在 HDFview 中可视化的 HDF5 文件结构
 
-顾名思义，HDF5 使用层次结构组织文件中的数据，类似基于目录的文件系统（图 6.1）。在 HDF5 文件中，数组的实际数据存储在 Dataset 中。Group 包含数据集或其他组，其作用类似于目录。
-借助 h5py 库，在 Python 中访问 HDF5 文件十分简单。该库将 HDF5 文件映射为字典式对象。数据集或数据组
-可以通过键访问。数据集中的元素可以像 NumPy 数组一样切片或索引。下面的代码示例说明了 h5py 的基本功能：
+顾名思义，HDF5使用层次结构组织文件中的数据，类似基于目录的文件系统（图6.1）。在HDF5文件中，数组的实际数据存储在Dataset中。Group包含数据集或其他组，其作用类似目录。
+借助h5py库，在Python中访问HDF5文件很简单。这个库将HDF5文件映射为字典式对象。数据集或数据组
+可以通过键访问。数据集中的元素可以像NumPy数组一样切片或索引。下面的代码示例说明了h5py的基本功能：
 
 ```python
 # Store array. File is opened in writable mode
@@ -288,7 +288,7 @@ HDF5的性能受其Dataset存储配置的影响很大。优化HDF5性能需要�
 
 ### 6.2.3 映射
 
-内存映射（memmap）是一种允许像访问内存一样访问磁盘文件的技术。这项技术对于处理无法全部放入内存的大型数据集尤为有用。NumPy 可以将 memmap 用作数组的数据缓冲区。操作 memmap 数组与操作标准数组几乎相同。它允许只访问数组中的一小部分元素，而无需将整个数组加载到内存中。NumPy memmap 的使用很简单。要创建用于存储 NumPy 数组的 memmap，只需运行以下命令：
+内存映射（memmap）是一种允许像访问内存一样访问文件的技术。这项技术对于处理无法全部放入内存的大型数据集尤其有用。NumPy可以将memmap用作数组的数据缓冲区。操作memmap数组与操作标准数组几乎相同。它允许只访问数组中的一小部分元素，而无需将整个数组加载到内存中。NumPy memmap的使用很简单。要创建用于存储NumPy数组的memmap，只需使用以下命令：
 
 ```python
 arr = np.memmap( 'filename.mmap', shape=(5 ,5), dtype= 'f8', mode= 'w')
@@ -301,11 +301,11 @@ arr = np.memmap( 'filename.mmap', shape=(5 ,5), dtype= 'f8', mode= 'r+')
 
 ## 6.3 缓冲
 
-I/O 的性能受读写请求频率的影响很大。底层 I/O 设备通常具有较高延迟，这意味着频繁的小型 I/O 请求可能明显增加系统开销。为尽量减少这一开销，操作系统通常在执行实际 I/O 操作前先将数据写入内存缓冲区。只有当缓冲区填入足够的数据时，数据才会被真正写入 I/O 设备。得益于缓冲 I/O，数据以块为单位统一管理，而不是逐个零散处理。
-虽然 I/O 缓冲可以有效提高性能，但处理不当可能导致数据丢失。例如，如果我们修改了文件，之后却忘记关闭它，可能导致内容不完整，因为部分尾部数据仍留在缓冲区中。关闭文件时，无论缓冲区是否已满，其中所有数据都会同步写入 I/O 设备。因此，应对所有打开的文件对象调用 .close() 方法关闭句柄。
-Python 建议使用 with 上下文处理文件对象，以确保文件正确关闭。为什么不建议在代码中手动调用 .close() 方法？原因是，如果程序由于任何错误或异常而崩溃，末尾的 .close() 语句可能根本不会执行。对文件对象使用 with 上下文，即使遇到 Python 错误或异常，也可以确保在程序退出前关闭文件。
-有时，程序可能被用户或系统事件突然终止。即使使用 with 上下文，退出处理程序也可能来不及执行，从而导致数据丢失。如果对此有所担忧，可以定期调用文件对象的 .flush()
-方法。flush() 方法能确保数据立即同步到 I/O 设备中。例如，对 HDF5 文件进行修改后，我们可以刷新缓冲区，以保障文件内数据的完整性。
+I/O的性能可能受读写请求频率的影响。I/O设备通常具有较高延迟，这意味着频繁的小型I/O请求可能显著增加开销。为尽量减少这一开销，操作系统通常在执行实际I/O操作之前先将数据写入内存缓冲区。只有当缓冲区填入足够的数据时，数据才会被写入I/O设备。由于采用了缓冲I/O，数据以块为单位管理，而不是逐个处理。
+虽然I/O缓冲可以有效提高性能，但它可能导致数据丢失。例如，如果我们修改了文件，之后却忘记关闭它，可能导致内容不完整，因为一些数据可能仍留在缓冲区中。关闭文件时，无论缓冲区是否已满，其中所有数据都会同步到I/O设备。因此，应对所有打开的文件对象调用.close()方法。
+Python建议使用with上下文处理文件对象，以确保文件正确关闭。为什么不建议在代码中手动调用.close()方法？原因是，如果程序由于任何错误或异常而崩溃，.close()语句可能不会被执行。对文件对象使用with上下文，即使遇到Python错误或异常，也可以在程序退出前关闭文件。
+有时，程序可能被用户或系统事件突然终止。即使使用with上下文，退出处理程序也可能不会执行，从而导致数据丢失。如果对此有所担忧，可以定期调用文件对象的.flush()
+方法。flush()方法确保数据立即同步到I/O设备。例如，对HDF5文件进行任何修改后，我们可以刷新缓冲区，以保证文件内数据的完整性。
 
 ```python
 with h5py.File('example.h5', 'r') as f:
@@ -320,14 +320,14 @@ $  python -u example.py > log
 
 ## 6.4 I/O
 
-内存I/O指像执行文件I/O操作一样从内存读取数据及向内存写入数据。虽然这个概念乍看可能用处有限，但它有不少实际应用。内存I/O可以：
+内存I/O指像执行文件I/O操作一样从内存读取数据及向内存写入数据。虽然这个概念乍看可能没什么用，但它有一些实际应用。内存I/O可以：
 
-- 模拟文件对象的功能。例如，我们可以将 CSV 格式的字符串转换为类文件对象，供 pandas.read_csv() 函数解析，因为该函数只支持文件对象。
-- 用作 I/O 缓冲区。内存 I/O 常被用作并行计算期间接收并汇总数据的缓冲区。
-- 提供高效拼接字符串（或字节）的方法。需要拼接大量字符串时，使用内存 I/O 以流方式处理它们可以提高性能，因为它避免了频繁创建不可变字符串所带来的重复内存分配。
-- 用作临时文件以减轻磁盘压力。例如，在云虚拟机中，磁盘 I/O 受到带宽和操作次数限制。用内存 I/O 替代部分临时文件操作可以有效提高 I/O 性能。
+- 模拟文件对象的功能。例如，我们可以将CSV格式的字符串转换为类文件对象，供pandas.read_csv()函数解析，因为该函数只支持文件对象。
+- 用作I/O缓冲区。内存I/O常被用作并行计算期间接收数据的缓冲区。
+- 提供拼接字符串（或字节）的方法。需要拼接大量字符串时，使用内存I/O以流方式处理它们可以提高性能，因为它避免了标准字符串操作中的重复内存分配。
+- 用作临时文件，以减轻I/O设备的压力。例如，在云中使用虚拟机时，I/O受到带宽和I/O操作次数等各种限制。用内存I/O替代部分文件I/O操作可以提高I/O性能。
 
-内存 I/O 可以使用 Python 标准库 io 实现。利用 io 模块中的 BytesIO 和 StringIO 类，我们能轻松创建类似文件操作的内存 I/O 对象。
+内存I/O可以使用Python标准库io实现。利用io模块中的BytesIO和StringIO类，我们可以创建功能类似文件操作的内存I/O对象。
 
 ```python
 In [15]: from io import BytesIO , StringIO
@@ -347,14 +347,14 @@ In [17]: buf = io.BytesIO()
 
 ## 6.5 I/O
 
-网络 I/O 指进程或计算节点通过网络交换数据。网络 I/O 的主要应用领域是 Web 服务。在 Web 服务中，网络 I/O 主要关注网络的可访问性与可用性，即如何通过网络正确访问远程服务。
-乍看之下，Web 服务的网络 I/O 似乎与量子化学无关。历史上，量子化学程序主要是为高性能计算（HPC）环境设计的，其中网络 I/O 主要由 MPI（消息传递接口）库提供。MPI 是一种专为 HPC 网络设计的技术，这类网络以低延迟、高带宽和低故障率著称。使用 MPI 时，我们在 Python 中能做的事情并不多，程序主要依靠 MPI 处理各种网络通信（更多讨论见第 10 章）。然而，随着云计算资源的快速发展，一些量子化学计算不再必须依赖 HPC 环境，可以直接在云上进行。在云环境中，不可避免地要运用针对 Web 服务开发的网络 I/O 技术。
-与 HPC 提供的低延迟网络专网相比，云计算的网络更加复杂。基于 Web 服务的网络通信需要不同的技能。Python 中的几个标准库，例如 socket、urllib 和 http 模块，提供了 Web 服务网络交互的基础功能。然而，实际上完全没有必要直接面对这些底层工具。Python 生态中存在多种成熟的软件包，提供了简化的 Web 服务网络编程模型。
-网络 I/O 背后的技术涉及许多细节和挑战。在讨论中，我们将省略许多技术细节，转而关注核心概念与应用场景。示例程序大多使用 AI 辅助编码工具自动生成（仅有少量必要修改）。由于这一技术领域有大量开源软件，AI 经过训练后能很好地完成这类编码任务。
+网络I/O指进程或计算节点通过网络交换数据。网络I/O的主要应用是Web服务。在Web服务中，网络I/O主要关注网络的可访问性和可用性，即如何通过网络正确访问远程服务。
+乍看之下，Web服务的网络I/O似乎与量子化学无关。历史上，量子化学程序是为高性能计算（HPC）环境设计的，其中网络I/O主要由MPI（消息传递接口）库提供。MPI是一种专为HPC网络设计的技术，这类网络以低延迟、高带宽和低故障率著称。使用MPI时，我们在Python中能做的并不多，因为程序主要依靠MPI处理各种网络通信（更多讨论见第10章）。然而，随着云计算资源的快速发展，一些量子化学计算不再需要HPC环境，可以在云上进行。在云环境中，不可避免地要使用为Web服务网络I/O开发的技术。
+与HPC提供的低延迟网络基础设施相比，云计算的网络更加复杂。使用Web服务类型的网络通信需要不同的技能。Python中的几个标准库，例如socket、urllib和http模块，提供了Web服务网络交互的基本功能。然而，实际上没有必要直接使用这些底层工具。有多种成熟的Python软件包提供了简化的Web服务网络编程模型。
+网络I/O背后的技术涉及许多细节和挑战。在讨论中，我们将省略许多技术细节，转而关注概念和应用场景。示例程序大多使用AI辅助编码工具自动生成（仅有少量人工修改）。由于这一技术领域有大量开源软件，AI经过训练后能很好地完成这些编码任务。
 
 ### 6.5.1 通过HTTP的请求
 
-HTTP是Web服务最基础的通信协议，也是互联网交换信息最广泛的技术。HTTP请求通常包含以下信息：
+HTTP是Web服务最基本的协议，也是互联网上交换信息使用最广泛的技术。HTTP请求通常包含以下信息：
 
 - 请求方法：GET、PUT、POST、DELETE等；
 - URI（统一资源标识符）[8]；
@@ -364,16 +364,16 @@ HTTP是Web服务最基础的通信协议，也是互联网交换信息最广泛�
 - 头部中的元数据；
 - 响应消息。
 
-requests 库是处理 HTTP 请求和响应最流行的第三方工具。它能自动构造 HTTP 请求并发送到网络。收到远程 HTTP 服务器的响应后，它能解析并后处理响应内容。
-使用 requests 库时，主要关注的是设置远程服务所需的必要信息，包括：
+requests库是处理HTTP请求和响应最流行的工具。它可以自动构造HTTP请求，然后调用底层库发送网络请求。收到远程HTTP服务器的响应后，它可以解析和后处理响应。
+使用requests库时，主要关注的是设置远程服务所需的必要信息，包括：
 
 - URL；
 - 请求方法（例如GET、POST）；
 - URL参数（出现在URL末尾的?号之后），应放在params参数中；
 - 授权或身份验证方法。
 
-此外，由于可能出现网络问题和远程服务器问题，为HTTP请求配置超时并检查响应状态码非常重要。如果响应是JSON文档，response.json()方法可以将JSON数据转换为Python对象。我们可以收集所有必要信息，提供给AI编码助手以生成程序。
-例如，Basis Set Exchange数据库通过HTTP请求提供基组下载。阅读其手册 [9] 可知，该服务允许同时获取多个基组，并以JSON格式返回。随后，我们使用GPT-4生成HTTP请求函数，提示词如下：
+此外，由于可能出现网络问题和远程服务器问题，为HTTP请求配置超时并检查响应状态码非常重要。如果响应是JSON文档，response.json()方法可以将JSON数据转换为Python对象。我们可以收集所有必要信息，将其提供给AI编码助手以生成程序。
+例如，Basis Set Exchange数据库通过HTTP请求提供基组下载。通过阅读其手册 [9]，我们了解到该服务允许同时获取多个基组，并以JSON格式返回。然后，我们使用GPT-4生成HTTP请求函数，提示词如下：
 
 ```python
 Create a Python function to query basis sets from bse:
@@ -437,8 +437,8 @@ print(data)
 ### 6.5.2 API
 
 调用远程服务时，另一个关键方面是服务的API和数据格式。在各种API和数据格式设计中，REST（表述性状态转移）API常被Web服务接口采用。
-你可能会问：REST API与量子化学应用开发有什么关系？许多数据集通过REST API提供访问。因此，为了处理这些数据集，不可避免地要与REST API服务交互。我们此前演示过的Basis Set Exchange（BSE）服务就是一个采用RESTful设计并以REST格式返回数据的例子；Materials Project [10] 是另一个例子，它通过REST API提供大量分子和材料的计算结果。此外，访问云上托管的算力资源时，我们也经常需要使用REST API。我们将在第7章探讨这一主题。
-REST不是协议或标准，而是一种设计风格。当服务接口被称为RESTful时，它通常遵循某些设计惯例：
+你可能会问：REST API与量子化学应用开发有什么关系？许多数据集通过REST API提供访问。因此，为了处理这些数据集，不可避免地要与REST API服务交互。我们此前演示过的Basis Set Exchange（BSE）服务就是一个采用RESTful设计并以REST格式返回数据的例子。Materials Project [10] 是另一个例子，它通过REST API提供大量分子和材料的计算结果。此外，访问云上托管的计算资源时，我们经常需要使用REST API。我们将在第7章探讨这一主题。
+REST不是协议或标准，而是一种设计方法。当服务接口被称为RESTful时，它通常遵循某些惯例：
 
 - REST将Web服务概念化为资源，可通过URI（统一资源标识符）访问。URI是反映数据结构的层次路径。例如，在BSE服务中，基组数据可通过URI /api/basis/<basis_name>访问，每个基组的参考文献可通过URI /api/references/<basis_name>访问。
 - 资源操作与HTTP方法关联：GET用于获取数据，POST用于创建数据，PUT用于更新数据，等等。例如，从BSE下载基组时使用GET方法。
@@ -446,19 +446,19 @@ REST不是协议或标准，而是一种设计风格。当服务接口被称为R
 - REST API以结构化文本格式传输数据，通常对请求和响应都使用JSON。
 - 除远程资源的内容外，REST API的响应通常还包含状态和辅助信息，帮助用户分析和管理数据。辅助信息通常包括API版本、数据版本、错误消息、请求时间戳和后续操作的URL等。
 
-尽管设计规范的 REST API 还有更多最佳实践与指南，但系统探讨已超出本书范围。若想深入了解 REST API，可以在线查阅更多权威资料 [11]。
+尽管设计结构良好的REST API还有更多建议和指南，这些主题超出了本书范围。如果你有兴趣进一步了解REST API，可以在线获取更多信息 [11]。
 
 ### 6.5.3 通过HTTP
 
-在HPC环境中，通常不需要考虑通过HTTP进行远程过程调用（RPC）。这项技术更常用于云环境，其中任务分布在远程计算节点上，RPC用于启动和控制计算任务。
-在Python生态系统中，有几个框架可用于建立RPC服务，例如Flask [12]、FastAPI [13]、json-rpc [14] 等。这里我们以Flask框架为例，说明如何开发RPC程序。虽然其他框架提供不同的设计和API，但基本概念完全相通。
-假设我们希望开发一个提供DFT计算服务的RPC服务。该服务的初始版本可以提供以下三大功能：
+在HPC环境中，通常不需要考虑通过HTTP进行远程过程调用（RPC）。这项技术更常用于云环境，其中任务分布在远程计算节点上。RPC用于启动和控制计算任务。
+在Python生态系统中，有几个框架可用于建立RPC服务，例如Flask [12]、FastAPI [13]、json-rpc [14] 等。这里我们以Flask框架为例，说明如何开发RPC程序。虽然其他框架提供不同的设计和API，但基本概念是类似的。
+假设我们希望开发一个提供DFT计算服务的RPC服务。该服务的初始版本可以提供以下功能：
 
 - 一个入口点，接受带有DFT计算参数的作业，然后启动异步运行的DFT计算任务。
 - 一个入口点，查询已提交DFT计算的状态或结果。
 - 一个入口点，监控排队中、进行中或已完成的任务。
 
-我们可以将这些需求提供给 AI 编码助手，直接生成一个 RPC 服务器雏形，作为自定义或优化 RPC 服务的起点。为了指导 AI 工具，我们可以在提示词中借助清晰伪代码概述需求。伪代码可以详细说明每个 RPC 函数的入参格式、返回结构及 URI 等。下面是我们给 GPT-4 的提示词。
+我们可以将这些需求提供给AI编码助手，生成一个RPC服务器示例，作为自定义或优化RPC服务的起点。为了指导AI工具，我们可以在提示词中使用伪代码概述需求。伪代码可以详细说明每个RPC函数的输入输出格式、每个函数的URI等。下面是我们给GPT-4的提示词。
 
 ```python
 Create a HTTP service that serves for DFT calculations online
@@ -556,19 +556,19 @@ $ python dft_rpc.py
 现在让我们把注意力转向这个RPC服务的缺点。使用Python开发REST-RPC服务有哪些局限？
 
 - 数据结构方面。Python对象不能直接映射到JSON数据。如果输入参数和函数输出包含无法序列化为JSON的Python对象，我们需要设计并实现额外的机制，将它们转换为兼容JSON表示的格式。
-- 错误处理。如果计算遇到任何Python错误，这些错误无法通过HTTP响应直接抛出。必须设计一套错误处理约定，在响应消息中传达Python错误事件与上下文。
-- 开销。一个开销来源是解析HTTP协议和路由HTTP请求，这些操作有1–10毫秒的固定耗时。另一个开销是JSON文档的序列化和反序列化成本。无论输入和输出的实际数据类型是什么，都必须将其转换为JSON文本或从JSON文本解析。REST服务的开销会影响性能，尤其是对需要高效率和低延迟的应用而言。
-- 消息体积与网络带宽损耗。文本格式不如二进制数据紧凑。此外，REST API还通过包含字段名、括号和其他辅助文本进一步增加了消息体积。
-- 处理二进制编码的挑战。二进制格式数据在量子化学计算中不可避免。例如，我们经常需要访问波函数、密度矩阵和积分，它们通常都是极其庞大的数组。
+- 错误处理。如果计算遇到任何Python错误，这些错误无法通过HTTP响应抛出。必须设计一定的错误处理约定来传达Python错误事件。
+- 开销。一个开销来源是解析HTTP协议和路由HTTP请求。这些操作有1–10毫秒的固定成本。另一个开销是JSON文档的序列化和反序列化成本。无论输入和输出的实际数据类型是什么，都必须将其转换为JSON文本或从JSON文本转换。REST服务的开销会影响性能，尤其是对需要高效率和低延迟的应用而言。
+- 消息大小及更高的带宽消耗。文本格式不如二进制数据紧凑。此外，REST API还通过包含字段名、括号和其他辅助文本进一步增加消息大小。
+- 处理二进制编码的挑战。二进制格式数据在量子化学计算中不可避免。例如，我们可能需要访问波函数、密度矩阵和积分，它们通常都是非常大的数组。
 
 JSON文档本身不支持二进制数据。将二进制数据传输到
 JSON文档需要经过若干数据转换的中间步骤。
 
 ### 6.5.4 gPRC
 
-gRPC框架以其高性能和低延迟而闻名，它可用于优化RPC系统中的数据传输性能。
+gRPC框架以其高性能和低延迟而闻名。它可用于优化RPC系统中的数据传输性能。
 gRPC使用Protobuf（Protocol Buffers）[19]序列化和交换数据。Protobuf是一种跨平台、跨编程语言的数据格式。使用gRPC和Protobuf开发RPC服务有一套标准化流程
-[20]。以DFT RPC服务为例，该流程通常涉及以下关键步骤：
+[20]。以DFT RPC服务为例，该流程通常涉及以下步骤：
 
 1. 在.proto文件中定义服务，我们可以在其中指定服务接口和消息结构。
 
@@ -644,8 +644,8 @@ if __name__ == '__main__':
 
 ### 6.5.5 arrow
 
-为Python应用程序实现gRPC需要根据Protobuf的特性设计数据格式及相应接口。如果RPC的输入和输出涉及复杂的数据对象，例如各种NumPy数组或Pandas DataFrame对象，就必须在.proto文件中指定每个对象的表示形式，这可能相当繁琐。对于Python应用程序，Apache Arrow库pyarrow [21]可以用作gRPC框架的替代方案。
-Apache Arrow推出了Flight [22]，这是一个构建在gRPC之上的RPC框架。Flight框架不仅提供Python式的使用方式，还受益于gRPC的高效数据通信。
+为Python应用程序实现gRPC需要根据Protobuf的特性设计数据格式及相应接口。如果RPC的输入和输出涉及复杂的数据对象，例如各种NumPy数组或Pandas DataFrame对象，就必须在.proto文件中指定每个对象的表示形式，这可能相当不方便。对于Python应用程序，Apache Arrow库pyarrow [21]可以用作gRPC框架的替代方案。
+Apache Arrow推出了Flight [22]，这是一个构建在gRPC之上的RPC框架。Flight框架不仅提供Python式的使用方式，还受益于gRPC的数据通信效率。
 要使用Flight创建RPC服务，我们需要继承其FlightServerBase类。该类提供了一个钩子do_action，用于传输数据并在RPC服务器上执行预定义操作。例如，通过重写这个钩子方法，我们可以实现一个DFT RPC服务，输出总能量和一个轨道能量数组。
 
 ```python
@@ -672,11 +672,11 @@ if __name__ == '__main__':
     server = DFTFlightServer( 'grpc://localhost:50011')
     server.serve()
 ```
-do_action方法可以处理所有请求（在此上下文中称为action），并根据第(1)行中action.type的值分派它们。请注意， do_action方法的设计不是返回一个值。相反，它应当作为生成器或迭代器工作，生成PyArrow Result对象，如第(2)行所示。
-在Flight框架中，I/O操作通过PyArrow缓冲区处理。PyArrow缓冲区的工作方式类似于Python内置的缓冲区协议（bytes和bytearray）和memoryview对象 []。它不能直接广播一般的Python对象。通信之前，我们必须使用pickle.dumps或json.dumps等方法将它们转换为字节。不过，对于NumPy数组，可以直接访问其memoryview（通过.data属性），从而绕过序列化的开销。此外，对于Pandas对象，PyArrow专门提供了pyarrow.serialize_pandas和pyarrow.deserialize_pandas函数，以实现快速的序列化和反序列化操作。
-处理大规模数据时，将序列化后的数据全部存储在内存中可能导致显著的开销。为解决这个问题，Flight框架提供了用于分发数据的流式方法 [24]，包括用于下载的do_get和用于上传的do_put。
-在客户端，我们使用FlightClient类建立与服务器的连接。通过调用do_action()方法，请求被转发到服务器，触发服务器端的do_action()。do_action()的响应是一个生成器。我们可以使用Python的next()函数迭代访问返回值。与服务器端的过程类似，输入和输出都以缓冲区协议表示，需要手动进行序列化和反序列化。
-import pickle
+do_action方法可以处理所有请求（在此上下文中称为action），并根据第(1)行中action.type的值分派它们。请注意，
+do_action方法并非设计为返回一个值。相反，它应当作为生成器（generator）或迭代器（iterator）工作，产出PyArrow Result对象，如第(2)行所示。
+在Flight框架中，输入输出（I/O）操作通过PyArrow缓冲区（buffer）处理。PyArrow缓冲区的工作方式类似于Python内置的缓冲区协议（buffer protocol）（bytes和bytearray）以及memoryview对象[]。它不适用于直接广播一般的Python对象。我们必须在通信前使用pickle.dumps或json.dumps之类的方法将其转换为字节。然而，对于NumPy数组，可以直接访问其memoryview（通过.data属性），从而绕过序列化（serialization）的开销。此外，对于Pandas对象，PyArrow专门提供了pyarrow.serialize_pandas和pyarrow.deserialize_pandas函数，以实现快速的序列化和反序列化（deserialization）操作。
+处理大规模数据时，将序列化后的数据全部存储在内存中可能导致显著的开销。为解决这一问题，Flight框架提供了用于分发数据的流式方法（streaming methods）[24]，包括用于下载的do_get和用于上传的do_put。
+在客户端，我们使用FlightClient类与服务器建立连接。通过调用do_action()方法，请求被转发到服务器，触发服务器端的do_action()。do_action()的响应是一个生成器。我们可以使用Python的next()函数迭代访问返回值。与服务器端的过程类似，输入和输出都以缓冲区协议表示，需要手动进行序列化和反序列化。
 
 ```python
 import pickle
@@ -703,34 +703,38 @@ if __name__ == '__main__':
     print("DFT energy:" ,e )
     print("orbital energies:" , mo_energy)
 ```
-除PyArrow之外，Dask [25]和Ray [26]等其他库也提供RPC服务的解决方案。这些库各自侧重于RPC通信的不同方面。我们鼓励读者查阅它们的文档，了解如何有效利用这些工具。
-小结
+这是PyArrow Flight框架的一个最小示例。要在实际产品中开发远程过程调用（RPC）服务，通常需要实现包含身份验证、TLS加密传输及其他功能的中间件（middleware）。这些组件的详细信息可见Flight文档[24]。
+除PyArrow之外，Dask [25]和Ray [26]等其他库也提供了RPC服务的解决方案。这些库各自侧重于RPC通信的不同方面。我们鼓励读者查阅它们的文档，了解如何有效利用这些工具。
 
-## 总结参考文献
+## 小结
 
-[1] Software Foundation, Python documentation -w h a tcan be pickled and unpickled, https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled, 2024.
-[2] Software Foundation, Python documentation - generator expressions, https:// docs.python.org/3/reference/expressions.html#generator-expressions, 2024.
-[3] Development Team, Cloudpickle, https://github.com/cloudpipe/cloudpickle, 2024.
-[4] Uncertainty Quantification Foundation, dill: serialize all of Python, https://dill. readthedocs.io/en/latest/, 2024.
-[5] Software Foundation, Python documentation - pickling class instances, https:// docs.python.org/3/library/pickle.html#pickling-class-instances, 2024.
-[6] Language Development Team, Yaml ain’t markup language (yaml) version 1.2, https://yaml.org/spec/1.2.2/, 2024. 221 Python Python Cloudpipe The Python YA M L
-[7] Developers, NumPy documentation - numpy.lib.format, https://numpy.org/doc/ stable/reference/generated/numpy.lib.format.html, 2024.
-[8] Berners-Lee, R. Fielding, L. Masinter, Uniform resource identifier (uri): generic syn- tax, https://datatracker.ietf.org/doc/html/rfc3986, 2005.
-[9] Pritchard, Basis set exchange api documentation -r e s tapi reference, https://molssi- bse.github.io/basis_set_exchange-apidoc/reference.html#, 2024.
-[10] Jain, S.P. Ong, G. Hautier, W. Chen, W.D. Richards, S. Dacek, S. Cholia, D. Gunter, D. Skinner, G. Ceder, K.A. Persson, Commentary: The Materials Project: a materi- als genome approach to accelerating materials innovation, APL Materials 1 (1) (2013) 011002, https://doi.org/10.1063/1.4812323, https://pubs.aip.org/aip/apm/article-pdf/doi/ 10.1063/1.4812323/13163869/011002_1_online.pdf.
-[11] Gupta, Rest api tutorial, https://restfulapi.net/, Dec. 2023.
-[12] Flask documentation, https://flask.palletsprojects.com/en/latest/, 2024.
-[13] Ramírez, FastAPI, https://github.com/tiangolo/fastapi.
-[14] Working Group, Json-rpc specification, https://www.jsonrpc.org/ specification, 2024.
-[15] PySCF Developers, Quantum chemistry with Python, https://pyscf.org/, 2024.
-[16] Inc, redis-py - Python client for redis, https://redis-py.readthedocs.io/en/stable/, 2024.
-[17] Flask documentation - development server, https://flask.palletsprojects.com/en/ latest/server/, 2024.
-[18] Flask document - deploying to production, https://flask.palletsprojects.com/en/ latest/deploying/, 2024.
-[19] LLC, Protocol buffers documentation, https://protobuf.dev/, 2024.
-[20] Authors, Basics tutorial -a basic tutorial introduction to grpc in Python, https:// grpc.io/docs/languages/python/basics/, 2024.
-[21] Richardson, I. Cook, N. Crane, D. Dunnington, R. François, J. Keane, D. Moldovan- Grünfeld, J. Ooms, J. Wujciak-Jens, Apache Arrow, arrow: Integration to ‘Apache’‘Ar- row’, https://arrow.apache.org/docs/r/, 2024.
-[22] McKinney, Introducing apache arrow flight: a framework for fast data transport, https://arrow.apache.org/blog/2019/10/13/introducing-arrow-flight/, 2019.
-[23] Software Foundation, Apache arrow document -m e m o r yand io interfaces, https://arrow.apache.org/docs/python/memory.html, 2024.
-[24] Software Foundation, Apache arrow cookbook - arrow flight, https://arrow. apache.org/cookbook/py/flight.html, 2022.
-[25] Development Team, Dask: library for dynamic task scheduling, http://dask.pydata. org, 2016.
-[26] Moritz, R. Nishihara, S. Wang, A. Tumanov,R. Liaw, E. Liang, M. Elibol, Z. Yang, W. Paul, M.I. Jordan, I. Stoica, Ray: a distributed framework for emerging AI applications, in: 13th USENIX Symposium on Operating Systems Design and Implementation (OSDI 18), USENIX Association, Carlsbad, CA, 2018, pp. 561–577, https://www.usenix.org/ conference/osdi18/presentation/moritz. CHAPTER NumPy T. B. A. L. Pallets, S. JSON-RPC The Redis Pallets, Pallets, Google gRPC N. W. Apache Apache Dask P.
+本章涵盖了一系列技术主题，包括数据序列化格式、用于数组数据存储的文件I/O以及网络I/O处理。对于数据序列化，Python内置的pickle模块通常是一个合适的选择。然而，对于管理配置文件和网络请求等特定场景，JSON和YAML等人类可读的格式更受青睐。对于文件I/O，可选方案包括HDF5格式、NumPy原生的npy格式和NumPy memmap。这些技术各有优势，不存在适用于所有场景的简单优胜者。对于网络I/O，性能要求在很大程度上影响技术的选择。为了简单起见，基于JSON的REST API是一个可行的选择。对于要求高性能的场景，可以考虑gRPC及其衍生技术，如PyArrow。
+
+## 参考文献
+
+[1] Python Software Foundation, Python documentation what can be pickled and unpickled, https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled, 2024.
+[2] Python Software Foundation, Python documentation - generator expressions, https://docs.python.org/3/reference/expressions.html#generator-expressions, 2024.
+[3] Cloudpipe Development Team, Cloudpickle, https://github.com/cloudpipe/cloudpickle, 2024.
+[4] The Uncertainty Quantiﬁcation Foundation, dill: serialize all of Python, https://dill. readthedocs.io/en/latest/, 2024.
+[5] Python Software Foundation, Python documentation - pickling class instances, https://docs.python.org/3/library/pickle.html#pickling-class-instances, 2024.
+[6] YAML Language Development Team, Yaml ain’t markup language (yaml) version 1.2, https://yaml.org/spec/1.2.2/, 2024.
+[7] NumPy Developers, NumPy documentation - numpy.lib.format, https://numpy.org/doc/stable/reference/generated/numpy.lib.format.html, 2024.
+[8] T. Berners-Lee, R. Fielding, L. Masinter, Uniform resource identiﬁer (uri): generic syntax, https://datatracker.ietf.org/doc/html/rfc3986, 2005.
+[9] B. Pritchard, Basis set exchange api documentation rest api reference, https://molssibse.github.io/basis_set_exchange-apidoc/reference.html#, 2024.
+[10] A. Jain, S.P. Ong, G. Hautier, W. Chen, W.D. Richards, S. Dacek, S. Cholia, D. Gunter, D. Skinner, G. Ceder, K.A. Persson, Commentary: The Materials Project: a materials genome approach to accelerating materials innovation, APL Materials 1 (1) (2013) 011002, https://doi.org/10.1063/1.4812323, https://pubs.aip.org/aip/apm/article-pdf/doi/ 10.1063/1.4812323/13163869/011002_1_online.pdf.
+[11] L. Gupta, Rest api tutorial, https://restfulapi.net/, Dec. 2023.
+[12] Pallets, Flask documentation, https://ﬂask.palletsprojects.com/en/latest/, 2024.
+[13] S. Ramírez, FastAPI, https://github.com/tiangolo/fastapi.
+[14] JSON-RPC Working Group, Json-rpc speciﬁcation, https://www.jsonrpc.org/speciﬁcation, 2024.
+[15] The PySCF Developers, Quantum chemistry with Python, https://pyscf.org/, 2024.
+[16] Redis Inc, redis-py - Python client for redis, https://redis-py.readthedocs.io/en/stable/, 2024.
+[17] Pallets, Flask documentation - development server, https://ﬂask.palletsprojects.com/en/latest/server/, 2024.
+[18] Pallets, Flask document - deploying to production, https://ﬂask.palletsprojects.com/en/latest/deploying/, 2024.
+[19] Google LLC, Protocol buffers documentation, https://protobuf.dev/, 2024.
+[20] gRPC Authors, Basics tutorial - a basic tutorial introduction to grpc in Python, https://grpc.io/docs/languages/python/basics/, 2024.
+[21] N. Richardson, I. Cook, N. Crane, D. Dunnington, R. François, J. Keane, D. Moldovan-Grünfeld, J. Ooms, J. Wujciak-Jens, Apache Arrow, arrow: Integration to ‘Apache’ ‘Arrow’, https://arrow.apache.org/docs/r/, 2024.
+[22] W. McKinney, Introducing apache arrow ﬂight: a framework for fast data transport, https://arrow.apache.org/blog/2019/10/13/introducing-arrow-ﬂight/, 2019.
+[23] Apache Software Foundation, Apache arrow document memory and io interfaces, https://arrow.apache.org/docs/python/memory.html, 2024.
+[24] Apache Software Foundation, Apache arrow cookbook - arrow ﬂight, https://arrow. apache.org/cookbook/py/ﬂight.html, 2022.
+[25] Dask Development Team, Dask: library for dynamic task scheduling, http://dask.pydata. org, 2016.
+[26] P. Moritz, R. Nishihara, S. Wang, A. Tumanov, R. Liaw, E. Liang, M. Elibol, Z. Yang, W. Paul, M.I. Jordan, I. Stoica, Ray: a distributed framework for emerging AI applications, in: 13th USENIX Symposium on Operating Systems Design and Implementation (OSDI 18), USENIX Association, Carlsbad, CA, 2018, pp. 561–577, https://www.usenix.org/conference/osdi18/presentation/moritz.

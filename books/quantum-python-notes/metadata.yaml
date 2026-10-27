@@ -1,0 +1,47 @@
+id: quantum-python-notes
+title: 量子化学 Python：原创中文学习笔记
+language: zh-CN
+categories:
+- quantum-chemistry
+- scientific-computing
+- python
+chapters:
+- index.qmd
+- chapters/01-environment.qmd
+- chapters/02-data.qmd
+- chapters/03-visualization.qmd
+- chapters/04-scientific-tools.qmd
+- chapters/05-metaprogramming.qmd
+- chapters/06-io.qmd
+- chapters/07-cloud.qmd
+- chapters/08-ffi.qmd
+- chapters/09-performance.qmd
+- chapters/10-parallel.qmd
+- chapters/11-gpu.qmd
+- chapters/12-integrals.qmd
+- chapters/13-mean-field.qmd
+- chapters/14-fci.qmd
+- chapters/15-coupled-cluster.qmd
+- chapters/16-properties.qmd
+assets: []
+source:
+  type: original
+  description: '非官方原创中文学习笔记；主题参考 Qiming Sun, Python for Quantum Chemistry: A Full
+    Stack Programming Guide (Elsevier, 2025)。各章文末列具体来源页与章节 DOI；不转载原书。'
+rights:
+  publication_mode: notes
+  public: false
+  license: null
+  evidence_url: null
+review:
+  status: draft
+  approved_by: null
+  approved_at: null
+  evidence_path: null
+  issues:
+  - id: cloud-idle-double-count
+    severity: P2
+    status: resolved
+  - id: cloud-final-ack-reconciliation
+    severity: P2
+    status: resolved

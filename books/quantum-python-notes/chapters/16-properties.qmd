@@ -1,0 +1,231 @@
+# 性质是期望值，还是收敛解的导数？ {#ch16}
+
+本章为非官方原创学习笔记，不是原书译文。
+
+## 学习目标
+
+能够区分一体算符期望值与总能量导数；解释核梯度中显式积分导数、Pulay项和轨道响应的不同角色；用残差方程推导隐式微分及其伴随式；理解JVP、VJP为何能免去显式Jacobian存储。例子采用三变量无量纲非线性约束，不将其当作分子力或CC梯度计算。
+
+## 1. 两条计算路线，不能随意互换
+
+固定几何、无外磁场，先考虑实AO和Hermitian一体算符$\hat O=\sum_i\hat o(i)$。若$P$是自旋求和的一粒子密度矩阵，AO矩阵元为$O_{\mu\nu}=\langle\chi_\mu|\hat o|\chi_\nu\rangle$，则
+
+$$
+\langle\hat O\rangle=\operatorname{Tr}(PO).
+$$
+
+RHF时本章沿用$P=2C_oC_o^T$，**包含占据因子2**，$\operatorname{Tr}(PS)=N_e$。相关波函数的密度仍按自旋求和约定定义，但一般不再满足$PSP=2P$。密度与算符矩阵的指标必须配对；对AO协变矩阵元的这个收缩不应额外插入$S$。电子数之所以是$\operatorname{Tr}(PS)$，是因为单位算符的AO矩阵元就是$S$。
+
+例如原子单位下，电偶极矩为
+
+$$
+\boldsymbol\mu=\sum_A Z_A\mathbf R_A
+-\sum_{\mu\nu}P_{\mu\nu}\langle\chi_\nu|\mathbf r|\chi_\mu\rangle.
+$$
+
+电子电荷为$-1$，核电荷为$+Z_A$，偶极单位为$e\,\mathrm{bohr}$。带电体系的偶极依赖坐标原点，报告数值时必须说明原点；即使没有程序错误，不同原点也会给出不同结果。
+
+另一类性质来自$E(q)$对外参量$q$的导数。若$q$是核坐标，$dE/dq$是能量梯度，单位为$E_h/\mathrm{bohr}$，**力为它的负值**。若$q$是电场，偶极与能量导数的符号取决于哈密顿量中的场耦合约定。不能仅凭“对某变量求导”就自动决定物理量的符号或单位。
+
+Hellmann–Feynman关系要求适当的本征态或变分驻定条件。对未收敛解、有限且随几何移动的基、以及投影非变分CC，直接求$\langle\partial H/\partial q\rangle$不自动等于目标能量的全导数。期望值路线与导数路线在满足条件时相接，不是无条件同义。
+
+## 2. 固定系数求偏导，不等于冻结电子态
+
+RHF轨道依赖几何，同时受$C^TSC=I$约束。对含占据因子2的密度，采用拉格朗日量
+
+$$
+\mathcal L=E(C,q)-2\sum_{ij\in\mathrm{occ}}\epsilon_{ij}
+\left[(C_o^TSC_o)_{ij}-\delta_{ij}\right].
+$$
+
+在收敛且轨道驻定时，沿解支的$dE/dq$可改写为$\partial\mathcal L/\partial q$；显式的$C'$项因驻定条件而消去。但是$S$也随几何变化，约束项的偏导仍然存在。定义规范占据轨道的能量加权密度
+
+$$
+W_{\mu\nu}=2\sum_{i\in\mathrm{occ}}\epsilon_iC_{\mu i}C_{\nu i}.
+$$
+
+在实AO、闭壳层、无分数占据条件下，梯度可写为
+
+$$
+\begin{aligned}
+\frac{dE}{dq}={}&\sum_{\mu\nu}P_{\mu\nu}h^q_{\mu\nu}
++\frac12\sum_{\mu\nu\kappa\lambda}P_{\mu\nu}P_{\kappa\lambda}
+\left[(\mu\nu|\kappa\lambda)^q
+-\frac12(\mu\kappa|\nu\lambda)^q\right]\\
+&-\sum_{\mu\nu}W_{\mu\nu}S^q_{\mu\nu}
++E_{\rm nn}^q.
+\end{aligned}
+$$
+
+上标$q$表示固定AO展开系数时，积分随参数的完整偏导，包括基函数中心移动及算符本身变化。这里仍用**化学家积分**：$(\mu\nu|\kappa\lambda)$的前两个函数作用于电子1，后两个作用于电子2，核为$1/r_{12}$。$h$包含电子动能和核吸引；$E_{\rm nn}$是核排斥。若$q$为核坐标，上式各项均以$E_h/\mathrm{bohr}$计。
+
+$-\operatorname{Tr}(WS^q)$通常称为Pulay重叠项。它不因SCF收敛而消失，也不是对HF相关误差的经验修正。更广义地，随基移动的效应还体现在积分导数里；把所有基依赖都仅等同于一个重叠项也不够精确。
+
+一个可手算的诊断是：仅改变一个基函数的尺度，使$S(q)=s(q)>0$、$h(q)=\epsilon_0s(q)$。一个电子的规范系数是$1/\sqrt s$，能量$h/s=\epsilon_0$恒定。只取显式项$h'/s$会得到伪导数；归一化约束贡献$-\epsilon_0s'/s$恰好抵消它。这是基表示变化的例子，不是一个核运动模型，但清楚展示了为什么“能量驻定”不允许忽略度量导数。
+
+中心导数与电子坐标导数也不可混淆。固定指数的笛卡尔高斯有
+
+$$
+\frac{\partial\chi_A}{\partial A_x}=-\frac{\partial\chi_A}{\partial x}.
+$$
+
+对未归一化多项式高斯，电子坐标导数是降阶项减去$2\alpha$倍升阶项；若使用归一化函数，需要相应归一化系数比。核吸引算符还显式依赖核位置，不能只对基函数求导。
+
+## 3. 什么时候必须求轨道响应？
+
+对收敛变分HF的**总能量一阶核导数**，前述拉格朗日处理可避免显式求$C'$；这不意味着轨道不响应。对偶极随坐标变化、Hessian、极化率等，需要知道密度或轨道的一阶响应。
+
+对$FC=SC\varepsilon$求导，有
+
+$$
+F^qC+FC^q=S^qC\varepsilon+SC^q\varepsilon+SC\varepsilon^q.
+$$
+
+$F^q$又包含由$P^q$引起的场变化，因此不能只除以轨道能差。将占据—虚轨道旋转作为未知量，会得到耦合微扰HF（CPHF）线性方程；其算符包含轨道能差和电子相互作用响应。占据内部和虚轨道内部的旋转存在规范自由，不能把所有$C^q$分量当成唯一可观察量。小能隙或稳定性问题会导致响应算符病态，梯度及更高导数也更敏感。
+
+对于[耦合簇](15-coupled-cluster.qmd)，右振幅方程是投影残差为零，而能量不对这些振幅驻定。导数因此需要左乘子方程，或者等价的隐式微分；仅把收敛振幅当常数求能量偏导会漏项。
+
+## 4. 用残差定义导数，而不是记录每一步迭代
+
+令$x\in\mathbb R^n$表示待收敛的轨道或振幅参数，$q\in\mathbb R^m$表示外参量。设
+
+$$
+R(x(q),q)=0.
+$$
+
+假设在所选解支附近可微，且$R_x=\partial R/\partial x$可逆。对参数方向$\dot q$，切线满足
+
+$$
+R_x\dot x=-R_q\dot q.
+$$
+
+这是隐函数定理的线性方程，不要求原始求根器必须是固定点迭代。若目标是一个标量$E(x,q)$，逐参数求$\dot x$可能很贵。改为求伴随向量
+
+$$
+R_x^T\lambda=\nabla_xE,
+\qquad
+\nabla_qE_{\rm total}=\nabla_qE-R_q^T\lambda.
+$$
+
+可从$\mathcal L=E-\lambda^TR$对$x$驻定独立推导符号和转置。以上变量都按列向量记；$R_x$通常**不对称**，转置不可省略。若残差取$R=x-f(x,q)$，则伴随算符是$(I-f_x)^T$，梯度是$E_q+f_q^T\lambda$。换一个残差正负号会相应改变乘子的定义，但不应改变最终物理梯度。
+
+逐步展开自动微分求的是某个有限迭代程序的导数，可能需要保存大量中间量。隐式微分求的是满足$R=0$的局部解映射；原始残差未足够收敛时，两者可以明显不同。隐式法节约迭代轨迹存储，却增加一个响应或伴随求解，并要求解支平滑、线性系统可解。态交叉、占据跳变或截断筛选的不连续点不能靠AD自动修复。
+
+## 5. JVP与VJP的接口分别在什么空间？
+
+对$f:\mathbb R^n\to\mathbb R^k$，Jacobian $J$形状是$k\times n$。JVP把输入方向$v\in\mathbb R^n$送到$Jv\in\mathbb R^k$；VJP把输出余切$w\in\mathbb R^k$送回$J^Tw\in\mathbb R^n$。名字中的“vector-Jacobian”若使用行向量写法是$w^TJ$，本章统一用等价的列向量$J^Tw$。
+
+二者满足可检查的伴随恒等式
+
+$$
+w^T(Jv)=(J^Tw)^Tv.
+$$
+
+Krylov响应求解器只需多次调用这些乘积，不必存下整个Jacobian。对一个标量目标和许多核坐标，伴随模式尤其有吸引力；少量输入方向而有许多输出时，切线模式可能更自然。AD框架能转置线性化程序的前提，是自定义JVP对方向输入确实线性，且所有外部积分接口都有正确导数规则；“API返回了一个数组”不是正确性的证据。
+
+## 6. 原创完整例：三变量约束中的切线与伴随 {#ch16-example}
+
+取无量纲参数$a>0$，约束为
+
+$$
+R_1=x_1^2-a,\quad R_2=x_2-\tfrac12x_1,\quad
+R_3=x_3-x_1-x_2^2,
+$$
+
+并选$x_1>0$的分支，目标$E=\frac12x_3^2+ax_2$也无量纲。这里没有核、轨道或真实能量单位。在$a=4$，$x=(2,1,3)$，
+
+$$
+R_x=\begin{pmatrix}4&0&0\\-1/2&1&0\\-1&-2&1\end{pmatrix},
+\quad R_a=(-1,0,0)^T,\quad E_x=(0,4,3)^T,\quad E_a=1.
+$$
+
+切线解是$x_a=(1/4,1/8,1/2)^T$，伴随解是$\lambda=(2,10,3)^T$。下面用标准库检查两条路线、JVP/VJP配对和中心差分，不依赖任何AD框架。
+
+```python
+from math import isclose, sqrt
+
+
+def solution(a):
+    x1 = sqrt(a)  # selected positive branch
+    x2 = 0.5 * x1
+    return x1, x2, x1 + x2*x2
+
+
+def objective(a):
+    x1, x2, x3 = solution(a)
+    return 0.5 * x3*x3 + a*x2
+
+
+def dot(left, right):
+    return sum(a*b for a, b in zip(left, right))
+
+
+# R_x products evaluated ONLY at a=4, x=(2, 1, 3).
+def jvp(v):
+    return (4*v[0], -0.5*v[0] + v[1], -v[0] - 2*v[1] + v[2])
+
+
+def vjp(w):
+    return (4*w[0] - 0.5*w[1] - w[2], w[1] - 2*w[2], w[2])
+
+
+a = 4.0
+assert solution(a) == (2.0, 1.0, 3.0)
+residual_a = (-1.0, 0.0, 0.0)
+energy_x = (0.0, 4.0, 3.0)
+energy_a = 1.0
+x_tangent = (0.25, 0.125, 0.5)
+multiplier = (2.0, 10.0, 3.0)
+assert all(isclose(t, -r, abs_tol=1e-12)
+           for t, r in zip(jvp(x_tangent), residual_a))
+assert vjp(multiplier) == energy_x
+v, w = (0.3, -0.8, 0.2), (-0.7, 0.4, 1.1)
+assert isclose(dot(w, jvp(v)), dot(vjp(w), v), abs_tol=1e-12)
+forward = energy_a + dot(energy_x, x_tangent)
+adjoint = energy_a - dot(multiplier, residual_a)
+h = 1e-4
+finite_difference = (objective(a+h) - objective(a-h)) / (2*h)
+assert isclose(forward, 3.0, abs_tol=1e-12)
+assert isclose(adjoint, forward, abs_tol=1e-12)
+assert abs(finite_difference - adjoint) < 1e-7
+print(f"tangent derivative = {forward:.6f}")
+print(f"adjoint derivative = {adjoint:.6f}")
+print("JVP/VJP pairing and finite-difference checks passed")
+```
+
+预期输出：
+
+```text
+tangent derivative = 3.000000
+adjoint derivative = 3.000000
+JVP/VJP pairing and finite-difference checks passed
+```
+
+本例特意使用不对称的$R_x$：若把伴随方程误写为$R_x\lambda=E_x$，手算乘子检查就会失败。代码把解析切线和乘子代回方程，不是一个通用线性求解器，也没有验证分子积分、SCF或CC外部接口的导数。
+
+## 7. 梯度验证应是一组证据，而不是一个相近小数
+
+中心差分
+
+$$
+\frac{E(q+h)-E(q-h)}{2h}=E'(q)+O(h^2)
+$$
+
+有截断误差；单点能量的误差$\delta E$又可能被放大到$O(\delta E/h)$。因此减小$h$不总会更准。至少使用若干步长，观察进入舍入或收敛误差平台前是否出现二阶趋势，同时让每个扰动点都收敛到同一态分支。梯度近零时应看绝对误差，不只看相对误差。
+
+对真实分子还要检查：整体平移时总力是否接近零；不受外场时转动相关的一致性；解析导数是否包括核排斥、所有基中心、DFT网格点和权重的移动。筛选阈值跨过某项贡献时可能产生不光滑性。一个AD程序可以忠实求出“遗漏了物理依赖的程序”的导数，因此自动微分不能替代物理模型与接口审查。
+
+## 练习与解题指引
+
+1. **单位与符号。** 若$E'(R)=0.02E_h/\mathrm{bohr}$，沿$R$增大方向的力是多少？  
+   答案：$-0.02E_h/\mathrm{bohr}$。若输入坐标是Å，还需按链式法则转换，不能只改输出单位标签。
+2. **固定点的转置。** 对$x=f(x,q)$和标量$E$，从$R=x-f$推导伴随方程。  
+   答案：$(I-f_x)^T\lambda=E_x$，$dE/dq=E_q+\lambda^Tf_q$。只有$ f_x$对称时才可无条件去掉转置。
+3. **临界分支。** 本例若$a\to0^+$会怎样？  
+   指引：$x_1=\sqrt a$的导数发散，$R_x$对角首元$2\sqrt a$趋零。问题在解映射的条件数，不在JVP/VJP语法。$a<0$时所选实数分支根本不存在。
+
+## 来源与新增内容
+
+主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），正式第16章 **Molecular properties**，全章印刷675–712页／PDF物理680–717页。开章页提取的DOI：[10.1016/B978-0-44-323837-6.00026-0](https://doi.org/10.1016/B978-0-44-323837-6.00026-0)。
+
+定向阅读：印刷675–679、681、683–686、703–707、709页／PDF物理680–684、686、688–691、708–712、714页；目录定位为PDF物理15–17页。梯度公式按本笔记统一的实AO、自旋求和密度约定重新组织，隐式微分从列向量残差独立推导，未凭文本提取认定原式的转置与因子。解释、三变量模型、代码和练习均为本笔记新作，未进行源PDF公式的视觉核对。完整CPHF、Krylov实现、JAX自定义导数、磁响应与高阶性质仅作为进一步阅读方向；本章没有提供实际分子梯度程序。

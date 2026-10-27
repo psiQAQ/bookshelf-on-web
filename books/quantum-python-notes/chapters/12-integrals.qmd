@@ -1,0 +1,201 @@
+# 把高斯积分看成可检查的计算图 {#ch12}
+
+本章为非官方原创学习笔记，不是原书译文。
+
+## 学习目标
+
+读完本章，应能说明高斯基函数为什么便于积分，区分原始函数归一化与收缩归一化；手算两个$s$型函数的重叠；把递推关系理解为有边界的依赖图；判断高斯求积的精确性条件，并写清AO到MO积分变换的指标。本章只建立这些基础，不实现生产级积分引擎。
+
+## 1. 先约定函数，再讨论数值
+
+以下使用原子单位：位置用bohr，指数$\alpha$用$\mathrm{bohr}^{-2}$，能量用hartree（$E_h$）。先限定为实值笛卡尔高斯函数
+
+$$
+g_{abc}(\mathbf r)=N_{abc}(\alpha)(x-A_x)^a(y-A_y)^b(z-A_z)^c
+ e^{-\alpha|\mathbf r-\mathbf A|^2},\qquad \alpha>0.
+$$
+
+$a,b,c$是非负整数，$l=a+b+c$。令$\int |g|^2d^3r=1$，三个方向的偶次高斯矩相乘，得到
+
+$$
+N_{abc}(\alpha)=\left(\frac{2\alpha}{\pi}\right)^{3/4}
+\left[\frac{(4\alpha)^{a+b+c}}
+{(2a-1)!!(2b-1)!!(2c-1)!!}\right]^{1/2},
+\qquad (-1)!!=1.
+$$
+
+例如$s$函数的$N=(2\alpha/\pi)^{3/4}$。归一化后的三维函数具有$\mathrm{bohr}^{-3/2}$量纲；多项式的额外长度幂已由$N$抵消。该式采用笛卡尔多项式，不是“径向部分乘已归一化球谐函数”的径向归一化公式；混用两者会引入角向常数。对于$d$及更高角动量，笛卡尔分量数与纯球谐分量数也不同，不能只改数组标签就完成转换。
+
+实际基函数通常是收缩
+
+$$
+\chi_\mu=\mathcal N_\mu\sum_p d_{\mu p}g_{\mu p},\qquad
+\mathcal N_\mu^{-2}=\sum_{pq}d_{\mu p}d_{\mu q}
+\langle g_{\mu p}|g_{\mu q}\rangle.
+$$
+
+即使各个$g_p$都归一化，$\sum_p d_pg_p$也未必归一化，因为不同指数的函数不正交。读取基组数据时必须知道系数是否已经包含原始函数或收缩函数的归一化因子；重复乘一次与漏乘一次同样错误。按壳层处理积分的意义，是让共享中心、指数和角动量的分量复用中间量，而不是假定所有分量相等。
+
+## 2. 完成平方为什么能降低积分难度
+
+对两个指数$\alpha,\beta$和中心$\mathbf A,\mathbf B$，定义
+
+$$
+p=\alpha+\beta,\quad \mu=\frac{\alpha\beta}{p},\quad
+\mathbf P=\frac{\alpha\mathbf A+\beta\mathbf B}{p}.
+$$
+
+逐项展开平方可以独立验证
+
+$$
+\alpha|\mathbf r-\mathbf A|^2+\beta|\mathbf r-\mathbf B|^2
+=p|\mathbf r-\mathbf P|^2+\mu|\mathbf A-\mathbf B|^2.
+$$
+
+因此两个不同中心的高斯乘积变成一个新中心的高斯，再乘与电子坐标无关的衰减因子。归一化$s$函数的重叠就是
+
+$$
+S_{AB}=N_s(\alpha)N_s(\beta)
+\left(\frac{\pi}{p}\right)^{3/2}
+ e^{-\mu R_{AB}^2}.
+$$
+
+它无量纲。相同指数、相同中心给出$S=1$；相同指数、中心分离时给出$S=e^{-\alpha R_{AB}^2/2}$。但一般重叠小不等于所有相关库仑积分都可忽略，筛选需要适合所求积分的界。
+
+对于带多项式的函数，三个方向仍可分离。定义**未归一化的一维**积分
+
+$$
+I_{ij}=\int_{-\infty}^{\infty}(x-A)^i(x-B)^j
+ e^{-\alpha(x-A)^2-\beta(x-B)^2}\,dx.
+$$
+
+由$(x-A)=(x-P)+(P-A)$并对高斯分部积分，可得一种升阶关系
+
+$$
+I_{i+1,j}=(P-A)I_{ij}+\frac{iI_{i-1,j}+jI_{i,j-1}}{2p},
+\qquad
+I_{00}=\sqrt{\frac{\pi}{p}}e^{-\mu(A-B)^2}.
+$$
+
+负指标项定义为零。把$A$换成$B$、交换$i,j$可得到另一个方向的升阶式。归一化因子最后乘入；若把已归一化函数代入这套递推而不调整系数，就会破坏关系。
+
+递推不是“让函数不断调用自己”这一种实现。画出目标$I_{ij}$依赖的低阶状态，就得到有向无环图。递归加缓存易读，适合做小参考；自底向上的表格可以避免调用开销，并让同一壳层复用状态。不过缓存键必须包含本次几何和指数，跨不同中心复用旧表会产生看似平滑却错误的结果。表格尺寸也应由最高所需角动量决定，而不是无条件计算大立方体。
+
+## 3. 原创完整例：两个归一化函数的和还要再归一化 {#ch12-example}
+
+取$\alpha=\beta=0.5\ \mathrm{bohr}^{-2}$，中心为$(0,0,0)$与$(2,0,0)$ bohr。这不是某种分子的拟合基组，只用来检查归一化。对$u=g_A+g_B$，应有$\langle u|u\rangle=2+2e^{-1}$。
+
+下面是静态Python示例，仅依赖标准库。这里的“积分”通过已推导解析式计算，不是网格截断近似。
+
+```python
+from math import exp, isclose, pi, sqrt
+
+
+def s_overlap(alpha, center_a, beta, center_b):
+    if alpha <= 0 or beta <= 0:
+        raise ValueError("Gaussian exponents must be positive")
+    distance2 = sum((a - b) ** 2 for a, b in zip(center_a, center_b))
+    p = alpha + beta
+    norm_a = (2 * alpha / pi) ** 0.75
+    norm_b = (2 * beta / pi) ** 0.75
+    return norm_a * norm_b * (pi / p) ** 1.5 * exp(
+        -alpha * beta * distance2 / p
+    )
+
+
+alpha = 0.5  # bohr^-2
+center_a = (0.0, 0.0, 0.0)  # bohr
+center_b = (2.0, 0.0, 0.0)
+s_aa = s_overlap(alpha, center_a, alpha, center_a)
+s_bb = s_overlap(alpha, center_b, alpha, center_b)
+s_ab = s_overlap(alpha, center_a, alpha, center_b)
+raw_norm2 = s_aa + 2 * s_ab + s_bb
+coefficient = 1 / sqrt(raw_norm2)
+assert isclose(s_aa, 1.0, abs_tol=1e-14)
+assert isclose(s_ab, exp(-1), abs_tol=1e-14)
+assert isclose(coefficient**2 * raw_norm2, 1.0, abs_tol=1e-14)
+print(f"overlap = {s_ab:.6f}")
+print(f"raw norm squared = {raw_norm2:.6f}")
+print(f"normalized norm squared = {coefficient**2 * raw_norm2:.6f}")
+```
+
+预期输出：
+
+```text
+overlap = 0.367879
+raw norm squared = 2.735759
+normalized norm squared = 1.000000
+```
+
+这同时检查了距离单位、指数单位、重叠对角元以及交叉项。若误把$u/\sqrt2$当成归一化函数，所得模平方为$1+S_{AB}$，在这里明显大于1。相反，若两个中心几乎重合，反对称组合$g_A-g_B$的模平方$2-2S_{AB}$会很小，归一化会放大舍入误差；这与重叠矩阵的近线性相关是同一个问题。
+
+## 4. 求积是一种带精确性条件的替代路线
+
+完成平方并换元$u=\sqrt p(x-P)$后，$I_{ij}$等于常数乘
+
+$$
+\frac{1}{\sqrt p}\int_{-\infty}^{\infty}e^{-u^2}
+\left(P-A+\frac{u}{\sqrt p}\right)^i
+\left(P-B+\frac{u}{\sqrt p}\right)^j du.
+$$
+
+$n$点Gauss–Hermite求积对乘在$e^{-u^2}$后的次数不超过$2n-1$的多项式精确。因此$i+j\leq 2n-1$时，它在精确算术中能重现该一维重叠，而不只是“点数多了大概更准”。两个节点$\pm1/\sqrt2$、各自权重$\sqrt\pi/2$，就能给出$\int u^2e^{-u^2}du=\sqrt\pi/2$。
+
+库仑核$1/r_{12}$不是三个独立方向的多项式，不能把上述重叠求积直接套过去。常见高斯ERI算法会引入辅助积分与Boys函数
+
+$$
+F_m(T)=\int_0^1t^{2m}e^{-Tt^2}\,dt,\qquad T\geq0.
+$$
+
+$F_m(0)=1/(2m+1)$，可由定义直接核验。向上递推
+
+$$
+F_{m+1}(T)=\frac{(2m+1)F_m(T)-e^{-T}}{2T}
+$$
+
+在小$T$处有相近数相减和除小数的问题；这说明代数恒等并不保证数值稳定。小$T$可用积分展开得到的级数
+
+$$
+F_m(T)=\sum_{k=0}^{\infty}\frac{(-T)^k}{k!(2m+2k+1)}.
+$$
+
+大参数、较高阶数需要分区算法及误差控制，本章不实现。递推、Rys求积、辅助函数并不是“解析对数值”的简单二分：解析积分引擎也要稳定地数值计算辅助量。
+
+## 5. 积分的指标定义决定后续每一个收缩
+
+对实AO，本笔记采用**化学家记号**
+
+$$
+(\mu\nu|\kappa\lambda)=\iint
+\chi_\mu(\mathbf r_1)\chi_\nu(\mathbf r_1)
+\frac{1}{r_{12}}
+\chi_\kappa(\mathbf r_2)\chi_\lambda(\mathbf r_2)
+\,d^3r_1d^3r_2.
+$$
+
+同一括号左边两指标属于电子1，右边两指标属于电子2。它在原子单位下给出以$E_h$计的矩阵元。实函数允许交换同一电子上的两个函数，以及交换两个电子，形成常说的八重对称；复函数情况下不能不加共轭地照搬全部等式。
+
+若$\phi_p=\sum_\mu\chi_\mu C_{\mu p}$，实轨道的变换是
+
+$$
+(pq|rs)=\sum_{\mu\nu\kappa\lambda}
+C_{\mu p}C_{\nu q}C_{\kappa r}C_{\lambda s}
+(\mu\nu|\kappa\lambda).
+$$
+
+这是算符表示的变换，不是对电子相互作用再做一次近似。AO非正交并不要求在这个展开式里另乘$S^{-1}$；MO的正交条件是$C^TSC=I$。一个输出元素四重求和，再遍历四个输出指标的直接实现，等规模时需$O(n^8)$工作；依次变换一个指标可降为$O(n^5)$，但仍可能保留$O(n^4)$中间张量。分块与磁盘存储缓解容量压力，同时引入I/O和转置成本。低秩近似则改变了表示误差，须另有阈值测试，不能与精确分块混称。
+
+## 练习与解题指引
+
+1. **相同中心、不同指数。** 推导两个归一化$s$函数的重叠，并检查其不超过1。  
+   指引：令$R_{AB}=0$，得$S=[2\sqrt{\alpha\beta}/(\alpha+\beta)]^{3/2}$；算术—几何平均不等式给出上界，只有$\alpha=\beta$取等号。
+2. **奇偶与递推。** 当$A=B=P=0$时，求$I_{10}$和$I_{20}$。  
+   答案：$I_{10}=0$，$I_{20}=I_{00}/(2p)$。前者来自奇函数，后者来自升阶式；一项符号写反就会破坏这两个检查。
+3. **变换与对称。** 若只把某个MO的符号反转，$(pq|rs)$怎样变化？  
+   指引：每出现一次该轨道就多一个负号；出现偶数次不变。积分分量可能变号，但一致变换波函数后的物理能量不应改变。这比只检查数组形状更能发现指标错误。
+
+## 来源与新增内容
+
+主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），正式第12章 **Integral evaluation**，全章印刷477–558页／PDF物理484–565页。开章页提取的章节DOI：[10.1016/B978-0-44-323837-6.00022-3](https://doi.org/10.1016/B978-0-44-323837-6.00022-3)。
+
+本章定向使用的正文为印刷478–480、484–488、538–539、552–553页／PDF物理485–487、491–495、545–546、559–560页；目录定位使用PDF物理15–17页。笛卡尔归一化、完成平方推导、双中心自造数据、代码与练习均为本笔记新作，不复制原书程序。这里只使用文本层定位，未声称已对原PDF公式做视觉核对。进一步阅读可沿原章查看完整ERI递推、编译优化、球谐转换与外存变换；这些未在本笔记中完整展开。

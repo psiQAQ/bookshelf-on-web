@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "issues": [
+    {
+      "code": "ineligible",
+      "path": "books/sample-linear-algebra/metadata.yaml",
+      "message": "Explicit human approval and its evidence are required",
+      "severity": "warning"
+    },
+    {
+      "code": "ineligible",
+      "path": "books/sample-linear-algebra/metadata.yaml",
+      "message": "Public rights clearance, license and evidence URL are required",
+      "severity": "warning"
+    },
+    {
+      "code": "unreviewed-provenance",
+      "path": "books/sample-linear-algebra/metadata.yaml",
+      "message": "Source mappings still need review",
+      "severity": "warning"
+    },
+    {
+      "code": "ineligible",
+      "path": "books/sample-waves/metadata.yaml",
+      "message": "Explicit human approval and its evidence are required",
+      "severity": "warning"
+    },
+    {
+      "code": "ineligible",
+      "path": "books/sample-waves/metadata.yaml",
+      "message": "Public rights clearance, license and evidence URL are required",
+      "severity": "warning"
+    },
+    {
+      "code": "unreviewed-provenance",
+      "path": "books/sample-waves/metadata.yaml",
+      "message": "Source mappings still need review",
+      "severity": "warning"
+    }
+  ],
+  "mode": "local-preview",
+  "strict": false,
+  "books": [
+    "sample-linear-algebra",
+    "sample-waves"
+  ]
+}

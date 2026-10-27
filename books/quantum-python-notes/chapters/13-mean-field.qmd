@@ -1,0 +1,187 @@
+# 平均场的约束、闭环与收敛证据 {#ch13}
+
+本章为非官方原创学习笔记，不是原书译文。
+
+## 学习目标
+
+本章要解决三个问题：为什么非正交AO不能直接做普通本征分解；闭壳层密度中的因子2怎样影响$J/K$和能量；为什么能量不再变化仍不足以证明SCF正确。随后说明DIIS的作用与限制，以及KS-DFT究竟替换了哪部分计算。例子只检查一次Fock构造，不冒充完整分子SCF求解器。
+
+## 1. 非正交基中的“长度”由重叠矩阵决定
+
+采用实值空间AO $\chi_\mu$，重叠$S_{\mu\nu}=\langle\chi_\mu|\chi_\nu\rangle$。轨道$\phi_i=\sum_\mu\chi_\mu C_{\mu i}$的正交条件是
+
+$$
+C^TSC=I,
+$$
+
+不是$C^TC=I$。变分优化带这个约束，得到RHF的广义本征方程
+
+$$
+FC=SC\varepsilon.
+$$
+
+若$S=UsU^T$且全部本征值为正，可以令$X=Us^{-1/2}U^T$，满足$X^TSX=I$。先对$F'=X^TFX$作普通实对称本征分解$F'U'=U'\varepsilon$，再取$C=XU'$。这里$X$负责改变坐标度量，不是电子相互作用的近似。
+
+若某个$s_i$接近零，$s_i^{-1/2}$会放大积分与舍入误差。可去掉小本征值方向，构造矩形$X=U_{\rm keep}s_{\rm keep}^{-1/2}$，但这已经改变了可用变分空间，必须记录阈值和保留维数，并检查能否容纳全部占据轨道。简单显式求$S^{-1}F$虽与原问题形式相关，却通常不再显式对称；直接套实对称求解器会违反其输入契约。
+
+## 2. 一套不混淆占据因子的RHF约定
+
+以下限定偶数电子、闭壳层、每个占据空间轨道恰有两个相反自旋电子，且使用原子单位。$h=T+V_{\rm nuc}$以$E_h$计；$S$无量纲。定义**含占据因子2**的自旋求和密度
+
+$$
+P_{\mu\nu}=2\sum_{i\in\mathrm{occ}}C_{\mu i}C_{\nu i}.
+$$
+
+于是
+
+$$
+\operatorname{Tr}(PS)=N_e,\qquad PSP=2P.
+$$
+
+非正交基下$\operatorname{Tr}(P)$一般不是电子数。$PSP=2P$适用于此处的整数占据单行列式；有限温度或分数占据不能照搬。
+
+沿用[积分章](12-integrals.qmd)的实AO化学家记号：
+
+$$
+(\mu\nu|\kappa\lambda)=\iint\chi_\mu(1)\chi_\nu(1)
+ r_{12}^{-1}\chi_\kappa(2)\chi_\lambda(2)\,d1\,d2.
+$$
+
+则
+
+$$
+J_{\mu\nu}[P]=\sum_{\kappa\lambda}(\mu\nu|\kappa\lambda)P_{\kappa\lambda},
+\qquad
+K_{\mu\nu}[P]=\sum_{\kappa\lambda}(\mu\kappa|\nu\lambda)P_{\kappa\lambda},
+$$
+
+$$
+F[P]=h+J[P]-\tfrac12K[P],
+\qquad
+E_{\rm RHF}=E_{\rm nn}+\operatorname{Tr}(Ph)
++\tfrac12\operatorname{Tr}\{P(J-\tfrac12K)\}.
+$$
+
+也可写成$E_{\rm nn}+\frac12\operatorname{Tr}[P(h+F)]$。这两个能量式应在同一个$P$上给出相同结果，而不是把旧密度的$F$与新密度拼接。若改用不含2的$D=P/2$，相应Fock是$h+2J[D]-K[D]$；不能只替换密度变量而保留旧系数。
+
+库仑项描述总电荷密度的平均排斥。交换源于反对称化，并且只在同自旋间作用；闭壳层自旋求和后才出现$K/2$。它不是“额外经验吸引力”。对于一个双占据空间轨道，库仑与交换不是全部相消：两种自旋电子仍相互排斥。
+
+## 3. 原创完整例：检查一次Fock构造，而不是宣布SCF收敛 {#ch13-example}
+
+构造两个抽象非正交基函数，$S_{12}=0.2$。人为指定对称占据轨道$C_o=(1,1)^T/\sqrt{2.4}$。再用两个对称因子$L^A$定义
+
+$$
+(\mu\nu|\kappa\lambda)=\sum_A L^A_{\mu\nu}L^A_{\kappa\lambda}.
+$$
+
+这些因子按$E_h^{1/2}$理解，$h$按$E_h$理解。张量具有实ERI的置换对称和成对指标上的半正定性，但没有从真实轨道的库仑积分计算得到；不把它归属于任何分子、基组或实验。
+
+静态示例依赖NumPy。输入规模固定为2，目的是暴露指标和度量错误。
+
+```python
+import numpy as np
+
+S = np.array([[1.0, 0.2], [0.2, 1.0]])
+h = np.array([[-0.9, -0.1], [-0.1, -0.4]])  # hartree
+factors = np.array([
+    [[0.6, 0.1], [0.1, 0.4]],
+    [[0.2, -0.05], [-0.05, 0.3]],
+])  # sqrt(hartree), synthetic
+occupied = np.array([1.0, 1.0]) / np.sqrt(2.4)
+P = 2 * np.outer(occupied, occupied)
+eri = np.einsum("Amn,Akl->mnkl", factors, factors)
+J = np.einsum("mnkl,kl->mn", eri, P)
+K = np.einsum("mknl,kl->mn", eri, P)
+F = h + J - 0.5 * K
+energy = np.trace(P @ h) + 0.5 * np.trace(P @ (J - 0.5 * K))
+energy_check = 0.5 * np.trace(P @ (h + F))
+
+assert np.allclose(P @ S @ P, 2 * P)
+assert np.isclose(np.trace(P @ S), 2.0)
+assert np.allclose(J, [[2 / 3, 1 / 12], [1 / 12, 1 / 2]])
+assert np.allclose(K, [[41 / 96, 31 / 96], [31 / 96, 25 / 96]])
+assert np.allclose(F, F.T)
+assert np.isclose(energy, energy_check)
+assert np.isclose(energy, -35 / 36)
+
+# A generalized eigenstep is possible, but it is only ONE update.
+s, U = np.linalg.eigh(S)
+X = (U * s**-0.5) @ U.T
+orbital_energy, rotation = np.linalg.eigh(X.T @ F @ X)
+C_next = X @ rotation
+assert np.allclose(C_next.T @ S @ C_next, np.eye(2))
+old_residual = F @ P @ S - S @ P @ F
+assert np.linalg.norm(old_residual) > 1e-3
+print(f"electron count = {np.trace(P @ S):.6f}")
+print(f"electronic energy = {energy:.6f} hartree")
+print("initial density is not self-consistent")
+```
+
+预期输出：
+
+```text
+electron count = 2.000000
+electronic energy = -0.972222 hartree
+initial density is not self-consistent
+```
+
+这里没有核排斥项，输出仅是自造模型的电子能。$\operatorname{Tr}(P)=5/3$，却有$\operatorname{Tr}(PS)=2$。密度合法、$F$对称、两个能量式一致，这些条件仍不意味着占据轨道就是该$F$的本征轨道；非零残差正好说明这一点。若继续迭代，应从新的最低轨道重建$P$、再重建$F[P]$，而不是重复对角化同一个矩阵。
+
+## 4. SCF是一条闭环，停止条件必须覆盖整条闭环
+
+SCF的逻辑是“猜密度—构造场—在该场中找轨道—由占据生成新密度”。非线性来自$F$依赖密度。映射在固定点附近若放大误差，就可能来回振荡；小能隙时轨道重排又会加剧这个问题。阻尼$P_{\rm mix}=(1-\eta)P_{\rm old}+\eta P_{\rm new}$可降低更新幅度，但混合过程中的密度通常不再满足整数占据幂等性，这不自动代表最终解有问题。
+
+至少共同检查能量变化、密度变化，以及驻定残差
+
+$$
+R=FPS-SPF.
+$$
+
+它等于零对应于占据与虚轨道间的Fock耦合消失；在正交化坐标中可检查$X^TRX$，避免把不同度量下的范数混为一谈。旧$P$配旧$F[P]$、新$P$配新$F[P]$的对应关系尤其重要。仅因阻尼极小而使$\Delta E$很小，不应返回“收敛”。最大迭代数耗尽应明确报告失败，并保存残差和最后状态。
+
+即便所有残差都小，也只是得到一个自洽驻定点。初猜、占据方式和对称限制可能导向不同解；RHF不允许不同自旋占据不同空间轨道，断键附近可能失去定性准确性。收敛、稳定性与物理模型准确性是三项不同声明。
+
+## 5. DIIS做的是误差外推，不是能量最小化保证
+
+保存若干历史Fock矩阵$F_i$与误差$r_i$，寻找$\sum_i c_i=1$使$\|\sum_i c_i r_i\|^2$尽量小。令$B_{ij}=r_i^Tr_j$，可求解
+
+$$
+\begin{pmatrix}B&\mathbf1\\\mathbf1^T&0\end{pmatrix}
+\begin{pmatrix}c\\\lambda\end{pmatrix}
+=\begin{pmatrix}0\\1\end{pmatrix},
+\qquad F_{\rm DIIS}=\sum_i c_iF_i.
+$$
+
+约束使它是仿射组合，而不是任意缩小所有系数得到零误差。系数可以为负，因此DIIS不等于保守平均。它只在线性化误差能有效预测邻近解时表现好；远离解时外推可能很激进。历史误差几乎平行时$B$近奇异，会出现大系数和噪声放大。可限制历史长度、删除相关方向、重启或暂时阻尼，并重新测量真实的非线性残差。它不保证每步能量下降，也不会把受限波函数自动变成正确多参考态。
+
+实际$J/K$构造还受积分成本支配。壳层筛选可跳过有可靠上界的小贡献；直接SCF可边算积分边收缩而不存全张量。密度拟合或Cholesky分解则以低秩因子降低存储和收缩成本，但需要单独控制近似误差。算法速度与SCF收敛是两条不同优化轴。
+
+## 6. KS-DFT沿用闭环，但改变能量泛函
+
+对这里的总密度$\rho(\mathbf r)=\sum_{\mu\nu}P_{\mu\nu}\chi_\mu(\mathbf r)\chi_\nu(\mathbf r)$，KS方法以非相互作用轨道计算动能，同时保留库仑能，并用$E_{\rm xc}[\rho]$处理交换关联。纯密度泛函不是在HF总能量上额外加一遍关联项。混合泛函才按约定比例引入精确交换；其$K$系数必须与自旋密度约定匹配。
+
+若LDA能量写为
+
+$$
+E_{\rm xc}=\int f_{\rm xc}(\rho)\,d^3r,
+\quad
+(V_{\rm xc})_{\mu\nu}=\int\chi_\mu\chi_\nu
+\frac{df_{\rm xc}}{d\rho}\,d^3r,
+$$
+
+那么$f_{\rm xc}$是每体积能量。若库返回的是每电子能量$\epsilon_{\rm xc}$，应先用$f_{\rm xc}=\rho\epsilon_{\rm xc}$；其导数不等于仅对$\epsilon_{\rm xc}$求导。GGA还依赖密度梯度，势矩阵就需要对AO乘积的梯度项。原子中心网格带来另一类离散误差：SCF残差很小不保证积分网格足够精细。泛函近似、基组截断、网格误差和未收敛误差应分别评估。
+
+## 练习与解题指引
+
+1. **两种密度约定。** 用$D=P/2$重写电子能。  
+   答案：$E_{\rm el}=2\operatorname{Tr}(Dh)+2\operatorname{Tr}(DJ[D])-\operatorname{Tr}(DK[D])$。关键是$J,K$均对输入密度线性。
+2. **一个可手算的DIIS系数。** 若两个一维误差为$e_1=0.2,e_2=-0.1$，求使组合为零的系数。  
+   答案：$c_1=1/3,c_2=2/3$。若两个误差完全相同，任意满足和为1的组合都不能降低误差，方程还会退化；“求解失败”可能是历史数据冗余而非电子积分错误。
+3. **有很小能量变化却有大残差。** 应降低能量阈值还是先检查什么？  
+   指引：检查是否过度阻尼、残差与Fock/密度是否来自同一步，以及占据是否反复跳变。单独提高能量输出精度不能修复自洽性。
+
+## 来源与新增内容
+
+主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），正式第13章 **Mean-field methods**，全章印刷559–611页／PDF物理566–618页。开章页提取的DOI：[10.1016/B978-0-44-323837-6.00023-5](https://doi.org/10.1016/B978-0-44-323837-6.00023-5)。
+
+定向阅读：印刷559–563、567–568、576–577、584–585、604页／PDF物理566–570、574–575、583–584、591–592、611页；目录定位为PDF物理15–17页。非正交度量的讲解、自造低秩张量、代码、诊断情境与练习均为本笔记新作。仅做文本定位，不声称源公式已视觉核对。进一步阅读可查原章的完整SCF类设计、J-engine、密度拟合和GGA/meta-GGA导数接口；本章没有实现这些框架，也没有提供可用于分子预测的SCF程序。

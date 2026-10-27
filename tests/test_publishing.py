@@ -28,6 +28,12 @@ class PublishingFixture(unittest.TestCase):
             shutil.copytree(ROOT / folder, self.root / folder, ignore=shutil.ignore_patterns("__pycache__"))
         for slug in ("sample-linear-algebra", "sample-waves"):
             shutil.copytree(ROOT / "books" / slug, self.root / "books" / slug)
+        # Fixture catalogs must not depend on books added to the real preview.
+        (self.root / "catalog/preview.yaml").write_text(yaml.safe_dump({"books": [
+            {"id": slug, "path": f"books/{slug}/metadata.yaml"}
+            for slug in ("sample-linear-algebra", "sample-waves")
+        ]}), encoding="utf-8")
+        (self.root / "catalog/books.yaml").write_text("books: []\n", encoding="utf-8")
         self.directory = self.root / "books/sample-linear-algebra"
         self.metadata_path = self.directory / "metadata.yaml"
 

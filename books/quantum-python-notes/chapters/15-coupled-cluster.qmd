@@ -1,0 +1,208 @@
+# 指数波函数为何不同于线性展开 {#ch15}
+
+本章为非官方原创学习笔记，不是原书译文。
+
+## 学习目标
+
+本章从两个互不作用的片段出发，说明指数参数化怎样产生非连通激发；区分CCD、CCSD与截断CI；把振幅方程理解为投影残差，而非能量最小化；理解张量的反对称因子和迭代分母为何容易出错。完整例子只验证四配置可分离模型的指数结构，不是通用CCD或CCSD求解器。
+
+## 1. 截断的是连通激发算符，不是波函数的最高激发阶数
+
+固定一个参考行列式$|\Phi_0\rangle$，占据自旋轨道用$i,j$，虚自旋轨道用$a,b$，全部轨道正交。耦合簇采用
+
+$$
+|\Psi\rangle=e^T|\Phi_0\rangle,\qquad T=T_1+T_2+\cdots,
+$$
+
+其中采用无约束求和的自旋轨道约定
+
+$$
+T_1=\sum_{ia}t_i^a a_a^\dagger a_i,\qquad
+T_2=\frac14\sum_{ijab}t_{ij}^{ab}a_a^\dagger a_b^\dagger a_j a_i.
+$$
+
+$t_{ij}^{ab}=-t_{ji}^{ab}=-t_{ij}^{ba}$；若只遍历有序指标对，则可不写$1/4$，但两种表示不可混用。振幅无量纲。有限电子空间里，足够高阶的纯激发会将态湮灭，所以作用到参考态的指数展开实际会终止，不需要对任意稠密矩阵调用指数函数。
+
+CCD保留$T_2$；CCSD保留$T_1+T_2$。然而CCD波函数已含
+
+$$
+e^{T_2}|\Phi_0\rangle=
+\left(1+T_2+\frac12T_2^2+\cdots\right)|\Phi_0\rangle.
+$$
+
+$T_2^2$可同时激发两对电子，因此有四重激发分量；它不是独立四重连通振幅$T_4$。CCSD同理含由$T_1,T_2$乘积生成的更高阶分量，但缺少独立的$T_3,T_4$等信息。说“CCSD只有单、双激发行列式”是不对的，那是截断CI式的直观，而不是指数波函数。
+
+## 2. 非相互作用片段提供最清楚的因果检验
+
+设$H=H_A+H_B$，参考态可分离，片段激发算符作用于不相交轨道，$[T_A,T_B]=0$。那么
+
+$$
+e^{T_A+T_B}|\Phi_A\Phi_B\rangle
+=e^{T_A}|\Phi_A\rangle\,e^{T_B}|\Phi_B\rangle.
+$$
+
+若每个片段只需一个双激发$X_A,X_B$，且$X_A^2=X_B^2=0$，则
+
+$$
+e^{t_AX_A+t_BX_B}|00\rangle
+=|00\rangle+t_A|10\rangle+t_B|01\rangle+t_At_B|11\rangle.
+$$
+
+最后一项是两个片段各自双激发同时发生的四重激发。线性形式$1+t_AX_A+t_BX_B$会漏掉它，因此无法普遍表示两个相关片段波函数的乘积。这是截断CI可能不具尺寸一致性的机制，而不是“少算了一项小修正”那么简单。
+
+标准单参考CC截断在相应可分离条件下保有能量可加性。该结论不表示它能可靠处理任意断键：若单个片段本身需要多个同等重要的参考行列式，低阶单参考CC仍可能失效。尺寸一致性与强关联精度不是同一性质。
+
+## 3. 投影残差决定振幅，能量不是Rayleigh商
+
+定义相似变换
+
+$$
+\bar H=e^{-T}He^T,\qquad
+E_{\rm CC}=\langle\Phi_0|\bar H|\Phi_0\rangle,
+\qquad
+R_\mu(t)=\langle\Phi_\mu|\bar H|\Phi_0\rangle=0.
+$$
+
+CCD只令双激发投影残差为零；CCSD令单、双投影残差为零。更高激发残差一般不为零。对通常两体电子哈密顿量与纯激发簇算符，Baker–Campbell–Hausdorff嵌套对易子可在有限阶终止，这是构造连通方程的重要结构；本章不列举全部收缩项。
+
+$e^T$通常不幺正，$\bar H$一般非Hermitian。标准投影CC的能量不是归一化$e^T|\Phi_0\rangle$的Rayleigh商，所以不保证高于同基FCI能量，也不保证沿迭代单调下降。相似变换保谱这句话指**完整矩阵的精确相似变换**，不代表截断投影方程自动给出全谱。
+
+能量不对右振幅驻定，性质导数还需左态或拉格朗日乘子$\Lambda$，例如
+
+$$
+\langle\widetilde\Psi|=
+\langle\Phi_0|(1+\Lambda)e^{-T}.
+$$
+
+它通常不是$|\Psi\rangle$的Hermitian共轭。关于导数的展开见[分子性质笔记](16-properties.qmd)。
+
+## 4. 原创完整例：四个配置中的非连通四重项 {#ch15-example}
+
+每个片段仅有参考配置$|0\rangle$及一个抽象双激发配置$|1\rangle$，局部模型取
+
+$$
+H_X=\begin{pmatrix}0&v_X\\v_X&\Delta_X\end{pmatrix},
+\quad (v_A,\Delta_A)=(-0.2,1.0)E_h,
+\quad (v_B,\Delta_B)=(-0.3,1.5)E_h.
+$$
+
+片段互不作用，总空间有$|00\rangle,|10\rangle,|01\rangle,|11\rangle$四个配置。它们是人为有效模型，不是由真实分子积分得到的CCD系统；局部的“1”代表双激发配置而不是多一个电子。
+
+对单片段，$X=|1\rangle\langle0|$，$e^{tX}=1+tX$。直接相乘得到参考能量$E=vt$和激发残差
+
+$$
+R(t)=v+\Delta t-vt^2.
+$$
+
+选与弱耦合$t\to0$连续连接的根
+
+$$
+t=\frac{-2v}{\Delta+\sqrt{\Delta^2+4v^2}},\qquad \Delta>0.
+$$
+
+这个写法还避免了$\sqrt{\Delta^2+4v^2}-\Delta$在弱耦合时的消减。下面只用标准库，用解析根检查总四配置的相似变换及能量可加性；不是迭代求解一般CC方程。
+
+```python
+from math import isclose, sqrt
+
+v_a, gap_a = -0.2, 1.0  # hartree, artificial fragment A
+v_b, gap_b = -0.3, 1.5  # hartree, artificial fragment B
+
+
+def local_amplitude(v, gap):
+    return -2 * v / (gap + sqrt(gap**2 + 4 * v**2))
+
+
+def apply_h(coefficients):
+    # Index bit 0 denotes excitation A; bit 1 denotes excitation B.
+    result = [0.0] * 4
+    for state, value in enumerate(coefficients):
+        for bit, coupling, gap in ((1, v_a, gap_a), (2, v_b, gap_b)):
+            if state & bit:
+                result[state] += gap * value
+            result[state ^ bit] += coupling * value
+    return result
+
+
+def apply_exp_minus_t(vector, a, b):
+    z0, z_a, z_b, z_ab = vector
+    return [z0, z_a - a * z0, z_b - b * z0,
+            z_ab - a * z_b - b * z_a + a * b * z0]
+
+
+a = local_amplitude(v_a, gap_a)
+b = local_amplitude(v_b, gap_b)
+psi = [1.0, a, b, a * b]  # intermediate normalization, not unit norm
+hpsi = apply_h(psi)
+projected = apply_exp_minus_t(hpsi, a, b)
+energy = projected[0]
+assert max(abs(r) for r in projected[1:]) < 1e-12
+assert isclose(energy, v_a * a + v_b * b, abs_tol=1e-12)
+assert max(abs(h - energy * c) for h, c in zip(hpsi, psi)) < 1e-12
+linear = [1.0, a, b, 0.0]
+# The omitted joint excitation has a nonzero Schrödinger residual.
+assert abs(apply_h(linear)[3]) > 1e-3
+print(f"t_A = {a:.6f}, t_B = {b:.6f}")
+print(f"joint coefficient = {a*b:.6f}")
+print(f"additive energy = {energy:.6f} hartree")
+```
+
+预期输出：
+
+```text
+t_A = 0.192582, t_B = 0.192582
+joint coefficient = 0.037088
+additive energy = -0.096291 hartree
+```
+
+两个$t$相等是自造参数具有相同$v/\Delta$的结果，不是普遍规律。$\psi_0=1$是中间归一化，故无需先把向量模长改成1才能计算投影CC能量。本模型可分离且局部空间只有两配置，所以指数构造恰能表示其精确解，连联合激发残差也为零；**这不是一般CCD的精确性结论，也不是非变分性的反例**。标准CC能量不具普遍上界与某个小模型恰好精确完全相容。
+
+## 5. 从残差到迭代：分母的符号必须由方程决定
+
+实际CCD/CCSD的每个残差是振幅和积分的多项式，求解的是大量耦合非线性方程。若规范HF轨道的能量为$\epsilon_p$，双激发残差的线性主项可写为
+
+$$
+R_{ij}^{ab}\approx g_{ij}^{ab}
++(\epsilon_a+\epsilon_b-\epsilon_i-\epsilon_j)t_{ij}^{ab}
++\text{其他项}.
+$$
+
+令正激发能差$D_{ij}^{ab}=\epsilon_a+\epsilon_b-\epsilon_i-\epsilon_j$，Jacobi型步是$t_{\rm new}=t-R/D$。若用相反号分母$\Delta=-D$，则同一个步写成$t+R/\Delta$。不要从某段实现里只复制一个“加号”而不复制残差定义。
+
+分母很小时，微小残差也可能产生很大振幅，揭示近简并或不良预条件。level shift、阻尼和DIIS可稳定求根，但不会补回缺失的高阶连通激发。应同时监测残差范数、振幅变化、能量变化与异常大振幅，并设置不收敛状态。小能量变化不足以证明残差为零；多个非线性根还要求追踪与参考态连续连接的分支。
+
+## 6. 张量实现中，省掉一个系数就可能算出另一个理论
+
+采用前章的实正交自旋轨道化学家积分，定义
+
+$$
+\langle pq\Vert rs\rangle=(pr|qs)-(ps|qr).
+$$
+
+则CCD相关能的无约束求和式为
+
+$$
+E_{\rm corr}^{\rm CCD}=\frac14\sum_{ijab}
+\langle ij\Vert ab\rangle t_{ij}^{ab}.
+$$
+
+每个有序指标对在无约束数组里出现四次，反对称符号在两个张量间成对抵消，所以需要$1/4$。CCSD还存在与单激发及其乘积相关的项，不能把CCD能量式当成所有CC方法的接口。
+
+真实程序中的$vvoo,oovv,oooo,vvvv$等名字只描述占据/虚轨道块，不完整描述数组的指标约定。应同时写出轴顺序、积分是否反对称、使用空间还是自旋轨道，以及求和是否受限。典型CCSD工作量在常规稠密表示下约为$O(n_o^2n_v^4)$等六阶项，双振幅存储为$O(n_o^2n_v^2)$；中间量会把峰值内存推得更高。
+
+优化应先确定共同子表达式和收缩顺序，再考虑分块或磁盘预取。预取要求缓冲区在消费完成前不被覆盖，且I/O错误能向主计算传播。符号生成可减少手写收缩的负担，却必须保留费米符号、Kronecker约束、哑指标重命名和排列反对称规则。仅凭生成程序能运行，不足以证明其对应正确方程；应在独立小空间里对比显式算符作用。
+
+## 练习与解题指引
+
+1. **展开系数。** 为什么$\frac12(t_AX_A+t_BX_B)^2$中的联合项是$t_At_BX_AX_B$而不是一半？  
+   答案：有$X_AX_B$与$X_BX_A$两项，二者可交换且相同，抵消$1/2$；两个自乘项为零。
+2. **对照受限求和。** 仅有一对不同占据$i,j$和一对不同虚轨道$a,b$，若独立分量积分为0.12、振幅为$-0.08$，单位分别为$E_h$和1，相关能贡献是多少？  
+   答案：$-0.0096E_h$。无约束四项之和再乘$1/4$应得到同值。这里是检查计数，不宣称该两数来自真实体系。
+3. **残差符号。** 对$R(t)=v+\Delta t-vt^2$，Newton步和忽略非线性Jacobian的步分别是什么？  
+   答案：$t-R/(\Delta-2vt)$与$t-R/\Delta$。后者只是预条件近似；$\Delta-2vt$接近零时，Newton步也可能不稳定，需分支与收敛诊断。
+
+## 来源与新增内容
+
+主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），正式第15章 **Post Hartree-Fock II: coupled cluster**，全章印刷641–673页／PDF物理647–679页。开章页提取的DOI：[10.1016/B978-0-44-323837-6.00025-9](https://doi.org/10.1016/B978-0-44-323837-6.00025-9)。
+
+定向阅读：印刷641–645、657页／PDF物理647–651、663页；目录定位为PDF物理15–17页。两片段四配置模型、稳定求根表达式的解释、代码与练习为本笔记新作，未复制原章CCD实现。源公式尚未经过PDF视觉核对。完整CCD/CCSD收缩、异步预取实现、符号推导引擎、微扰三重激发与激发态CC留作进一步阅读，本章不声称覆盖其实现细节。

@@ -1,0 +1,226 @@
+# 先设计失败，再考虑云：成本与任务工作流 {#ch07}
+
+本章为非官方原创学习笔记，不是原书译文。
+
+## 学习目标
+
+读完本章，应能把一批计算拆成有输入身份、完成条件和失败策略的任务；估计计算、存储与传输成本；区分重试、幂等和真正的持久化；按任务关系选择 Celery、Dask 或 Ray。全部例子仅操作内存，不连接云、不提供凭据、不启动集群，也不展示真实部署命令。
+
+## 云不是“换一台更大的电脑”
+
+本地程序常隐含几个方便的假设：数据路径一直可用、调用函数后就能知道是否执行成功、工作进程退出后其文件仍在那里。分布式运行时，这些假设都需要显式化。工作进程可以被回收，消息可能重复投递，客户端超时后服务端却可能已经提交结果。**不知道是否成功**是一种独立状态，不能直接等同于“没有执行”。
+
+云与传统 HPC 的差异也不是绝对二分。云可以提供共享文件系统、专用高速网络，HPC 也可以使用容器和工作流服务。真正要比较的是某个环境的网络延迟、数据位置、排队时间、可用内存、资源配额、故障语义和计费规则。大量相互独立的小批任务容易横向分发；频繁全局同步的大型线性代数，可能更依赖高速互连。不能用“任务很多”作为迁移上云的充分理由。
+
+对一个小团队来说，运维时间往往比理论峰值吞吐更重要。若数据本来就在本地、任务一小时内能完成，引入镜像仓库、消息代理、身份管理和账单监控未必有收益。先在本地测量单任务时间、峰值内存、输入输出大小与失败率，再讨论云端调度；不要先开机器再猜预算。
+
+## 一个能被核算的成本模型 {#ch07-cost}
+
+用一个简化式分解账单：
+
+$$
+C\approx\sum_i r_i t_i+sDh+eG+C_{\mathrm{requests}}+C_{\mathrm{idle}}.
+$$
+
+这里 $r_i$ 是第 $i$ 个计算资源的费率（记账单位/小时），$t_i$ 是不含另列空闲时段的计费运行小时数；$D$ 是存储量（GB），$h$ 是保存小时数，$s$ 是每GB每小时费率；$G$ 是需要计费的数据传输量（GB），$e$ 是每GB传输费率。请求次数费用和空闲资源费用单列，不能把同一空闲时段同时计入 $t_i$ 和 $C_{\mathrm{idle}}$。真实服务可能按月、最低时长或不同传输方向收费，必须先统一单位；本式没有提供任何供应商报价。
+
+假设100个独立任务，每个实际计算6分钟，费率人为取为每工作进程每小时0.4个记账单位。不含调度开销的总计算费是 $100\times0.1\times0.4=4$。10个工作进程理想情况下约1小时完成，100个约6分钟完成，但总计算费仍为4，前提是扩展完全线性、按使用时长收费且没有最小计费粒度。若两种方案都再空闲12分钟，空闲费分别是0.8和8。缩短墙钟时间不等于自动省钱。
+
+若每个任务输出0.02 GB，总输出为2 GB，假想传输费率为每GB0.1，外传费用为0.2。这个例子只是量纲明确的算术，不是现行云价格。真实大数组可能先受传输时间限制：理想下传输 $D$ 字节耗时至少 $D/B$ 秒，还未包括连接延迟、序列化、重传和竞争。因此应尽量让计算靠近数据，用对象引用或任务身份传消息，而不是反复携带整个数组。
+
+重试也要进入预算。若每次尝试独立地以概率 $p$ 发生可重试失败，最多尝试 $K$ 次，则期望尝试次数是
+
+$$
+\mathbb E[N]=1+p+p^2+\cdots+p^{K-1},
+$$
+
+因为只有前 $j$ 次都失败才会发生第 $j+1$ 次尝试。$p=0.2,K=3$ 时是1.24；无限尝试时为 $1/(1-p)$，但现实的故障常相关，不能把这个式子当作容量保证。服务整体故障时，更多并发重试只会加重负载，应有退避、随机抖动、并发上限和停止条件。
+
+## 工作流先有契约，再有调度器
+
+把工作流想成有向无环图，例如：验证输入 → 分发各批计算 → 验证各批结果 → 汇总。每个任务至少应说明：输入协议、算法/环境版本、所需 CPU/内存、超时、允许的重试原因、结果模式与提交规则。依赖边传递的是已完成结果的身份，不应仅仅是“某工作进程好像退出了”。
+
+最小状态可写成：
+
+```text
+pending -> running -> succeeded
+                   -> retry_wait -> running
+                   -> failed
+```
+
+`succeeded` 要有可校验的完成记录。任务失败不等于科学数值一定无意义，但不能把未收敛、形状错误或单位不符的输出混进正常汇总。任务应区分暂时基础设施故障与永久输入错误；重复提交无效输入一般不会使它变有效。自洽场不收敛也不应无条件重试同样参数到无限次，需要领域层面的策略和单独标记。
+
+任务身份必须绑定**计算内容**。若只用“第17号任务”作键，参数改变后可能错误命中旧结果。可以由规范化输入、单位、方法版本和相关环境身份构造键；原始浮点输入是否先做领域允许的归一化，也要明确。哈希是一种紧凑身份，不是授权凭证，更不能证明科学结果正确。
+
+### 幂等不是“只运行一次”
+
+一次操作执行多次，外部可见效果仍与执行一次相同，才称为幂等。赋值“此任务结果为R”在条件正确时可以幂等；操作“把累计样本数加一”通常不幂等。即使工作函数纯净，结果登记和后续通知仍可能重复。最典型的故障窗口是：结果已提交 → 成功确认丢失 → 调度器重投任务。只在计算前检查缓存不够，因为两个工作进程可能同时看到“没有结果”。
+
+实际多工作进程系统通常需要唯一任务键、事务或条件写入来竞争提交权，并使任务状态与结果一致。若还要给别的服务发送完成事件，可以考虑把事件记录与结果放入同一事务、再由可靠转发器发送，接收方继续按事件键去重。这里不能由“消息队列会重试”推出全链路恰好一次。去重记录保留时间也须覆盖可能的重投时间窗。
+
+## 完整原创例子：提交成功后仍报超时 {#ch07-retry}
+
+两个任务对无量纲读数计算相对于目标值的均方偏差，公式为 $S=\sum_i(v_i-a)^2/n$。这只是统计玩具，不是分子计算。任务A第一次在提交前失败；任务B第一次在提交后丢失确认。第二次尝试时，B应该读到已存在结果，而不是重复提交。
+
+代码使用标准库，模拟时间只记录退避秒数，不睡眠、不联网、不写磁盘。字典代表同一进程中的结果表，**不是**持久存储或并发事务；只有串行执行假设下，检查与写入之间才没有竞争。本次写作未执行示例。
+
+```python
+import hashlib
+import json
+import math
+
+
+class TemporaryFailure(Exception):
+    pass
+
+
+def task_key(task):
+    if type(task) is not dict or set(task) != {"model", "values", "target"}:
+        raise ValueError("task fields")
+    if task["model"] != "toy-score/v1":
+        raise ValueError("model version")
+    values = task["values"]
+    if type(values) is not list or not 1 <= len(values) <= 20:
+        raise ValueError("sample count")
+    for v in values + [task["target"]]:
+        if (type(v) not in (int, float) or abs(v) > 1000
+                or not math.isfinite(v)):
+            raise ValueError("bounded dimensionless numbers required")
+    # 此演示以该Python JSON编码的字节为身份，不承诺跨语言规范化。
+    raw = json.dumps(task, sort_keys=True, separators=(",", ":"),
+                     allow_nan=False).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
+results = {}
+commits = []
+evaluations = []
+
+
+def run_task(task, failure_plan, max_attempts=3):
+    if type(max_attempts) is not int or not 1 <= max_attempts <= 5:
+        raise ValueError("attempt budget")
+    if any(phase not in {"before", "after", "ok"}
+           for phase in failure_plan):
+        raise ValueError("failure plan")
+    key = task_key(task)  # 永久输入错误在重试循环之外拒绝
+    events, delays = [], []
+    for attempt in range(1, max_attempts + 1):
+        events.append((attempt, "running"))
+        try:
+            if key in results:
+                events.append((attempt, "succeeded:cached"))
+                return results[key], events, delays
+            phase = (failure_plan[attempt - 1]
+                     if attempt <= len(failure_plan) else "ok")
+            if phase == "before":
+                raise TemporaryFailure("temporary failure before commit")
+            values, target = task["values"], task["target"]
+            score = math.fsum((v - target) ** 2 for v in values) / len(values)
+            evaluations.append(key)
+            results[key] = score  # 仅模拟串行、不可分割的结果登记
+            commits.append(key)
+            if phase == "after":
+                raise TemporaryFailure("commit succeeded; acknowledgement lost")
+            events.append((attempt, "succeeded"))
+            return score, events, delays
+        except TemporaryFailure:
+            if attempt == max_attempts:
+                # 预算耗尽不代表没有提交；本模型可可靠读取结果表。
+                if key in results:
+                    events.append((attempt, "succeeded:reconciled"))
+                    return results[key], events, delays
+                events.append((attempt, "failed"))
+                raise
+            events.append((attempt, "retry_wait"))
+            delays.append(min(8, 2 ** (attempt - 1)))
+
+
+a = {"model": "toy-score/v1", "values": [1.0, 3.0], "target": 2.0}
+b = {"model": "toy-score/v1", "values": [2.0, 4.0], "target": 2.0}
+score_a, events_a, delays_a = run_task(a, ["before", "ok"])
+score_b, events_b, delays_b = run_task(b, ["after", "ok"])
+assert (score_a, score_b) == (1.0, 2.0)
+assert len(commits) == len(set(commits)) == 2
+assert len(evaluations) == 2
+assert events_a == [(1, "running"), (1, "retry_wait"),
+                    (2, "running"), (2, "succeeded")]
+assert events_b == [(1, "running"), (1, "retry_wait"),
+                    (2, "running"), (2, "succeeded:cached")]
+assert delays_a == delays_b == [1]
+changed = dict(a, target=1.0)
+assert task_key(changed) != task_key(a)
+never = dict(a, target=3.0)
+try:
+    run_task(never, ["before", "before"], max_attempts=2)
+except TemporaryFailure:
+    pass
+else:
+    raise AssertionError("retry budget not enforced")
+assert task_key(never) not in results
+assert len(commits) == len(evaluations) == 2
+print("scores:", score_a, score_b)
+print("commits:", len(commits), "evaluations:", len(evaluations))
+print("retry delays:", delays_a, delays_b)
+
+# 回归：最后一次尝试已经提交，只是确认丢失。
+last = dict(a, target=7.0)
+score_last, events_last, delays_last = run_task(last, ["after"], max_attempts=1)
+assert score_last == 26.0
+assert events_last == [(1, "running"), (1, "succeeded:reconciled")]
+assert delays_last == []
+assert commits.count(task_key(last)) == evaluations.count(task_key(last)) == 1
+```
+
+预期输出：
+
+```text
+scores: 1.0 2.0
+commits: 2 evaluations: 2
+retry delays: [1] [1]
+```
+
+A在真正计算前失败，所以只计算一次；B虽尝试两次，第二次从结果表恢复，仍只计算一次。它展示的是“允许重复尝试，但避免重复登记”的状态语义，不保证真实集群中只计算一次。若进程崩溃，内存字典会消失；若两个进程同时运行，字典也不是共同的原子去重表。真实实现应替换为满足一致性要求的持久组件，而不是直接将这段代码放到云端。
+
+补充断言覆盖最后一次尝试提交成功但确认丢失的情况：预算耗尽时先核对结果表，存在结果就恢复为 `succeeded:reconciled`。这依赖内存模型可可靠读取登记结果的假设；远端结果存储若也不可用，应保留 `unknown`／待核对状态，不能据一次读取失败断言任务没有提交。
+
+本例键区分整数和浮点数的 JSON 表达，`1` 与 `1.0` 可能得到不同身份；它追求本演示编码内的可追溯性，而非通用语义去重。输入也须保持不变：真实提交入口应捕获不可变快照，避免键生成后参数又被修改。失败计划只用于测试故障窗口，不应成为真实业务输入。
+
+## Celery、Dask、Ray：选择任务关系，而非名字 {#ch07-executors}
+
+| 工具 | 倾向解决的问题 | 本章工作流中可承担的角色 | 仍由应用负责的部分 |
+| --- | --- | --- | --- |
+| Celery | 通过消息代理分发后台任务 | 批任务排队、路由、重试 | 幂等提交、结果语义、代理/结果后端配置与维护 |
+| Dask | 数组/表格分块及一般任务依赖图 | 分块变换、依赖调度、聚合 | 合理任务粒度、内存预算、持久结果与集群运维 |
+| Ray | 分布式任务、actor与对象引用 | 有状态工作者、动态任务、对象共享 | actor状态恢复、对象生命周期、资源与预算上限 |
+
+Celery 的核心抽象适合“来了一个请求，就排入一项已注册的工作”。任务确认、重新投递和重试的实际行为取决于配置、代理和失败类型，不可笼统宣称默认恰好一次。把大数组直接装进消息会给代理、序列化与重复投递带来压力，常应传经验证的对象身份。
+
+Dask 的依赖图适合描述“这些分块先算完，才能归约”。若每个节点只做几个浮点运算，调度开销可能超过计算本身；把合理数量的样本合并为一项任务，可降低调度与序列化比例。调度器还可能重算可重建的任务，所以含外部副作用的函数必须另行设计；分布式 future 并不是永久档案。
+
+Ray 的 actor 让某个工作者保有状态，例如缓存昂贵模型初始化结果。好处是避免每次重建，代价是状态、并发访问和恢复更加复杂；actor重启不自动恢复任意内存状态。对象存储也不是持久数据库，跨节点传送、内存不足与溢写仍然有成本。自动扩缩容提供资源管理机制，不是费用约束的替代品。
+
+这些工具的功能有重叠，生态与部署接口会变化。Dask可借助部署工具管理弹性资源，Celery也可由外部平台扩缩工作者；不应把某个版本的集群部署方式当作永久能力边界。无论选择哪种，可信集群内部使用的 Python 序列化/函数分发都不该被当作向任意用户开放的安全执行入口。服务认证、网络访问控制、依赖供应链和最小权限需要单独审核。
+
+FaaS也不是“所有科学计算都改成函数”。它适合短小请求处理、校验或触发后端长任务；超长计算可能受时限、启动延迟、依赖大小和临时存储约束。把控制平面与计算平面分开，通常比在一次HTTP请求中等待所有工作更容易处理超时与恢复。
+
+## 练习与解题指引
+
+1. 一个任务先执行“总分加2”，随后超时，重试后又加2。怎样避免重复累计？
+   **答案：**为任务结果按唯一键登记，汇总时对唯一结果集合归约；或用事务把去重登记与计数更新绑定。单独检查“是否已处理”再加2有并发窗口。把重试次数改成1只是减少恢复能力，不是建立幂等。
+
+2. 在示例中用 `max_attempts=2` 和失败计划 `["before", "before"]` 会发生什么？若计划改成 `["before", "ok"]` 呢？
+   **指引：**对结果表中尚不存在的新任务，前者在第二次抛出 `TemporaryFailure`，没有提交；后者第二次成功，只登记一次，记录一次1秒的模拟退避。测试时需隔离/清空原有任务状态，否则已缓存结果会改变故障路径。
+
+3. 100个6分钟任务若各额外产生1分钟初始化，100工作者是否仍理想6分钟完成？计算费是多少？
+   **答案：**假定并发无限制、同费率、无其他开销，墙钟至少7分钟，总计费工作者时间为 $700/60$ 小时，费用约 $4.667$ 个记账单位。若每工作者可连续处理多任务并复用初始化，10工作者各处理10项只需每人初始化一次，约61分钟、费用约4.067。更快与更便宜的方案可能不同。
+
+## 进一步阅读与限制
+
+本章没有展开供应商API、容器构建、身份角色配置、配额申请、真实事务/租约实现、可抢占节点或监控部署。真实系统还需要有界超时、取消/清理策略、日志脱敏、预算报警及资源回收核对。没有提供真实云操作，也没有测试任何框架集群；只有在获授权并完成安全与成本评估后，才应在专门环境验证部署方案。
+
+## 来源与新增内容
+
+主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（2025），第7章 **Working with cloud**，全章印刷页223–261／PDF物理页235–273；章节 DOI：[10.1016/B978-0-44-323837-6.00015-6](https://doi.org/10.1016/B978-0-44-323837-6.00015-6)，从开章页文本提取。
+
+本章针对性阅读：印刷页223–229、234、241、246–247、253、256–257（PDF物理页235–241、246、253、258–259、265、268–269）；目录定位为PDF物理页11–12。云资源、工作流与分布式执行器是主题参考；成本数字、重试状态模拟、数据、代码、推导与练习均为本笔记新作，未沿用原书云账户、势能面工作流代码或权限配置。成本式与有限重试期望由单位分析和概率独立推导，未声称已对原书PDF公式做视觉核对。

@@ -1,0 +1,1559 @@
+{
+  "ok": true,
+  "browser": "141.0.7390.37",
+  "pages": [
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 0,
+      "renderedMath": 0,
+      "mathErrors": [],
+      "code": 0,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/01-environment.html",
+      "previous": null,
+      "heading": "量子化学 Python：原创中文学习笔记",
+      "overflow": [],
+      "path": "books/quantum-python-notes/index.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 6,
+      "renderedMath": 6,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/02-data.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/",
+      "heading": "1  先确认运行的究竟是什么",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 501,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 648,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/01-environment.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 18,
+      "renderedMath": 18,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/03-visualization.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/01-environment.html",
+      "heading": "2  让形状、内存与标签共同说明数据",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 672,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "auto",
+          "width": 339,
+          "content": 413,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 705,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/02-data.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 38,
+      "renderedMath": 38,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/04-scientific-tools.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/02-data.html",
+      "heading": "3  图像首先是一组可解释的选择",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 673,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 375,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 371,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 607,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "auto",
+          "width": 339,
+          "content": 454,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/03-visualization.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 55,
+      "renderedMath": 55,
+      "mathErrors": [],
+      "code": 4,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/05-metaprogramming.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/03-visualization.html",
+      "heading": "4  算出答案以后，还要问它可靠吗",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 424,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 689,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 550,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 623,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 436,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 566,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/04-scientific-tools.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 42,
+      "renderedMath": 42,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/06-io.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/04-scientific-tools.html",
+      "heading": "5  把表达式当作数据：表示、变换与导数",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 558,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/05-metaprogramming.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 16,
+      "renderedMath": 16,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/07-cloud.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/05-metaprogramming.html",
+      "heading": "6  数据如何离开内存：格式、契约与可靠性",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 361,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 558,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 476,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/06-io.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 24,
+      "renderedMath": 24,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/08-ffi.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/06-io.html",
+      "heading": "7  先设计失败，再考虑云：成本与任务工作流",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 367,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "auto",
+          "width": 339,
+          "content": 356,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 664,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/07-cloud.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 15,
+      "renderedMath": 15,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/09-performance.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/07-cloud.html",
+      "heading": "8  跨语言接口：先约定内存，再调用函数",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 466,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 607,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/08-ffi.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 33,
+      "renderedMath": 33,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/10-parallel.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/08-ffi.html",
+      "heading": "9  性能优化：用证据选择要减少的工作",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 615,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 389,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 542,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/09-performance.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 23,
+      "renderedMath": 23,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/11-gpu.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/09-performance.html",
+      "heading": "10  并行计算：划分工作，也划分责任",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 493,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 353,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 542,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "auto",
+          "width": 339,
+          "content": 413,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/10-parallel.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 15,
+      "renderedMath": 15,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/12-integrals.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/10-parallel.html",
+      "heading": "11  GPU 编程：把数据留在能高效处理它的地方",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 436,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 460,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 624,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "auto",
+          "width": 339,
+          "content": 528,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "auto",
+          "width": 339,
+          "content": 568,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 358,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/11-gpu.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 77,
+      "renderedMath": 77,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/13-mean-field.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/11-gpu.html",
+      "heading": "12  把高斯积分看成可检查的计算图",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 563,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 605,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 444,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 349,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 409,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 406,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 536,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 574,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 451,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 457,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/12-integrals.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 77,
+      "renderedMath": 77,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/14-fci.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/12-integrals.html",
+      "heading": "13  平均场的约束、闭环与收敛证据",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 392,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 468,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 647,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 542,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 383,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 420,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/13-mean-field.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 76,
+      "renderedMath": 76,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/15-coupled-cluster.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/13-mean-field.html",
+      "heading": "14  从费米符号到矩阵自由FCI",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 429,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 376,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 351,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 650,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 607,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/14-fci.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 69,
+      "renderedMath": 69,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/16-properties.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/14-fci.html",
+      "heading": "15  指数波函数为何不同于线性展开",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 378,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 433,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 565,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 649,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 574,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 358,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/15-coupled-cluster.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 390,
+      "pageWidth": 390,
+      "math": 105,
+      "renderedMath": 105,
+      "mathErrors": [],
+      "code": 1,
+      "next": null,
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/15-coupled-cluster.html",
+      "heading": "16  性质是期望值，还是收敛解的导数？",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 368,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 507,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 356,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 452,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 339,
+          "content": 619,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 337,
+          "content": 509,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "auto",
+          "width": 339,
+          "content": 421,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/16-properties.html",
+      "width": 390,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 0,
+      "renderedMath": 0,
+      "mathErrors": [],
+      "code": 0,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/01-environment.html",
+      "previous": null,
+      "heading": "量子化学 Python：原创中文学习笔记",
+      "overflow": [],
+      "path": "books/quantum-python-notes/index.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 6,
+      "renderedMath": 6,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/02-data.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/",
+      "heading": "1  先确认运行的究竟是什么",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 648,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/01-environment.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 18,
+      "renderedMath": 18,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/03-visualization.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/01-environment.html",
+      "heading": "2  让形状、内存与标签共同说明数据",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 672,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 705,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/02-data.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 38,
+      "renderedMath": 38,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/04-scientific-tools.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/02-data.html",
+      "heading": "3  图像首先是一组可解释的选择",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 673,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 607,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/03-visualization.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 55,
+      "renderedMath": 55,
+      "mathErrors": [],
+      "code": 4,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/05-metaprogramming.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/03-visualization.html",
+      "heading": "4  算出答案以后，还要问它可靠吗",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 689,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 550,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 623,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 566,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/04-scientific-tools.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 42,
+      "renderedMath": 42,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/06-io.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/04-scientific-tools.html",
+      "heading": "5  把表达式当作数据：表示、变换与导数",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 558,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/05-metaprogramming.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 16,
+      "renderedMath": 16,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/07-cloud.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/05-metaprogramming.html",
+      "heading": "6  数据如何离开内存：格式、契约与可靠性",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 558,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/06-io.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 24,
+      "renderedMath": 24,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/08-ffi.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/06-io.html",
+      "heading": "7  先设计失败，再考虑云：成本与任务工作流",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 664,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/07-cloud.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 15,
+      "renderedMath": 15,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/09-performance.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/07-cloud.html",
+      "heading": "8  跨语言接口：先约定内存，再调用函数",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 607,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/08-ffi.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 33,
+      "renderedMath": 33,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/10-parallel.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/08-ffi.html",
+      "heading": "9  性能优化：用证据选择要减少的工作",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 615,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 542,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/09-performance.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 23,
+      "renderedMath": 23,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/11-gpu.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/09-performance.html",
+      "heading": "10  并行计算：划分工作，也划分责任",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 542,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/10-parallel.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 15,
+      "renderedMath": 15,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/12-integrals.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/10-parallel.html",
+      "heading": "11  GPU 编程：把数据留在能高效处理它的地方",
+      "overflow": [
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 624,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "auto",
+          "width": 508,
+          "content": 528,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "auto",
+          "width": 508,
+          "content": 568,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/11-gpu.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 77,
+      "renderedMath": 77,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/13-mean-field.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/11-gpu.html",
+      "heading": "12  把高斯积分看成可检查的计算图",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 508,
+          "content": 563,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 508,
+          "content": 605,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 508,
+          "content": 536,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 574,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/12-integrals.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 77,
+      "renderedMath": 77,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/14-fci.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/12-integrals.html",
+      "heading": "13  平均场的约束、闭环与收敛证据",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 508,
+          "content": 647,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 542,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/13-mean-field.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 76,
+      "renderedMath": 76,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/15-coupled-cluster.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/13-mean-field.html",
+      "heading": "14  从费米符号到矩阵自由FCI",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 508,
+          "content": 650,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 607,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/14-fci.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 69,
+      "renderedMath": 69,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/16-properties.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/14-fci.html",
+      "heading": "15  指数波函数为何不同于线性展开",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 508,
+          "content": 565,
+          "scrollable": true
+        },
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 508,
+          "content": 649,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 574,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/15-coupled-cluster.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 768,
+      "pageWidth": 768,
+      "math": 105,
+      "renderedMath": 105,
+      "mathErrors": [],
+      "code": 1,
+      "next": null,
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/15-coupled-cluster.html",
+      "heading": "16  性质是期望值，还是收敛解的导数？",
+      "overflow": [
+        {
+          "tag": "MJX-CONTAINER",
+          "style": "auto",
+          "width": 508,
+          "content": 619,
+          "scrollable": true
+        },
+        {
+          "tag": "PRE",
+          "style": "visible",
+          "width": 506,
+          "content": 509,
+          "scrollable": true
+        }
+      ],
+      "path": "books/quantum-python-notes/chapters/16-properties.html",
+      "width": 768,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 0,
+      "renderedMath": 0,
+      "mathErrors": [],
+      "code": 0,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/01-environment.html",
+      "previous": null,
+      "heading": "量子化学 Python：原创中文学习笔记",
+      "overflow": [],
+      "path": "books/quantum-python-notes/index.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 6,
+      "renderedMath": 6,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/02-data.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/",
+      "heading": "1  先确认运行的究竟是什么",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/01-environment.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 18,
+      "renderedMath": 18,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/03-visualization.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/01-environment.html",
+      "heading": "2  让形状、内存与标签共同说明数据",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/02-data.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 38,
+      "renderedMath": 38,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/04-scientific-tools.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/02-data.html",
+      "heading": "3  图像首先是一组可解释的选择",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/03-visualization.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 55,
+      "renderedMath": 55,
+      "mathErrors": [],
+      "code": 4,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/05-metaprogramming.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/03-visualization.html",
+      "heading": "4  算出答案以后，还要问它可靠吗",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/04-scientific-tools.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 42,
+      "renderedMath": 42,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/06-io.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/04-scientific-tools.html",
+      "heading": "5  把表达式当作数据：表示、变换与导数",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/05-metaprogramming.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 16,
+      "renderedMath": 16,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/07-cloud.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/05-metaprogramming.html",
+      "heading": "6  数据如何离开内存：格式、契约与可靠性",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/06-io.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 24,
+      "renderedMath": 24,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/08-ffi.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/06-io.html",
+      "heading": "7  先设计失败，再考虑云：成本与任务工作流",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/07-cloud.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 15,
+      "renderedMath": 15,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/09-performance.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/07-cloud.html",
+      "heading": "8  跨语言接口：先约定内存，再调用函数",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/08-ffi.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 33,
+      "renderedMath": 33,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/10-parallel.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/08-ffi.html",
+      "heading": "9  性能优化：用证据选择要减少的工作",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/09-performance.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 23,
+      "renderedMath": 23,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/11-gpu.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/09-performance.html",
+      "heading": "10  并行计算：划分工作，也划分责任",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/10-parallel.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 15,
+      "renderedMath": 15,
+      "mathErrors": [],
+      "code": 2,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/12-integrals.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/10-parallel.html",
+      "heading": "11  GPU 编程：把数据留在能高效处理它的地方",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/11-gpu.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 77,
+      "renderedMath": 77,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/13-mean-field.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/11-gpu.html",
+      "heading": "12  把高斯积分看成可检查的计算图",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/12-integrals.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 77,
+      "renderedMath": 77,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/14-fci.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/12-integrals.html",
+      "heading": "13  平均场的约束、闭环与收敛证据",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/13-mean-field.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 76,
+      "renderedMath": 76,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/15-coupled-cluster.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/13-mean-field.html",
+      "heading": "14  从费米符号到矩阵自由FCI",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/14-fci.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 69,
+      "renderedMath": 69,
+      "mathErrors": [],
+      "code": 1,
+      "next": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/16-properties.html",
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/14-fci.html",
+      "heading": "15  指数波函数为何不同于线性展开",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/15-coupled-cluster.html",
+      "width": 1440,
+      "status": 200
+    },
+    {
+      "viewport": 1440,
+      "pageWidth": 1440,
+      "math": 105,
+      "renderedMath": 105,
+      "mathErrors": [],
+      "code": 1,
+      "next": null,
+      "previous": "http://127.0.0.1:53643/books/quantum-python-notes/chapters/15-coupled-cluster.html",
+      "heading": "16  性质是期望值，还是收敛解的导数？",
+      "overflow": [],
+      "path": "books/quantum-python-notes/chapters/16-properties.html",
+      "width": 1440,
+      "status": 200
+    }
+  ],
+  "interactions": [
+    {
+      "width": 390,
+      "search_results": 5,
+      "theme_before": "nav-sidebar floating quarto-dark",
+      "theme_after": "nav-sidebar floating quarto-light",
+      "copy": true,
+      "next_previous": true
+    },
+    {
+      "width": 768,
+      "search_results": 5,
+      "theme_before": "nav-sidebar floating quarto-dark",
+      "theme_after": "nav-sidebar floating quarto-light",
+      "copy": true,
+      "next_previous": true
+    },
+    {
+      "width": 1440,
+      "search_results": 5,
+      "theme_before": "nav-sidebar floating quarto-dark",
+      "theme_after": "nav-sidebar floating quarto-light",
+      "copy": true,
+      "next_previous": true
+    }
+  ],
+  "failed_requests": [],
+  "console_errors": []
+}

@@ -1,0 +1,54 @@
+test_lowercase_readmes_link_each_other_and_have_matching_commands (test_documents.DocumentTests.test_lowercase_readmes_link_each_other_and_have_matching_commands) ... ok
+test_site_and_project_name (test_documents.DocumentTests.test_site_and_project_name) ... ok
+test_workflows_pin_actions_and_deployment_is_manual_only (test_documents.DocumentTests.test_workflows_pin_actions_and_deployment_is_manual_only) ... ok
+test_broken_link_and_pdf_output_block_delivery (test_publishing.BuildTests.test_broken_link_and_pdf_output_block_delivery) ... ok
+test_delivery_rename_failure_rolls_back_previous_good_site (test_publishing.BuildTests.test_delivery_rename_failure_rolls_back_previous_good_site) ... ok
+test_empty_registry_build_ignores_unregistered_material_and_drafts (test_publishing.BuildTests.test_empty_registry_build_ignores_unregistered_material_and_drafts) ... ok
+test_gate_runs_before_renderer (test_publishing.BuildTests.test_gate_runs_before_renderer) ... ok
+test_preview_two_books_never_delivers_dist (test_publishing.BuildTests.test_preview_two_books_never_delivers_dist) ... ok
+test_real_quarto_empty_portal_and_two_book_preview (test_publishing.BuildTests.test_real_quarto_empty_portal_and_two_book_preview) ... ok
+test_render_failure_preserves_previous_dist_and_cleans_staging (test_publishing.BuildTests.test_render_failure_preserves_previous_dist_and_cleans_staging) ... ok
+test_successful_rebuild_replaces_previous_output (test_publishing.BuildTests.test_successful_rebuild_replaces_previous_output) ... ok
+test_title_html_is_escaped_in_generated_portal (test_publishing.BuildTests.test_title_html_is_escaped_in_generated_portal) ... ok
+test_two_approved_test_fixtures_build_in_isolated_projects (test_publishing.BuildTests.test_two_approved_test_fixtures_build_in_isolated_projects) ... ok
+test_duplicate_content_id_rejected_but_quarto_theme_links_supported (test_publishing.CheckSiteTests.test_duplicate_content_id_rejected_but_quarto_theme_links_supported) ... ok
+test_missing_anchors_escape_root_urls_and_srcset (test_publishing.CheckSiteTests.test_missing_anchors_escape_root_urls_and_srcset) ... ok
+test_missing_entry_and_unregistered_books_private_paths (test_publishing.CheckSiteTests.test_missing_entry_and_unregistered_books_private_paths) ... ok
+test_relative_links_anchors_and_css_resources (test_publishing.CheckSiteTests.test_relative_links_anchors_and_css_resources) ... ok
+test_approval_does_not_override_unreviewed_provenance (test_publishing.ValidateTests.test_approval_does_not_override_unreviewed_provenance) ... ok
+test_asset_symlink_and_source_symlink_are_rejected (test_publishing.ValidateTests.test_asset_symlink_and_source_symlink_are_rejected) ... skipped 'Windows symlink privilege unavailable'
+test_chapter_traversal_is_rejected (test_publishing.ValidateTests.test_chapter_traversal_is_rejected) ... ok
+test_cli_strict_failure_writes_machine_readable_report (test_publishing.ValidateTests.test_cli_strict_failure_writes_machine_readable_report) ... ok
+test_duplicate_explicit_qmd_anchor (test_publishing.ValidateTests.test_duplicate_explicit_qmd_anchor) ... ok
+test_duplicate_provenance_and_missing_anchor (test_publishing.ValidateTests.test_duplicate_provenance_and_missing_anchor) ... ok
+test_duplicate_registry_id (test_publishing.ValidateTests.test_duplicate_registry_id) ... ok
+test_duplicate_yaml_keys_are_not_silently_overwritten (test_publishing.ValidateTests.test_duplicate_yaml_keys_are_not_silently_overwritten) ... ok
+test_empty_publish_registry_passes_strict (test_publishing.ValidateTests.test_empty_publish_registry_passes_strict) ... ok
+test_invalid_date_and_rights_uri (test_publishing.ValidateTests.test_invalid_date_and_rights_uri) ... ok
+test_malformed_yaml_and_null_registry_produce_diagnostics (test_publishing.ValidateTests.test_malformed_yaml_and_null_registry_produce_diagnostics) ... ok
+test_missing_authorization_evidence_blocks_approved_fixture (test_publishing.ValidateTests.test_missing_authorization_evidence_blocks_approved_fixture) ... ok
+test_missing_review_record_blocks_approved_fixture (test_publishing.ValidateTests.test_missing_review_record_blocks_approved_fixture) ... ok
+test_original_mapping_cannot_claim_pdf_coordinates (test_publishing.ValidateTests.test_original_mapping_cannot_claim_pdf_coordinates) ... ok
+test_pdf_mapping_hash_bbox_and_page_schema (test_publishing.ValidateTests.test_pdf_mapping_hash_bbox_and_page_schema) ... ok
+test_preview_samples_remain_drafts_with_no_fabricated_pdf_evidence (test_publishing.ValidateTests.test_preview_samples_remain_drafts_with_no_fabricated_pdf_evidence) ... ok
+test_public_rights_not_inferred_from_notes_or_approval (test_publishing.ValidateTests.test_public_rights_not_inferred_from_notes_or_approval) ... ok
+test_registry_id_path_mismatch (test_publishing.ValidateTests.test_registry_id_path_mismatch) ... ok
+test_registry_traversal (test_publishing.ValidateTests.test_registry_traversal) ... ok
+test_safe_path_rejects_platform_specific_escapes (test_publishing.ValidateTests.test_safe_path_rejects_platform_specific_escapes) ... ok
+test_schema_rejects_wrong_types_unknown_fields_and_invalid_slug (test_publishing.ValidateTests.test_schema_rejects_wrong_types_unknown_fields_and_invalid_slug) ... ok
+test_source_config_hooks_cannot_reach_renderer (test_publishing.ValidateTests.test_source_config_hooks_cannot_reach_renderer) ... ok
+test_source_links_cannot_import_unregistered_resources (test_publishing.ValidateTests.test_source_links_cannot_import_unregistered_resources) ... ok
+test_static_code_accepted_executable_options_and_shortcodes_rejected (test_publishing.ValidateTests.test_static_code_accepted_executable_options_and_shortcodes_rejected) ... ok
+test_strict_rejects_registered_drafts (test_publishing.ValidateTests.test_strict_rejects_registered_drafts) ... ok
+test_unresolved_p0_p1_block_but_p2_does_not (test_publishing.ValidateTests.test_unresolved_p0_p1_block_but_p2_does_not) ... ok
+test_fixed_math_scroll_style_and_disabled_execution (test_quantum_notes.QuantumNotesTests.test_fixed_math_scroll_style_and_disabled_execution) ... ok
+test_original_provenance_has_one_entry_per_document (test_quantum_notes.QuantumNotesTests.test_original_provenance_has_one_entry_per_document) ... ok
+test_sixteen_ordered_chapters_and_static_guide (test_quantum_notes.QuantumNotesTests.test_sixteen_ordered_chapters_and_static_guide) ... ok
+test_twenty_six_examples_parse_without_execution (test_quantum_notes.QuantumNotesTests.test_twenty_six_examples_parse_without_execution) ... ok
+test_portal_sources_exist (test_scaffold.ScaffoldTests.test_portal_sources_exist) ... ok
+test_workspace_is_not_a_python_package (test_scaffold.ScaffoldTests.test_workspace_is_not_a_python_package) ... ok
+
+----------------------------------------------------------------------
+Ran 49 tests in 14.291s
+
+OK (skipped=1)

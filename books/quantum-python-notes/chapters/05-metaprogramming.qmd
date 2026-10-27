@@ -1,0 +1,169 @@
+# 把表达式当作数据：表示、变换与导数 {#ch05}
+
+本章为非官方原创学习笔记，不是原书译文。
+
+## 学习目标
+
+读完本章，应能区分 Python 语法树、数学符号表达式和数值计算图；说明代码生成在什么地方跨过信任边界；手推一个前向自动微分规则，并判断它没有回答哪些数学问题。本章围绕一个无量纲多项式展开，不实现通用代数系统，也不把表达式解释器包装成生产级安全沙箱。
+
+## 同一公式可以有三种身份
+
+设 $x\in\mathbb R$，考察自造函数
+
+$$
+f(x)=3x^2+2x+1.
+$$
+
+这里 $x$ 与 $f$ 都无量纲，不对应分子能量。写成 Python 的 `3*x*x + 2*x + 1` 时，它首先是一段**语法**：乘法先于加法，变量名是 `x`。Python 的 AST（抽象语法树）保存这些结构，却不知道 `x` 是实数、矩阵还是一个重载了乘法的对象。`a*b` 与 `b*a` 的树不同；解释器不能仅凭乘法这个节点就交换次序。
+
+数学上的**符号表达式**则需要额外语义。若 $x$ 是实标量，可以合并同类项、求导，得到 $f'(x)=6x+2$。若它是矩阵，乘积求导和化简就必须尊重不交换性。更隐蔽的例子是 $\sqrt{x^2}=|x|$：只有补上 $x\geq0$，才能将右边改成 $x$。符号系统的假设不是注释，而是变换合法性的条件。
+
+**数值计算图**记录一次具体计算中的运算依赖。例如在 $x=2$ 处，先计算 $u=x*x=4$，再计算 $v=3u=12$，最后加上 $2x+1$ 得到 $17$。自动微分可以沿这些运算传播局部导数，而不必先构造简化后的符号公式。某些实现通过跟踪运行建立图，另一些采用程序变换；“自动微分一定是在运行时重载运算符”并不成立。
+
+| 表示 | 主要问题 | 不能单靠它保证的事情 |
+| --- | --- | --- |
+| Python AST | 程序写了什么语法结构？ | 数学恒等、无副作用、输入安全 |
+| 符号表达式 | 在给定假设下能怎样变换公式？ | 浮点稳定性、实际运行成本 |
+| 数值计算图 | 输出如何依赖本次计算的输入？ | 分支之外的行为、物理模型正确性 |
+
+把这三层混成一种“智能公式”，会把语法合法误认成数学正确，也会把导数算出来误认成模型验证完成。
+
+## 代码生成的收益与信任边界
+
+若同一运算结构反复用于许多参数，先生成专门代码，可能消除解释器逐节点分派的开销。一个合理流程是：受控模型描述 → 经检查的中间表示 → 生成源码 → 语法检查与测试 → 在明确授权的运行环境执行。每次变换都要保存输入、生成器版本和输出身份，否则报错位置只指向临时生成的代码，难以追溯。
+
+生成代码也有成本：编译耗时、缓存失效、调试困难，以及生成器自身的错误。只调用几次的小公式，直接写函数通常更清楚；大批重复结构才值得先测量生成是否划算。符号展开还有“表达式膨胀”风险，例如展开高次多项式可能比保留因式分解形式耗费更多运算且更不稳定。公共子表达式复用能减少重复计算，却可能改变浮点舍入路径，不能只检查源码长度。
+
+`eval`、`exec` 与对生成代码的执行都是权限边界。把用户字符串拼进源码，就可能把“输入一个公式”的权限升级成“运行任意程序”。传入空字典不等于建立安全沙箱；AST 解析成功也不意味着安全。属性访问、函数调用、推导式和对象运算都可能引入本来未授权的行为。对于只需要多项式的小工具，更可审计的方向是定义极小语言，拒绝其余语法，并自行解释允许的节点，而不是寻找更多黑名单词语。
+
+AST 改写同样需要语义约束。删除“返回值不依赖”的赋值，看似是优化，但其右侧函数可能写日志、修改共享对象或抛出异常。除非已经证明相关运算纯净，否则依赖图上的不连通不等于语句没有作用。本章不实现这种优化。
+
+## 自动微分：传播的是什么？ {#ch05-ad}
+
+给每个实数附带一个切向量，记为 $(a,\dot a)$，其中 $\dot a=da/dx$。沿加法、乘法传播：
+
+$$
+(a,\dot a)+(b,\dot b)=(a+b,\dot a+\dot b),
+$$
+
+$$
+(a,\dot a)(b,\dot b)=(ab,\dot a b+a\dot b).
+$$
+
+这就是一维双数/前向模式的规则，也可以从形式符号 $\varepsilon^2=0$ 展开乘积得到。常数的切向量为 $0$，自变量的种子是 $(x,1)$。对上述多项式，$x*x$ 的切向量是 $2x$，最终得到 $6x+2$；在 $x=2$ 处是 $14$。没有引入有限差分步长，因此没有步长截断误差，但数值运算仍有浮点舍入和溢出风险。
+
+对 $F:\mathbb R^n\to\mathbb R^m$，给定种子方向 $v$，一次前向传播求的是 $J_Fv$，不一定是整个雅可比矩阵。反向模式从输出端种入权重 $w$，计算 $J_F^T w$。少量输入、很多输出常适合前向；很多参数、单个标量目标常适合反向。反向需要保存或重算中间量，因而时间收益会伴随内存与检查点设计的代价。
+
+导数还是**所实现程序**的导数。若条件分支选择了某条路径，微分通常沿该路径进行；在不可微边界不能自动凭空产生唯一导数。若迭代求解在达到阈值时提前停止，对有限步迭代求导也不自动等于对精确收敛解求导。量子化学中的自洽场响应等问题还需要数学上的响应或隐式微分分析，不能只换一个数组库名字。
+
+## 完整原创例子：极小表达式语言中的值与导数 {#ch05-example}
+
+输入限定为变量 `x`、有限实常数及 `+`、`-`、`*`；负数可写成 `0-2`，不支持一元负号、幂、除法、函数和属性。先检查整棵树，再用双数解释，不调用 `eval`、`exec` 或 `compile`。长度和节点限制只是演示性的资源上限；面向敌意输入的服务仍须有进程资源隔离、解析器风险分析和独立审查。
+
+下面是完整静态示例，仅依赖 Python 标准库，不联网、不读写磁盘。本次写作只做语法与内容自查，未执行示例。
+
+```python
+import ast
+import math
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Dual:
+    value: float
+    tangent: float
+
+    def __add__(self, other):
+        return Dual(self.value + other.value,
+                    self.tangent + other.tangent)
+
+    def __sub__(self, other):
+        return Dual(self.value - other.value,
+                    self.tangent - other.tangent)
+
+    def __mul__(self, other):
+        return Dual(self.value * other.value,
+                    self.tangent * other.value
+                    + self.value * other.tangent)
+
+
+def value_and_slope(source, x):
+    if type(source) is not str or len(source) > 200:
+        raise ValueError("expression length")
+    if type(x) not in (int, float):
+        raise ValueError("real scalar required")
+    if abs(x) > 1_000_000 or not math.isfinite(x):
+        raise ValueError("finite bounded input required")
+    try:
+        tree = ast.parse(source, mode="eval")
+    except SyntaxError as exc:
+        raise ValueError("expression syntax") from exc
+    nodes = list(ast.walk(tree))
+    allowed = (ast.Expression, ast.BinOp, ast.Add, ast.Sub,
+               ast.Mult, ast.Name, ast.Load, ast.Constant)
+    if len(nodes) > 64:
+        raise ValueError("node budget")
+    for node in nodes:
+        if type(node) not in allowed:
+            raise ValueError("unsupported syntax")
+        if isinstance(node, ast.Name) and node.id != "x":
+            raise ValueError("unknown variable")
+        if isinstance(node, ast.Constant):
+            v = node.value
+            if (type(v) not in (int, float)
+                    or abs(v) > 1_000_000 or not math.isfinite(v)):
+                raise ValueError("constant bound")
+
+    def visit(node):
+        if isinstance(node, ast.Constant):
+            return Dual(float(node.value), 0.0)
+        if isinstance(node, ast.Name):
+            return Dual(float(x), 1.0)
+        left, right = visit(node.left), visit(node.right)
+        if isinstance(node.op, ast.Add):
+            return left + right
+        if isinstance(node.op, ast.Sub):
+            return left - right
+        return left * right  # 已检查，其余唯一可能是乘法
+
+    result = visit(tree.body)
+    if not all(map(math.isfinite, (result.value, result.tangent))):
+        raise ValueError("nonfinite result")
+    return result
+
+
+result = value_and_slope("3*x*x + 2*x + 1", 2.0)
+assert result == Dual(17.0, 14.0)
+assert value_and_slope("x*x - x*x", 3.0) == Dual(0.0, 0.0)
+for bad in ("x/2", "abs(x)", "x.real", "True", "y+1"):
+    try:
+        value_and_slope(bad, 2.0)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unexpectedly accepted: " + bad)
+print(result.value, result.tangent)
+```
+
+预期输出是 `17.0 14.0`，所有断言通过。树的检查决定**允许描述什么**，双数规则决定**如何计算导数**；这两项责任没有相互替代。`x*x - x*x` 的测试也有用：它让同一输入沿两条路径影响输出，检查导数贡献是否正确相消。但这些测试远不足以证明通用解释器安全，更没有实现符号化简或反向模式。
+
+## 练习与解题指引
+
+1. 在上述语法中输入 `x*x*x`，令 $x=2$，应得到什么？哪一步体现了链式法则？
+   **答案：**值为 $8$，导数为 $12$。先得到 $(x^2,2x)$，再乘 $(x,1)$，切向量是 $2x\cdot x+x^2\cdot1=3x^2$。不要把 AST 中出现三次 `x` 误当成三项无权重求和。
+
+2. 若想支持除法，局部规则是什么，还须新增什么约束？
+   **关键步骤：**对 $b\ne0$，商的切向量为 $(\dot a b-a\dot b)/b^2$。必须同时添加 `ast.Div`、解释分支、分母为零处理及近零分母的数值风险测试；仅扩大白名单而不补语义会让已有默认乘法分支给出错误答案。
+
+3. 有 $10^5$ 个参数、一个标量损失，为什么不分别用 $10^5$ 个前向种子？能否由此断定反向总更快？
+   **指引：**逐种子求完整梯度可能需要约 $10^5$ 次方向传播；反向可由一个输出种子汇集各参数贡献。但保存计算图可能超内存，重算、稀疏结构和批量切向量会改变成本，须结合实际计算图测量。
+
+## 进一步阅读与限制
+
+本章没有展开 SymPy 的具体接口、张量指标代数、生成代码缓存、JAX 的追踪约束或 PyTorch 的梯度生命周期；也不提供对任意 Python 程序的安全执行方案。学习这些工具时，应分别核查符号假设、变换支持范围、数据类型和依赖版本，而不是将框架名当作正确性保证。
+
+## 来源与新增内容
+
+主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（2025），第5章 **Meta-programming and non-numerical computation**，全章印刷页173–194／PDF物理页185–206；章节 DOI：[10.1016/B978-0-44-323837-6.00013-2](https://doi.org/10.1016/B978-0-44-323837-6.00013-2)，从开章页文本提取。
+
+本章针对性阅读：印刷页173–174、176–178、181–182、186–187、190（PDF物理页185–186、188–190、193–194、198–199、202）；目录定位为PDF物理页11–12。参考范围用于确认代码生成、AST、符号计算和自动微分的主题，不沿用原书示例。本笔记的组织、解释、多项式、限制语言、代码、练习与推导均为新作。双数规则由链式法则独立推导，未声称已视觉核对原书公式；原书PDF物理页199的式(5.2)未采用，文本公式如需用于后续内容，应另作视觉核验。

@@ -1,0 +1,286 @@
+{
+  "ok": true,
+  "python": "3.12.13 (main, Jun  2 2026, 22:47:20) [MSC v.1944 64 bit (AMD64)]",
+  "numpy": "2.3.5",
+  "examples": [
+    {
+      "chapter": "books/quantum-python-notes/chapters/01-environment.qmd",
+      "block": 1,
+      "line": 24,
+      "source_sha256": "41d2e0349a997e767fbc77c69b68858ade849858c4bfca593cdb0f031877ad4a",
+      "returncode": 0,
+      "stdout": "{\n  \"executable\": \"D:\\\\workspace\\\\bookshelf-on-web\\\\.local\\\\notes-verify-env\\\\Scripts\\\\python.exe\",\n  \"python_version\": [\n    3,\n    12,\n    13\n  ],\n  \"prefix\": \"D:\\\\workspace\\\\bookshelf-on-web\\\\.local\\\\notes-verify-env\",\n  \"base_prefix\": \"C:\\\\Users\\\\ustcw\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.12-windows-x86_64-none\",\n  \"json_module_file\": \"C:\\\\Users\\\\ustcw\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.12-windows-x86_64-none\\\\Lib\\\\json\\\\__init__.py\",\n  \"numpy_distribution_version\": \"2.3.5\"\n}\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/01-environment.qmd",
+      "block": 2,
+      "line": 92,
+      "source_sha256": "1a7d2c0d75a42b9fb1ce86663897854ea8cdc7573e21e6649c1d8f32c8606123",
+      "returncode": 0,
+      "stdout": "mean = -1.25 Eh\n",
+      "stderr": "...\n----------------------------------------------------------------------\nRan 3 tests in 0.000s\n\nOK\n",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/02-data.qmd",
+      "block": 1,
+      "line": 71,
+      "source_sha256": "dad3cd0356245d0b6a0372a6471e1c5e2dc2786befa2439f6ee654be6e8f7829",
+      "returncode": 0,
+      "stdout": "voltage / mV: [[0.0, 1.0], [1.0, 2.0], [2.0, 3.0]]\nrow mean / mV: [0.5, 1.5, 2.5]\nafter shared write / mV: [99.0, 1.0]\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/02-data.qmd",
+      "block": 2,
+      "line": 131,
+      "source_sha256": "aa75b1a36b0dc62652a6ff9790aa32e0c28c384e9c738636b55f856cced7354e",
+      "returncode": 0,
+      "stdout": "paired: ['s1', 's3']\nmissing prediction: ['s2']\nmissing observation: ['s4']\nMAE = 0.25 mV\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/03-visualization.qmd",
+      "block": 1,
+      "line": 35,
+      "source_sha256": "5d9e5041cdbae7b9f8c89c1de8b8f0a0bec16afca7bc906a9f9da2ddec804ad3",
+      "returncode": 0,
+      "stdout": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"560\" height=\"260\" viewBox=\"0 0 560 260\" role=\"img\" aria-labelledby=\"plot-title\">\n<title id=\"plot-title\">Toy residuals: linear and log scales</title>\n<rect width=\"560\" height=\"260\" fill=\"white\"/>\n<text x=\"50\" y=\"20\" font-size=\"13\">linear; residual (dimensionless)</text>\n<line x1=\"50\" y1=\"200.00\" x2=\"230\" y2=\"200.00\" stroke=\"#dddddd\"/>\n<text x=\"45\" y=\"204.00\" text-anchor=\"end\" font-size=\"11\">0</text>\n<line x1=\"50\" y1=\"120.00\" x2=\"230\" y2=\"120.00\" stroke=\"#dddddd\"/>\n<text x=\"45\" y=\"124.00\" text-anchor=\"end\" font-size=\"11\">0.5</text>\n<line x1=\"50\" y1=\"40.00\" x2=\"230\" y2=\"40.00\" stroke=\"#dddddd\"/>\n<text x=\"45\" y=\"44.00\" text-anchor=\"end\" font-size=\"11\">1</text>\n<path d=\"M 50 40 V 200 H 230\" fill=\"none\" stroke=\"black\"/>\n<polyline points=\"50.00,40.00 110.00,184.00 170.00,198.40 230.00,199.84\" fill=\"none\" stroke=\"#2166ac\"/>\n<circle cx=\"50.00\" cy=\"40.00\" r=\"3\" fill=\"#2166ac\"/>\n<text x=\"50\" y=\"220\" text-anchor=\"middle\" font-size=\"11\">0</text>\n<circle cx=\"110.00\" cy=\"184.00\" r=\"3\" fill=\"#2166ac\"/>\n<text x=\"110\" y=\"220\" text-anchor=\"middle\" font-size=\"11\">1</text>\n<circle cx=\"170.00\" cy=\"198.40\" r=\"3\" fill=\"#2166ac\"/>\n<text x=\"170\" y=\"220\" text-anchor=\"middle\" font-size=\"11\">2</text>\n<circle cx=\"230.00\" cy=\"199.84\" r=\"3\" fill=\"#2166ac\"/>\n<text x=\"230\" y=\"220\" text-anchor=\"middle\" font-size=\"11\">3</text>\n<text x=\"50\" y=\"245\" font-size=\"12\">iteration</text>\n<text x=\"330\" y=\"20\" font-size=\"13\">log10; residual (dimensionless)</text>\n<line x1=\"330\" y1=\"200.00\" x2=\"510\" y2=\"200.00\" stroke=\"#dddddd\"/>\n<text x=\"325\" y=\"204.00\" text-anchor=\"end\" font-size=\"11\">0.001</text>\n<line x1=\"330\" y1=\"146.67\" x2=\"510\" y2=\"146.67\" stroke=\"#dddddd\"/>\n<text x=\"325\" y=\"150.67\" text-anchor=\"end\" font-size=\"11\">0.01</text>\n<line x1=\"330\" y1=\"93.33\" x2=\"510\" y2=\"93.33\" stroke=\"#dddddd\"/>\n<text x=\"325\" y=\"97.33\" text-anchor=\"end\" font-size=\"11\">0.1</text>\n<line x1=\"330\" y1=\"40.00\" x2=\"510\" y2=\"40.00\" stroke=\"#dddddd\"/>\n<text x=\"325\" y=\"44.00\" text-anchor=\"end\" font-size=\"11\">1</text>\n<path d=\"M 330 40 V 200 H 510\" fill=\"none\" stroke=\"black\"/>\n<polyline points=\"330.00,40.00 390.00,93.33 450.00,146.67 510.00,200.00\" fill=\"none\" stroke=\"#2166ac\"/>\n<circle cx=\"330.00\" cy=\"40.00\" r=\"3\" fill=\"#2166ac\"/>\n<text x=\"330\" y=\"220\" text-anchor=\"middle\" font-size=\"11\">0</text>\n<circle cx=\"390.00\" cy=\"93.33\" r=\"3\" fill=\"#2166ac\"/>\n<text x=\"390\" y=\"220\" text-anchor=\"middle\" font-size=\"11\">1</text>\n<circle cx=\"450.00\" cy=\"146.67\" r=\"3\" fill=\"#2166ac\"/>\n<text x=\"450\" y=\"220\" text-anchor=\"middle\" font-size=\"11\">2</text>\n<circle cx=\"510.00\" cy=\"200.00\" r=\"3\" fill=\"#2166ac\"/>\n<text x=\"510\" y=\"220\" text-anchor=\"middle\" font-size=\"11\">3</text>\n<text x=\"330\" y=\"245\" font-size=\"12\">iteration</text>\n</svg>\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/03-visualization.qmd",
+      "block": 2,
+      "line": 134,
+      "source_sha256": "a4f6cfaf6bbf7b1e0cd87d8ac9000b11fe2cb5b35cac5dd6407d56c4d629f199",
+      "returncode": 0,
+      "stdout": "z = 0 bohr; columns x = -2..2 bohr; rows y = 2..-2 bohr\n0 - - - 0\n+ 0 - 0 +\n+ + 0 + +\n+ 0 - 0 +\n0 - - - 0\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/04-scientific-tools.qmd",
+      "block": 1,
+      "line": 47,
+      "source_sha256": "24d8966442106c261cd2b0b3672b42edef0d34c3869c8756282479ac3c91b3a0",
+      "returncode": 0,
+      "stdout": "condition = 1.0e+08\nrelative residual = 1.0e-08\nrelative solution error = 0.707107\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/04-scientific-tools.qmd",
+      "block": 2,
+      "line": 112,
+      "source_sha256": "e6b9c3c47200593d1daa3ee4d73b3087e5a654c7d4076844018f1cf27a4d494a",
+      "returncode": 0,
+      "stdout": "CSR: [0.0, 2.0, 5.0]\nmatrix-free: [0.0, 2.0, 5.0]\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/04-scientific-tools.qmd",
+      "block": 3,
+      "line": 173,
+      "source_sha256": "aa34c753d0dfedf30573f124097370302c64b79b686be35d42c3ddc0ee6121bf",
+      "returncode": 0,
+      "stdout": "weighted overlap: [[4.0, 4.0], [4.0, 6.0]]\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/04-scientific-tools.qmd",
+      "block": 4,
+      "line": 218,
+      "source_sha256": "a40514cde18e376b9f4c5d067539dbf5ea99d08b4e256cc3a6fe1011bce3fcef",
+      "returncode": 0,
+      "stdout": "frequency / Hz: [0.0, 1.0, 2.0, 3.0, 4.0]\namplitude / U: [0.0, 0.5, 1.0, 0.0, 0.0]\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/05-metaprogramming.qmd",
+      "block": 1,
+      "line": 65,
+      "source_sha256": "218e6ec70df43551b4b2015d35cb673478d640b2536f6e7c06daf10a9b8fcf18",
+      "returncode": 0,
+      "stdout": "17.0 14.0\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/06-io.qmd",
+      "block": 1,
+      "line": 48,
+      "source_sha256": "3ee3965275cdbf7d50e6759a3273d0ee5b34a28047a75fcf5ca4c6349fd32d94",
+      "returncode": 0,
+      "stdout": "minimum: q=0.0 nm, V=0.0 kJ/mol\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/06-io.qmd",
+      "block": 2,
+      "line": 145,
+      "source_sha256": "fe196455f5693fa132437792457907376efca62d19b6c2c78a37d4d1388ec8da",
+      "returncode": 0,
+      "stdout": "(3, 2) float64\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/07-cloud.qmd",
+      "block": 1,
+      "line": 67,
+      "source_sha256": "d914ac0a4afbb3d15f81f12cad9feb2dc132232a149c66b9251699d47b6ab24a",
+      "returncode": 0,
+      "stdout": "scores: 1.0 2.0\ncommits: 2 evaluations: 2\nretry delays: [1] [1]\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/08-ffi.qmd",
+      "block": 1,
+      "line": 78,
+      "source_sha256": "21d3607bbefde6183a0a2b002baf6340cbb73b76cb1c7e50e10b6dc1dae26d8c",
+      "returncode": 0,
+      "stdout": "[-1.0, 15.0] [-1.0, 15.0] [5.0, 7.0]\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/09-performance.qmd",
+      "block": 1,
+      "line": 71,
+      "source_sha256": "4865450809f6edd86132ca1b5937bbd6f94e68f1cfd7e89b182b4f38b53989f3",
+      "returncode": 0,
+      "stdout": "[6, 8, 0, 0]\ndirect reads: 11 preprocess elements: 6\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/09-performance.qmd",
+      "block": 2,
+      "line": 146,
+      "source_sha256": "6048ea65e8ed0f3e37471759d97c3ef39cbaa4e9f0126eea13c45e52a014e30b",
+      "returncode": 0,
+      "stdout": "first strict win: 25\n25 calls, seconds: 0.15 0.145\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/10-parallel.qmd",
+      "block": 1,
+      "line": 46,
+      "source_sha256": "0c5af1dd2be4d530ea3069a2bc0aa994b5660136b3e2e055460d2c8ccd4df0c7",
+      "returncode": 0,
+      "stdout": "count: 8 square sum: 44\nmean square: 5.5\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/10-parallel.qmd",
+      "block": 2,
+      "line": 107,
+      "source_sha256": "ca674c0237526f79ff97e63a64c90c54d65c1665168a00ea03648d0b43c37418",
+      "returncode": 0,
+      "stdout": "serial / 4 workers / 8 workers, ms: 51.2 31.6 25.2\n4-worker speedup: 1.62\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/11-gpu.qmd",
+      "block": 1,
+      "line": 43,
+      "source_sha256": "9658122c0a33f07f7656d68e881bcf88c46af107984e81b84a3eedaf0c629601",
+      "returncode": 0,
+      "stdout": "[1.75, 2.0, 2.25]\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/11-gpu.qmd",
+      "block": 2,
+      "line": 79,
+      "source_sha256": "e7993e02d0fbfd2705f5e8ff30adcd49f6bcfab23fe3e8ca4c18192c6188b033",
+      "returncode": 0,
+      "stdout": "one step, CPU/GPU ms: 0.800 / 1.090\n20 steps, CPU/resident/roundtrip GPU ms: 16.000 / 2.800 / 21.800\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/12-integrals.qmd",
+      "block": 1,
+      "line": 90,
+      "source_sha256": "479d229a116acca244a28861b01f336a2cab339c3e6ded16fad67f06512e4bf6",
+      "returncode": 0,
+      "stdout": "overlap = 0.367879\nraw norm squared = 2.735759\nnormalized norm squared = 1.000000\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/13-mean-field.qmd",
+      "block": 1,
+      "line": 81,
+      "source_sha256": "333c9fbb3de79340a19b64bf5db95758d8b6935cd7a99c18c0077a21aaec3af5",
+      "returncode": 0,
+      "stdout": "electron count = 2.000000\nelectronic energy = -0.972222 hartree\ninitial density is not self-consistent\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/14-fci.qmd",
+      "block": 1,
+      "line": 94,
+      "source_sha256": "777275c2e0cd1cc67552d9ce25ab24aeb987029aeded4a4d34c7b425f1f49497",
+      "returncode": 0,
+      "stdout": "determinants = 6\nground energy = -0.618034 hartree\neigenvector residual < 1e-12\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/15-coupled-cluster.qmd",
+      "block": 1,
+      "line": 105,
+      "source_sha256": "9649d76e32ba6c8b1ea103042108d6c89c9aab75bde12159aa03efad57db9e6b",
+      "returncode": 0,
+      "stdout": "t_A = 0.192582, t_B = 0.192582\njoint coefficient = 0.037088\nadditive energy = -0.096291 hartree\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "chapter": "books/quantum-python-notes/chapters/16-properties.qmd",
+      "block": 1,
+      "line": 144,
+      "source_sha256": "ea8c5d491ed40b9206b7907a9edeb4a1a9ef018848b0910de49c6059567a5591",
+      "returncode": 0,
+      "stdout": "tangent derivative = 3.000000\nadjoint derivative = 3.000000\nJVP/VJP pairing and finite-difference checks passed\n",
+      "stderr": "",
+      "ok": true
+    }
+  ],
+  "chapter_sha256": {
+    "books/quantum-python-notes/chapters/01-environment.qmd": "8a2d0f4154da7afdbae03dd4be18ef38f8cbc612b4006e50baf45ea2b9ba672c",
+    "books/quantum-python-notes/chapters/02-data.qmd": "23ffca142f1630eb56fed08e40c847df0b640180ee8c8922427de59339f1540d",
+    "books/quantum-python-notes/chapters/03-visualization.qmd": "ab79ba0e64bfd547c0b45d75b1079bbd3d8d8a654ce5e65d11926b194dd21df1",
+    "books/quantum-python-notes/chapters/04-scientific-tools.qmd": "2bf64833abbf17148b1dc2b7b739535553c4c66809fde7812508f180e934c729",
+    "books/quantum-python-notes/chapters/05-metaprogramming.qmd": "ce557a409da13010f6abb536ceefb66508622c74456751e7ea5c6b42ef1c4964",
+    "books/quantum-python-notes/chapters/06-io.qmd": "3b8e4352693a995be189ca206b5df089070e255ed54dec27cfe788142081432f",
+    "books/quantum-python-notes/chapters/07-cloud.qmd": "fed649e652a2e9f5a682722a7c94a1668e4551d68a9d2716632733f0eb4fb3f4",
+    "books/quantum-python-notes/chapters/08-ffi.qmd": "003d5d684b23a5f92c3fe15c8cd2bbaafa013cc0c3f8ad5197d1d098e6644a86",
+    "books/quantum-python-notes/chapters/09-performance.qmd": "698a93962febb118e3eef02f0fe116a38f90182c1f1f5280ec863e1428e4344b",
+    "books/quantum-python-notes/chapters/10-parallel.qmd": "ecf3a3cb0f8d087e662908821e9b8e2461cd63bb09a681a903ec0cc2375cfe21",
+    "books/quantum-python-notes/chapters/11-gpu.qmd": "4290848c4ff4df765b0a70ad2c5982011816742eac4a76fedb7597f3ad6e021f",
+    "books/quantum-python-notes/chapters/12-integrals.qmd": "bcc9277088bba4484c82c97df3edea961919d9ae7ed5e31dc041baf961d53ce1",
+    "books/quantum-python-notes/chapters/13-mean-field.qmd": "9cd35cddd52650c30e905987e2f029a525dd1936fadb6968be9ea9996447094d",
+    "books/quantum-python-notes/chapters/14-fci.qmd": "5433bcdec281d059abb0085ef4529a79154fc530c078ea868afba48596c5d383",
+    "books/quantum-python-notes/chapters/15-coupled-cluster.qmd": "4e4a1aec0f4f95c6a3e834da3efa57f832d791949dd3dda67d02de12ff53b263",
+    "books/quantum-python-notes/chapters/16-properties.qmd": "0080300521f13ce068d4df45685ca4f1045f66b21eb2a67d06285a536a35ae87"
+  },
+  "limits": "Reviewed examples only; environment/file/network guards are not an OS sandbox. Exit status and embedded assertions checked; stdout is recorded, not automatically matched."
+}

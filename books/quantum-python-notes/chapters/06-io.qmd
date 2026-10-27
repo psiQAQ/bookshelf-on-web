@@ -1,0 +1,198 @@
+# 数据如何离开内存：格式、契约与可靠性 {#ch06}
+
+本章为非官方原创学习笔记，不是原书译文。
+
+## 学习目标
+
+读完本章，应能为小型科学数据设计带版本、形状和单位的协议；根据访问方式而不是文件后缀选择 JSON、npy 或 HDF5；解释缓冲、内存映射和持久化的差别；指出反序列化时的安全边界。示例全部在内存中完成，不访问网络、不写磁盘，也不建立真实检查点。
+
+## 保存数值，不等于保存含义
+
+一串数值 `[0.1, 2.0]` 几乎没有可复现意义：第一列是长度还是角度？第二列是总能量还是能量差？行对应不同构型还是不同轨道？“文件能读回来”只证明字节和程序大致相容，不能证明科学解释相同。
+
+本章自造一个一维位移扫描：行按位移 $q$ 严格递增，第一列单位 nm，第二列是玩具势能 $V$，单位 kJ/mol。取
+
+$$
+V(q)=\tfrac12 kq^2,\qquad
+k=400\ \mathrm{kJ\,mol^{-1}\,nm^{-2}}.
+$$
+
+$q=-0.1,0,0.1\ \mathrm{nm}$ 对应 $V=2,0,2\ \mathrm{kJ/mol}$。这是人为设定的标量二次函数，不是真实分子的力常数或计算结果；它没有电子基组、轨道或张量指标。这里的“mol”只是所选能量单位的一部分，不暗含已经计算出某种物质性质。
+
+在协议中必须把列名、单位、版本、数据排列写清楚。如果保存的是轨道矩阵，还应增加行列基顺序、实数/复数约定、是否共轭、归一化和指标含义。二进制格式通常能保存形状与数据类型，却不会自动替你保存这些语义。哈希能帮助检测字节变化，但不能证明单位正确；攻击者同时改数据和哈希时，它也不能提供真实性保证。
+
+## 按访问模式选择格式
+
+| 需求 | 可考虑的表示 | 必须补上的契约与限制 |
+| --- | --- | --- |
+| 小型参数、元数据、跨语言消息 | JSON | 版本、单位、字段检查；数组类型/形状不是原生语义 |
+| 单个稠密数值数组 | `.npy` | 数组轴含义和单位仍需元数据；禁用对象反序列化 |
+| 少量数组打包交付 | `.npz` | 约定成员名；访问成员不等于任意子块都能零拷贝读取 |
+| 分层、多数组、部分读取、压缩 | HDF5 | dataset路径、属性、分块与压缩策略；需相应库 |
+| 已知布局的大数组局部访问 | 内存映射 | 它是访问技术，不是独立通用数据模式 |
+
+JSON 的优势在于可查看、跨语言工具多，而不是能够无损表示所有 Python 对象。元组读回通常变成列表；复数要约定实虚部；不同语言对大整数和特殊浮点值的处理可能不同。应明确是否允许 NaN、无穷、缺失值及超出接收方精确整数范围的数字。不能把“Python 的 JSON 库接受了”当作跨语言标准符合性证明。
+
+npy 的头部保存 `dtype`、`shape` 和布局信息，适合数值数组交换。对于普通数值数组，调用加载接口时显式采用 `allow_pickle=False`，避免无意允许对象数组携带 Python 对象重建行为。npy 的自描述不包括物理单位；将 nm 数据按 Å 使用，文件仍可顺利读取，但科学解释错了十倍。
+
+HDF5 将数组放在 dataset 中，并可通过 group 组织层级、用属性保存元数据。它适合只读大数组的一部分，但切片语法相似不代表与 NumPy 内存视图相同：读切片通常需要实际 I/O，并产生内存结果。分块压缩还会放大不合适的访问。如果每个块含100行，随机取一行可能仍需读取并解压整个块。反复逐行扫描和按大块顺序扫描，成本可能差得很大。
+
+分块应围绕常用访问方式选择。轨迹按帧读取可偏向帧方向分块；若经常提取所有帧的同一个坐标分量，则要重新权衡。过小的块增加元数据与调用开销，过大则浪费读取和解压。不应在尚未确定工作负载前宣布一个“最佳块大小”。HDF5 的并发写入也需要专门设计，不能让多个进程随意改同一文件。
+
+## 完整原创例子一：会拒绝坏输入的 JSON 小协议 {#ch06-protocol}
+
+协议只允许固定五个字段，版本用 `schema` 表示；`columns` 定义第二维的顺序，`rows` 的第一维是样本序号。消息长度、行数和数值绝对值不超过 $10^6$ 的上限不是物理要求，而是本地演示的资源与取值预算。未知字段在此版本中直接拒绝，避免默默忽略拼写错误；若将来扩展，应定义新版本或明确兼容规则。
+
+示例先序列化，再通过内存流接收，最后验证并解释最小值。仅用 Python 标准库。所有数值都在自造数据范围内；验证器限制消息长度和行数，但不是通用防拒绝服务方案。本次未执行示例。
+
+```python
+import io
+import json
+import math
+
+
+def unique_fields(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate field")
+        result[key] = value
+    return result
+
+
+def reject_special(token):
+    raise ValueError("nonstandard number: " + token)
+
+
+def decode_scan(raw):
+    if type(raw) is not bytes or len(raw) > 4096:
+        raise ValueError("message budget")
+    try:
+        doc = json.loads(raw.decode("utf-8"),
+                         object_pairs_hook=unique_fields,
+                         parse_constant=reject_special)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("invalid JSON encoding") from exc
+    keys = {"schema", "columns", "q_unit", "V_unit", "rows"}
+    if type(doc) is not dict or set(doc) != keys:
+        raise ValueError("fields")
+    if doc["schema"] != "toy-scan/v1":
+        raise ValueError("schema")
+    if doc["columns"] != ["q", "V"]:
+        raise ValueError("column order")
+    if doc["q_unit"] != "nm" or doc["V_unit"] != "kJ/mol":
+        raise ValueError("units")
+    rows = doc["rows"]
+    if type(rows) is not list or not 1 <= len(rows) <= 20:
+        raise ValueError("row count")
+    for row in rows:
+        if type(row) is not list or len(row) != 2:
+            raise ValueError("row shape")
+        if any(type(v) not in (int, float) or abs(v) > 1_000_000
+               or not math.isfinite(v) for v in row):
+            raise ValueError("finite bounded real values required")
+    if any(a[0] >= b[0] for a, b in zip(rows, rows[1:])):
+        raise ValueError("q must be strictly increasing")
+    return doc
+
+
+scan = {
+    "schema": "toy-scan/v1",
+    "columns": ["q", "V"],
+    "q_unit": "nm",
+    "V_unit": "kJ/mol",
+    "rows": [[-0.1, 2.0], [0.0, 0.0], [0.1, 2.0]],
+}
+wire = json.dumps(scan, allow_nan=False,
+                  separators=(",", ":")).encode("utf-8")
+stream = io.BytesIO(wire)
+received = stream.read(4097)
+loaded = decode_scan(received)
+minimum = min(loaded["rows"], key=lambda row: row[1])
+assert minimum == [0.0, 0.0]
+assert loaded == scan
+
+bad_unit = dict(scan, q_unit="angstrom")
+bad_order = dict(scan, rows=list(reversed(scan["rows"])))
+bad_bool = dict(scan, rows=[[0.0, True]])
+for bad in (json.dumps(bad_unit).encode("utf-8"),
+            json.dumps(bad_order).encode("utf-8"),
+            json.dumps(bad_bool).encode("utf-8"),
+            b'{"schema":"a","schema":"b"}'):
+    try:
+        decode_scan(bad)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("bad message accepted")
+print(f"minimum: q={minimum[0]:.1f} nm, V={minimum[1]:.1f} kJ/mol")
+```
+
+预期输出：
+
+```text
+minimum: q=0.0 nm, V=0.0 kJ/mol
+```
+
+这个最小值仅指三个输入样本中的最小值；因为本例另给了二次函数，才知道连续模型的最小值也在 $q=0$。单凭文件中的三个点不能断言任意势能面在点间没有更低极小值。单位验证在这里选择“拒绝不相同的标签”，而非自动换算；如需支持 Å，必须同时转换数值并在结果中记录转换，不能只改字符串。
+
+`BytesIO` 让依赖文件式接口的程序接受内存缓冲，但它并没有把 I/O 变成零成本。UTF-8 编码、`getvalue()` 或读出完整内容、JSON 解析都可能分配副本。若要处理大数据，应先限制输入规模，再设计分块协议，不应先把无限消息全读入内存再检查长度。真实网络流的一次 `read` 也不保证获得完整消息，需要另有长度边界或分帧约定；本例的内存流没有模拟网络分片。
+
+## 完整原创例子二：数值数组在内存中往返 {#ch06-npy}
+
+这里将同样的三行数据存入内存中的 npy 流，依赖 NumPy。列约定沿用上面的协议，实际项目应把元数据与数组身份关联保存。`BytesIO` 上的保存不创建磁盘文件；本例不展示内存映射，因为那需要另外的真实文件/操作系统资源。
+
+```python
+import io
+import numpy as np
+
+samples = np.array([[-0.1, 2.0], [0.0, 0.0], [0.1, 2.0]],
+                   dtype=np.float64)
+buffer = io.BytesIO()
+np.save(buffer, samples, allow_pickle=False)
+buffer.seek(0)
+restored = np.load(buffer, allow_pickle=False)
+assert restored.shape == (3, 2)
+assert restored.dtype == np.dtype("float64")
+assert np.array_equal(restored, samples)
+print(restored.shape, restored.dtype.name)
+```
+
+预期输出为 `(3, 2) float64`。`seek(0)` 很重要：保存后流位置在末尾，不回到开头就无法按预期读取。这里保存的是固定大小数值类型，不是 Python 对象数组；等值断言检验往返的数值和排列，却仍不能自行证明两列的科学含义。
+
+## 缓冲、内存映射与“已经保存”
+
+缓冲把许多小请求合并为大请求，减少每次系统调用或设备访问的固定延迟。若每次写入成本近似 $t_0+b/B$，其中 $t_0$ 为固定延迟（秒）、$b$ 为字节数、$B$ 为吞吐量（字节/秒），将同样的总字节数分成更多小请求就会重复支付 $t_0$。这个简化模型没有包含缓存命中、并发与设备调度，但足以解释“每个元素都刷新一次”往往很慢。
+
+刷新也不是一层含义：Python 用户态缓冲、操作系统页缓存、设备缓存和远端存储确认各有边界。普通文件对象的 `flush()` 通常只是将用户态数据交给下层，并不等于断电后仍可恢复；正常关闭文件也不能保证突然断电时万无一失。`with` 可处理正常退出和大多数 Python 异常下的关闭，却挡不住进程被强制终止。数据库事务或文件替换方案仍要结合操作系统、文件系统和存储服务的持久性保证设计。
+
+内存映射让程序按虚拟内存地址访问文件内容，由操作系统按页调入。它避免一次主动加载整个数组，但访问到的页面仍会产生实际 I/O，也占用缓存；跨步、随机或重复扫描不合适的布局可能造成大量缺页。原始二进制映射还需外部提供形状、元素类型、字节序和偏移。npy 可提供这些数组布局元数据，并可在支持的模式下映射；映射不是压缩 `.npz` 成员的通用随机访问方案。
+
+映射写入须区分只读、读写和写时复制等模式；可写映射并非一概不能修改文件。但“赋值返回了”仍不等于一个完整检查点已经原子提交。多个数组、版本元数据和完成标记必须一致。一个概念性保存流程是先写新一代数据、校验完整性，再以存储系统支持的原子操作公布“这一代完成”，并保留上一代可用数据。具体实现须验证崩溃窗口，本章不提供或宣称测试了磁盘持久化代码。
+
+## 反序列化是入口，不是普通算术
+
+Pickle 能重建 Python 对象，也可能执行对象重建逻辑，因此不能加载不可信来源。YAML 若用于配置，应选择安全加载接口并继续做模式验证；“安全加载”也不等于无限大小或任意嵌套都没有资源风险。JSON 的数据模型较小，但仍应限制大小、嵌套、重复键和数值范围。以上协议拒绝布尔数值，因为 Python 中 `bool` 是 `int` 的子类，用宽松的 `isinstance(v, int)` 会误收 `True`。
+
+来自可信同事的数据也可能版本错误或意外损坏。分清“真实性”“完整性”“模式合法”“科学合理”四个问题：访问控制/认证、校验、结构验证、领域检查分别解决不同层次。没有某一种文件后缀能一次解决它们。
+
+## 练习与解题指引
+
+1. 一份数据的数值仍为 `0.1`，单位却从 nm 改成 Å。长度解释差多少？若协议加入合法转换，应如何保留同一物理位移？
+   **答案：**$1\ \mathrm{nm}=10\ \text{Å}$。`0.1 nm` 应转换成 `1.0 Å`，而不是 `0.1 Å`；后者代表原长度的十分之一。若只换位移单位，能量列不需改，但模型中 $k$ 的数值也须随长度单位平方转换。
+
+2. 数据是 $(10000,3)$ 的 float64 数组，忽略头部需要多少字节？使用 `BytesIO` 是否就只占这些内存？
+   **答案：**$10000\times3\times8=240000$ 字节。原数组、序列化缓冲和加载后数组可能同时存在；解析产生的 Python 对象还会更大。内存式 I/O 不是零拷贝承诺。
+
+3. 为什么在写完数组 A 后写“完成”，再写数组 B，是不可靠的检查点协议？
+   **指引：**读者可能先看到完成标记而 B 尚缺失。应把完成标记纳入有明确原子/一致性保证的提交协议，至少在 A、B 和元数据校验后才公布；还需考虑写入重排、断电与多写者冲突。只把 `flush()` 移到末尾不能自动提供跨文件事务。
+
+## 进一步阅读与限制
+
+没有展开 HDF5 并行/SWMR、压缩过滤器、模式迁移、HTTP/RPC/gRPC、Arrow 的列式内存布局和真实网络分帧实现。对于网络数据，传输方式与负载格式应分别选择；对于长期档案，还需保存软件版本、校验信息和可读的领域元数据。本章小协议不是现成的分子数据交换标准。
+
+## 来源与新增内容
+
+主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（2025），第6章 **Input and output**，全章印刷页195–222／PDF物理页207–234；章节 DOI：[10.1016/B978-0-44-323837-6.00014-4](https://doi.org/10.1016/B978-0-44-323837-6.00014-4)，从开章页文本提取。
+
+本章针对性阅读：印刷页195–197、199、202–209（PDF物理页207–209、211、214–221）；目录定位为PDF物理页11–12。本笔记新增了玩具势能数据、协议模式、拒绝路径、内存数组往返、练习与持久性边界分析，未复制原书代码或图表。二次函数和字节计数均可独立推导，不依赖难辨的提取公式；未进行原PDF视觉核对。格式/API说明采用独立表述，尤其不将映射写入限制或刷新等同持久性的过强说法作为实现保证。

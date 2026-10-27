@@ -1,0 +1,175 @@
+{
+  "book_id": "quantum-python-notes",
+  "blocks": [
+    {
+      "block_id": "notes-guide",
+      "qmd": "index.qmd",
+      "qmd_anchor": "source-boundary",
+      "source": {
+        "type": "original",
+        "description": "主会话新作的阅读指南与来源边界；来源身份及缺项见 docs/reviews/quantum-python-source-baseline.md。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-01",
+      "qmd": "chapters/01-environment.qmd",
+      "qmd_anchor": "ch01",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第1章 **Python programming environment**，全章印刷页3–56／PDF物理页18–71。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00009-0](https://doi.org/10.1016/B978-0-44-323837-6.00009-0)。\n\n本章针对性使用：印刷页3–4、6、16、29–31、49（PDF物理页18–19、21、31、44–46、64），涉及运行身份、模块、虚拟环境、测试和交互环境；目录定位为PDF物理页9。本文的复现分层、诊断组织、加权平均解释、数据、代码和练习均为本笔记新作，不复制原书程序。数学关系由加权平均定义独立得到；未进行原PDF视觉核对。本章不宣称覆盖原书全部细节，也未获公开发布批准。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-02",
+      "qmd": "chapters/02-data.qmd",
+      "qmd_anchor": "ch02",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第2章 **Data processing**，全章印刷页57–117／PDF物理页72–132。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00010-7](https://doi.org/10.1016/B978-0-44-323837-6.00010-7)。\n\n针对性使用：印刷页57、62–63、70–71、75、78、91、96、111、114（PDF物理页72、77–78、85–86、90、93、106、111、126、129）；目录定位为PDF物理页9–10。主题是广播、布局、视图、数据类型、标签与缺失。本章的校准模型、数据、标准库对齐参照、误差解释、代码和练习均为本笔记新作。地址表达式、校准关系和容差关系按本文约定独立解释；没有依据提取文字复刻原书公式，也未进行原PDF视觉核对。Pandas 版本相关行为仍应在实际环境核验；本章不是其全部 API 的替代说明，未获公开发布批准。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-03",
+      "qmd": "chapters/03-visualization.qmd",
+      "qmd_anchor": "ch03",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第3章 **Visualization**，全章印刷页119–143／PDF物理页133–157。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00011-9](https://doi.org/10.1016/B978-0-44-323837-6.00011-9)。\n\n针对性使用：印刷页119–121、131、139–142（PDF物理页133–135、145、153–156）；目录定位为PDF物理页10。参考的是二维/三维可视化、采样网格和轨道交换格式这些主题。残差数据、SVG生成器、玩具场、坐标推理、图像诚实表达与练习均为本笔记新作，未复用原书势场、分子或轨道程序。网格关系与密度关系按本文符号独立说明；未采用原书印刷页131的势积分公式，也未进行原PDF公式或图像的视觉核对。图形输出和科学解释仍待独立审阅，未获公开发布批准。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-04",
+      "qmd": "chapters/04-scientific-tools.qmd",
+      "qmd_anchor": "ch04",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第4章 **Scientific computing tools**，全章印刷页145–171／PDF物理页158–184。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00012-0](https://doi.org/10.1016/B978-0-44-323837-6.00012-0)。\n\n针对性使用：印刷页145–149、151–158、169（PDF物理页158–162、164–171、182）；目录定位为PDF物理页10–11。参考主题是稠密线代、稀疏存储与线性算子、收缩顺序及FFT。本章的条件数推导、对角系统、图算子、带权特征、双频信号、代码、数据和练习均为本笔记新作，不复制原书协方差或谐振子程序，也不采用其机器基准数值。DFT符号与归一化在本文明确规定并可独立推导；原书印刷页158／PDF物理页171的公式仍待主会话视觉对照，本次未做视觉核验。其余关系也未声称与原PDF排版逐式核对。例子尚待隔离环境执行与独立科学审阅，未获公开发布批准。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-05",
+      "qmd": "chapters/05-metaprogramming.qmd",
+      "qmd_anchor": "ch05",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（2025），第5章 **Meta-programming and non-numerical computation**，全章印刷页173–194／PDF物理页185–206；章节 DOI：[10.1016/B978-0-44-323837-6.00013-2](https://doi.org/10.1016/B978-0-44-323837-6.00013-2)，从开章页文本提取。\n\n本章针对性阅读：印刷页173–174、176–178、181–182、186–187、190（PDF物理页185–186、188–190、193–194、198–199、202）；目录定位为PDF物理页11–12。参考范围用于确认代码生成、AST、符号计算和自动微分的主题，不沿用原书示例。本笔记的组织、解释、多项式、限制语言、代码、练习与推导均为新作。双数规则由链式法则独立推导，未声称已视觉核对原书公式；原书PDF物理页199的式(5.2)未采用，文本公式如需用于后续内容，应另作视觉核验。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-06",
+      "qmd": "chapters/06-io.qmd",
+      "qmd_anchor": "ch06",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（2025），第6章 **Input and output**，全章印刷页195–222／PDF物理页207–234；章节 DOI：[10.1016/B978-0-44-323837-6.00014-4](https://doi.org/10.1016/B978-0-44-323837-6.00014-4)，从开章页文本提取。\n\n本章针对性阅读：印刷页195–197、199、202–209（PDF物理页207–209、211、214–221）；目录定位为PDF物理页11–12。本笔记新增了玩具势能数据、协议模式、拒绝路径、内存数组往返、练习与持久性边界分析，未复制原书代码或图表。二次函数和字节计数均可独立推导，不依赖难辨的提取公式；未进行原PDF视觉核对。格式/API说明采用独立表述，尤其不将映射写入限制或刷新等同持久性的过强说法作为实现保证。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-07",
+      "qmd": "chapters/07-cloud.qmd",
+      "qmd_anchor": "ch07",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（2025），第7章 **Working with cloud**，全章印刷页223–261／PDF物理页235–273；章节 DOI：[10.1016/B978-0-44-323837-6.00015-6](https://doi.org/10.1016/B978-0-44-323837-6.00015-6)，从开章页文本提取。\n\n本章针对性阅读：印刷页223–229、234、241、246–247、253、256–257（PDF物理页235–241、246、253、258–259、265、268–269）；目录定位为PDF物理页11–12。云资源、工作流与分布式执行器是主题参考；成本数字、重试状态模拟、数据、代码、推导与练习均为本笔记新作，未沿用原书云账户、势能面工作流代码或权限配置。成本式与有限重试期望由单位分析和概率独立推导，未声称已对原书PDF公式做视觉核对。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-08",
+      "qmd": "chapters/08-ffi.qmd",
+      "qmd_anchor": "ch08",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第8章 **Foreign language interfaces**，印刷页265–304／PDF物理页274–313。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00017-X](https://doi.org/10.1016/B978-0-44-323837-6.00017-X)。\n\n本章实际参考的正文定位：类型与转换，印刷268–269／PDF277–278；结构与序列化，印刷270–273／PDF279–282；FFI，印刷283／PDF292；内存管理，印刷292／PDF301；Fortran，印刷296–297、299／PDF305–306、308；Rust，印刷301–302／PDF310–311；另读开章印刷265／PDF274与目录PDF12–14。所用来源为非OCR文本提取，未作PDF视觉核对；没有采用原书的图、代码或科学公式。上面的地址公式由字节步长定义直接给出。解释组织、协议、矩阵数据、代码及练习均为本笔记新作；平台约定须以实际工具链再核实。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-09",
+      "qmd": "chapters/09-performance.qmd",
+      "qmd_anchor": "ch09",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第9章 **Program performance optimization**，印刷页305–394／PDF物理页314–403。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00018-1](https://doi.org/10.1016/B978-0-44-323837-6.00018-1)。\n\n实际参考：开章与原则，印刷305–306／PDF314–315；延迟/吞吐与资源限制，印刷313、316／PDF322、325；分析与基准，印刷326–327／PDF335–336；编译，印刷347、360／PDF356、369；存储布局，印刷366／PDF375；预计算、缓存与动态规划，印刷374–375、380／PDF383–384、389；目录PDF12–14。来源为非OCR文本，未作PDF视觉核对。未采用原书正交化公式、计时数据、代码或插图。这里的有限和恒等式、资源下界与摊销关系按已列假设独立推导；解释、数据、代码、成本参数与练习均为本笔记新作。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-10",
+      "qmd": "chapters/10-parallel.qmd",
+      "qmd_anchor": "ch10",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第10章 **Parallel computation**，印刷页395–448／PDF物理页404–457。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00019-3](https://doi.org/10.1016/B978-0-44-323837-6.00019-3)。\n\n实际参考：开章与线程，印刷395–396／PDF404–405；锁、条件与生产消费，印刷401–403、406／PDF410–412、415；协程，印刷417／PDF426；进程及通信，印刷419、422、426／PDF428、431、435；OpenMP与MPI，印刷435–437、439／PDF444–446、448；目录PDF12–14。来源为非OCR文本，未作PDF视觉核对。没有使用原书张量示例、代码或插图；工作量下界与交接成本模型由所列假设独立建立。解释、数据、示例、参数和练习均为本笔记新作，未将特定平台的进程启动或 GIL 行为推广到所有 Python 环境。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-11",
+      "qmd": "chapters/11-gpu.qmd",
+      "qmd_anchor": "ch11",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第11章 **GPU programming**，印刷页449–474／PDF物理页458–483。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00020-X](https://doi.org/10.1016/B978-0-44-323837-6.00020-X)。\n\n实际参考：开章印刷449／PDF458；框架与运行环境，印刷452–456／PDF461–465；锁页内存与stream，印刷457–460／PDF466–469；内核组织，印刷461、466／PDF470、475；目录PDF12–14。来源为非OCR文本，未作PDF视觉核对；未采用原书内核、张量模型、图或代码。玩具递推及闭式解、字节成本和理想流水线关系按本章假设独立推导。解释、数据、参数、代码、协议和练习均为本笔记新作，不把版本相关的 API 细节当作永久保证。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-12",
+      "qmd": "chapters/12-integrals.qmd",
+      "qmd_anchor": "ch12",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），正式第12章 **Integral evaluation**，全章印刷477–558页／PDF物理484–565页。开章页提取的章节DOI：[10.1016/B978-0-44-323837-6.00022-3](https://doi.org/10.1016/B978-0-44-323837-6.00022-3)。\n\n本章定向使用的正文为印刷478–480、484–488、538–539、552–553页／PDF物理485–487、491–495、545–546、559–560页；目录定位使用PDF物理15–17页。笛卡尔归一化、完成平方推导、双中心自造数据、代码与练习均为本笔记新作，不复制原书程序。这里只使用文本层定位，未声称已对原PDF公式做视觉核对。进一步阅读可沿原章查看完整ERI递推、编译优化、球谐转换与外存变换；这些未在本笔记中完整展开。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-13",
+      "qmd": "chapters/13-mean-field.qmd",
+      "qmd_anchor": "ch13",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），正式第13章 **Mean-field methods**，全章印刷559–611页／PDF物理566–618页。开章页提取的DOI：[10.1016/B978-0-44-323837-6.00023-5](https://doi.org/10.1016/B978-0-44-323837-6.00023-5)。\n\n定向阅读：印刷559–563、567–568、576–577、584–585、604页／PDF物理566–570、574–575、583–584、591–592、611页；目录定位为PDF物理15–17页。非正交度量的讲解、自造低秩张量、代码、诊断情境与练习均为本笔记新作。仅做文本定位，不声称源公式已视觉核对。进一步阅读可查原章的完整SCF类设计、J-engine、密度拟合和GGA/meta-GGA导数接口；本章没有实现这些框架，也没有提供可用于分子预测的SCF程序。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-14",
+      "qmd": "chapters/14-fci.qmd",
+      "qmd_anchor": "ch14",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），正式第14章 **Post Hartree-Fock I: full configuration interaction**，全章印刷613–640页／PDF物理619–646页。开章页提取的DOI：[10.1016/B978-0-44-323837-6.00024-7](https://doi.org/10.1016/B978-0-44-323837-6.00024-7)。\n\n定向阅读：印刷613–618、623–624页／PDF物理619–624、629–630页；目录定位为PDF物理15–17页。本笔记主动使用自己的递增创建顺序，不能直接混入采用另一种顺序的符号表。格点模型、位操作程序、解析检查、解释和练习均为本笔记新作。源公式仅文本定位，未做PDF视觉核对。进一步阅读可沿原章学习自旋分离direct CI、多级张量收缩、内存分块和流水线并行；这些生产实现没有在此展开。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-15",
+      "qmd": "chapters/15-coupled-cluster.qmd",
+      "qmd_anchor": "ch15",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），正式第15章 **Post Hartree-Fock II: coupled cluster**，全章印刷641–673页／PDF物理647–679页。开章页提取的DOI：[10.1016/B978-0-44-323837-6.00025-9](https://doi.org/10.1016/B978-0-44-323837-6.00025-9)。\n\n定向阅读：印刷641–645、657页／PDF物理647–651、663页；目录定位为PDF物理15–17页。两片段四配置模型、稳定求根表达式的解释、代码与练习为本笔记新作，未复制原章CCD实现。源公式尚未经过PDF视觉核对。完整CCD/CCSD收缩、异步预取实现、符号推导引擎、微扰三重激发与激发态CC留作进一步阅读，本章不声称覆盖其实现细节。"
+      },
+      "review_state": "needs_review"
+    },
+    {
+      "block_id": "chapter-16",
+      "qmd": "chapters/16-properties.qmd",
+      "qmd_anchor": "ch16",
+      "source": {
+        "type": "original",
+        "description": "主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），正式第16章 **Molecular properties**，全章印刷675–712页／PDF物理680–717页。开章页提取的DOI：[10.1016/B978-0-44-323837-6.00026-0](https://doi.org/10.1016/B978-0-44-323837-6.00026-0)。\n\n定向阅读：印刷675–679、681、683–686、703–707、709页／PDF物理680–684、686、688–691、708–712、714页；目录定位为PDF物理15–17页。梯度公式按本笔记统一的实AO、自旋求和密度约定重新组织，隐式微分从列向量残差独立推导，未凭文本提取认定原式的转置与因子。解释、三变量模型、代码和练习均为本笔记新作，未进行源PDF公式的视觉核对。完整CPHF、Krylov实现、JAX自定义导数、磁响应与高阶性质仅作为进一步阅读方向；本章没有提供实际分子梯度程序。"
+      },
+      "review_state": "needs_review"
+    }
+  ]
+}

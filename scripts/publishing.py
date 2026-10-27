@@ -94,7 +94,8 @@ def book_config(metadata: dict) -> dict:
                  "page-navigation": True, "reader-mode": True, "search": True},
         "format": {"html": {"lang": metadata["language"], "theme": {"light": "cosmo", "dark": "darkly"},
                             "html-math-method": "mathjax", "toc": True, "number-sections": True,
-                            "code-copy": True, "code-overflow": "scroll"}},
+                            "code-copy": True, "code-overflow": "scroll",
+                            "include-in-header": [{"text": "<style>mjx-container[display=\"true\"] { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 0.25em 0; }</style>"}]}},
         "execute": {"enabled": False, "eval": False},
     }
 

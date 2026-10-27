@@ -1,0 +1,213 @@
+{
+  "purpose": "Local preview awaiting explicit public approval",
+  "base_commit": "08fb19f18bd3b1b2f412898564db865945109ba0",
+  "approved": false,
+  "hashing": "SHA-256; CRLF normalized to LF",
+  "files": [
+    {
+      "path": "books/quantum-python-notes/_quarto.yml",
+      "bytes_lf": 1060,
+      "sha256": "dd14a6bb29be4f0fd99301a922122b625d2398826d4e492ceeb54feedb6bd3d7"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/01-environment.qmd",
+      "bytes_lf": 13990,
+      "sha256": "8a2d0f4154da7afdbae03dd4be18ef38f8cbc612b4006e50baf45ea2b9ba672c"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/02-data.qmd",
+      "bytes_lf": 15065,
+      "sha256": "23ffca142f1630eb56fed08e40c847df0b640180ee8c8922427de59339f1540d"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/03-visualization.qmd",
+      "bytes_lf": 14834,
+      "sha256": "ab79ba0e64bfd547c0b45d75b1079bbd3d8d8a654ce5e65d11926b194dd21df1"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/04-scientific-tools.qmd",
+      "bytes_lf": 17397,
+      "sha256": "2bf64833abbf17148b1dc2b7b739535553c4c66809fde7812508f180e934c729"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/05-metaprogramming.qmd",
+      "bytes_lf": 11693,
+      "sha256": "1e2c7c5a6fd0df42c7ed0fa02d09b15302f9d03fbca7474a13dd1aa781d38c86"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/06-io.qmd",
+      "bytes_lf": 14825,
+      "sha256": "c18bab385b995434b5416c1ae37166ea60bd8cef5d709b550cd0b8a10f9cb881"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/07-cloud.qmd",
+      "bytes_lf": 17692,
+      "sha256": "38149254ba1fe7db56dcb7eb3ecf4652e6dd5d72a08e138f6152b6998a1cf1c4"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/08-ffi.qmd",
+      "bytes_lf": 14483,
+      "sha256": "003d5d684b23a5f92c3fe15c8cd2bbaafa013cc0c3f8ad5197d1d098e6644a86"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/09-performance.qmd",
+      "bytes_lf": 14754,
+      "sha256": "698a93962febb118e3eef02f0fe116a38f90182c1f1f5280ec863e1428e4344b"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/10-parallel.qmd",
+      "bytes_lf": 15365,
+      "sha256": "ecf3a3cb0f8d087e662908821e9b8e2461cd63bb09a681a903ec0cc2375cfe21"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/11-gpu.qmd",
+      "bytes_lf": 16483,
+      "sha256": "4290848c4ff4df765b0a70ad2c5982011816742eac4a76fedb7597f3ad6e021f"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/12-integrals.qmd",
+      "bytes_lf": 10242,
+      "sha256": "bcc9277088bba4484c82c97df3edea961919d9ae7ed5e31dc041baf961d53ce1"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/13-mean-field.qmd",
+      "bytes_lf": 10750,
+      "sha256": "9cd35cddd52650c30e905987e2f029a525dd1936fadb6968be9ea9996447094d"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/14-fci.qmd",
+      "bytes_lf": 11110,
+      "sha256": "5433bcdec281d059abb0085ef4529a79154fc530c078ea868afba48596c5d383"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/15-coupled-cluster.qmd",
+      "bytes_lf": 10941,
+      "sha256": "4e4a1aec0f4f95c6a3e834da3efa57f832d791949dd3dda67d02de12ff53b263"
+    },
+    {
+      "path": "books/quantum-python-notes/chapters/16-properties.qmd",
+      "bytes_lf": 12773,
+      "sha256": "0080300521f13ce068d4df45685ca4f1045f66b21eb2a67d06285a536a35ae87"
+    },
+    {
+      "path": "books/quantum-python-notes/index.qmd",
+      "bytes_lf": 4689,
+      "sha256": "ccc7492d92fde7fc8492cbc0cd69db8177b0ecc91341de3b8dc25a898f9f9eb1"
+    },
+    {
+      "path": "books/quantum-python-notes/metadata.yaml",
+      "bytes_lf": 1216,
+      "sha256": "7586e8dd33e334baaa7156d87bdc0400ae202b90c1e5a9d91dd127cdf8ec3978"
+    },
+    {
+      "path": "books/quantum-python-notes/provenance.json",
+      "bytes_lf": 18592,
+      "sha256": "d62811566d7475eb87473be11bdd7109f65baea19b306663156c59a51be33744"
+    },
+    {
+      "path": "books/sample-linear-algebra/_quarto.yml",
+      "bytes_lf": 586,
+      "sha256": "739e794799b9fb76a133184836b24549a67b97620fc15e88d366b9682ea3cd43"
+    },
+    {
+      "path": "books/sample-waves/_quarto.yml",
+      "bytes_lf": 578,
+      "sha256": "c2c965ff05e09a17bd2dad3577619b047d3bd5ca5fc5b702471a21c1f04be34c"
+    },
+    {
+      "path": "catalog/preview.yaml",
+      "bytes_lf": 283,
+      "sha256": "59bbff84f23577c34120084847cd47b2ca61d6d99aa81469e95eac7e45537a1f"
+    },
+    {
+      "path": "docs/reviews/quantum-python/integration-review.md",
+      "bytes_lf": 3616,
+      "sha256": "8cf66fb24abd965ef3e76ea5643e625b1ca626f83b12e8e787e4effb0ec0d7f5"
+    },
+    {
+      "path": "docs/reviews/quantum-python/notes-browser.json",
+      "bytes_lf": 44311,
+      "sha256": "467ada070b0e82ce9f64a5581c0765ab3a291b1c15dbb76c8def2b491e6355be"
+    },
+    {
+      "path": "docs/reviews/quantum-python/notes-examples.json",
+      "bytes_lf": 15429,
+      "sha256": "e3700cb89212a59d3fa46f4dd2cd94d1f03a9390d639d7f459cf704efb085c84"
+    },
+    {
+      "path": "docs/reviews/quantum-python/preview-build.json",
+      "bytes_lf": 2099,
+      "sha256": "2efcbf55b73adad5bde29635f77e00b9e90f5db4ca8603db51141204a28cd0a1"
+    },
+    {
+      "path": "docs/reviews/quantum-python/preview-links.json",
+      "bytes_lf": 55,
+      "sha256": "1cbda76b32d65a63823ceb49c47ce1e7c293b8c42e15ce99aa0e24f1fec03861"
+    },
+    {
+      "path": "docs/reviews/quantum-python/preview-validation.json",
+      "bytes_lf": 1332,
+      "sha256": "531011ce4dfd5ba7a1d65774cd97943cad2ce7d9ca762d3ff5cfc36ad145d2e4"
+    },
+    {
+      "path": "docs/reviews/quantum-python/review-a.md",
+      "bytes_lf": 4501,
+      "sha256": "d2cbdb7922dbe0d4fc2380a816a845f5c15793422e684553746d0c8a98bdd29d"
+    },
+    {
+      "path": "docs/reviews/quantum-python/review-b.md",
+      "bytes_lf": 4615,
+      "sha256": "70cb936887720f6ca068cac4c535a4c17519a29737771ddcc4fe21b12524c4c7"
+    },
+    {
+      "path": "docs/reviews/quantum-python/review-c.md",
+      "bytes_lf": 5077,
+      "sha256": "4e0cfdef03917ce313b5de3705d501b3ec7b09b9488db75a072f638fa44932ea"
+    },
+    {
+      "path": "docs/reviews/quantum-python/review-d.md",
+      "bytes_lf": 4631,
+      "sha256": "7cc3057794562e20336b00e76910ad4d9123c284f3a1760b5e87b818c35bc11a"
+    },
+    {
+      "path": "docs/reviews/quantum-python/tests.txt",
+      "bytes_lf": 6837,
+      "sha256": "584533b1c592f59bee3b1122a39e2ef50683dc8e0c49fe3c5fc7dda881fd4869"
+    },
+    {
+      "path": "docs/reviews/quantum-python-coverage.md",
+      "bytes_lf": 4994,
+      "sha256": "947220c955677b35831942e8fa4c7762876287ea7788babd897a12f0579f714d"
+    },
+    {
+      "path": "docs/reviews/quantum-python-verification.md",
+      "bytes_lf": 8506,
+      "sha256": "40079b577c63c63148f1301fa3328130ad9ba328ce3069cd174a102de54a1a46"
+    },
+    {
+      "path": "scripts/publishing.py",
+      "bytes_lf": 13380,
+      "sha256": "27b9bca6b40016fdb28d3e25f229b16f1e7bb34602deffafbb293639d676684b"
+    },
+    {
+      "path": "scripts/verify_notes.py",
+      "bytes_lf": 5080,
+      "sha256": "e15a7aaa7c3026585731e455e58af333fad27a64dc62d3a81a4b15a4a87371ac"
+    },
+    {
+      "path": "scripts/verify_notes_browser.py",
+      "bytes_lf": 8603,
+      "sha256": "f9edf7353d150951fccd042f5239e08c7f0309be24b6d58d87a2f4319138dcde"
+    },
+    {
+      "path": "tests/test_publishing.py",
+      "bytes_lf": 21041,
+      "sha256": "103346e65e88fe4c6d9e821f5a117280603e6acc94d74c2b97ec8a9f5c46c8aa"
+    },
+    {
+      "path": "tests/test_quantum_notes.py",
+      "bytes_lf": 2450,
+      "sha256": "df4b3843ef03480b09ea527080f839f25cbb3fb6b0b82dc0e04f11e26888a7c3"
+    }
+  ]
+}

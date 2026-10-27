@@ -1,0 +1,181 @@
+# 先确认运行的究竟是什么 {#ch01}
+
+本章为非官方原创学习笔记，不是原书译文。
+
+一段程序在自己的电脑上得到正确数字，只能说明“一次运行成功”。如果换一个终端就无法导入包，或者同事得到略有差别的结果，我们首先需要追问的往往不是算法，而是运行身份。本章把环境看作计算输入的一部分：源代码、输入数据、解释器、依赖以及运行配置共同决定结果。
+
+## 学习目标
+
+- 区分解释器、导入模块、安装分发包这三种身份，并定位常见的“装了却找不到”。
+- 理解虚拟环境隔离了什么、没有隔离什么，选择与风险相称的复现记录。
+- 将一个小型数值函数的假设变成可检查的接口和测试，而不是只保留成功截图。
+- 区分语法检查、单元测试、集成测试与科学正确性核验。
+
+## 1.1 三种名字，不要混为一谈
+
+终端里的 `python` 是一个命令名，不是唯一解释器的身份证。命令搜索路径、终端激活状态以及编辑器的解释器选择，都可能把它指向不同的可执行文件。Notebook 还有另一层选择：浏览器连接的 kernel 进程未必使用启动 Jupyter 服务的那个 Python。于是，“终端能导入、Notebook 不能”并不矛盾。
+
+第二种身份是**实际导入的模块**。Python 按导入规则搜索模块，并将通常已加载的模块保存在 `sys.modules`。对普通的文件模块，`module.__file__` 有助于确认来源；对命名空间包可以检查 `module.__spec__` 的搜索位置。不要假定所有模块都有 `__file__`，内建模块就是反例。本地文件若叫 `numpy.py`，还可能遮蔽已安装的 NumPy。此时重复安装包没有解决真正的问题。
+
+第三种身份是**分发包**：安装器处理的版本、元数据和依赖关系。分发名称与导入名称不保证相同，一个分发也可能提供多个模块。因此，查到分发版本，只证明此解释器能找到相应安装元数据，并不证明刚才导入的对象就来自它。诊断需要把“解释器在哪里”“模块来自哪里”“元数据是什么版本”放在同一份记录里。
+
+下面是只依赖标准库、只读本进程信息的完整诊断例子。没有安装 NumPy 也能运行；它不会尝试安装或联网。路径和版本是机器相关结果，不应照抄示意值，更不应未经检查就把含个人目录的报告公开。
+
+```python
+import importlib.metadata
+import json
+import sys
+
+try:
+    numpy_distribution = importlib.metadata.version("numpy")
+except importlib.metadata.PackageNotFoundError:
+    numpy_distribution = "not installed in this interpreter"
+
+report = {
+    "executable": sys.executable,
+    "python_version": list(sys.version_info[:3]),
+    "prefix": sys.prefix,
+    "base_prefix": sys.base_prefix,
+    "json_module_file": getattr(json, "__file__", None),
+    "numpy_distribution_version": numpy_distribution,
+}
+assert len(report["python_version"]) == 3
+print(json.dumps(report, indent=2, ensure_ascii=False))
+```
+
+预期输出是含上述六个字段的 JSON 对象；`numpy_distribution_version` 是版本字符串或给定的未安装提示。这个例子刻意没有导入 NumPy，所以不能用它宣称 NumPy 已可正常运行。实际数值任务还要在同一解释器中导入所需模块，检查来源，并做一次最小功能测试。
+
+定位环境问题时，可以按因果顺序排查：先看进程的 `sys.executable`，再看需要的模块来源，最后看依赖版本与动态库错误。安装器也应绑定到所选解释器，例如在使用安装器的场景中选择 `该解释器 -m pip` 的形式，而不是相信另一个独立的 `pip` 命令。这里的“该解释器”指已确认的可执行文件路径，不是要原样输入的命令。
+
+## 1.2 隔离不是密封，更不是安全沙箱
+
+通常的 `venv` 为项目提供自己的包安装位置和启动入口，并通过基础解释器建立环境。`sys.prefix != sys.base_prefix` 是识别常规 `venv` 的线索，不是识别所有环境管理器的通用定理。激活脚本主要是在当前 shell 中调整命令搜索路径；它不会把已经运行的 Notebook kernel 自动换掉。直接使用环境内的解释器也能工作，不以“是否激活”作为正确性的最终证据。
+
+这种隔离有明确边界：
+
+| 层面 | 项目环境能帮助控制的部分 | 仍需单独记录或限制的部分 |
+| --- | --- | --- |
+| Python 包 | 各项目不同版本的安装位置 | 模块遮蔽、手工路径修改、可选系统包继承 |
+| 二进制依赖 | 某些发行包自带的本机库 | 操作系统、驱动、外部动态库与 CPU 差异 |
+| 运行状态 | 新进程减少历史变量干扰 | 环境变量、线程数、随机源、当前目录 |
+| 安全权限 | 不提供安全隔离保证 | 文件、网络、凭据和进程权限 |
+
+因此，不要把未知代码放进虚拟环境后就认为安全，也不要把整个环境目录当成可搬运的成果。入口脚本可能含绝对路径，本机扩展依赖特定平台。迁移时应在目标位置重建环境，使用记录的依赖，再重新检查身份与测试结果。
+
+环境方案也有成本取舍。`venv` 适合轻量 Python 项目；包含复杂本机库的环境管理方案能控制更多二进制依赖，但解析器、平台和渠道仍影响结果。容器可以描述更大范围的用户态环境，却不自动固定宿主内核、GPU 驱动或所有硬件行为。对一个十行纯 Python 函数，强行引入复杂容器流程未必值得；对依赖编译器与多种共享库的程序，仅记一个 Python 包版本又往往不够。
+
+## 1.3 复现要分层，不必迷信逐位相同
+
+建议先定义复现目标，再决定记录深度：
+
+1. **身份可追踪**：知道用了什么代码版本、输入数据和依赖。保留直接依赖声明及解析后的精确版本；有条件时记录分发文件哈希和平台信息。
+2. **流程可重建**：从干净环境按说明得到同一类输出。还需写清入口、单位、工作目录假设以及数据来源；不要依赖某个交互会话里遗留的变量。
+3. **数值可接受**：结果在预先说明的误差阈值内一致。归约顺序、BLAS 实现或线程安排可能改变末位，测试应体现科学精度需求。
+4. **逐位相同**：通常需要更严格的算法、硬件与执行顺序约束。只有问题确实要求时才承诺这一层，固定随机种子本身远远不够。
+
+一份版本列表不是完整的复现方案。例如，从不同渠道取得同版本的包，底层数值库仍可能不同；而把运行时间戳也纳入输出文件逐字比较，又可能将无关差异误报成科学失败。应该保存足够追踪问题的元数据，同时让测试只对真正有意义的不变量提出要求。
+
+## 1.4 完整例子：把能量加权平均写成可审计的函数 {#ch01-example}
+
+假设我们按给定的无量纲权重，对一组**自造能量数据**求加权平均。能量输入统一为 Hartree（$E_h$），权重非负，且总权重严格大于零。我们只讨论有限、适中大小的浮点数据，要求中间加权和能用双精度表示；这不是统计不确定度估计，也不是真实分子的计算结果。
+
+目标关系是
+
+$$
+\bar E=\frac{\sum_i w_iE_i}{\sum_i w_i}.
+$$
+
+这里最重要的不是除法，而是接口决定：空输入不应返回零；负权重不应偷偷变成绝对值；`NaN` 不应等到下游画图时才被发现。将函数写成只接收输入、只返回结果的纯函数，可以让测试不依赖文件、网络或 Notebook 的执行历史。
+
+以下完整例子仅依赖标准库。所有数据与测试为本笔记新作。
+
+```python
+import math
+import unittest
+
+
+def mean_energy_hartree(energies, weights):
+    energies = tuple(float(value) for value in energies)
+    weights = tuple(float(value) for value in weights)
+    if not energies or len(energies) != len(weights):
+        raise ValueError("nonempty energies and matching weights required")
+    if not all(math.isfinite(value) for value in energies + weights):
+        raise ValueError("finite values required")
+    if any(weight < 0.0 for weight in weights):
+        raise ValueError("weights must be nonnegative")
+    total_weight = math.fsum(weights)
+    if total_weight == 0.0:
+        raise ValueError("positive total weight required")
+    return math.fsum(
+        energy * weight for energy, weight in zip(energies, weights)
+    ) / total_weight
+
+
+class MeanEnergyTests(unittest.TestCase):
+    def test_hand_computed_result(self):
+        self.assertAlmostEqual(
+            mean_energy_hartree([-1.0, -2.0], [3.0, 1.0]), -1.25
+        )
+
+    def test_shift_and_permutation(self):
+        energies, weights = [-1.0, -2.0], [3.0, 1.0]
+        reference = mean_energy_hartree(energies, weights)
+        self.assertAlmostEqual(
+            mean_energy_hartree([value + 4.0 for value in energies], weights),
+            reference + 4.0,
+        )
+        self.assertAlmostEqual(
+            mean_energy_hartree(energies[::-1], weights[::-1]), reference
+        )
+
+    def test_invalid_input(self):
+        cases = [
+            ([], []),
+            ([-1.0], [1.0, 2.0]),
+            ([float("nan")], [1.0]),
+            ([-1.0], [-1.0]),
+            ([-1.0], [0.0]),
+        ]
+        for energies, weights in cases:
+            with self.subTest(energies=energies, weights=weights):
+                with self.assertRaises(ValueError):
+                    mean_energy_hartree(energies, weights)
+
+
+if __name__ == "__main__":
+    print(f"mean = {mean_energy_hartree([-1.0, -2.0], [3.0, 1.0]):.2f} Eh")
+    unittest.main()
+```
+
+保存为独立脚本运行时，预期打印 `mean = -1.25 Eh`，测试摘要为运行 3 项测试并显示 `OK`；耗时和标准输出/标准错误的显示先后可能不同。这里的断言是待运行的验收条件，不表示本章写作时已执行。
+
+这个测试集采用两类证据。手算值检查权重是否放对位置；整体平移和成对置换检查数学不变量。后者特别适合科学程序，因为即使大问题没有方便的精确答案，仍可能知道“同时重排对象与权重不应改变结果”。但不变量测试不能替代独立答案：错误函数也可能满足一部分不变量。
+
+`math.fsum` 改善求和误差，不赋予任意精度，也不防止乘积或总和溢出。生产接口若允许极端数值，需要另定缩放和溢出策略。这里使用 `unittest` 的断言方法表达正式测试；普通 Python `assert` 可被优化模式关闭，不应承担输入校验或安全检查。
+
+## 1.5 如何把探索变成项目
+
+探索时可以先在 Notebook 比较几组输入；一旦发现可复用规律，就把核心计算移到模块，把数据读取留在边界层，把测试放在独立位置。这样能分别回答“数值函数是否对”“数据是否正确读入”“整个入口能否从干净状态运行”。模块导入不应自动开始昂贵计算或写文件；命令行入口与库函数分离，使相同计算更容易被脚本、测试和交互环境复用。
+
+从测试证据看，语法检查能发现无法解析的代码，却不能证明变量类型或单位正确；单元测试覆盖小函数，集成测试检查组件协作；科学核验还需要手算、极限、对称性或独立算法。测试通过不是模型正确的充分条件。持续集成只是自动重复既定检查，如果检查本身漏掉“eV 被当作 Hartree”，重复一千次也不会弥补。
+
+## 练习与解题指引
+
+1. **终端与 Notebook 导入不同版本。** 两边都报告已安装同一个分发版本，就能排除环境问题吗？  
+   **指引：** 不能。分别记录 `sys.executable`、模块来源以及 kernel 的选择；检查工作目录是否存在同名文件。分发元数据相同不保证实际导入路径相同。修改安装后还应重启相关进程，避免旧模块仍留在内存。
+
+2. **为平均函数补充一条变形测试。** 若全部权重乘以正数 $c$，结果应该怎样？  
+   **答案：** 分子与分母同时乘 $c$，平均不变。可用 $c=7$ 的适中数据与原值比较。不要用极大的 $c$ 而忽略浮点溢出；同时测试零权重项不影响结果。
+
+3. **复制环境目录还是重建？** 把某台机器的环境目录压缩给另一种操作系统，为什么不是可靠复现方案？  
+   **指引：** 解释器、入口路径、本机扩展和共享库可能不兼容。应传递代码与数据身份、依赖声明/解析记录及测试入口，在目标平台重建并验证。若只能保证容差内一致，应写明容差，而不是声称逐位复现。
+
+## 进一步阅读与边界
+
+本章没有展开包发布、Git 操作、多重继承、容器制作和远程 Notebook 运维。它们是独立技能，不能由上述十几行诊断代码替代。后续做数值处理时，环境记录之外还要追踪数组的形状、类型和所有权，见[第2章](02-data.qmd)。
+
+## 来源与新增内容
+
+主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第1章 **Python programming environment**，全章印刷页3–56／PDF物理页18–71。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00009-0](https://doi.org/10.1016/B978-0-44-323837-6.00009-0)。
+
+本章针对性使用：印刷页3–4、6、16、29–31、49（PDF物理页18–19、21、31、44–46、64），涉及运行身份、模块、虚拟环境、测试和交互环境；目录定位为PDF物理页9。本文的复现分层、诊断组织、加权平均解释、数据、代码和练习均为本笔记新作，不复制原书程序。数学关系由加权平均定义独立得到；未进行原PDF视觉核对。本章不宣称覆盖原书全部细节，也未获公开发布批准。

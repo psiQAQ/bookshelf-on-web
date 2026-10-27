@@ -4,3 +4,5 @@ books:
   path: books/sample-linear-algebra/metadata.yaml
 - id: sample-waves
   path: books/sample-waves/metadata.yaml
+- id: quantum-python-notes
+  path: books/quantum-python-notes/metadata.yaml

@@ -21,7 +21,7 @@ format:
     code-copy: true
     code-overflow: scroll
     include-in-header:
-    - text: '<style>mjx-container[display="true"] { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 0.25em 0; }</style>'
+    - text: '<style>mjx-container[display="true"] { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 0.25em 0; } img { max-width: 100%; height: auto; } .page-columns, #quarto-document-content, main.content { min-width: 0; } #quarto-document-content p, #quarto-document-content li, #quarto-document-content td { overflow-wrap: anywhere; }</style>'
 execute:
   enabled: false
   eval: false

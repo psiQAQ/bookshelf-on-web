@@ -55,3 +55,15 @@ uv run python scripts/check_site.py .preview --book sample-linear-algebra --book
 - GitHub 托管 runner、Pages 环境保护和公开站点 URL 尚未验证；本地 HTTP 200 不等于上线。
 - M0 的静态输入限制不是 OS 沙箱或 HTML/JS 净化器，正式审批须审查内容。来源 Schema 仅定义 PDF 数据契约，不代表 M1 实现。
 - 当前实现留在 `feat/m0-publishing` 的未提交工作区；未执行暂存、提交、合并、推送或部署。文件系统已用中间文件名完成 `README.md` → `readme.md`；遵守不暂存约束，索引中的初始路径要在将来获准暂存时显式记录大小写更名。
+
+## 整书直译上线记录（2026-10-27）
+
+原「学习笔记」任务被整书直译取代（见 `.scratch/quantum-python-notes/revision-request.md`）。本次交付与验证结果：
+
+- 内容：Qiming Sun《Python for Quantum Chemistry: A Full Stack Programming Guide》全书中译，前言 + 16 章；59 张插图、18 张表格、228 张公式图（按版面裁剪，因 PDF 文本层公式已碎散为字形残片）、349 条参考文献（保留英文原文）、全部代码清单（逐字符照录，仅把排版弯引号折回 ASCII）。
+- 来源核验：源 PDF SHA-256 `c7553b895fc4caf52359df14007190a83bc5b94162dea1d22f4dc41314e383aa`，717 页；17 章的 PDF 页范围写入 `provenance.json` 并逐章核对覆盖，`eq/ref/fig/tbl/code` 计数与源转录逐章相等（`problems=0`）。
+- 质量闸门：`uv run python -m unittest discover -s tests` → 49 项通过（2 跳过）；`scripts/validate.py --strict` → 0 问题；`scripts/build.py` → `delivered=true`，`dist/` 20 MB、18 个 HTML 与 305 张 PNG；`scripts/check_site.py dist`（不带 `--book`，自动取注册表）→ 0 问题。
+- 浏览器核验：桌面 1440 px 与移动 390 px（390 视口经 iframe 复现，因为 headless Chrome 窗口最小宽度约 480 px）逐页检查；文档级 `scrollWidth` 在 390/768 下分别为 375/753，无横向溢出，代码块在自身容器内滚动。
+- 上线：提交 `d475d5e`、`01f08e9`、`f8a1472`、`a3f8b9a` 推送 `main`；手动触发 `deploy.yml`（run 40497222200）成功。为首次发布在仓库上启用 Pages（`build_type: workflow`，自定义域名 `notes.psiqaq.cn`）。实测 `https://notes.psiqaq.cn/bookshelf-on-web/`、`/books/quantum-python-notes/index.html`、`/books/quantum-python-notes/chapters/12-integrals.html`、`/books/quantum-python-notes/assets/math/eq-12-001.png` 均 HTTP 200。
+- 已知限制：公式以图片呈现，不可选中或搜索；正文中少量被排版拆散的符号残片按原样保留，未重新排版；第 1 章因篇幅（97 KB）未执行润色 pass，其余 16 章经 `gemini-3.8-flash-low` + humanizer-zh 规则润色并通过结构与字数校验。
+- 版权：译本未获 Elsevier 授权，按用户决定「公开 Pages，自负风险」发布，`index.qmd` 的「版权」一节记录了下线承诺。

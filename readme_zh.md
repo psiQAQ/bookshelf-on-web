@@ -8,9 +8,9 @@
 
 已实现：两本简短原创样例、浅深主题、公式、静态代码、章节导航与显式锚点；JSON Schema 与机器可读校验；隔离渲染、多书组装、站内 HTML/CSS 链接与资源检查、发布边界检查；锁定 Python 依赖、PR 验证和**仅手动触发**的 Pages 工作流。
 
-正式注册表 `catalog/books.yaml` 刻意保持为空。两本样例均为**未经人工批准的草稿**，仅登记于明确隔离的本地预览注册表 `catalog/preview.yaml`。不虚构原始 PDF 哈希或页码。已有未登记书籍材料未被修改，也不进入构建。
+正式注册表 `catalog/books.yaml` 当前发布一本书：Qiming Sun《Python for Quantum Chemistry: A Full Stack Programming Guide》的中文直译，线上地址 <https://notes.psiqaq.cn/bookshelf-on-web/books/quantum-python-notes/>。两本原创样例仍为**未经人工批准的草稿**，仅登记于明确隔离的本地预览注册表 `catalog/preview.yaml`。不虚构原始 PDF 哈希或页码。已有未登记书籍材料未被修改，也不进入构建。
 
-未实现：PDF/OCR 提取、Pagefind 跨书搜索、知识图谱或增量渲染。未部署、未验证公开 Pages 站点。Quarto 搜索仅覆盖单个项目，不覆盖整个书库。
+未实现：构建流水线内的 PDF/OCR 提取（译本的图片资产由忽略目录 `.local/` 下的一次性脚本产出）、Pagefind 跨书搜索、知识图谱或增量渲染。Quarto 搜索仅覆盖单个项目，不覆盖整个书库。
 
 ## 环境与命令
 

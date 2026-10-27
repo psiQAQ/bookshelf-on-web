@@ -8,9 +8,9 @@
 
 Implemented: two short original sample books, light/dark themes, formulas, static code, chapter navigation and explicit anchors; JSON Schemas and machine-readable validation; isolated rendering, multi-book assembly, local HTML/CSS link/resource checks and publication boundary checks; locked Python dependencies, PR validation and a **manual-only** Pages workflow.
 
-The public registry `catalog/books.yaml` is intentionally empty. Both samples are **drafts without human approval**. They appear only in `catalog/preview.yaml`, an explicitly separate local-preview registry. No original PDF hash or page number is invented. Existing unregistered book materials are untouched and excluded.
+The public registry `catalog/books.yaml` currently publishes one book: the Chinese translation of Qiming Sun's *Python for Quantum Chemistry: A Full Stack Programming Guide*, live at <https://notes.psiqaq.cn/bookshelf-on-web/books/quantum-python-notes/>. Both original samples remain **drafts without human approval**; they appear only in `catalog/preview.yaml`, an explicitly separate local-preview registry. No original PDF hash or page number is invented. Existing unregistered book materials are untouched and excluded.
 
-Not implemented: PDF/OCR extraction, Pagefind cross-book search, knowledge graphs or incremental rendering. No public Pages site has been deployed or verified. Quarto search is per project, not library-wide.
+Not implemented: PDF/OCR extraction inside the build pipeline (the translation's assets were produced by throwaway scripts under the ignored `.local/` directory), Pagefind cross-book search, knowledge graphs or incremental rendering. Quarto search is per project, not library-wide.
 
 ## Requirements and commands
 

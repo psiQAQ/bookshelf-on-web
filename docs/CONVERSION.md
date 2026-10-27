@@ -4,7 +4,7 @@
 
 ## 原创内容
 
-书籍元数据 `source: {type: original, description: ...}`，来源映射 `provenance.json` 的每个块也使用 `source.type: original` 和创作说明。不填写 PDF 哈希、页码、bbox 或解析器版本。两本样例仅演示该分支，`review_state: needs_review`；原创不自动代表已取得公开授权。
+书籍元数据 `source: {type: original, description: ...}`，来源映射 `provenance.json` 的每个块也使用 `source.type: original` 和创作说明。不填写 PDF 哈希、页码、bbox 或解析器版本。两本样例仅演示该分支，`review_state: needs_review`。
 
 ## PDF 数据约束（为来源记录定义，不实现提取）
 

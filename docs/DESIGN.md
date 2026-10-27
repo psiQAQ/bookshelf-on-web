@@ -6,9 +6,9 @@
 
 一个 Quarto Website 门户，加多个独立 Quarto Book。`catalog/books.yaml` 是唯一**正式**注册表，初始为空；构建不扫描 `books/`。注册条目为 `id` 和 `path: books/<id>/metadata.yaml`，详细元数据定义于 `schemas/book.schema.json`，注册表定义于 `schemas/catalog.schema.json`。
 
-`catalog/preview.yaml` 是独立的、仅本地预览注册表；只有显式传入 `--preview` 才读取，输出固定为 `.preview/`，不会写入 `dist/`。两本原创样例在此登记，保持 `draft`、`rights.public: false`、人工批准与权利证据均为 null。预览不是审核，也不产生公开授权。
+`catalog/preview.yaml` 是独立的、仅本地预览注册表；只有显式传入 `--preview` 才读取，输出固定为 `.preview/`，不会写入 `dist/`。两本原创样例在此登记，保持 `draft`，人工批准为 null。预览不是审核。
 
-正式构建会拒绝任何无资格的登记条目，而非静默跳过。资格要求人工批准身份、时间及本地审核决定记录，公开授权、许可及 HTTPS 证据，来源块已核验，无未解决 P0/P1。空注册表是合法状态，能生成空门户。
+正式构建会拒绝任何无资格的登记条目，而非静默跳过。资格要求人工批准身份、时间及本地审核决定记录，来源块已核验，无未解决 P0/P1。空注册表是合法状态，能生成空门户。
 
 ## 输入与隔离
 

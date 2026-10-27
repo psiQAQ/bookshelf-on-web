@@ -25,7 +25,7 @@ except ImportError:
 def portal_index(books: list[Book], preview: bool) -> str:
     text = '# bookshelf-on-web\n\n科学技术资料的在线阅读书架。\n\n'
     if preview:
-        text += '**LOCAL PREVIEW ONLY — 未审核、未获公开授权，不可部署。**\n\n'
+        text += '**LOCAL PREVIEW ONLY — 未审核、不可部署。**\n\n'
     elif not books:
         text += '目前没有获批发布的书籍。\n\n'
     text += '<ul>\n'

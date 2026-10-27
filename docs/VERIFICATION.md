@@ -17,14 +17,14 @@ uv run python scripts/validate.py --preview --report reports/preview-validation.
 uv run python scripts/build.py --quarto .local/tools/bin/quarto.exe
 uv run python scripts/build.py --preview --quarto .local/tools/bin/quarto.exe
 uv run python scripts/check_site.py dist
-uv run python scripts/check_site.py .preview --book sample-linear-algebra --book sample-waves --report reports/preview-links.json
+uv run python scripts/check_site.py .preview --book sample-linear-algebra --book sample-waves --book quantum-python-notes --report reports/preview-links.json
 .local/actionlint/actionlint.exe -color=false
 ```
 
-- 锁定依赖同步与 lock 检查通过。除 PyYAML/jsonschema，明确锁定 RFC3339/URI 格式校验器，避免 JSON Schema 对未安装格式校验器静默跳过；非法日期及授权 URI 有回归测试。
-- 45 项测试：44 通过、1 跳过。真实渲染集成测试已启用并通过，不是仅模拟 renderer；检查空正式门户、两个独立书籍、数学显示标记、公式锚点、语法高亮、主题样式与侧栏。静态代码中加入临时哨兵写文件语句，验证文件未被创建。跳过项是实际符号链接测试：Windows 当前没有创建符号链接权限。Linux PR 工作流配置执行该项，但未实际远端运行。
-- 正式严格校验：0 问题；正式空门户构建 `ok: true, delivered: true`，23 文件、1,700,166 字节，书籍列表为空。
-- 本地预览：两本书，67 文件、5,120,159 字节；6 条预期警告（每本书均缺人工批准、公开权利、来源待核验）。没有为消除警告而改动审核状态。
+- 锁定依赖同步与 lock 检查通过。除 PyYAML/jsonschema，明确锁定 RFC3339/URI 格式校验器，避免 JSON Schema 对未安装格式校验器静默跳过；非法日期及 URI 有回归测试。
+- 47 项测试：46 通过、1 跳过。真实渲染集成测试已启用并通过，不是仅模拟 renderer；检查空正式门户、两个独立书籍、数学显示标记、公式锚点、语法高亮、主题样式与侧栏。静态代码中加入临时哨兵写文件语句，验证文件未被创建。跳过项是实际符号链接测试：Windows 当前没有创建符号链接权限。Linux PR 工作流配置执行该项，但未实际远端运行。
+- 正式严格校验：0 问题；正式空门户构建 `ok: true, delivered: true`，23 文件、1,700,136 字节，书籍列表为空。
+- 本地预览：三本书，104 文件、8,211,823 字节；6 条预期警告（每本书均缺人工批准、来源待核验）。没有为消除警告而改动审核状态。
 - 正式与预览站点检查均为 0 问题。临时构建目录均在交付后清除。失败处理测试证明渲染/断链/禁止文件会阻断交付，保留旧成功产物且不残留新半成品。
 - 用 Python `ThreadingHTTPServer` 仅绑定 127.0.0.1、根目录 `.preview/`、随机端口验证 `/`、两个 `/books/<id>/` 及两个章节 HTML，共 5 个请求均 HTTP 200；验证后关闭服务。
 - 真实渲染揭示 Quarto 1.10.19 浅深主题重复两个 stylesheet `<link>` ID。仅对此模板行为作窄豁免；正文重复 ID 仍失败，且有回归测试。
@@ -49,7 +49,7 @@ uv run python scripts/check_site.py .preview --book sample-linear-algebra --book
 
 ## 安全边界与未验证项目
 
-- 两本原创样例保持草稿，未取得公开许可。没有真实 PDF 导入、OCR、全文覆盖或人工原文核验；不伪造 PDF 哈希/页码/许可。
+- 两本原创样例保持草稿。没有真实 PDF 导入、OCR、全文覆盖或人工原文核验；不伪造 PDF 哈希/页码。
 - 既有 `books/Python for Quantum Chemistry A Full Stack Programming Guide/` 未修改、未登记、未暂存或复制；`skills-lock.json`、`.agents/`、`.local/` 原始规划和既有 Agent 规则保持原样。下载工具仅新增到忽略的 `.local/`。
 - 外部 URL、MathJax CDN、主题切换/搜索交互、视觉布局与 390/768/1440 px 响应式行为未作浏览器验证。HTML 已真实渲染不等于浏览器效果已验收。
 - GitHub 托管 runner、Pages 环境保护和公开站点 URL 尚未验证；本地 HTTP 200 不等于上线。

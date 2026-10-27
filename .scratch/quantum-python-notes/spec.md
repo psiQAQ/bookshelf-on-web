@@ -1,5 +1,7 @@
 # 量子化学 Python 原创中文学习笔记
 
+> 已取代：2026-10-27 用户改为「整书直译」，任务定义见 `.scratch/quantum-python-notes/revision-request.md`。本文件仅作旧版（`c647409` 学习笔记）的历史记录保留。
+
 ## 目标与范围
 
 以 Qiming Sun 的 *Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025）为学习参考，覆盖正式目录的 16 章主题。产物为独立组织的中文学习笔记，不是译本、逐段改写或原书替代品。每章必须包含实质讲解、学习目标、适用的原创示例或练习及来源指引。

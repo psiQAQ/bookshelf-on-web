@@ -51,7 +51,7 @@ Qiming Sun《Python for Quantum Chemistry: A Full Stack Programming Guide》（E
 1. 用 pypdf 抽取 PDF 文本层，按字体、字号与坐标还原标题层级、段落、列表、代码块与参考文献。
 2. 插图、表格、公式按版面坐标从 PDF 裁剪为 PNG，图注单独抽取后翻译。
 3. 正文由 `gpt-6.1-terra`（`openai-codex`，thinking=low）分段直译，强制保持标签顺序、代码逐字符、图表编号与参考文献原样。
-4. 再由 `gemini-3.8-flash-low`（经 `agy`）按 humanizer-zh 的规则润色中文措辞，只改句式与填充词，不改信息点、段序与代码；结构或字数越界的章节一律回退到润色前版本。
+4. 再尝试用 `gemini-3.8-flash-low`（经 `agy`）按 humanizer-zh 的规则润色中文措辞，只改句式与填充词；结构或字数越界的章节整章回退。本版有 3 章通过，其余 14 章因改写破坏了标题、分段或篇幅而保留直译稿，逐章状态见 `docs/reviews/quantum-python-translation.md`。
 5. 最后由脚本装配为 Quarto 书籍，逐章校验行结构、代码、图表与参考文献数量，并核对 PDF 页范围覆盖。
 
 ## 版权

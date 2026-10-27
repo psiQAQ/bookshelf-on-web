@@ -4,7 +4,7 @@
  "prompt": ".local/polish_prompt.md",
  "gate": ".local/check_qmd.py",
  "before_revision": "fe35636",
- "after_tree": "9cb7b5f6f65a68017b67610b3fd36215d0a10c89",
+ "after_tree": "af1b4a9f81577dea8b566e75aec29232c894c22b",
  "chapters": [
   {
    "chapter": "00-preface",

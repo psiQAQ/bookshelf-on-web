@@ -3,8 +3,9 @@
 润色由 `agy`（`gemini-3.8-flash-low`，`--effort low`）按 `.local/polish_prompt.md` 逐章执行，提示词只给译文、不给原文；每章跑完立刻用 `.local/check_qmd.py` 做结构闸门（代码块、参考文献、图片、标题、图注、公式锚点逐条相同，汉字数比例 0.85–1.20，段落偏差 ≤ max(3, 1%)），不通过就回退到润色前副本并重试一次。
 
 - 润色前修订：`fe35636`（`books/quantum-python-notes/chapters/*.qmd` 的直译稿）
-- 润色后修订：`9cb7b5f6f65a68017b67610b3fd36215d0a10c89`
-- 润色前后逐章 diff：`git diff fe35636..9cb7b5f6f65a -- books/quantum-python-notes/chapters/`
+- 润色后修订：`af1b4a9f81577dea8b566e75aec29232c894c22b`
+- 润色提交：`6b32f9f`（17 章一次通过）；其后 `af1b4a9` 只删掉 15 处「行内 API 名被抬进代码行后残留的列表标记」（`- 。GroupBy.agg …`），不改任何措辞。
+- 润色前后逐章 diff：`git diff fe35636..af1b4a9f8157 -- books/quantum-python-notes/chapters/`
 - 机器可读证据：`docs/reviews/quantum-python-polish-evidence.json`（逐章 before/after 计数与 SHA-256、行级增删数、调用起止时间）
 - 调用日志：`.local/logs/polish3-<chapter>.log`（含 agy 的 rc、闸门输出）；逐章耗时见下表
 

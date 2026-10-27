@@ -96,8 +96,8 @@
     },
     {
       "path": "books/quantum-python-notes/metadata.yaml",
-      "bytes_lf": 1129,
-      "sha256": "16338dd75a3b6a022c791b4736ed40e86bfe5329047407f798a63a515b04f646"
+      "bytes_lf": 1111,
+      "sha256": "fd054c5d8ccfaeda7e19bc92548fe01c892385830a03ca625fbb5994c4d952d1"
     },
     {
       "path": "books/quantum-python-notes/provenance.json",
@@ -136,8 +136,8 @@
     },
     {
       "path": "docs/reviews/quantum-python/preview-build.json",
-      "bytes_lf": 2099,
-      "sha256": "2efcbf55b73adad5bde29635f77e00b9e90f5db4ca8603db51141204a28cd0a1"
+      "bytes_lf": 1476,
+      "sha256": "4de09a8265d1c2899dda2c336b8db5eb873b346ec5132c402d1ba50df0d7ed9e"
     },
     {
       "path": "docs/reviews/quantum-python/preview-links.json",
@@ -146,8 +146,8 @@
     },
     {
       "path": "docs/reviews/quantum-python/preview-validation.json",
-      "bytes_lf": 1332,
-      "sha256": "531011ce4dfd5ba7a1d65774cd97943cad2ce7d9ca762d3ff5cfc36ad145d2e4"
+      "bytes_lf": 1340,
+      "sha256": "e63f59c9f45d672fbd89932bdeee86476da616a0eedd1bb95475a9553d25cc61"
     },
     {
       "path": "docs/reviews/quantum-python/review-a.md",
@@ -171,8 +171,8 @@
     },
     {
       "path": "docs/reviews/quantum-python/tests.txt",
-      "bytes_lf": 6837,
-      "sha256": "584533b1c592f59bee3b1122a39e2ef50683dc8e0c49fe3c5fc7dda881fd4869"
+      "bytes_lf": 6499,
+      "sha256": "64b89b3e031827fffc83a4c6eb81dc20e4c79cb7488e878883b76198bd2addd8"
     },
     {
       "path": "docs/reviews/quantum-python-coverage.md",

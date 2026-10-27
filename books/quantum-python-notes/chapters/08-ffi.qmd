@@ -1,175 +1,1217 @@
-# 跨语言接口：先约定内存，再调用函数 {#ch08}
+# 外部语言接口 {#ch08 .unnumbered}
 
-本章为非官方原创学习笔记，不是原书译文。
+在 Python 项目中，有多种场景需要集成用不同编程语言编写的代码或库。对于计算密集型任务，可以用 C 或 C++ 等编程语言开发某些功能，以优化性能。在其他情况下，项目可能需要使用以编译型语言开发的现有库，而用 Python 重写这些库可能不切实际。因此，我们需要一个接口来执行用外部编程语言开发的函数。
+开发这种接口有多种选择。从技术上讲，它们可分为两类：进程间通信（Inter-Process Communication，IPC）和同一内存空间内的函数调用。
+使用进程间通信时，Python 程序和用外部语言编写的程序可以通过文件、消息传递或共享内存进行通信。然而，进程间通信接口的开销往往较高。同一内存空间内的函数调用可以避免进程间通信带来的开销和复杂性。这种方法通常通过 Python/C API 实现，是首选方案。
+开发外部语言接口时需要考虑几个技术方面。其中一些技术问题与底层编译型编程语言甚至操作系统的特性有关。阅读本章时，你将找到以下问题的答案：
 
-## 学习目标
+- Python 与其他语言的数据类型有什么区别？
+- 如何在 Python 软件包中编译扩展？此外，如何利用 CMake 在 Python 软件包中编译 C/C++ 库？
+- 如何检查和管理 Python 扩展所用外部库的运行时依赖？
+- 是否有工具能够自动实现 Python 与编译型语言之间的接口，而不必手动使用 Python/C API？
+- 如何在不实现 Python/C API 代码的情况下，从 Python 直接调用 C 函数？
+- 开发 Python 与 Fortran 之间的接口有哪些方法？
 
-读完本章，应能把“Python 调用一个外部函数”拆成可检查的契约：符号与调用约定、数值类型、形状与步长、内存所有权、错误与线程行为。还应能说明 C、C++、Fortran、Rust 各自需要怎样的桥接，而不是把一个地址当作完整的数组。
+## 8.1 进程间通信接口
 
-这里不搭建编译工具链，也不加载本机动态库。完整例子只用标准库解释数据布局；实际本机接口另以协议示意，不能据此宣称扩展已编译或已测试。
+通过进程间通信将 Python 与外部库连接时，基本上有两个问题需要解决：
 
-## 1. 先决定边界放在哪里
+1. 如何执行外部库？
+2. 如何在 Python 与外部库之间交换数据？
 
-设一个计算程序需要反复对长度为 $n$ 的向量求加权和。可以让 Python 每次传一个数，也可以一次传入整个向量。即使底层乘法同样快，这两种接口仍可能差很多：每次越过语言边界都可能发生参数检查、类型转换、包装对象分配和错误处理。将一次调用设计成处理一个批次，往往比把一个标量函数换成 C 更重要。
+大多数传统量子化学程序都可以通过 shell 命令执行。为了与这些程序交互，Python 中的 os.system 和 os.popen 函数提供了执行 shell 命令的基本能力。不过，更可靠的选择是内置的 subprocess 模块，它提供了更好的控制和错误处理能力。我们特别推荐使用该模块的 subprocess.check_call 或 subprocess.check_output 函数。这些函数可以执行 shell 命令，同时捕获和处理过程中可能出现的异常。subprocess 函数可以在 shell 中或以直接模式执行命令，后者不启动 shell。通常建议以直接模式执行命令。在这种模式下，命令应以独立字符串组成的列表提供，如下例所示：
 
-还有更基本的选择：是否必须在同一进程中调用？
+```python
+try:
+    cmd = 'pyldd chap01/pyldd'
+    output = subprocess.check_output(cmd.split())
+    print(output.decode())
+except subprocess.CalledProcessError as e:
+    print(e.returncode)
+    print(e.cmd)
+    print(e.output.decode())
+    print(e.stderr)
+```
+在这种进程间通信接口中，Python 与外部库之间的通信通常基于文件。这种方法需要读写 Python 脚本和外部库都能访问的临时文件。如何管理用于数据交换的临时文件？计算结束后把临时文件留在磁盘上通常并不可取。为了确保用后清理，tempfile 模块提供了管理临时文件的功能。
+如果用一个临时文件作为外部程序的输入文件，可以使用 tempfile.NamedTemporaryFile 类创建该文件。关闭时，这个临时文件会自动删除。执行外部程序时，应将 subprocess.check_call 函数放在 NamedTemporaryFile 上下文中，如下例所示：
 
-- **进程外协议**：两个程序通过文件或消息交换数据。需要规定编码、版本、单位和失败重试；通常有序列化与通信成本，但崩溃隔离较好，也不必共享对象表示。
-- **进程内接口**：Python 与动态库共用地址空间，能借用同一缓冲区。代价是错误指针、越界访问或错误 ABI 可能直接终止解释器，不能指望 Python 的异常机制兜底。
-
-因此，已有独立程序、调用次数少、每次工作量大时，进程外协议可能更易维护；频繁处理大数组且需要避免复制时，进程内接口才更有吸引力。不能仅以“少一层通信”决定整个系统的可靠性设计。
-
-## 2. ABI 不是函数说明书的另一种写法 {#ch08-contract}
-
-API 告诉调用者函数的含义；ABI（应用二进制接口）还要规定二进制层面怎样找到它、传入参数和接收返回值。同样的函数名和相似的源代码类型，不保证 ABI 一致。需逐项回答：
-
-| 契约项 | 要说清的问题 | 违反时可能发生什么 |
-| --- | --- | --- |
-| 符号、调用约定 | 导出的名称是什么？参数按何种约定传递？ | 找不到函数，或错误解释栈/寄存器 |
-| 整数和浮点 | 位宽、符号、表示和范围是什么？ | 截断、溢出、把地址误读成整数 |
-| 聚合类型 | 结构体字段偏移、对齐与填充是什么？ | 每个字段都“有值”，但读错位置 |
-| 指针 | 元素数、可写性、对齐、有效期是什么？ | 越界、悬空指针、数据竞争 |
-| 错误 | 返回码还是异常？输出在失败后是否有效？ | 使用未初始化或部分写入的数据 |
-
-Python 整数没有固定的机器位宽限制，外部函数的整数参数却有。传入 `int32_t` 前应检查 $-2^{31}\leq x<2^{31}$；传入长度还应检查非负和总字节数是否超出目标地址空间。不要笼统假定 C 的 `long` 在所有平台都是 64 位，也不要把 NumPy 的类型名字当作所有平台 C 类型的保证。
-
-数值还包含语义契约：两个同为 64 位浮点的数组，一个以 bohr、一个以 ångström 表示坐标，ABI 不会发现混用。包装层应同时规定单位与指标含义。本章的布局例子全部是无量纲玩具数据，不表示分子性质。
-
-### 用稳定的外壳隔离语言内部对象
-
-以下是**接口协议示意，不是可编译工程**。设输入有 $n$ 个双精度数，输出由调用方预先分配：
-
-```text
-int32_t weighted_batch(
-    uint64_t n,
-    const double *input,
-    const double *weights,
-    double *output
-);
+```python
+In [1]: with tempfile.NamedTemporaryFile(mode='w', dir='.') as f:
+            print(f.name)
+            f.write('hello')
+            f.flush()
 ```
 
-还必须附上文字约定：`double` 在目标平台须为约定的 binary64；指针指向至少 `n` 个元素；输出不得与输入重叠；函数只在调用期间借用缓冲区，不保存指针；返回 0 才可使用输出；错误返回后输出内容未定义；空数组是否允许空指针须另作约定。仅写这段声明，仍未规定函数到底计算什么。
+```python
+            subprocess.check_call(['cat', f.name])
+        print(os.path.exists(f.name))
+Out[1]:
+/home/ubuntu/tmpzpt80qxt
+hello
+False
+```
+请注意，写入 NamedTemporaryFile 的操作是有缓冲的。其内容可能不会立即对外部程序可见。因此，在执行外部 shell 命令之前，调用 flush 方法确保所有数据都同步到文件中。
+默认情况下，NamedTemporaryFile 创建的临时文件存储在环境变量 TMPDIR 指定的目录中。要更改这些文件的存储位置，可以调整 dir 关键字参数。NamedTemporaryFile 的默认操作模式是二进制模式，只允许写入 bytes 或 bytearray 对象。为了能够写入文本字符串，本例将文件操作模式改为文本模式。
+对于涉及多个临时文件的场景，TemporaryDirectory 类提供了便捷的解决方案。该类创建一个临时目录，退出 with 上下文时会自动删除该目录。
 
-在 `ctypes` 中，已确认的声明需要对应的 `argtypes`、`restype` 与正确的加载方式。漏写 `restype` 会让默认返回类型造成危险，特别是返回指针时。`ctypes` 不会从头文件自动证明声明正确；CFFI 能帮助描述或编译接口，也不能替调用者证明指针长度和有效期。不要通过试着调用陌生符号来“猜”签名。
+```python
+In [2]: with tempfile.TemporaryDirectory() as tmpdir:
+            input_file = f '{tmpdir}/input.dat'
+            print(input_file)
+            subprocess.call(... , cwd=tmpdir)
+            ...
+        print(os.path.exists(input_file))
+Out[2]:
+/tmp/tmpvczd6f5c/input.dat
+False
+```
 
-## 3. 数组是地址规则，不只是一个指针
+## 8.2 C/C++ 接口
 
-二维数组元素地址的一般形式为
+C 和 C++ 常用于开发 Python 扩展。Python 有原生 C API，允许将 C 和 C++ 代码集成到 Python 项目中。这使 Python 能够以极小的开销在同一内存空间中调用 C/C++ 函数。开发扩展时需要考虑的一个重要方面是 Python 与 C/C++ 之间数据类型的差异。此外，必须正确配置编译设置和构建系统。
 
-$$
-\operatorname{addr}(A_{ij})=p+i s_0+j s_1,
-\qquad 0\leq i<m,\quad 0\leq j<n,
-$$
+### 8.2.1 数据类型与类型转换
 
-其中 $p$ 是逻辑首元素地址，$s_0,s_1$ 是**以字节计**的步长。若每个元素占 8 字节，紧凑的行主序有 $(s_0,s_1)=(8n,8)$；列主序有 $(8,8m)$。这里下标一律从 0 开始。Fortran 源程序常用从 1 开始的下标，但“下标从几开始”和“内存中哪一维连续”是两个不同问题。
+整数和浮点数等基本数据类型可以轻松地在 Python 和 C/C++ 之间映射。然而，数据结构或类并没有直接的映射方式。Python 数据类型的限制较少，通常比 C/C++ 中的类型更容易操作。C/C++ 数据类型施加的约束可能影响接口乃至算法的设计。管理两种语言之间的数据类型可能需要重新设计数据结构，并在接口中增加内存管理代码。下面，我们将考察与 Python 量子化学程序扩展有关的数据类型。
 
-转置可能只交换步长而不移动数据。切片甚至可能产生负步长，逻辑首元素不一定是底层分配区的最小地址。因此，一个只收 `double*` 和形状、默认行主序的 C 函数，不一定能处理 Python 数组的转置视图。包装层应明确选择：
+#### 8.2.1.1 整数
 
-1. 拒绝不满足布局的输入，接口简单但使用受限；
-2. 转成指定连续布局，容易调用但增加复制和内存峰值；
-3. 传入步长，让底层支持一般布局，实现复杂且可能不利于向量化。
+C/C++ 有多种整数类型，用于表示不同范围的数。long long 类型是 64 位整数。它能表示范围 [− 263, 263 1] 内的数。64 位整数是 NumPy 库中使用的最大整数类型，也是默认整数类型。此外，NumPy 提供 np.int32、np.int16 和 np.int8，分别对应 C 中的标准 32 位 int、int16_t 和 int8_t 类型。
+对于大整数，Python 可以处理任意大的数。C/C++ 没有支持任意大数值的原生数据类型。因此，在将 Python 整数传给 C 函数之前，可能需要额外检查以确保数值范围合适。
+对于 Python 的 bool 类型，bool 可以映射到 C 中的任何整数类型。NumPy 中的 np.bool_ 是一种单字节数据类型。它与 C++ 中的 std::boolean、C 中的 Bool_ 类型或 int8_t 类型兼容。
 
-静默复制还会影响写回语义：底层修改了临时缓冲区，不等于修改了用户原数组。要么返回新结果，要么明确检查并完成写回，不能把“接受输入”与“原位修改成功”混为一谈。
+#### 8.2.1.2 浮点数
 
-## 4. 完整例子：同一矩阵的两份字节序列 {#ch08-layout-example}
+Python 的 float 是双精度（64 位）浮点类型，与 C 中的 double 类型完全兼容。它也是 NumPy 库中的默认浮点类型，称为 np.float64。NumPy 还分别提供 32 位和 128 位浮点类型 np.float32 和 np.float128。它们可以映射到 C 中的单精度 float 类型和四倍精度 __float128 类型。请注意，C 中的 long double 类型保证其精度不低于 double 类型。然而，它未必满足 float128 的精度要求。long double 的精度取决于平台。因此，不应使用 long double 表示 128 位精度的数据。
+16 位浮点类型（半精度）因其性能和内存效率优势而广泛用于机器学习应用。然而，16 位浮点数有两种不兼容的格式，即 IEEE 标准半精度格式和脑浮点格式（Brain Floating Point，bfloat16），如图 8.1 所示。NumPy 中的 np.float16 类型采用 IEEE 754 半精度浮点数标准。此外，PyTorch 和 Tensorflow 等机器学习库支持 bfloat16 类型。
+数据类型 std::float16_t 和 std::bfloat16_t 是在较新的 C++ 标准中引入的。不幸的是，这些类型没有在
 
-我们新造一个 $2\times3$ 无量纲矩阵与列权重，目标是 $y_i=\sum_j A_{ij}w_j$。例子把数据按**小端 binary64 序列格式**封装，用步长恢复逻辑矩阵。它是可运行的标准库布局实验，**不是本机 ABI 调用**；文件/消息的字节序约定不能直接替代目标平台的原生 ABI。
+![](../assets/figures/fig-8-1.png)
+
+**图 8.1** IEEE 浮点数（float16）与 Brain 浮点数（bfloat16）的比较
+
+C语言标准。不同的C和C++编译器对半精度类型的支持可能并不普遍，也可能不一致。在GCC [1] 和Clang [2] 中使用float16类型需要额外的编译标志。bfloat16类型仅在某些硬件平台上可用。在Python的C/C++扩展中使用半精度浮点数时必须谨慎，因为这可能涉及依赖平台和编译器的问题。
+
+#### 8.2.1.3 字符串
+
+Python、C和C++中的字符串类型规范大不相同。Python字符串采用Unicode编码，而C字符串表示为以NUL字符（\0）结尾的char数组。因此，无法在C或C++函数中直接操作Python字符串。只有Python的bytes或bytearray对象与C中的char类型兼容。要在C/C++中操作Python字符串，可以使用.encode()和.decode()方法在Unicode和bytes之间进行转换。
+
+```text
+a_str = 'py -str'
+b_obj = a_str.encode() # converts string to bytes
+a_str = b_obj.decode() # converts bytes to string
+```
+对于NumPy数组中的字符串，我们可以使用.astype()方法将数组中的所有字符串转换为bytes，或进行反向转换 [3]。
+
+```python
+str_arr = np.array([ 'py -str', 'xyz'])
+b_arr = str_arr.astype(bytes) # converts all strings in the array to bytes
+str_arr = b_arr.astype( str) # converts all bytes to string objects
+```
+转换操作.astype(bytes)得到一个由bytes对象组成的数组。这个数组b_arr的步幅（stride）等于str_arr数组中最长字符串的大小。较短的字符串在末尾填充0，以匹配最长字符串的长度。因此，b_arr中的每个元素大小相同，对应于b_arr.itemsize。值得注意的是，数组中的字符串元素没有结尾的NUL字符。strcpy和strcmp等C字符串函数不适用于单个元素。在C函数中处理b_arr时，我们可以按b_arr.itemize的步幅遍历数据，以访问每个元素。b_arr的.dtype属性
+显示诸如|S6的记法。它表示数组元素是bytes对象，每个对象的长度为6字节。
+Python字符串与C或C++字符串之间的转换可以通过Python/C API或C++的std::string构造函数实现：
+
+```python
+#include <Python.h >
+// Create a Python string from C string
+PyObject* strObject = PyUnicode_FromString( "c -str");
+Py_DECREF(strObject);
+// Get the pointer to the Python string data
+char* strData = PyUnicode_AsUTF8(strObject);
+// strData is a null -terminated char array , from which a C++ string can be
+// constructed
+std::string cpp_str(strData);
+```
+虽然可以手动转换，但在构建接口模块时，这种方法既繁琐又容易出错。可以使用Cython和pybind11等工具自动完成这些转换。
+
+#### 8.2.1.4 类和结构体
+
+从C/C++代码的角度看，Python类的实例本质上是一个PyObject。由于PyObject的数据结构复杂，它不能直接映射到C/C++代码中的常规结构体或类。我们必须使用Python/C API在C/C++代码中访问其属性。
+为了简化Python和C之间的数据转换，一种有效的方法是将Python对象序列化（serialize）为与C/C++数据结构兼容的某种二进制格式。例如，在将Python类的实例传递给C/C++函数之前，我们可以使用Python的struct.pack函数将其序列化。随后，通过简单的类型转换，就可以将序列化后的二进制数据解释为C结构体或C++类的对象。反之，对于C/C++函数产生的输出，我们可以使用Python的struct.unpack函数或ctypes.Structure类对数据进行反序列化（deserialize）。
+假设C++中实现了一个Atom类，用于保存分子中一个原子的元素符号和坐标。
+
+```python
+class Atom {
+    char symbol[2];
+    float x;
+    float y;
+    float z;
+};
+```
+我们可以相应地使用struct.pack和struct.unpack函数定义一个序列化协议。可以为该协议实现序列化方法dumps和反序列化方法loads：
+
+```python
+from dataclasses import dataclass
+PROTOCOL = '2sfff'
+@dataclass
+class Atom:
+    symbol: str
+    x: float
+    y: float
+    z: float
+    def dumps(self) -> bytearray:
+        ' ' 'Serializes the Atom object' ' '
+        return bytearray (struct.pack( PROTOCOL , self.symbol.encode(), self.x , self.y , self.z))
+    @classmethod
+    def loads(cls , buffer: Union[bytes , bytearray]) -> Atom:
+        ' ' 'Deserializes binary data and constructs an Atom object' ' '
+        symbol ,x ,y , z = struct.unpack(PROTOCOL , buffer)
+        return cls(symbol.decode(), x ,y ,z )
+```
+Python标准模块dataclasses [4] 中的dataclass装饰器（decorator）可以自动添加双下划线方法，例如__init__和__repr__。classmethod是一种用于类中方法的特殊装饰器，它使方法能够操作类本身，而不是类的实例。由classmethod装饰的方法通常用于创建新实例，作为标准类初始化方法的替代方案 [5]。
+使用ctypes.Structure是表示C结构体数据的另一种方法。例如，我们可以使用ctypes.Structure实现以下序列化和反序列化方法：
+
+```python
+class Atom(ctypes.Structure):
+    _fields_ = [
+        ('symbol', ctypes.c_char *2), ('x', ctypes.c_float), ('y', ctypes.c_float), ('z', ctypes.c_float), ]
+    def dumps(self) -> bytearray:
+        ' ' 'Serializes the Atom object' ' '
+        return bytearray (self)
+```
+
+```python
+    @classmethod
+    def loads(cls , buffer: Union[bytes , bytearray]) -> Atom:
+        ' ' 'Deserializes binary data and constructs an Atom object' ' '
+        if isinstance (buffer , bytearray):
+            return cls.from_buffer(buffer)
+        else:
+            return cls.from_buffer_copy(buffer)
+```
+有关ctypes.Structure的更多细节将在第8.3.1.4节中讨论。
+另一种选择是使用cffi库 [6] 包装数据：
+
+```python
+from cffi import FFI
+ffi = FFI()
+ffi.cdef(' ' '
+typedef struct {
+    char symbol[2];
+    float x;
+    float y;
+    float z;
+} Atom;
+' ' ')
+@dataclass
+class Atom:
+    symbol: str
+    x: float
+    y: float
+    z: float
+    def dumps(self) -> bytearray:
+        ' ' 'Serializes the Atom object' ' '
+        c_atom = ffi.new( 'Atom *')
+        c_atom.symbol = self.symbol
+        c_atom.x = self.x
+        c_atom.y = self.y
+        c_atom.z = self.z
+        return ffi.buffer(c_atom)
+    @classmethod
+    def loads(cls , buffer: Union[bytes , bytearray]) -> Atom:
+        ' ' 'Deserializes binary data and constructs an Atom object' ' '
+        c_atom = ffi.cast( 'Atom *', ffi.from_buffer( buffer))[0]
+        return cls(c_atom.symbol.decode(), c_atom.x , c_atom.y , c_atom.z)
+```
+有关cffi的更多细节将在第8.3.2节中讨论。
+如果目的是操作一组C结构体数据，NumPy结构化数组（structured array）（参见第2章第2.2.5节）是打包或解包复杂数据的高效选择。
+
+```python
+atom_type = np.dtype([
+    ('symbol', 'S2'), ('x', 'f4'), ('y', 'f4'), ('z', 'f4')
+] , align=True)
+@dataclass
+class Atom:
+    symbol: str
+    x: float
+    y: float
+    z: float
+    def dumps(self) -> bytearray:
+        ' ' 'Serializes the Atom object' ' '
+        arr = np.array([(self.symbol , self.x , self.y , self.z)] , dtype=atom_type)
+        return bytearray (arr.data)
+    @classmethod
+    def loads(cls , buffer: Union[bytes , bytearray]) -> Atom:
+        return cls(*np.frombuffer(buffer , dtype=atom_type))
+```
+请注意创建结构化数组的dtype时设置的align=True。该设置确保每个字段在内存地址上的对齐（alignment）。C结构体中的填充（padding）由C编译器自动处理。默认情况下，NumPy结构化数组不会在字段之间添加填充。启用align选项后，结构化数组的dtype就与使用ctypes.Structure定义的类型等价。然后，我们可以使用以下方式初始化结构化数组的dtype：
+
+```python
+class Atom(ctypes.Structure):
+    _fields_ = [
+        ('symbol', ctypes.c_char *2), ('x', ctypes.c_float), ('y', ctypes.c_float), ('z', ctypes.c_float), ]
+atom_type = np.dtype(Atom)
+```
+使用NumPy结构化数组，可以方便地初始化或修改结构体的元素。
+
+```python
+arr = np.empty(shape , dtype=atom_type)
+arr['symbol']=[ 'C', 'H', 'H', ...]
+arr['x'] = corrdinates[: ,0]
+arr['y'] = corrdinates[: ,1]
+arr['z'] = corrdinates[: ,2]
+```
+
+#### 8.2.1.5 数组
+
+多维NumPy数组与C/C++中的多维数组有很大不同。在C/C++中，多维数组本质上是嵌套指针。相比之下，NumPy多维数组是一个连续的数据块，附带形状和步幅信息。为了索引NumPy数组中的元素，多维索引会被转换为该数据块中的单个地址。因此，必须向C/C++函数提供NumPy数组的形状和步幅信息，才能执行这种索引转换。
+在C/C++函数中，通常会假设多维数组中的数据连续存储在内存中。然而，正如第2章所讨论的，NumPy数组并不总能保证数据连续。使用NumPy中的数组视图（array view）可能导致不连续的内存布局。在将NumPy数组数据传递给C/C++函数之前，验证并确保数据的连续性至关重要。
+为确保连续存储，可以使用np.copy(a, order=’C’)创建一个以C连续顺序存储的NumPy数组副本。然而，对于已经按C连续顺序排列的数组，复制数据会增加不必要的开销。为了避免这种开销，可以使用np.asarray或np.require等函数。
+
+```python
+a = np.asarray(a , order= 'C')
+a = np.require(a , requirements=[ 'C'])
+```
+这些函数只在必要时才触发数据复制。
+
+#### 8.2.1.6 函数指针和回调
+
+与C/C++不同，Python没有为回调函数（callback function）提供函数指针这样的特殊数据类型。在Python中，函数是一等对象（first-class object），可以像任何其他Python对象一样对待。要从C/C++调用Python回调函数，一种方法是使用Python/C API解码并执行作为回调的Python对象。另一种方法是创建指向C包装函数的函数指针，再由该包装函数调用Python回调函数。这可以通过ctypes.CFUNCTYPE函数或cffi模块提供的回调包装器实现。有关ctypes回调的更多细节将在第8.3.1节中讨论。
+如果回调函数向C返回任何Python对象，在C/C++函数中调用回调可能会意外干扰Python对象的生命周期管理。回调中创建的对象可能会被垃圾回收器释放
+一旦程序控制权返回 C/C++ 程序，访问这些 Python 对象的内存块就可能导致非法内存操作。
+
+### 8.2.2 Cython
+
+是在 Python 中集成 C 和 C++ 程序的优秀工具。通过将 Python 代码转换为 C 代码，Cython 可以显著提高代码效率。此外，Cython 可以生成接口，简化从 Python 调用 C 函数的过程。因此，Cython 可以作为连接 Python 与外部 C/C++ 库的中间层。包括 NumPy、SciPy 和 scikit-learn 等知名库在内的许多科学计算库，都使用 Cython 优化特定功能并将外部库嵌入 Python。
+支持编译纯 Python 代码。不过，更常见的做法是直接用 Cython 语言编写程序。Cython 程序文件通常以 .pyx 为后缀。Cython 语言基于 Python 语言，引入了额外的关键字，帮助 Cython 编译器推断每个变量的数据类型。许多 Cython 语言关键字是在 Python 关键字前加上 c，例如 cdef、cimport 和 __cinit__。这些关键字表明 Cython 源代码中的代码块或语句被视为 C 层面的操作。
+例如，scipy.special 模块中有一个名为 comb 的函数，用于计算二项式系数。这个函数调用了一个 C 函数，该函数在 SciPy 源代码 scipy/special/_comb.pyx 中用 Cython 语言实现。除了少量使用 cdef 的数据类型声明之外，函数 _comb_int_long 看起来非常像一个 Python 函数。
+
+```python
+cdef extern from "limits.h":
+    unsigned long ULONG_MAX
+...
+cdef unsigned long _comb_int_long(unsigned long N , unsigned long k):
+    """
+    Compute binom(N , k) for integers.
+    Returns 0 if error/overflow encountered.
+    """
+    cdef unsigned long val ,j ,M , nterms
+    if k>N or N == ULONG_MAX:
+        return 0
+    M=N+1
+    nterms = min(k ,N-k )
+    v a l=1
+    for j in xrange (1 , nterms + 1):
+```
+
+```python
+        # Overflow check
+        if val > ULONG_MAX // (M - j):
+            return 0
+        val *=M-j
+        val //= j
+    return val
+```
+为了有效组织 Cython 代码，我们可以根据源代码的角色或功能将其分散到多个文件中。函数签名以及类和数据类型声明通常放在以 .pxd 为后缀的 Cython 头文件中。函数和类的实现则集中在 .pyx 文件中。使用 cimport 关键字，我们可以将 .pxd 文件中的声明代码导入 .pyx 文件。要包含普通的 C/C++ 头文件，例如 math.h，可以使用语句
+
+```python
+cdef extern from "..."
+```
+。
+编译 Cython 程序时，编译器只处理 .pyx 文件。与编译 C/C++ 源代码类似，编译器会沿着 -I 选项或 cythonize() 中的 include_path 选项指定的路径，以及 sys.path 中的路径，搜索所依赖的 .pxd 文件和 C/C++ 头文件。
+将 Cython 代码编译为 Python 扩展有两种常见方法。
+
+#### cythonize 编译器
+
+我们可以从命令行执行 cythonize 编译器，例如：
+
+```bash
+$  cythonize --inplace scipy/special/_comb.pyx
+```
+这条命令会创建一个可由 Python 导入的共享库（shared library），名为
+
+```text
+_comb.cpython -310 -x86_64 -linux -gnu.so
+```
+，并将其放在源代码所在的目录中。
+编译器并不直接生成共享库。实际上，它首先将 Python 代码转换为 C 代码，然后调用 C/C++ 编译器生成共享库。cythonize 编译器还会在源代码目录中为每个 .pyx 文件生成一个中间 C 文件。该文件包含生成的 C 函数以及相应 Python/C API 的详细信息，有助于追踪接口中的性能问题和错误。
+
+#### setuptools 扩展
+
+可以配置 setuptools 扩展来编译 Cython 代码。例如，编译 _comb.pyx 的最简单 setup.py 如下：
+
+```python
+from setuptools import setup
+from Cython.Build import cythonize
+setup( ext_modules=cythonize('scipy/special/_comb.pyx'), package_data={'my_pkg':[ 'scipy/special/_comb.pyx']} , )
+```
+然后我们可以从命令行构建扩展：
+
+```bash
+$  python setup.py build_ext --inplace
+```
+
+### 8.2.3 pybind11
+
+旨在提供类似 Python 的编程体验。它面向 Python 程序员，使他们能够基于 Python 代码快速开发 Python 扩展。在 C++ 方面，pybind11 的设计则是利用 C++ 模板，由 C++ 编译器生成 Python 绑定（bindings）。虽然这两种工具都能创建 Python 扩展，但它们采用不同的方法，适用于不同的场景。Cython 适合优化现有 Python 代码。pybind11 则更适合将 C++ 程序的功能暴露给 Python。
+许多 Python 库都使用 pybind11。例如，PyTorch 使用 pybind11 创建 Python 扩展。为了简化 PyTorch 扩展的开发流程，它提供了一个基于 pybind11 的工具 torch.utils.cpp_extension。有一篇 PyTorch 教程 [7]，指导你使用 pybind11 构建 PyTorch 扩展。
+为定义 Python 接口提供了非常直观的抽象。一个典型的代码示例如下：
+
+```python
+#include <pybind11/pybind11.h >
+double square(double x) {
+    return x * x;
+}
+PYBIND11_MODULE(example_module ,m ){
+  m.def("square", &square);
+}
+```
+编译 pybind11 扩展有多种方法。根据扩展是在 Python 项目还是 C++ 项目中编译，推荐的方法也有所不同。在 Python 项目中，可以安装 pybind11 Python 软件包（pip install pybind11），并在 setup.py 中使用它，例如：
+
+```python
+from setuptools import setup
+from pybind11.setup_helpers import Pybind11Extension
+setup(ext_modules=[
+    Pybind11Extension('example_module',[ 'example.cpp']), ])
+```
+使用命令构建这个 setup.py：
+
+```bash
+$  python setup.py build_ext --inplace
+```
+我们得到 Python 模块 example_module，可以直接将其导入 Python 程序。
+
+```python
+In [1]: import example_module
+        print(example_module.square(9))
+Out[1]: 81.0
+```
+关于在 Python 项目中使用 pybind11 库的更多示例，可以在其 GitHub 仓库 [8] 中找到。
+对于 C++ 项目，使用 CMake 系统编译 Python 扩展很方便。假设 pybind11 源代码位于 C++ 项目代码库中名为 pybind11 的目录内，以下 CMake 配置可以编译 Python 扩展：
+
+```text
+add_subdirectory(pybind11)
+pybind11_add_module(example_module example.cpp)
+```
+
+### 8.2.4 将 C++ 代码编译为 Python 模块
+
+在 Python 项目中，使用 setup.py 脚本和 setuptools.Extension 函数是编译 C++ 扩展的标准方法。如前所示，编译扩展需要执行以下命令：
+
+```bash
+$  python setup.py build_ext --inplace
+```
+例如，我们可以创建一个简单的 setup.py 来处理多个 C++ 文件，如下所示：
+
+```python
+from setuptools import setup , Extension
+setup(ext_modules=[
+    Extension( 'example.simple_cpp', sources=['src/cpp/example_A.cpp', 'src/cpp/example_B.cpp'] , language='c++',
+```
+
+```text
+    )] , )
+```
+这个配置示例指定了三个关键方面：
+
+- 扩展是一个名为 example.simple_cpp 的 Python 模块。在 Linux 上，模块文件 simple_cpp.cpython-310-x86_64-linux-gnu.so 会在 example 目录中生成。
+- 扩展由两个 C++ 文件组成。
+- 扩展的编译需要 C++ 编译器。
+
+通过在 Extension 配置中添加更多设置，例如 extra_compile_args、libraries、library_dirs、include_dirs 和 extra_link_args，开发者可以构建满足更复杂需求的扩展。下面来看看如何在以下场景中配置 C/C++ 扩展。
+
+#### 启用 OpenMP
+
+通过将编译器标志 -fopenmp 添加到 extra_compile_args 和
+
+```text
+Extension( ...
+    extra_compile_args=['-fopenmp'] , extra_link_args=['-fopenmp'] , )
+```
+
+#### 使用 Intel 编译器
+
+启用 Intel 编译器的一种简单方法是在运行 setup.py 之前设置环境变量 CC=icc 和 CXX=icpc。setuptools 软件包读取 CC、CFLAGS、LDFLAGS 等环境变量，以统一配置编译器和编译选项。请注意，CXXFLAGS 是个例外，setuptools 不支持它。
+
+#### 链接外部库
+
+BLAS 和 LAPACK 等外部库在量子化学程序中经常使用。要使用外部库构建扩展，我们需要配置 libraries 和 library_dirs 条目。例如，要在程序中使用 Intel MKL（Math Kernel Library，数学核心库），根据 Intel MKL 链接顾问 [9] 的建议，GCC 编译器需要以下命令行选项：
+
+```text
+-L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
+```
+这些选项可以转换为以下配置：
+
+```text
+Extension( ...
+```
+
+```text
+    libraries=['mkl_intel_lp64', 'mkl_sequential', 'mkl_core'] , library_dirs=[f'{os.getenv("MKLROOT")}/lib/intel64'] , )
+```
+Linux 上的大多数共享库遵循 lib{name}.so 的命名约定。在配置 Extension 的 libraries 选项时，我们只需包含共享库名称中的 name 部分。setuptools 可以在 library_dirs 中列出的每个目录前加上 -L，在 libraries 中列出的每个名称前加上 -l。然而，有些共享库可能不遵循常规命名模式。例如，在某些 Linux 发行版中，BLAS 库位于 /usr/lib/libblas.so.3。要链接这样的库，我们可以写：
+
+```text
+libraries=[ ':libblas.so.3 ']
+```
+这一设置会生成命令行选项 -l:libblas.so.3，使链接器能够找到 /usr/lib/libblas.so.3，而不是使用标准名称的
+如果 Python 项目调用 C/C++ 扩展，就需要正确配置动态库的路径，这与运行标准 C/C++ 应用程序类似。在 Linux 上，一种方法是设置 LD_LIBRARY_PATH 环境变量。另一种方法是使用链接器选项 -Wl,-rpath，将 rpath 信息直接嵌入扩展中。这个选项可以通过 extra_link_args 参数添加。例如，下面的设置可以将 Python 项目的目录添加到动态库搜索路径中：
+
+```yaml
+if platform.system() == "Linux":
+    link_args = [ '-Wl , -rpath ,$ORIGIN']
+elif platform.system() == "Darwin": # MacOS
+    link_args = [ '-Wl , -rpath ,@loader_path']
+else:
+    link_flags = []
+Extension( ...
+    libraries=['mkl_intel_lp64', 'mkl_sequential', 'mkl_core'] , library_dirs=[f'{os.getenv("MKLROOT")}/lib/intel64'] , extra_link_flags=link_flags , )
+```
+这里，$ORIGIN 和 @loader_path 分别指 Linux 和 macOS 上扩展所在的目录。
+在标准 C/C++ 程序中，我们可能会遇到依赖库的版本和路径问题。Python 中的 C/C++ 扩展也可能出现类似问题。在 Linux 上，几种工具可以帮助我们识别 Python 扩展的运行时问题：
+
+- . ELF（Executable and Linkable Format，可执行与可链接格式）是一种标准格式，用于存储共享库的变量符号、运行时路径、依赖关系和其他信息。有关 ELF 工作方式的更多细节，可以参阅《Computer Systems: A Programmer’s Perspective》第 7 章 [10]。readelf 是用于检查 ELF 文件内容的工具。
+- . 这个工具可以显示共享库的依赖关系。
+- . 这个工具可以列出共享库中的所有全局符号 [11]。我们可以用它来确定共享库中的哪些函数符号依赖外部库。
+
+#### 使用 MPI 的扩展
+
+要在 C/C++ 扩展中启用 MPI（Message Passing Interface，消息传递接口），我们需要使用 MPI 编译器编译源代码。设置环境变量 CC=mpicc 和 CXX=mpicxx 会将 MPI 编译器用于所有扩展。然而，如果只有一个扩展需要 MPI，我们可以通过自定义 setup 配置中的 build_ext 组件来限制 MPI 编译器的使用范围。setup.py 中的编译工作由 build_ext 类的 build_extension 方法执行。对于 MPI 扩展，我们可以在调用这个方法之前配置编译器。编译 MPI 扩展后，应当恢复编译器设置，因为所有扩展都共享这些设置。
+
+```python
+from setuptools import setup , Extension
+from setuptools.command.build_ext import build_ext
+class MPIExtension(Extension):
+    pass
+class MPIBuild(build_ext):
+    def build_extension(self , ext: Extension):
+        if not isinstance (ext , MPIExtension):
+            return super ().build_extension(ext)
+        # Back up the existing settings.
+        compiler_c = self.compiler.compiler_c
+        compiler_cxx = self.compiler.compiler_cxx
+        compiler_so = self.compiler.compiler_so
+        linker_so = self.compiler.linker_so
+        self.compiler.set_executables( compiler_c='mpicc', compiler_cxx= 'mpicxx', compiler_so='mpicxx', linker_so= 'mpicxx')
+        build_ext.build_extension(self , ext)
+        # Restore old compiler settings
+        self.compiler.set_executables(
+```
+
+```yaml
+            compiler_c=compiler_c , compiler_cxx=compiler_cxx , compiler_so=compiler_so , linker_so=linker_so)
+setup( ext_modules=[
+        Extension('example.serial_ext', sources=[ 'serial_ext.cpp'] , language='c++'), MPIExtension('example.mpi_ext', sources=[ 'mpi_ext.cpp'] , language='c++'), ] , cmdclass={"build_ext": MPIBuild} , )
+```
+
+#### 调用 CMake
+
+某些 Python 软件包，例如 PyTorch，使用 CMake 编译扩展。在这种情况下，setup.py 只用于触发 cmake 命令。方法是绕过 build_ext.build_extension 方法中的编译任务，直接调用 cmake 命令。如果需要其他预处理或后处理步骤，也可以将其集成到这个方法中。
+
+```python
+from setuptools.command.build_ext import build_ext
+class CMakeExtension(Extension):
+    pass
+class CMakeBuild(build_ext):
+    def build_extension(self , ext: Extension):
+        if not isinstance (ext , CMakeExtension):
+            return super ().build_extension(ext)
+        # Process cmake configuration
+        cmd = [ 'cmake',f '-B{self.build_temp}']
+        self.spawn(cmd)
+        # Process building
+        cmd = [ 'cmake', '--build', self.build_temp]
+        if hasattr (self , "parallel") and self.parallel:
+            cmd += [f "-j{self.parallel}"]
+        self.spawn(cmd)
+setup( ...
+    ext_modules=[
+        CMakeExtension('my_pkg.ext_via_cmake', sources=[]),
+```
+
+```yaml
+    ] , cmdclass={"build_ext": CMakeBuild} , package_data={'my_pkg':[ 'src/CMakeLists.txt']} , )
+```
+此外，在 pyproject.toml 文件中，我们将 cmake 软件包列为构建时依赖。
+
+```text
+[build -system]
+requires = [ 'setuptools ' , 'wheel ' , 'cmake ']
+```
+
+#### NumPy 头文件
+
+在 Cython 代码中使用语句 cimport numpy 时，代码必须能够访问 NumPy 头文件。这些头文件的路径可以通过 numpy.get_include() 获取，然后按如下方式赋给 Extension 对象的 include_dirs 参数：
+
+```text
+setup( ...
+    ext_modules=cythonize([
+        Extension('example.cython_ext',[ 'src/example/cython_code.pyx'] , include_dirs=[numpy.get_include()]), ]), ...
+)
+```
+
+## 8.3 函数接口
+
+虽然 Python 提供 C API 来调用 C 函数，但使用这些 Python/C API 并不方便，因为它需要额外编写一层 C 代码。实际上，Python 可以通过外部函数接口（Foreign Function Interface，FFI）执行 C 函数，而不需要编写或编译任何 Python/C API 代码。在 Python 中，ctypes 和 cffi 是利用 FFI 调用 C 函数的常用方案。
+
+### 8.3.1 Ctypes
+
+ctypes 是一个 Python 标准库，用于从 Python 与 C 函数交互。然而，ctypes 的使用受到一些限制：
+
+- 与原生 Python/C API 相比，这种方法发起函数调用的开销相对较高。
+- 不支持原生 C++ 函数。
+- 只能加载使用 -fPIC 选项编译的共享库。
+
+一般来说，使用 ctypes 开发 Python/C 接口包括两个步骤：
+
+1. 使用 ctypes.CDLL 函数加载共享库。
+2. 声明 C 函数的原型，其中包括用 argtypes 指定
+
+所有输入参数的类型，以及用 restype 指定返回值的类型。
+例如，我们可以使用 ctypes 与 BLAS 函数 ddot_ 交互，再利用该函数计算两个 NumPy 数组的内积。
+
+```python
+import numpy as np
+import ctypes
+libblas = ctypes.CDLL( 'libblas.so.3')
+c_int_p = ctypes.POINTER(ctypes.c_int)
+c_double_p = ctypes.POINTER(ctypes.c_double)
+libblas.ddot_.argtypes = [ # (1)
+    c_int_p , c_double_p , c_int_p , c_double_p , c_int_p]
+libblas.ddot_.restype = ctypes.c_double
+def blas_ddot(x: np.ndarray , y: np.ndarray) -> float:
+    assert x.size == y.size
+    assert x.dtype == y.dtype == np.float64
+    assert x.ndim == y.ndim == 1
+    px = x.ctypes.data_as(c_double_p)
+    py = y.ctypes.data_as(c_double_p)
+    size = ctypes.c_int(x.size)
+    incx = ctypes.c_int(x.strides[0] // x.itemsize)
+    incy = ctypes.c_int(y.strides[0] // y.itemsize)
+    out = libblas.ddot_(size ,p x , incx ,p y , incy)
+    return out
+```
+第 (1) 行的 libblas.ddot_.argtypes 函数原型根据 ddot_ 的签名声明：
+
+```text
+double ddot_(int *n , double *dx , int *incx , double *dy , int *incy);
+```
+
+#### 8.3.1.1 函数原型
+
+C 函数原型 argtypes 是一个 ctypes 转换器列表，它不仅反映数据类型信息，还定义如何将每个 Python 输入参数转换为 C 变量。调用 C 函数时，ctypes 调用转换器的 from_param 方法 [12] 来验证输入参数的数据类型，并执行必要的转换。ctypes 内置数据类型，如 ctypes.c_int 和 ctypes.c_double，有自己的 from_param 方法。对于我们在项目中实现的类，可以自定义 from_param 以接入 ctypes 接口。在 from_param
+方法中，我们可以将必要的属性打包到一个 C 结构体变量中，然后返回它的内存地址。这种方法无需在调用 C 函数时为每个输入参数手动编写转换语句。例如，我们可以为第 8.2.1 节介绍的 Atom 类实现 ctypes 接口，并在 C 函数原型中使用它。
 
 ```python
 import struct
+@dataclass
+class Atom:
+    symbol: str
+    x: float
+    y: float
+    z: float
+    def dumps(self) -> bytearray:
+        ' ' 'Serializes the Atom object' ' '
+        return bytes(struct.pack(PROTOCOL , self.symbol.encode(), self.x , self.y , self.z))
+    @classmethod
+    def loads(cls , buffer: Union[bytes , bytearray]) -> Atom:
+        ' ' 'Deserializes binary data and constructs an Atom object' ' '
+        symbol ,x ,y , z = struct.unpack(PROTOCOL , buffer)
+        return cls(symbol.decode(), x ,y ,z )
+    @classmethod
+def from_param(cls , obj: bytes): # (1)
+        # Passing the pointer of struct
+        return ctypes.cast(obj , ctypes.c_void_p)
+    @property
+def _as_parameter_(self): # (2)
+        return self.dumps()
+...
+atom_distance.argtypes = [Atom , Atom]
+atom_distance.restype = ctypes.c_float
+atom1 = atom2 = Atom( 'H',0 ,0 ,0 )
+dist = atom_distance(atom1 , atom2)
+```
+只有声明了 C 函数的函数原型（由 .argtypes 定义）时，才会调用第 (1) 行的数据转换方法 from_param。如果没有指定函数原型，就会使用每个输入参数的 _as_parameter_ 属性
+并将其传递给 C 函数。因此，我们还为这种情况实现了 _as_parameter_ 属性，如第 (2) 行所示。
 
-matrix = ((2.0, 5.0, 1.0), (7.0, 0.0, 4.0))
-weights = (1.0, -1.0, 2.0)
-rows, cols = 2, 3
-item_bytes = struct.calcsize("<d")
-row_values = [matrix[i][j] for i in range(rows) for j in range(cols)]
-col_values = [matrix[i][j] for j in range(cols) for i in range(rows)]
-row_blob = struct.pack("<6d", *row_values)
-col_blob = struct.pack("<6d", *col_values)
+#### 8.3.1.2 NumPy 数组
 
+NumPy 数组可以顺利地与 ctypes 配合使用。有几种方法可以将 NumPy 数组，更确切地说是 NumPy 数组的指针，传递给 C 函数。一种方法是访问 NumPy 数组的 .ctypes 属性来获取指针。以 BLAS 的 ddot_ 函数为例，这种方法将 C 函数接口简化为：
 
-def weighted_rows(blob, shape, strides, w):
-    m, n = shape
-    s0, s1 = strides
-    if m <= 0 or n <= 0 or len(w) != n:
-        raise ValueError("invalid shape or weights")
-    if s0 < 0 or s1 < 0:
-        raise ValueError("this example only accepts nonnegative strides")
-    last_end = (m - 1) * s0 + (n - 1) * s1 + item_bytes
-    if last_end > len(blob):
-        raise ValueError("buffer too short")
-    return [
-        sum(struct.unpack_from("<d", blob, i * s0 + j * s1)[0] * w[j]
-            for j in range(n))
-        for i in range(m)
-    ]
+```python
+import numpy as np
+import ctypes
+libblas.ddot_.restype = ctypes.c_double
+def blas_ddot(x: np.ndarray , y: np.ndarray) -> float:
+    assert x.size == y.size
+    assert x.dtype == y.dtype == np.float64
+    assert x.ndim == y.ndim == 1
+    size = ctypes.c_int(x.size)
+    incx = ctypes.c_int(x.strides[0] // x.itemsize)
+    incy = ctypes.c_int(y.strides[0] // y.itemsize)
+    out = libblas.ddot_(size , x.ctypes , incx , y.ctypes , incy)
+    return out
+```
+然而，这个接口在传递指针之前仍需要多次检查，以验证数据类型、数组形状和数据的连续性。为了简化这一过程，numpy.ctypeslib 模块提供了一个简洁的包装器 ndpointer，自动执行检查和数据类型转换。如下面的代码片段所示，通过指定带有 dtype 和 ndim 等参数的 np.ctypeslib.ndpointer，我们可以省去 blas_ddot 函数中的数据类型转换和相关检查。
 
-
-row_stride = (cols * item_bytes, item_bytes)
-col_stride = (item_bytes, rows * item_bytes)
-a = weighted_rows(row_blob, (rows, cols), row_stride, weights)
-b = weighted_rows(col_blob, (rows, cols), col_stride, weights)
-wrong = weighted_rows(col_blob, (rows, cols), row_stride, weights)
-assert len(row_blob) == len(col_blob) == 48
-assert a == b == [-1.0, 15.0]
-assert wrong == [5.0, 7.0]
-print(a, b, wrong)
+```python
+import numpy as np
+import ctypes
+c_int_p = ctypes.POINTER(ctypes.c_int)
+nparray_p = np.ctypeslib.ndpointer(ctypes.float64 , ndim=1)
+libblas = ctypes.CDLL( 'libblas.so.3')
+libblas.ddot_.argtypes = [c_int_p , nparray_p , c_int_p , nparray_p , c_int_p]
+libblas.ddot_.restype = ctypes.c_double
+def blas_ddot(x: np.ndarray , y: np.ndarray) -> float:
+    assert x.size == y.size
+    size = ctypes.c_int(x.size)
+    incx = ctypes.c_int(x.strides[0] // x.itemsize)
 ```
 
-预期输出：
+```python
+    incy = ctypes.c_int(y.strides[0] // y.itemsize)
+    out = libblas.ddot_(size ,x , incx ,y , incy)
+    return out
+```
+
+#### 8.3.1.3 指针
+
+对于整数、浮点数和字符串等标准 Python 对象，无法使用 ctypes 函数获取它们的地址。如果需要用指针引用标准 Python 对象的值，就必须创建一个临时 ctypes 对象来存储该 Python 对象的值。然后可以将指向这个临时 ctypes 对象的指针传递给 C 函数。下面的示例演示如何获取 bytes、NumPy 数组和 int 的指针。
+
+```python
+import ctypes
+liblapack = ctypes.CDLL( 'liblapack.so')
+# work is the workspace buffer for the general eigenvalue solver dgeev_
+lwork = 4000
+work = np.empty(lwork)
+liblapack.dgeev_( ctypes.c_char_p(b'N'), ctypes.c_char_p(b'V'), ... , work.ctypes , ctypes.byref(ctypes.c_int(lwork)), ...)
+```
+在这个例子中，创建了几个临时对象。ctypes.c_char_p 函数为 bytes 创建一个临时副本，并返回指向该副本的指针。为了传递整数的指针，我们用该整数的值创建一个 ctypes.c_int 对象，然后使用 ctypes.byref 获取对该 ctypes.c_int 对象的引用，可以将其视为指针。
+
+#### 8.3.1.4 结构体和复数
+
+ctypes 通过 ctypes.Structure 类全面支持 C 结构体类型。ctypes.Structure 的一个典型用途是表示复数。虽然 C99 标准定义了复数，但 ctypes 没有提供原生复数数据类型。复数由两个在内存中连续存储的浮点数表示。表示复数的数据类型可以定义如下：
+
+```python
+import ctypes
+class c_complex(ctypes.Structure):
+    _fields_ = [
+        ('real', ctypes.c_double), ('imag', ctypes.c_double), ]
+```
+我们可以使用这个自定义数据类型与需要复数作为输入或输出的 C/C++ 函数交互。例如，BLAS 函数 zdotu_ 计算两个复向量的点积，并返回一个复数。
 
 ```text
-[-1.0, 15.0] [-1.0, 15.0] [5.0, 7.0]
+double complex zdotu_(int *n , double complex *zx , int *incx , double complex
+     *zy , int *incy);
+```
+zdotu_ 的 Python 函数包装器可以实现如下：
+
+```python
+import numpy as np
+import ctypes
+libblas = ctypes.CDLL( 'libblas.so.3')
+c_int_p = ctypes.POINTER(ctypes.c_int)
+nparray_p = np.ctypeslib.ndpointer(np.complex128 , ndim=1)
+libblas.zdotu_.argtypes = [c_int_p , nparray_p , c_int_p , nparray_p , c_int_p]
+libblas.zdotu_.restype = c_complex
+def blas_zdot(x: np.ndarray , y: np.ndarray) -> complex:
+    assert x.size == y.size
+    size = ctypes.c_int(x.size)
+    incx = ctypes.c_int(x.strides[0] // x.itemsize)
+    incy = ctypes.c_int(y.strides[0] // y.itemsize)
+    out = libblas.zdotu_(size ,x , incx ,y , incy)
+    return complex (out.real , out.imag)
 ```
 
-错误解释并没有触发越界，因为两份数据长度相同；得到的数甚至看起来正常。这是接口测试不能只检查“运行不崩溃”的原因。应使用不对称矩阵、不相等的各维长度、已知答案，以及跨布局的等价性测试。这个读取器只支持非负步长、非空二维数据，也没有模拟对齐或借用规则；它不能直接改作通用裸指针验证器。
+#### 8.3.1.5 回调
 
-## 5. 所有权决定何时还能读写
+在某些情况下，我们可能希望在 C/C++ 代码中调用 Python 函数。一个例子是在 C/C++ 函数中使用 numpy.load 函数从文件读取数组。为此，我们可以使用 ctypes.CFUNCTYPE 将 Python 函数转换为 C/C++ 可调用的函数指针。在 C 代码中，函数指针作为输入参数传入。
 
-一个指针不自带“由谁释放”的信息。安全接口至少应区分三种模式：
+```text
+void callback_example(void (*np_load)(char *filename , double *buf))
+{
+        char filename = "example.npy";
+        double *b u f=( double *)malloc(sizeof(double) * 100);
+        (*np_load)(&filename[0] , buf);
+        free(buf);
+}
+```
+在 Python 端，我们按如下方式实现回调函数 np_load。
 
-- **调用期间借用**：Python 持有分配者，底层不留存指针；函数返回后借用结束。
-- **底层持久借用**：例如异步任务尚未完成。Python 必须保留真正拥有缓冲区的对象，并禁止不允许的修改；仅保存地址整数不够。
-- **所有权转移**：底层分配并返回句柄，由约定的配套释放函数销毁。不能用 Python 的回收器或另一运行库的释放函数随意释放。
+```python
+import numpy as np
+import ctypes
+```
 
-内存泄漏是分配后失去释放途径；悬空指针是对象已释放但仍被访问。两者是不同故障。Python 有垃圾回收并不意味着裸指针能延长其指向内存的生命周期，也不意味着所有 Python 对象都不可能泄漏。
+```python
+libcb = ctypes.CDLL(...)
+@ctypes.CFUNCTYPE(None , ctypes.c_char_p , ctypes.POINTER(ctypes.c_double))
+def np_load(filename: bytes , buf: ctypes.c_void_p):
+    arr = np.load(filename.decode())
+    out = np.ctypeslib.as_array(buf , dtype=arr.dtype , shape=arr.shape)
+    out[:] = arr
+libcb.callback_example( np_load
+)
+```
+ctypes.CFUNCTYPE 装饰器用于指定回调函数指针的类型提示。第一个参数指定返回值的类型，在这个例子中为 None，表示不需要返回值。后续参数指定回调函数的输入类型。然后将 Python 回调的函数指针传递给 C 函数 callback_example。当 C 中调用回调时，CFUNCTYPE 包装器会自动创建 Python 对象，并根据类型提示将 C 变量映射到各个参数。
+需要注意的是，回调中执行的 Python 代码并不支持所有 Python 特性。例如，Python 无法捕获回调函数内部引发的错误。如果回调内部发生错误，控制流会立即返回 C 调用者。因此，所有关于该错误的信息都会丢失。随后 C 调用者会继续执行，并返回其 Python 调用者，仿佛没有发生错误一样。
 
-如果底层保存了 Python 回调，还需要保留回调包装对象，说明在哪个线程调用、如何取得 Python 执行权限，以及异常如何报告。若包装层临时释放 GIL，底层就不能未经许可操作 Python 对象。释放 GIL 也不等于输入数组自动获得独占访问权；其他线程仍可能修改它。
+### 8.3.2 CFFI
 
-## 6. 四种语言的桥接选择
+软件包 [6] 是加载外部共享库并将其绑定到标准 Python 代码的另一种选择。与 ctypes 类似，cffi 也提供应用程序二进制接口（Application Binary Interface，ABI）级别的接口来执行 C/C++ 函数。ctypes 函数原型以 Python 风格编写，与之不同，cffi 内置了一个 C 语言解析器，允许以 C 风格声明 C 函数签名。
+例如，要使用 cffi 执行 BLAS 的 ddot_ 函数，我们可以按如下方式实现接口代码：
 
-### C：让声明与真实库一致
+```python
+import numpy as np
+from cffi import FFI
+ffi = FFI()
+ffi.cdef(' ' '
+double ddot_(int *n , double *dx , int *incx , double *dy , int *incy);
+' ' ')
+# Load the external library , similar to ctypes.CDLL
+```
 
-已有稳定 C ABI 的库适合用 `ctypes` 或 CFFI 包装。优势是薄、直接；风险集中在签名、指针与资源管理。Python/C API 扩展可直接管理 Python 对象，但与解释器构建、引用计数和打包有关，维护成本更高。无论哪条路线，依赖库的版本和实际加载身份都应可追溯，不能只凭同名文件认定兼容。
+```python
+libblas = ffi.dlopen( 'libblas.so.3')
+def blas_ddot(x: np.ndarray , y: np.ndarray) -> float:
+    assert x.size == y.size
+    assert x.dtype == y.dtype == np.float64
+    assert x.ndim == y.ndim == 1
+    # Get the address of array , similar to x.ctypes.data_as(c_double_p)
+px = ffi.cast( 'double *', x.ctypes.data) # (1)
+    py = ffi.cast( 'double *', y.ctypes.data)
+    # Allocate one int , similar to ctypes.byref(ctypes.c_int(x.size))
+    size = ffi.new( 'int *', x.size)
+    incx = ffi.new( 'int *', x.strides[0] // x.itemsize)
+    incy = ffi.new( 'int *', y.strides[0] // y.itemsize)
+    out = libblas.ddot_(size ,p x , incx ,p y , incy)
+    return out
+```
+NumPy 库没有像对 ctypes 那样为 cffi 提供专门的包装器。使用 cffi 操作 NumPy 数组不如使用 ctypes 方便。调用 C 函数之前，我们需要为 NumPy 数组编写类型转换代码。我们可以使用 ffi.cast 方法获取指向 NumPy 数组的指针，如第 (1) 行所示。
+还有另一种处理 NumPy 数组指针的方法。我们可以使用 cffi 分配内存，然后将其用作 NumPy 数组的数据缓冲区。例如：
 
-### C++：不要把内部类布局当作跨编译器契约
+```python
+float_p = ffi.new( 'double []' , 100)
+buf = ffi. buffer(float_p)
+arr = np.ndarray(shape=(100 ,), dtype=np.float64 , buffer=buf)
+```
+cffi 指针对象 float_p 可以直接供 C 函数使用。ffi.buffer 方法将 cffi 指针转换为类 bytes 对象，这是 numpy.ndarray 函数所需的数据缓冲区格式。
+cffi 库还提供管理指针、C 结构体和回调的 API。这些功能在 cffi 官方文档 [13] 中有详细说明。
+与 ctypes 相比，cffi 的一个主要优势是能够提供 API 级别的 C 函数集成。使用 API 级别的接口代码时，cffi 会生成包含 Python/C API 的中间 C 文件，然后可以将其编译为 C 扩展。这种方法在提供简单接口的同时确保最佳性能。例如，运行以下脚本，可以将 BLAS 库的 ddot_ 函数接口编译成普通 C 扩展：
 
-C++ 涉及名称修饰、重载、模板、标准库对象布局和异常。通常用 pybind11 等绑定工具包装类，或提供一层窄 C ABI：Python 只见不透明句柄与显式创建/销毁函数。`extern "C"` 可指定 C 语言链接，但不会把 `std::vector`、异常或任意类自动变成稳定 C 接口。应在边界捕获 C++ 异常，转成已约定的 Python 异常或错误码，不能让异常穿越不兼容的边界。
+```python
+from cffi import FFI
+```
 
-### Fortran：使用互操作机制，不猜下划线
+```text
+sig = ' ' '
+double ddot_(int *n , double *dx , int *incx , double *dy , int *incy);
+' ' '
+ffibuilder = FFI()
+ffibuilder.set_source('_blas_lite', sig , libraries=[ ':libblas.so.3'])
+ffibuilder.cdef(sig)
+if __name__ == '__main__':
+ ffibuilder.compile(verbose=True)
+```
+编译后的扩展可以导入 Python。C 函数可以通过 lib 模块的命名空间访问。
 
-遗留 Fortran 过程可能含编译器相关的名称修饰、引用传参和隐藏字符串长度。不能由一次成功调用推断所有编译器均如此。可控制源代码时，优先设计 `ISO_C_BINDING` 与 `bind(C)` 边界，用 `real(c_double)`、`integer(c_int)` 等互操作种类描述目标类型，并按需要使用 `value` 明确按值标量；数组布局、可写性和字符串长度仍须说明。不能笼统说 Fortran 的所有参数永远按引用传递。
+```python
+import numpy as np
+from _blas_lite import ffi , lib
+def blas_ddot(x: np.ndarray , y: np.ndarray) -> float:
+ assert x.size == y.size
+ assert x.dtype == y.dtype == np.float64
+ assert x.ndim == y.ndim == 1
+ # Get the address of array , similar to x.ctypes.data_as(c_double_p)
+    px = ffi.cast( 'double *', x.ctypes.data)
+ py = ffi.cast( 'double *', y.ctypes.data)
+ # Allocate one int , similar to ctypes.byref(ctypes.c_int(x.size))
+ size = ffi.new( 'int *', x.size)
+ incx = ffi.new( 'int *', x.strides[0] // x.itemsize)
+ incy = ffi.new( 'int *', y.strides[0] // y.itemsize)
+ out = lib.ddot_(size ,p x , incx ,p y , incy)
+ return out
+```
+我们可以在 setup.py 中添加 cffi 扩展：
 
-f2py 可生成 Fortran 包装层，但仍须检查输入/输出意图、类型、形状以及隐式复制；自动生成不等于零复制或所有权已经无歧义。构建后端与工具版本需要另外核实，本章不复用旧式构建命令。
+```python
+# setup.py (with automatic dependency tracking)
+from setuptools import setup
+setup( name='blas_lite', version='0.1', cffi_modules=['blas_lite_builder.py:ffibuilder'] , )
+```
+并在 pyproject.toml 中添加构建时依赖：
 
-### Rust：安全核心不替代不安全边界的证明
+```text
+[build -system]
+requires = [ 'setuptools ' , 'wheel ' , 'cffi >=1.0.0 ']
+```
 
-PyO3 适合暴露 Python 对象与函数；另一条路线是导出 C ABI 并传入原始指针。Rust 默认 ABI 不是应当依赖的稳定外部契约；C 兼容聚合类型通常需要 `#[repr(C)]` 等合适的表示约定，但这也不意味着可以把任意 Rust 容器直接传给 C。`extern "C"` 与“导出可预测的符号名”也是不同事项，符号导出写法还涉及 Rust edition。
+### 8.3.3 泄漏
 
-把裸指针构造成切片前，仍须证明地址有效、对齐、长度不过界、生命周期足够，并满足共享/可变借用的别名规则。若同时构造输入共享切片和输出可变切片，两者重叠可能违反规则，即使逐元素循环看起来没有问题。边界也要明确 panic 的处理策略；不能默认它会成为 Python 异常。Rust 能帮助安全核心，但错误的 `unsafe` FFI 契约仍可能造成未定义行为。
+Python 使用基于引用计数的有效对象生命周期管理系统。一般来说，开发者不必担心 Python 中的内存泄漏。在 Python 代码中暴露 C 指针可能导致内存泄漏。
+在 C/C++ 中，有两种常见的内存泄漏：
 
-## 7. 练习与解题指引
+- 内存：当内存被分配但未被释放时，就会发生这种情况。
+- 指针：当内存已被释放，但程序仍持有对该指针的引用时，就会发生这种情况。访问悬空指针（dangling pointer）可能导致段错误（Segmentation Fault）崩溃。
 
-1. **一个转置视图是否可以原样传入只收行主序指针的函数？** 设原矩阵为 $2\times3$、元素 8 字节，行主序步长为 $(24,8)$。转置后的形状是 $(3,2)$、步长是 $(8,24)$，而紧凑行主序应为 $(16,8)$。因此一般不可以。可复制、拒绝或增加步长参数；要单独说明输出写回。
-2. **底层启动异步任务后立刻返回，Python 删除输入变量，是否安全？** 关键不在变量名，而在分配者是否仍被强引用、任务是否完成、输入是否被其他主体修改。方案是让任务对象持有输入所有者，直到完成事件；释放与取消也须等待不再访问缓冲区。
-3. **Rust 已启用内存安全检查，为什么还要禁止输入输出重叠？** 将外部地址转换为共享切片和可变切片的操作依赖调用者证明。重叠会破坏借用前提。应选择禁止重叠并检查、复制输入，或重新设计成单一可变缓冲区上的原位算法；不能事后寄希望于循环顺序。
+通常，由于 Python 的垃圾回收机制，无需担心不可达内存（unreachable memory）。内存中的缓冲区可以由 Python 函数创建，并自动被引用。当没有对象引用该缓冲区时，垃圾回收器会释放它。这就是 Python 引用计数系统的工作方式，它保证每个分配的内存缓冲区都被引用。
+如果在 Python 程序中创建指针，可能会因为悬空指针而遇到内存泄漏。Python 本身无法跟踪这些指针的内容。因此，即使指针对象引用了无效的内存地址，Python 也可能无法正确处置它们。
+在某些情况下，我们可能希望使用 Python 为 C/C++ 扩展管理内存。这涉及在 Python 中分配内存缓冲区，然后将其指针传递给 C/C++ 函数。例如，下面是一些分配内存缓冲区并将其传递给 C 函数的有效方法。
 
-## 进一步阅读与未展开范围
+```python
+import numpy as np
+import ctypes
+from cffi import FFI
+ffi = FFI()
+# Method 1: allocating buffer with ctypes array.
+libc = ctypes.CDLL( '')
+buf = (ctypes.c_byte * n * 4)()
+libc.memset(ctypes.addressof(buf), ctypes.c_int(0), ctypes.c_size_t(200))
+# Method 2: allocating buffer with numpy array , then extracting its pointer with array.ctypes.data_as
+buf = np.empty(n , dtype=np.int32)
+libc.memset(buf.ctypes.data_as(ctypes.POINTER(ctypes.c_int)), ctypes.c_int(0), ctypes.c_size_t(200))
+```
 
-本章没有实现跨平台扩展打包、动态链接器诊断、回调线程桥接、复杂结构体、Fortran 描述符或 Rust 构建工程。实际工作应以目标版本的 Python `ctypes`/C API、CFFI、pybind11、f2py、Fortran 互操作标准与 PyO3 文档补充，并在目标平台测试边界条件。本章与[性能成本分析](09-performance.qmd)衔接，但不是完整 FFI 工程手册。
+```python
+# Method 3: allocating buffer with numpy array , then extracting its pointer with ctypes.cast
+buf = np.empty(n , dtype=np.int32)
+libc.memset(ctypes.cast('double *', buf.ctypes.data), ctypes.c_int(0), ctypes.c_size_t(200))
+# Method 4: allocating buffer with numpy array , then extracting its pointer with ffi.cast
+ffi.cdef('void *memset(void *s , int c , size_t n);' )
+libc = ffi.dlopen(None)
+buf = np.empty(n , dtype=np.int32)
+libc.memset(ffi.cast('double *', buf.ctypes.data), ctypes.c_int(0), ctypes.c_size_t(200))
+```
+然而，将这些内存缓冲区分配代码移到 Python 函数中，可能因悬空指针而导致内存泄漏。
 
-## 来源与新增内容
+```python
+import numpy as np
+import ctypes
+from cffi import FFI
+def alloc_buffer1(n):
+    buf = (ctypes.c_byte * n * 4)()
+    return ctypes.addressof(buf)
+def alloc_buffer2(n):
+    buf = np.empty(n , dtype=np.int32)
+    return buf.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
+def alloc_buffer3(n):
+    buf = np.empty(n , dtype=np.int32)
+    return ctypes.cast('double *', buf.ctypes.data)
+def alloc_buffer4(n):
+    buf = np.empty(n , dtype=np.int32)
+    return ffi.cast('double *', buf.ctypes.data)
+```
+在这些函数中，内存缓冲区在 Python 函数内部被分配，而返回的只有引用这些内存缓冲区的指针。内存缓冲区与其指针的生命周期不一致。内存缓冲区仅在 Python 函数的作用域内存活，并在函数返回时自动释放。然而，指针可以在函数外部访问。这些指针是悬空指针，不应引用。
+如下面的示例所示，在调用 C 函数时内联分配缓冲区也可能导致内存泄漏。问题源于内存缓冲区和指针的生命周期不一致：
 
-主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第8章 **Foreign language interfaces**，印刷页265–304／PDF物理页274–313。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00017-X](https://doi.org/10.1016/B978-0-44-323837-6.00017-X)。
+```python
+ffi.cfunc(ffi.cast('double *', np.empty(100).ctypes.data))
+ctypes_lib.cfunc(ctypes.cast(ctypes.c_char_p , np.empty(100).ctypes.data))
+```
+这里，np.empty() 创建一个匿名 NumPy 数组作为缓冲区。这个缓冲区对象只存在于 ffi.cast 和 ctypes.cast 函数的作用域内。一旦 cast 函数执行完毕，缓冲区对象就会因为没有任何对象引用而被释放。cast 函数返回的指针仍然引用该缓冲区，从而导致悬空指针。
+在一些程序中，会分配 NumPy 数组，并在调用 C/C++ 函数时使用 .ctypes.data_as() 方法访问其指针。例如：
 
-本章实际参考的正文定位：类型与转换，印刷268–269／PDF277–278；结构与序列化，印刷270–273／PDF279–282；FFI，印刷283／PDF292；内存管理，印刷292／PDF301；Fortran，印刷296–297、299／PDF305–306、308；Rust，印刷301–302／PDF310–311；另读开章印刷265／PDF274与目录PDF12–14。所用来源为非OCR文本提取，未作PDF视觉核对；没有采用原书的图、代码或科学公式。上面的地址公式由字节步长定义直接给出。解释组织、协议、矩阵数据、代码及练习均为本笔记新作；平台约定须以实际工具链再核实。
+```text
+ctypes_lib.cfunc(np.empty(100).ctypes.data_as(ctypes.c_void_p))
+```
+你可能担心这种情况下有内存泄漏的风险。好在 NumPy 库已经解决了这个问题。.ctypes.data_as() 提供的指针保持着对 NumPy 数组对象的引用。这确保 NumPy 数组缓冲区的生命周期不短于指针的生命周期。换言之，只要 .ctypes.data_as() 返回的指针仍在使用，NumPy 数组缓冲区就仍然可以访问。
+还有其他情况可能产生悬空指针。我们的目的并不是涵盖所有情况。一般规则是，每当函数返回指针时，我们都必须关注指针以及它所引用的数据缓冲区的生命周期。为了避免悬空指针问题，确保数据缓冲区对象的存活时间长于指针对象至关重要。
+
+### 8.3.4 扩展中的函数名
+
+在使用 C/C++ 开发的动态库中，如果多个依赖的动态库中存在相同的函数（或符号）名称，动态链接器会按照 LD_LIBRARY_PATH 和 ld.so.cache 中定义的库搜索顺序，从依赖库中选择第一个可用符号。通过这一机制，可以在运行时使用 LD_PRELOAD 环境变量覆盖符号 [14,15]。当一个 Python 软件包包含多个 C/C++ 扩展，且同一个函数名出现在其中几个扩展中时，Python 如何处理这种名称重复？Python 是否在所有扩展中只使用该函数的一个版本，还是每个扩展都使用自己的函数版本？
+这个问题的一个典型场景是在 C/C++ 扩展中使用 BLAS 库。不同厂商提供了多种 BLAS 实现。不同软件包可能通过扩展链接到不同的 BLAS 实现。例如，一个扩展可能使用 Intel 多线程 MKL 库构建，而另一个可能使用 OpenBLAS。
+在 Linux 上，我们可以进行一个小测试，调查这种情况下的符号解析问题。首先，创建一个名为 test_blas.c 的文件，内容如下：
+
+```text
+void dcopy_(int * , double * , int * , double * , int *);
+void test_copy(double *in , double *out , int n)
+{
+  int inc1 = 1;
+  dcopy_(&n ,i n , &inc1 , out , &inc1);
+}
+```
+然后编译这段代码，并将其链接到 MKL 库：
+
+```bash
+$  gcc -g -fPIC -shared -o libtest_ld_mkl.so test_blas.c \
+  -L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lm
+```
+我们还将这段代码编译并链接到 OpenBLAS：
+
+```bash
+$ gcc -g -fPIC -shared -o libtest_ld_openblas.so test_blas.c \
+  -L/usr/lib/x86_64 -linux -gnu -lopenblas
+```
+接下来，编写一个 Python 测试程序 ffi_load_test.y，使用 ctypes 加载这两个库：
+
+```python
+import ctypes
+ld_mkl = ctypes.CDLL( 'libtest_ld_mkl.so')
+print(ld_mkl.test_copy)
+ld_openblas = ctypes.CDLL( 'libtest_ld_openblas.so')
+print(ld_openblas.test_copy)
+```
+为了检查运行时函数／符号解析，我们可以设置环境变量 LD_DEBUG=bindings，然后执行该程序。
+
+```bash
+$  LD_DEBUG=bindings python ffi_load_test.py
+```
+LD_DEBUG 设置会使系统显示动态链接器执行的函数绑定详情。有关 LD_DEBUG 设置的更多细节，请参阅 ld.so 的手册。在输出中搜索关键字 dcopy_，可以找到如下信息：
+
+```text
+...
+516985: binding file libtest_ld_mkl.so [0] to /opt/intel/lib/
+    intel64/lib/libmkl_intel_lp64.so [0]: normal symbol 'dcopy_ '
+...
+516985: binding file libtest_ld_openblas.so [0] to /usr/lib/x86_64    -
+    linux -gnu/libopenblas.so.0 [0]: normal symbol 'dcopy_ '
+...
+```
+这表明两个扩展中的两次 dcopy_ 函数调用分别绑定到了不同的 BLAS 库。
+导入两个库（或保存在不同目录中的同一个库）时，默认情况下，动态链接器（dynamic linker）会分别解析每个库的符号。请注意，此行为受 dlopenflags 设置影响，可以通过 sys.getdlopenflags() 查看该设置。某些软件包，如 MKL 和 PyTorch，可能会更改这一设置并导致符号冲突 [16,17]。每个 Python 扩展都可以拥有各自独立的全局符号定义，这些符号会被解析到不同的内存地址。这与运行单个 C/C++ 可执行文件不同。在 C/C++ 可执行文件中，如果多个共享库包含同名函数，则只会使用其中一个，通常是依赖库中首次出现的那个。
+解析每个扩展的函数符号时，动态链接器读取 ELF 头中的 NEEDED 条目（可通过 readelf -d 查看），以确定依赖库。为了定位这些库，链接器随后搜索 ELF 头中的 RUNPATH（或 RPATH）、LD_LIBRARY_PATH 和 ld.so.cache 指定的路径，直到找到匹配项。在上面的例子中，两个扩展的 NEEDED 条目中包含不同的 BLAS 库。动态链接器能够毫无歧义地解析不同依赖库中的 dcopy_ 符号。
+当系统中存在某个库的多个版本时，链接器可能会选择错误的版本。C/C++ 和 Python 程序都会遇到这个问题。解决方法之一是显式配置 -Wl,-rpath 选项，如第 8.2.4 节所述。另一种方法是使用 auditwheel 工具，将库及其版本信息嵌入 Python 软件包。第 1 章的第 1.3.4 节讨论了这一工具。
+
+## 8.4 接口
+
+Fortran 是科学应用中广泛使用的语言。许多量子化学程序完全用 Fortran 编写，尤其是那些几十年前启动的项目。
+有多种方法可以连接 Fortran 和 Python。一种方法是利用 Fortran/C 互操作性，通过 FFI（使用 ctypes 或 cffi 库）从 Python 调用 Fortran 函数。另一种方法是使用 f2py 等专用工具。f2py 自动生成所需的接口 C 代码，从而简化这一过程。
+
+### 8.4.1 Fortran 的接口
+
+Fortran 使用的 ABI 约定与 C 语言不同。因此，Fortran 与 Python 之间的接口处理方式也不同于 C 与 Python 之间的接口。下面概述可能遇到的主要区别。更多信
+息可参见 Fortran/C 互操作性文档 [18] 和编译器手册 [19]。
+
+- 函数（或子程序）名称。编译 Fortran 程序时，编译器会对 Fortran 函数名进行名称改编（name mangling）。具体来说，这一过程使 Fortran 函数名不区分大小写，并通过添加下划线来修改名称。例如，GNU 和 Intel Fortran 编译器（gfortran 和 ifort）会将函数名转换为小写，并在末尾添加一个下划线 [20]。名称改编过程因编译器和操作系统而异。开发 Fortran-Python 接口时，理解编译器和操作系统如何处理这一过程至关重要。
+- 参数传递方式。Fortran 按引用传递所有参数，这意味着在函数内部对参数的任何修改都会反映到函数外部。这与按值传递参数的 C 不同。
+- 字符串的处理。Fortran 和 C 处理字符串的方式不同。C 字符串以 NUL 字符终止，而 Fortran 单独保存字符串的长度信息。向 Fortran 函数传递字符串时，也必须提供其长度。传递字符串参数的约定，包括长度信息的处理方式，取决于编译器和平台。对于 gfortran 和 ifort，字符串以指针形式传递，其长度信息追加在参数列表末尾 [21]。
+
+下面是一个基于 gfortran 编译器和 Python ctypes 模块的 Python-Fortran 接口示例。考虑一个提供多个数据复制子程序的 Fortran 程序：
+
+```text
+subroutine dcopy(len , inArray , outArray)
+integer*4 , intent(in): : len
+real*8 , intent(in) :: inArray( *)
+real*8 , intent(out) :: outArray( *)
+integer :: i
+do i=1  , len
+ outArray(i) = inArray(i)
+end do
+end subroutine
+subroutine strcopy(inStr , outStr)
+character(*), intent(in) :: inStr
+character(*), intent(out) :: outStr
+print* , inStr
+outStr = inStr
+end subroutine
+```
+假设其文件名为 fcopy.f90，我们可以编译这段代码，生成共享库 libfcopy.so。
+
+```bash
+$  gfortran -fPIC -shared -o libfcopy.so fcopy.f90
+```
+下面是创建 Python 接口的代码。
+
+```python
+import ctypes
+import numpy as np
+libcopy = ctypes.CDLL( 'libfcopy.so')
+libcopy.dcopy_.argtypes = [ # (1)
+    ctypes.POINTER(ctypes.c_int), ctypes.c_void_p , ctypes.c_void_p , ]
+libcopy.strcopy_.argtypes = [ # (2)
+    ctypes.c_char_p , ctypes.c_char_p , ctypes.c_size_t , # length of inStr
+ctypes.c_size_t , # length of outStr
+]
+def dcopy(a: np.ndarray) -> np.ndarray:
+    assert a.dtype == np.float64
+    assert a.ndim == 1
+    assert a.flags.contiguous
+    b = np.empty_like(a)
+    size = ctypes.c_int(a.size)
+    libcopy.dcopy_(ctypes.byref(size), a.ctypes , b.ctypes)
+    return b
+def strcopy(a: bytes) -> bytes:
+    assert isinstance (a , bytes)
+    b = bytes( len(a))
+    libcopy.strcopy_(a ,b , len(a), len(b))
+    return b
+```
+为适应 gfortran 使用的名称改编方案，我们在 Python 中使用函数名 dcopy_ 和 strcopy_。在 strcopy 函数中，每个字符串的长度都需要追加到参数列表末尾。长度参数的类型为 size_t，按照 gfortran 的约定，该变量按值传递 [21]。
+Fortran 还支持通过 function 关键字定义子程序，这些子程序用于返回一个值。向这些子程序传递参数的方法与 subroutine 子程序相同。可以通过 ctypes 中函数的 restype 属性访问返回值。例如，下面是一个计算向量欧几里得范数（Euclidean norm）的 Fortran 函数：
+
+```text
+function dnorm(len , inArray)
+  real*8 :: dnorm
+  integer*4 , intent(in): : len
+  real*8 , intent(in) :: inArray( *)
+  integer :: i
+  real*8 :: norm
+  norm = 0.0
+  do i=1  , len
+    norm = norm + inArray(i) * inArray(i)
+  end do
+  dnorm = sqrt(norm)
+end function
+```
+其 Python 接口可以按如下方式开发：
+
+```text
+libcopy = ctypes.CDLL( 'libfcopy.so')
+libcopy.dnorm_.argtypes = [
+    ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double), ]
+libcopy.dnorm_.restype = ctypes.c_double
+```
+
+### 8.4.2 编译器
+
+Python 与 Fortran 之间的 ctypes 接口要求详细了解 Fortran ABI 约定，因此开发和维护起来可能比较困难。f2py 编译器提供了一种解决方案，它将 Fortran 函数的签名转换为中间 C 代码。这些 C 代码充当 Python 与 Fortran 之间的通信桥梁。f2py 是 NumPy 库的一个组件 [22]。
+例如，要为前面的例子编译 Fortran 扩展，我们可以使用 f2py 扫描 Fortran 源代码，并生成一个名为 fcopy.pyf 的初步签名文件。
+
+```bash
+$  f2py -m fcopy fcopy.f90 -h fcopy.pyf
+```
+签名文件的内容如下：
+
+```bash
+$ cat fcopy.pyf
+!- *   - f90 - * -
+! Note: the context of this file is case sensitive.
+python module fcopy ! in
+interface ! in :fcopy
+        subroutine dcopy(len_bn ,inarray ,outarray) ! in :fcopy:fcopy.f90
+```
+
+```text
+            integer*4 , optional ,intent(in),check(len(inarray)>=len_bn), depend(inarray) :: len_bn= len(inarray)
+            real*8 dimension(len_bn),intent( in) :: inarray
+            real*8 dimension(len_bn),intent(out),depend(len_bn) :: outarray
+        end subroutine dcopy
+        subroutine strcopy(instr ,outstr) ! in :fcopy:fcopy.f90
+            character*(*) intent( in) :: instr
+            character*(*) intent(out) :: outstr
+        end subroutine strcopy
+    end interface
+end python module fcopy
+! This file was auto -generated with f2py (version:1.21.6).
+! See http://cens.ioc.ee/projects/f2py2e/
+```
+这个签名文件用于生成中间 C 代码。然而，在继续生成代码之前，需要解决该签名中的一个问题。在 strcopy 块中，输出参数 outStr 的长度尚未定义。由于输入参数 inStr 的长度可以在运行时根据实际字符串参数确定，我们可以使用语句 len=slen(inStr)，使 outStr 的长度与 inStr 一致。修改签名文件后，我们得到一个修订后的签名文件。
+
+```text
+python module fcopy
+    interface
+    subroutine dcopy( len , inArray , outArray)
+      integer*4 ,intent(in ,hide),depend(inArray) :: len_bn= len(inArray)
+      real*8 ,dimension(len_bn),intent(in) :: inArray
+      real*8 ,dimension(len_bn),intent(out),depend(len_bn) :: outArray
+    end subroutine
+    subroutine strcopy(inStr , outStr)
+      character(*),intent(in) :: instr
+      character(len=slen(inStr)),intent(out) :: outstr
+    end subroutine
+  end interface
+end python module fcopy
+```
+接下来，我们可以使用 gfortran 编译 Fortran 源代码，并使用 f2py 编译签名文件：
+
+```bash
+$ gfortran -fPIC -shared -o libcopy.so fcopy.f90
+$ f2py -c -m fcopy fcopy.pyf -L. -lcopy
+```
+输出是一个共享库 fcopy.cpython-310-x86_64-linux-gnu.so，可以作为 Python 模块导入。
+
+```python
+import fcopy
+import numpy as np
+def dcopy(a: np.ndarray) -> np.ndarray:
+    assert a.dtype == np.float64
+    assert a.ndim == 1
+    assert a.flags.contiguous
+    return fcopy.dcopy(a)
+def str_copy(a: bytes) -> bytes:
+    assert isinstance (a , bytes)
+    return fcopy.strcopy(a)
+```
+最后，我们讨论如何将 f2py 接口集成到 Python 构建系统中。你可能已经注意到 numpy.distutils 模块，它提供 Extension 类，可在 setup.py 中编译 Fortran 代码和 f2py 接口 [23]。这一工具基于 Python 标准库 distutils 开发，与 setuptools 软件包中的 Extension 类不兼容。换句话说，应避免在同一个 setup.py 脚本中同时使用 numpy.distutils 和 setuptools。如果选择使用 setuptools 打包，如何用 setuptools 编译 Fortran 扩展和 f2py 接口呢？为了解决这个问题，我们可以使用 f2py 编译器手动生成中间 C 文件：
+
+```bash
+$ f2py -m fcopy fcopy.pyf
+```
+该命令生成两个额外的中间文件 fcopy-f2pywrappers.f 和 fcopymodule.c。随后，我们可以将 fcopymodule.c 视为普通 C 代码，仅使用 setuptools 中的 Extension 类编译这个中间 C 文件。
+
+## 8.5 接口
+
+近年来，Rust 语言凭借其现代化设计和出色的特性而受到欢迎。Rust 的一个突出特点是性能可与 C/C++ 相媲美。此外，Rust 的所有权系统（ownership system）在编译时实施严格的内存安全检查，有效消除了 C 和 C++ 等语言中的许多内存泄漏问题。这些特点使 Rust 成为需要兼顾高性能和安全性的科学应用的一个有吸引力的选择。
+有多种方法可以将 Rust 集成到 Python 项目中。Rust 社区提供了 PyO3 软件包，通过 Python/C API 生成 Python 绑定。由于 Rust 与 C 具有互操作性，也可以通过 FFI 使用 Rust 库。借助 ctypes 和 cffi 等工具，可以动态
+地在 Python 中加载 Rust 库，方式与加载标准 C 库类似。
+要通过 FFI 访问 Rust 扩展，第一步是将 Rust 代码编译为可动态加载的库。以前面的 dcopy 扩展为例，我们可以使用以下命令创建一个 Rust 项目 rust_copy：
+
+```bash
+$  cargo new --lib rust_copy
+```
+然后编辑 Cargo.toml 文件，启用动态库编译。
+
+```text
+[package]
+name = "rcopy"
+version = "0.1.0"
+[lib]
+crate -type = ["cdylib"]
+```
+函数 dcopy 可以在 src/lib.rs 中定义。
+
+```yaml
+#[no_mangle]
+pub extern "C" fn dcopy( len: i32 , input: *mut f64 , output: *mut f64) {
+    let size = len as usize;
+    let i_vec = unsafe { std:: slice::from_raw_parts(input , size) };
+    let o_vec = unsafe { std:: slice::from_raw_parts_mut(output , size) };
+    for i in 0..size {
+        o_vec[i] = i_vec[i];
+    }
+}
+```
+为确保与 C ABI 兼容，指定了 pub extern "C" 标记，以禁用库中的函数名称改编。此外，Rust 函数的参数必须与 C 内置数据类型兼容。
+接下来，我们可以执行 cargo build 命令编译项目，在 target/debug 目录中生成一个名为 librcopy.so 的共享库。该库可以像普通 C 库一样，通过 Python 中的 cffi 或 ctypes 加载。
+
+```python
+import ctypes
+c_double_p = ctypes.POINTER(ctypes.c_double)
+nparray_p = np.ctypeslib.ndpointer(ctypes.float64 , ndim=1)
+librcopy = ctypes.CDLL( 'target/debug/librcopy.so')
+librcopy.dcopy.argtypes = [ctypes.c_int , nparray_p , nparray_p]
+def dcopy(a: np.ndarray) -> np.ndarray:
+    assert a.dtype == np.float64
+    assert a.ndim == 1
+```
+
+```python
+    assert a.flags.contiguous
+    b = np.empty_like(a)
+    librcopy.dcopy(a.size ,a ,b )
+    return b
+```
+
+## 小结
+
+本章探讨了将 Python 与其他编程语言连接的几种方法。对于使用命令行输入的软件，可以使用 Python subprocess 模块开发接口。如果外部程序提供可在内存中访问的函数，则可以使用 Python/C API 或外部函数接口（Foreign Function Interface，FFI）开发接口。通过这些接口技术，我们展示了如何将用 C、C++、Fortran 和 Rust 编写的程序集成到 Python 中。
+Python/C API 是开发可导入模块接口的标准方法。尽管 Python/C API 的开销较低、可移植性更好，但编写 Python/C API 代码通常复杂而繁琐。对于 C 和 C++ 项目，Cython 和 pybind11 等工具可以自动生成接口，简化 Python/C API 接口的开发过程。FFI 为集成动态库提供了更简单的开发过程。ctypes 和 cffi 等工具可用于连接 Python 与用其他语言编译的库。然而，FFI 通常带来更大的开销，其接口也不如 Python/C API 方式的接口健壮。
+在 Python 中集成外部库时，我们可能遇到纯 Python 程序中不存在的若干技术挑战。我们需要了解 Python 与其他语言之间的数据类型差异，以避免数据类型不兼容导致的错误。外部语言接口引入了指针，这可能在 Python 中导致内存泄漏。应仔细管理指针及相关内存缓冲区的生命周期，以避免内存泄漏。外部库通常具有运行时依赖。外部库中的运行时路径和重复符号可以采用与常规 C/C++ 程序类似的方式管理。
+
+## 参考文献
+
+[1] Compiler Collection Team, Gcc documentation - half-precision floating point, https://gcc.gnu.org/onlinedocs/gcc/Half-Precision.html, 2024.
+[2] Clang Team, Clang documentation - half-precision floating point, https://clang.llvm. org/docs/LanguageExtensions.html#half-precision-floating-point, 2024.
+[3] Developers, Numpy reference -d a t a types, https://numpy.org/doc/stable/ reference/arrays.dtypes.html, 2024. 303 GNU The NumPy
+[4] Smith, Pep 557 – classes, https://peps.python.org/pep-0557/, Jun. 2017.
+[5] Bader, Python’s instance, class, and static methods demystified, https://realpython. com/instance-class-and-static-methods-demystified, 2024.
+[6] Rigo, M. Fijalkowski, Cffi https://cffi.readthedocs.io/en/latest/, 2024.
+[7] Goldsborough, Custom C++ and CUDA extensions, https://pytorch.org/tutorials/ advanced/cpp_extension.html, 2024.
+[8] Jakob, pybind11 — operability between C++11 and Python, https:// pybind11.readthedocs.io/en/stable/index.html, 2024.
+[9] Corporation, Intel oneapi math kernel library link line advisor, https://www.intel. com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html, 2024.
+[10] Bryant, D.R. O’Hallaron, Computer Systems: A Programmer’s Perspective, 2nd edition, Addison-Wesley Publishing Company, USA, 2010.
+[11] Arora, Linux nm command tutorial for beginners, https://www.howtoforge.com/linux- nm-command/, 2024.
+[12] Software Foundation, Python documentation - ctypes: specifying the required argument types, https://docs.python.org/3/library/ctypes.html#specifying-the-required- argument-types-function-prototypes, 2024.
+[13] Rigo, M. Fijalkowski, Cffi -u s i n gthe ffi/lib objects, https://cffi. readthedocs.io/en/latest/using.html, 2024.
+[14] Kerrisk, ld.so(8) — manual page, https://man7.org/linux/man-pages/man8/ld. so.8.html, 2024.
+[15] Kerrisk, The Linux Programming Interface: A Linux and UNIX System Programming Handbook, 1st edition, No Starch Press, USA, 2010.
+[16] developers, Pytorch github issue -a v o i dloading with rtld_global, https://github. com/pytorch/pytorch/issues/3059, 2024.
+[17] Developers, Numpy github issue -h o wwe want to link with mkl, and a missing symbol issue, https://github.com/numpy/numpy/issues/24824, 2024.
+[18] Fortran wiki -C interoperability, https://fortranwiki.org/fortran/show/C+ interoperability, 2024.
+[19] Compiler Collection Team, Gfortran documentation -n a m i n gand argument- passing conventions, https://gcc.gnu.org/onlinedocs/gfortran/Naming-and-argument- passing-conventions.html, 2024.
+[20] Compiler Collection Team, Gfortran documentation -n a m i n gconventions, https:// gcc.gnu.org/onlinedocs/gfortran/Naming-conventions.html, 2024.
+[21] Compiler Collection Team, Gfortran documentation - argument pass- ing conventions, https://gcc.gnu.org/onlinedocs/gfortran/Argument-passing-conventions. html, 2024.
+[22] Peterson, F2py: a tool for connecting Fortran and Python programs, International Journal of Computational Science and Engineering 4 (4) (2009) 296–305, https:// www.inderscience.com/info/inarticle.php?artid=29165.
+[23] Developers, F2py and build systems -u s i n gvia numpy.distutils, https://numpy. org/doc/stable/f2py/buildtools/distutils.html, 2024. CHAPTER E.V . data D. A. documentation, P. W. seamless Intel R.E. H. Python A. documentation M. Linux M. PyTorch NumPy FortranWiki, GNU GNU GNU P. NumPy

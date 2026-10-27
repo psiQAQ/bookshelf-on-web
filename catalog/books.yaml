@@ -1,2 +1,3 @@
-# Registry only; never discover publishable books by scanning books/.
-books: []
+books:
+- id: quantum-python-notes
+  path: books/quantum-python-notes/metadata.yaml

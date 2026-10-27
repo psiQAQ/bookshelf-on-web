@@ -1,216 +1,787 @@
-# 从费米符号到矩阵自由FCI {#ch14}
+# 后 Hartree-Fock 方法 I：完全组态相互作用 {#ch14 .unnumbered}
 
-本章为非官方原创学习笔记，不是原书译文。
+尽管 Hartree-Fock 方法能够计及分子能量的主要部分，但它不足以研究化学性质和化学反应的特征。化学由电子关联（electron correlation）产生的效应驱动，而电子关联是量子化学的核心方面。人们已经开发出许多后 Hartree-Fock（post-HF）方法来描述电子关联效应。
+开发后 Hartree-Fock 方法的程序涉及多种技术挑战。后 Hartree-Fock 方法引入了多体波函数，通常包含大量参数。处理波函数可能需要密集的浮点运算。计算过程中产生的中间变量往往占用大量内存空间，有时还需要大量磁盘空间进行存储。这会导致 CPU 核心、内存和磁盘之间发生大量数据传输。数据存储结构和内存管理策略会极大地影响后 Hartree-Fock 方法程序的效率。如何高效利用计算机的浮点计算能力？如何有效、合理地设计数据结构，以尽量减少数据传输开销？这些都是开发后 Hartree-Fock 方法时的关键问题。
+组态相互作用（Configuration Interaction，CI）是一种描述电子关联效应的有效后 Hartree-Fock 方法。在其各种形式中，完全组态相互作用（Full Configuration Interaction，FCI）是最全面的形式：波函数中考虑由给定轨道集合生成的所有可能电子组态（或行列式）。这种方法对电子关联的描述最为精确。然而，由于波函数参数的规模随系统规模呈指数增长，其计算开销极大。
+从编程角度看，FCI 呈现了后 Hartree-Fock 方法中遇到的许多典型技术挑战，是展示如何利用各种技术优化程序的典型例子。
 
-## 学习目标
+- FCI 波函数中的参数数量极大。只有使用稀疏矩阵算法，才有可能求解 FCI 波函数。
+- 将哈密顿量作用于 FCI 波函数需要大量浮点运算。
+- 利用并行计算加速 FCI 程序是有益的。并行计算的效率高度依赖于程序的设计和实现。
+- FCI 方法产生极大的中间变量，这对内存管理效率提出了挑战。
 
-能够为行列式固定一种可追踪的创建算符顺序；由占据位推导产生和湮灭的符号；解释有限轨道空间中FCI的变分意义；理解为什么Davidson只需要$Hv$而不需要存下整个$H$。本章用一个完整定义的两位置格点模型检查符号与残差，不把它称作通用分子FCI程序。
+本章将采用第 9 章讨论的性能分析和代码优化技术。此外，我们还将展示如何使用第 10 章开发的流水线执行器，有效地并行化存在依赖关系的计算任务。
 
-## 1. “全”首先要回答：在哪个空间里全？
+## 14.1 完全组态相互作用
 
-先选择$m$个正交自旋轨道，固定$N$个电子。每个占据集合对应一个Slater行列式，数目是$\binom mN$。若非相对论哈密顿量分别守恒$N_\alpha,N_\beta$，也可用$n$个空间轨道构造$\binom n{N_\alpha}\binom n{N_\beta}$个行列式。固定$M_S$并不自动固定总自旋$S$；还需自旋适配或另作诊断。
+在组态相互作用（CI）方法中，电子波函数表示为 Slater 行列式的线性组合，这些行列式也称为组态：
 
-FCI在所选空间中纳入全部行列式：
+![](../assets/math/eq-14-001.png){width=43%}
 
-$$
-|\Psi\rangle=\sum_I c_I|I\rangle,\qquad Hc=Ec,
-\qquad H_{IJ}=\langle I|\hat H|J\rangle.
-$$
+Slater 行列式 |Φ ⟩表示电子在特定轨道中的占据情况。展开系数 C 通过对 CI 能量进行变分优化得到，如下述本征值方程所示：
 
-对Hermitian $H$，归一化试探向量的Rayleigh商满足
+![](../assets/math/eq-14-002.png){width=40%}
 
-$$
-\mathcal E(c)=\frac{c^\dagger Hc}{c^\dagger c}\geq E_0^{\rm space}.
-$$
+其中哈密顿矩阵的元素为
 
-扩展嵌套的变分子空间，基态最低能不会上升。但有限基FCI不是连续空间精确解：基组误差仍在。冻结核、活性空间以及相对论近似还会改变问题。只在同一哈密顿量、同一电子数与相应对称扇区中比较，上界的说法才明确。
+![](../assets/math/eq-14-003.png){width=44%}
 
-维数指数增长的后果不仅是矩阵太大。即使不存$H$，一个CI向量也必须容纳每个保留行列式的系数；Davidson还要保存多个试探向量和对应的$Hv$。因此“矩阵自由”不等于“没有内存瓶颈”。
+FCI 方法要求在波函数展开中包含所有行列式。在非相对论计算中，α 自旋和 β 自旋的电子数分别守恒。对于具有 n 个轨道和 kα + kβ 个电子的系统，FCI
+波函数包含这些行列式。每个行列式都可以表示为 α 和 β 自旋电子组态的乘积： Iα 和 Iβ 分别表示 α 和 β 电子的产生算符组态：
 
-## 2. 排序约定是符号的定义，不是代码细节
+![](../assets/math/eq-14-004.png){width=43%}
 
-本章从0编号，采用**创建算符从左到右按指标递增**的约定：
+在许多场合，Iα 和 Iβ 分别称为 α 串和 β 串。
+由于行列式的数量呈指数增长，FCI 方法只适用于相对较小的系统。考虑一个包含 20 个空间轨道的半填充波函数，其中有 10 个 α 电子和 10 个 β 电子。FCI
+展开将包含约 ≈ 34 个行列式。以双精度存储该波函数大约需要 250 GB 空间。这一需求接近 FCI 方法的实际上限。
+尽管如此，FCI 程序的实现是展示如何应用 Python 编程技术处理实际量子化学问题的一个好例子。FCI 程序的开发涉及若干实用技术，例如：
 
-$$
-|n_0n_1\cdots\rangle=
-(a_0^\dagger)^{n_0}(a_1^\dagger)^{n_1}\cdots|\mathrm{vac}\rangle.
-$$
+- 如何在不完整构建整个矩阵的情况下计算大矩阵的部分本征值。
+- 如何通过将问题重新表述为张量收缩问题，最大限度地发挥浮点计算能力。
+- 如何优化内存效率和性能。
+- 如何利用并行化加速计算。
 
-算符作用在态上仍从右往左读。要让一个新的$a_p^\dagger$移到规定位置，需要跨过所有指标小于$p$的已占据创建算符。每跨过一个得到负号，所以创建或湮灭时的符号都是
+## 14.2 串的表示
 
-$$
-(-1)^{\sum_{q<p}n_q},
-$$
-
-前提分别是$p$空或$p$已占据，否则结果为零。这里的约定与采用递减排列的实现可能不同；单个系数的符号没有脱离基态相位约定的意义。修改排序时必须同步修改矩阵元和CI系数。
-
-例如$|0,2\rangle=a_0^\dagger a_2^\dagger|\mathrm{vac}\rangle$，先湮灭0没有负号，再在3创建时要越过已占据的2，因此
-
-$$
-a_3^\dagger a_0|0,2\rangle=-|2,3\rangle.
-$$
-
-不能只在最初行列式上一次性数符号：第二个操作的占据状态已改变。位串让这一规则紧凑可算；字典或排序表则负责从位串映射到CI向量地址。
-
-## 3. 从化学家积分到稀疏连接
-
-为与前两章对应，对**实正交自旋轨道**仍用化学家指标
-
-$$
-(pq|rs)=\iint\phi_p(1)\phi_q(1)r_{12}^{-1}
-\phi_r(2)\phi_s(2)\,d1\,d2,
-$$
-
-其中积分包括自旋求和。这样电子哈密顿量为
-
-$$
-\hat H=\sum_{pq}h_{pq}a_p^\dagger a_q
-+\frac12\sum_{pqrs}(pq|rs)a_p^\dagger a_r^\dagger a_s a_q.
-$$
-
-$h$和二电子积分均用$E_h$计；不含核排斥常数，加入该常数只会平移全部本征值。常用反对称积分记为
-
-$$
-\langle pq\Vert rs\rangle=(pr|qs)-(ps|qr).
-$$
-
-它采用另一种指标配对，不能把数组$(pq|rs)$直接命名为$\langle pq\Vert rs\rangle$。在这一约定下，两体项也可写为$\frac14\sum_{pqrs}\langle pq\Vert rs\rangle a_p^\dagger a_q^\dagger a_s a_r$。
-
-一体项至多替换一个占据，两体项至多替换两个。因此相差三个以上轨道占据的两个行列式间矩阵元为零。这是Slater–Condon稀疏连接的根源，不需要先生成所有矩阵元再寻找零。真实direct CI通常进一步把$\alpha/\beta$字符串和激发地址表组织成收缩，复用连通关系，避免对每对行列式重复比较。
-
-## 4. 原创完整例：在六个行列式上核验费米符号 {#ch14-example}
-
-定义两个位置，每处有$\uparrow,\downarrow$两个自旋轨道，编号依次是$0\uparrow,0\downarrow,1\uparrow,1\downarrow$。取$N=2$，保留全部六个行列式，模型为
-
-$$
-\hat H=-t\sum_{\sigma}(a_{0\sigma}^\dagger a_{1\sigma}
-+a_{1\sigma}^\dagger a_{0\sigma})
-+U(n_{0\uparrow}n_{0\downarrow}+n_{1\uparrow}n_{1\downarrow}),
-\quad t=0.5E_h,\quad U=1E_h.
-$$
-
-这些是人为格点参数，不是某个分子的积分或实际预测。格点自旋轨道正交，无空间长度参数。下面只用标准库，主计算通过算符作用计算$Hv$，不依赖预先组装的矩阵；末尾仅为六维厄米性交叉检查显式收集各列，这一步不适合扩大到真实FCI空间。
+为了表示行列式的 α 串和 β 串，我们使用 String 类存储其产生算符的索引。String 类类似于第 9 章第 9.7.3 节中的 Determinant 类。此外，我们在 String 类中实现了 __hash__ 和 __eq__ 方法。这些方法使 String 对象能够用作字典键。本章后面将利用这一功能简化地址计算。
 
 ```python
-from itertools import combinations
-from math import isclose, sqrt
-
-states = [sum(1 << p for p in occ) for occ in combinations(range(4), 2)]
-address = {mask: i for i, mask in enumerate(states)}
-t, U = 0.5, 1.0  # hartree, model parameters
-
-
-def change(mask, p, create):
-    occupied = bool(mask & (1 << p))
-    if occupied == create:
-        return None  # Pauli-forbidden operation
-    sign = -1 if (mask & ((1 << p) - 1)).bit_count() % 2 else 1
-    return mask ^ (1 << p), sign
-
-
-def hop(mask, p, q):
-    first = change(mask, q, False)
-    if first is None:
-        return None
-    middle, sign1 = first
-    second = change(middle, p, True)
-    if second is None:
-        return None
-    final, sign2 = second
-    return final, sign1 * sign2
-
-
-def matvec(vector):
-    result = [0.0] * len(states)
-    for j, mask in enumerate(states):
-        double_count = int(mask & 0b0011 == 0b0011) + int(
-            mask & 0b1100 == 0b1100
-        )
-        result[j] += U * double_count * vector[j]
-        for p, q in ((0, 2), (2, 0), (1, 3), (3, 1)):
-            moved = hop(mask, p, q)
-            if moved is not None:
-                final, sign = moved
-                result[address[final]] -= t * sign * vector[j]
-    return result
-
-
-assert len(states) == 6
-assert hop(0b0101, 3, 0) == (0b1100, -1)
-assert change(0b0101, 0, True) is None
-
-# Analytically constructed singlet and symmetric double-occupancy states.
-singlet = [0.0] * 6
-ionic = [0.0] * 6
-singlet[address[0b1001]] = 1 / sqrt(2)
-singlet[address[0b0110]] = -1 / sqrt(2)
-ionic[address[0b0011]] = ionic[address[0b1100]] = 1 / sqrt(2)
-energy = (U - sqrt(U**2 + 16 * t**2)) / 2
-ratio = -energy / (2 * t)
-psi = [(s + ratio * d) / sqrt(1 + ratio**2)
-       for s, d in zip(singlet, ionic)]
-hpsi = matvec(psi)
-residual = sqrt(sum((h - energy * c)**2 for h, c in zip(hpsi, psi)))
-assert residual < 1e-12
-assert isclose(sum(c*c for c in psi), 1.0, abs_tol=1e-12)
-assert isclose(energy, (1 - sqrt(5)) / 2, abs_tol=1e-12)
-# Check Hermiticity independently on every pair of coordinate vectors.
-columns = []
-for j in range(6):
-    unit = [0.0] * 6
-    unit[j] = 1.0
-    columns.append(matvec(unit))
-assert all(isclose(columns[j][i], columns[i][j], abs_tol=1e-12)
-           for i in range(6) for j in range(6))
-print(f"determinants = {len(states)}")
-print(f"ground energy = {energy:.6f} hartree")
-print("eigenvector residual < 1e-12")
+class String:
+    def __init__(self , occupied_orbitals: List):
+        self.occupied_orbitals = set(occupied_orbitals)
+    def __repr__(self):
+        return f'Det{self.occupied_orbitals}'
+    @classmethod
+    def vacuum(cls):
+        return cls(set())
+    @classmethod
+    def fully_occupied(cls , n):
+        return cls(set(range(n)))
+    def add_occupancy(self , orbital_id):
+        assert orbital_id not in self.occupied_orbitals
+        return String(self.occupied_orbitals.union([orbital_id]))
+    def __hash__(self):
 ```
 
-预期输出：
+```python
+        return hash (tuple(self.occupied_orbitals))
+    def __eq__(self , other):
+        return self.occupied_orbitals == other.occupied_orbitals
+    def annihilate(self , orbital_id):
+        ' ' 'Apply an annihilation operator. Returns the sign and a new
+    string.' ' '
+        if orbital_id not in self.occupied_orbitals:
+            return 0 , String.vacuum()
+        sign = ( -1) ** sum(i > orbital_id for i in self.occupied_orbitals)
+        return sign , String(self.occupied_orbitals.difference([orbital_id])
+    )
+    def create(self , orbital_id):
+        ' ' 'Apply a creation operator. Returns the sign and a new string.' ' '
+        if orbital_id in self.occupied_orbitals:
+            return 0. , String.vacuum()
+        sign = ( -1) ** sum(i > orbital_id for i in self.occupied_orbitals)
+        return sign , String(self.occupied_orbitals.union([orbital_id]))
+```
+† †
+将二次量子化算符作用于 String 对象时，可能产生正号或负号。在 String 表示中，我们约定算符按轨道索引从低到高的顺序作用，例如
+为确定符号，我们只需统计索引大于目标轨道索引的算符数量。这个数量表示作用二次量子化算符所需的置换次数，或者等价地说，符号翻转次数。所需的符号翻转在 annihilate 和 create 方法中处理。
+给定轨道数和占据数后，我们可以通过程序生成所有可能的 CI 串。这就是下面的 make_strings 函数的功能，它与第 9 章介绍的 dets 函数基本相同。
+
+```python
+@lru_cache(200)
+def make_strings(norb: int , noccupied: int):
+    assert norb >= noccupied
+    if norb == 0:
+        return [String.vacuum()]
+    elif noccupied == 0:
+        return [String.vacuum()]
+    elif norb == noccupied:
+        return [String.fully_occupied(norb)]
+```
+
+```python
+    return (make_strings(norb -1 , noccupied) +
+            [s.add_occupancy(norb -1)
+             for s in make_strings(norb -1 , noccupied -1)])
+```
+
+## 14.3 Davidson 对角化
+
+通常，FCI 方法只需要计算哈密顿量最低的几个本征态，分别对应基态波函数和低能激发态。在量子化学中，Davidson 对角化算法 [1,2] 用于计算最低本征值和本征向量。
+给定一组基向量 {v0,v 1,...,v n − 1}，我们可以如下表示矩阵 A
+和本征向量 x：
+
+![](../assets/math/eq-14-005.png){width=41%}
+
+本征值问题被简化为一个可以高效求解的较小问题：
+
+![](../assets/math/eq-14-006.png){width=39%}
+
+对于近似本征向量 x，可以针对最低本征值 e0 构造残差：
+
+![](../assets/math/eq-14-007.png){width=51%}
+
+为尽量降低矩阵与向量乘法的计算开销，使用预先计算的乘积 Avi 构造残差。然后利用该残差生成新的基向量：
+
+![](../assets/math/eq-14-008.png){width=43%}
+
+其中 diag(A) 表示矩阵 A 的对角元素。
+Davidson 迭代从初始猜测 v0 开始，采用上述步骤改进子空间基向量，直到式 (14.11) 定义的残差小于要求的收敛阈值。下面是针对实对称矩阵最低本征值的简化实现：
+
+```python
+def davidson(A , A_diag , x0=None , tol=1e -5 , maxiter=50 , space=15):
+    def precond(r , e):
+        return r / (A_diag - e)
+```
+
+```python
+    # The initial guess
+    if x0 is None:
+        x0 = 1. / (A_diag - A_diag.argmin() + 1e -2)
+    x0 = x0 / np.linalg.norm(x0)
+    v s=[ ]
+    h v=[ ]
+    h = np.empty((space , space))
+    for cycle in range (maxiter):
+        vs.append(x0)
+        hv.append(A(x0))
+        n= len(vs)
+        for i in range (n):
+            h[i ,n -1] = np.dot(vs[i] , hv[n -1])
+            h[n -1 ,i] = h[i ,n -1].conj()
+        e , c = np.linalg.eigh(h[:n ,:n])
+        e0 = e[0]
+        c0 = c[: ,0]
+        x = np.zeros_like(x0)
+        for i ,c i in enumerate (c0):
+            x += vs[i] * ci
+        residual = -e0 * x
+        for i ,c i in enumerate (c0):
+            residual += hv[i] * ci
+        norm = np.linalg.norm(residual)
+        print(f'davidson {cycle=} {e0=} residual={norm:.5g}' )
+        if norm < tol:
+            break
+        if len (vs) >= space:
+            # Restart the calculation , the last x is used as initial guess
+            x0 ,v s ,h v=x ,[ ] ,[ ]
+            continue
+        x0 = precond(residual , e0)
+        # orthogonalize the basis
+        for v in vs:
+            x0 -= v * np.dot(v , x0)
+        norm = np.linalg.norm(x0)
+        assert norm < 1e -10 , 'Linearly dependent basis vectors'
+```
+
+```python
+        x0 /= norm
+    else:
+        raise RuntimeError('davidson not converged' )
+    return e0 ,x
+```
+在迭代过程中，新的基向量加入子空间之前，必须相对于现有基向量进行正交化。如果没有这一步，子空间本征值问题将成为广义本征值问题：
+
+![](../assets/math/eq-14-009.png){width=40%}
+
+尽管使用非正交基向量的广义本征值问题在理论上应当得到与原问题相同的本征值，但实际经验表明，非正交基向量往往会引入更多误差和数值问题。
+请注意参数 space，它限制了子空间的大小。当子空间大小达到这一限制时，本征值求解器会清空子空间并重新开始对角化迭代。这一策略不仅降低了基向量和 A(x) 向量的存储需求，还有助于控制数值误差。
+残差向量是两个数值很大的向量之差。在对角化迭代过程中，残差的大小通常会逐渐减小。因此，迭代过程可能积累明显的数值误差。每迭代 10 到 15 次重新启动一次，程序就能有效减少这些数值误差 [3]。这种重启机制对维持量子化学应用中的精度至关重要。scipy.sparse.linalg 模块提供的本征值求解器不具备重启功能。这是量子化学软件需要使用自定义对角化程序的原因之一。
+为对 FCI 哈密顿量进行 Davidson 对角化，我们需要一个函数来计算哈密顿量与 CI 系数之间的矩阵向量乘积 σ = HC：
+
+```python
+def matvec(x)
+    return compute_hc(h1 , eri ,x , norb , nelec_a , nelec_b)
+```
+参数 h1 是单电子积分矩阵，eri 是双电子积分张量。其他参数包括轨道数 norb、α 串中的算符数（nelec_a）和 β 串中的算符数（nelec_b）。compute_hc 是 FCI 方法中计算最密集的部分。它可以使用高效的高维张量收缩算法求值，第 14.4 节将对此进行讨论。
+Davidson 算法需要的另一个参数是哈密顿量的对角元素。这些元素可以使用 Slater-Condon 规则 [4] 计算。
+
+![](../assets/math/eq-14-010.png){width=69%}
+
+得益于 NumPy 的花式索引（fancy indexing）功能，计算对角元素的程序很容易实现。
+
+```python
+def make_hdiag(h1 , eri , norb , nelec_a , nelec_b):
+    occs_a = make_strings(norb , nelec_a).occupied_orbitals
+    occs_b = make_strings(norb , nelec_b).occupied_orbitals
+    eri = ao2mo.restore(1 , eri , norb)
+    diagj = np.einsum( 'iijj ->ij', eri)
+    diagk = np.einsum( 'ijji ->ij', eri)
+    hdiag = []
+    for aocc in occs_a:
+        for bocc in occs_b:
+            e1 = h1[aocc ,aocc].sum() + h1[bocc ,bocc].sum()
+            e2 =(diagj[aocc][: ,aocc].sum() + diagj[aocc][: ,bocc].sum() +
+                 diagj[bocc][: ,aocc].sum() + diagj[bocc][: ,bocc].sum() -
+                 diagk[aocc][: ,aocc].sum() - diagk[bocc][: ,bocc].sum())
+            hdiag.append(e1 + e2 *.5)
+    return np.array(hdiag)
+```
+求解基态 FCI 波函数的 FCI_solve 函数可以如下实现：
+
+```python
+def FCI_solve(h1 , eri , norb , nelec_a , nelec_b , x0=None):
+    # matrix -vector product
+    def matvec(x):
+        hc = compute_hc(h1 , eri ,x , norb , nelec_a , nelec_b)
+        return hc.ravel()
+    # Diagonal elements
+    h_diag = make_hdiag(h1 , eri , norb , nelec_a , nelec_b)
+    e , wfn = davidson(matvec , h_diag , x0=x0)
+    return e , wfn
+```
+实际上，Davidson 对角化程序往往比上面的示例复杂得多。还有一些技术细节必须
+考虑。本书不会为这些技术方面逐一实现代码示例。下面简要讨论其中一些关键技术要点。
+
+#### 初始猜测的对称性
+
+Davidson 对角化并不总能得到最低本征态，特别是在具有自旋对称性或高阶点群对称性的系统中。对角化过程只能产生特定对称性子空间中的最低本征态，该子空间与初始猜测的对称性有关。哈密顿矩阵通常是全对称算符。如果初始猜测局限于某个对称性子空间，基生成代码只能产生局限于该子空间的基向量。这是 Davidson 对角化在量子化学应用中最常见的问题之一。
+因此，在 Davidson 迭代求解器中，构造具有所需对称性的恰当初始猜测至关重要。如果最低本征态的对称性未知，一种实用策略是求解问题的多个本征值。这种方法增加了捕获正确对称性子空间的可能性，从而提高 Davidson 对角化程序寻找最低本征态的效果。
+
+#### 预条件器中的奇异性
+
+式 (14.12) 中预条件器的分母由矩阵 A 的对角元素与近似本征值之差构成。这个差可能变得非常小（小于 10），从而可能导致预条件器出现奇异性或数值误差。
+确保预条件器生成的基向量得到适当缩放非常重要。基向量中的大数值可能悄然引入数值不稳定性。为了避免数值问题，必须过滤掉预条件器中奇异的（或过大的）元素。
+
+#### 多个本征态
+
+Davidson 对角化可用于计算本征值谱低端的多个本征态。在 Davidson 迭代过程中，使用多个候选本征向量生成新的基向量。然而，这些本征向量的收敛速度可能不同。一些本征态已经收敛而另一些尚未收敛的情况很常见。如果程序继续使用已收敛的本征向量生成基向量，就可能向基空间引入误差，并可能导致求解器数值不稳定。在这种情况下，我们需要对已收敛的本征态进行特殊处理，例如：
+
+- 将已收敛的本征态排除在基生成过程之外。可以使新生成的基向量与已收敛的本征态正交。这样，所得基向量就只能改进未收敛的本征态。
+- 对已收敛的本征态添加惩罚项。进行矩阵向量运算 A(x) 时，这种方法为已收敛的本征向量 t 引入惩罚项 s
+
+![](../assets/math/eq-14-011.png){width=42%}
+
+此时处于低能态的未收敛本征向量将在后续迭代中逐步
+得到改进。
+求解多个本征态的过程可能遇到各种其他问题，例如：
+
+- 本征态的顺序可能在不同迭代中变化，给识别已收敛的本征态带来困难。
+- 某些态可能在不同迭代中在收敛阈值附近波动，难以确定其收敛状态。
+- 较高本征态不满足变分原理，其收敛高度依赖于较低本征态的精度。
+
+在这些情况下，仅仅改进程序实现可能无法解决所有问题。我们可能需要采用各种策略来有效处理本征值问题。例如，可以计算更多本征态，但只选取其中最低的几个。另一种方法是适当放宽难以收敛的本征态的收敛标准。
+
+#### 非厄米矩阵
+
+尽管 Davidson 对角化算法最初是为对称矩阵开发的，但稍作修改即可用于非厄米矩阵的对角化。然而，对于非厄米矩阵，对角化过程往往收敛得更慢。
+非厄米矩阵的左、右本征向量不同。因此，与这些本征向量相关的残差也不同。所以，左、右残差生成的基向量必须纳入同一个子空间。换言之，分别为左本征态和右本征态使用不同的子空间是不合适的。左、右本征态使用独立子空间会导致收敛问题。
+此外，对非厄米矩阵进行对角化可能得到复数本征值。在某些情况下，即使预期求解得到的本征值为实数，迭代过程中的中间本征值也可能由于基子空间不完备而出现虚部。如果某些本征向量对应的本征值虚部足够小，就可以将这些本征向量保留在子空间中。
+
+## 14.4 直接 CI 算法
+
+二次量子化的无自旋哈密顿量可表示为 [5]
+
+![](../assets/math/eq-14-012.png){width=58%}
+
+其中
+
+![](../assets/math/eq-14-013.png){width=46%}
+
+矩阵元素为
+
+![](../assets/math/eq-14-014.png){width=56%}
+
+其中 h˜ 是修饰后的单电子算符
+
+![](../assets/math/eq-14-015.png){width=47%}
+
+请注意，这个单电子算符与 Fock 算符无关。对指标 r 的求和涉及所有轨道。
+给定粒子数算符
+
+![](../assets/math/eq-14-016.png){width=47%}
+
+我们可以在行列式基底中构造一个对角矩阵
+
+![](../assets/math/eq-14-017.png){width=53%}
+
+利用这个对角矩阵，我们将哈密顿量的单电子部分并入双电子积分，从而简化哈密顿矩阵：
+
+![](../assets/math/eq-14-018.png){width=54%}
+
+![](../assets/math/eq-14-019.png){width=55%}
+
+在 Epˆ 和 Erˆ 之间插入单位算符的分解后，哈密顿矩阵被分解为一个张量收缩
+E 张量定义为
+
+![](../assets/math/eq-14-020.png){width=66%}
+
+E 张量的元素只有三个可能的值：0、+1 和 − 1。我们可以使用二次量子化代数确定它们的值，如下面的代码示例所示。
+
+```python
+def Etensor_value(create_p: int , annihilate_q: int , strI: String , strJ: String):
+    ' ' 'The value of <stringI|p^\dagger q|stringJ >' ' '
+    sign1 , strK1 = strJ.annihilate(annihilate_q)
+    sign2 , strK2 = strK1.create(create_p)
+    if strK2 == strI:
+        return sign1 * sign2
+    else:
+        return 0
+def make_Etensor(norb , nelec):
+    strings = make_strings(norb , nelec)
+    na = len(strings)
+    Et = np.zeros((norb ,norb ,na ,na))
+    for p in range (norb):
+        for q in range (norb):
+            for i , strI in enumerate (strings):
+                for j , strJ in enumerate (strings):
+                    Et[p ,q ,i ,j] = Etensor_value(p ,q , strI , strJ)
+    return Et
+```
+根据式 (14.4) 中行列式的结构，我们可以将 FCI 波函数系数组织成矩阵 CJαJβ。该矩阵的行和列分别对应 α 串和 β 串。矩阵向量乘积 HC 可以分解为三个张量收缩步骤：
+
+![](../assets/math/eq-14-021.png){width=62%}
+
+![](../assets/math/eq-14-022.png){width=68%}
+
+这些张量收缩可以使用 einsum 函数快速实现。
+
+```python
+def compute_hc(h1 , eri , fciwfn , norb , nelec_a , nelec_b):
+    Etensor_a = make_Etensor(norb , nelec_a)
+    Etensor_b = make_Etensor(norb , nelec_b)
+    d = einsum( 'pqKI ,IJ ->pqKJ', Etensor_a , fciwfn , optimize=True)
+    d += einsum( 'pqKJ ,IJ ->pqIK', Etensor_b , fciwfn , optimize=True)
+    v = merge_h1_eri(h1 , eri , nelec_a + nelec_b)
+    g = einsum( 'pqrs ,rsIJ ->pqIJ',v ,d )
+    sigma = einsum( 'pqKI ,pqIJ ->KJ', Etensor_a ,g , optimize=True)
+    sigma += einsum( 'pqKJ ,pqIJ ->IK', Etensor_b ,g , optimize=True)
+    return sigma
+```
+
+## 14.5 优化张量收缩
+
+式 (14.27) 和式 (14.29) 涉及计算密集的张量收缩。然而，这些方程中的 E 张量非常稀疏。可以利用这种稀疏性降低计算成本。
+E 张量的非零元素可以高效地存储在查找表中：
+
+- 每个串对应查找表中的一个条目。
+- 表中的每个条目存储若干四元素元组 (p, q, address, value)。
+
+给定表条目 Jα，该元组表示轨道索引 p、q，串 Iα 的地址，以及 Eα 中张量元素的值。
+下面的代码展示了如何构造查找表：
+
+```python
+def make_Elt(norb , nelec):
+    ' ' 'The lookup table for non -zero elements of E tensor' ' '
+    strings = make_strings(norb , nelec)
+    # To setup the map from string to address ,
+    # __hash__ and __eq__ methods must be created for String object.
+    strings_address = {s: i for i ,s in enumerate (strings)}
+    E l t=[ ]
+    for k , strI in enumerate (strings):
+        table_k = []
+        occs = strI.occupied_orbitals
+        uoccs = [p for p in range (norb) if p not in occs]
+        for q in occs:
+            sign1 , strK1 = strI.annihilate(q)
+            for p in uoccs:
+                sign2 , strJ = strK1.create(p)
+```
+
+```python
+# Applying a^\dagger_p a_q on address of strI leads to to address of the output string (strJ)
+                table_k.append([p ,q , strings_address[strJ] , sign1 *sign2])
+        for p in occs:
+            table_k.append([p ,p ,k , 1])
+        Elt.append(table_k)
+    return Elt
+```
+为简化 String 对象与其在 CI 系数矩阵中对应地址之间的转换，我们使用字典为串建立索引并计算其地址。
+通过使用查找表，我们消除了 E 张量及与 E 张量相关的所有张量收缩。因此，我们得到了 HC 的优化实现：
+
+```python
+def compute_hc(h1 , eri , fciwfn , norb , nelec_a , nelec_b):
+    Elt_a = make_Elt(norb , nelec_a)
+    Elt_b = make_Elt(norb , nelec_b)
+    na = len(Elt_a)
+    nb = len(Elt_b)
+    d = np.zeros((norb ,norb ,na ,nb))
+    for I , tab in enumerate (Elt_a):
+        for a ,i ,J , sign in tab:
+            d[a ,i ,J] += sign * fciwfn[I]
+    for I , tab in enumerate (Elt_b):
+        for a ,i ,J , sign in tab:
+            d[a ,i ,: ,J] += sign * fciwfn[: ,I]
+    v = absorb_h1(h1 , eri , nelec_a + nelec_b)
+    g = einsum( 'pqrs ,rsIJ ->pqIJ',v ,d )
+    sigma = np.zeros_like(fciwfn)
+    for I , tab in enumerate (Elt_a):
+        for a ,i ,J , sign in tab:
+            sigma[J] += sign * g[a ,i ,I]
+    for I , tab in enumerate (Elt_b):
+        for a ,i ,J , sign in tab:
+            sigma[: ,J] += sign * g[a ,i ,: ,I]
+    return sigma
+```
+在这个函数中，调用 make_Elt 是一个主要瓶颈。make_Elt 中最耗时的操作包括确定 aˆpaqˆ 的符号，以及查找所得串的地址。为提高该函数的效率，我们采用以下优化：
+
+- 将 String 对象转换为二进制表示。这项优化可以加快字典中的查找速度。
+- 缓存每个二次量子化算符的符号。这使得我们可以利用缓存的符号快速计算算符对 aˆpaqˆ 的符号。当 p >q 时，aˆp 和 apˆ 所需交换的轨道数与缓存中的情况相同。当 p <q 时，需要一个额外的负号，因为作用 aqˆ 会移除一个轨道，从而影响 aˆp。
+
+优化后的 make_Elt 函数实现如下：
+
+```python
+def as_bin(occupied_orbitals):
+ binstr = 0
+ for i in occupied_orbitals:
+     binstr |= (1 < <i )
+ return binstr
+def make_Elt(norb , nelec):
+ ' ' 'The lookup table for non -zero elements of E tensor' ' '
+ strings = make_strings(norb , nelec)
+ strings_address = {as_bin(s): i for i ,s in enumerate (strings)}
+ E l t=[ ]
+ for k , binI in enumerate (bin_strings):
+     table_k = []
+     occs = []
+     uoccs = []
+     sign_cache = []
+     sign = 1
+     for i in reversed (range(norb)):
+         sign_cache.append(sign)
+         if (1 < < i) & binI:
+             occs.append(i)
+             sign = -sign
+         else:
+             uoccs.append(i)
+     sign_cache = sign_cache[:: -1]
+     occs = occs[:: -1]
+     uoccs = uoccs[:: -1]
+     for p in occs:
+         table_k.append([p ,p ,k , 1])
+     for q ,p in product(occs , uoccs):
+         binJ = binI ^ (1 < <q )^( 1< <p )
+         if p>q :
+```
+
+```python
+                sign = sign_cache[p] * sign_cache[q]
+            else:
+                sign = -sign_cache[p] * sign_cache[q]
+            table_k.append([p ,q , strings_address[binJ] , sign])
+        Elt.append(table_k)
+    return np.array(Elt , dtype= int)
+```
+
+## 14.6 优化内存效率
+
+第 14.5 节中的 compute_hc 函数分配了两个临时四指标张量 d 和 g。这些临时变量占用大量内存。例如，对于一个有 14 个轨道和 7α + 7 β 个电子的系统，FCI 波函
+数包含 = 11778624 个系数，占用约 100 MB 内存。程序执行期间观察到的实际内存占用接近 40 GB。主要原因是 d 张量和 g 张量，两者
+=
+的规模均为 × 142 2.31 × 109。
+为减少内存使用，我们应当分块处理 d 张量和 g 张量。在此算法中，必须小心处理 Elt 查找表提供的地址，因为它可能超出分块后的 d 张量边界。例如，在语句
 
 ```text
-determinants = 6
-ground energy = -0.618034 hartree
-eigenvector residual < 1e-12
+d[a ,i ,J] += sign * fciwfn[I]
+```
+中，任意索引 J 很可能不位于 d 张量当前的子块内。
+由于 E 张量具有置换对称性：
+
+![](../assets/math/eq-14-023.png){width=44%}
+
+语句
+
+```text
+d[a ,i ,J] += sign * fciwfn[I]
+```
+与语句
+
+```text
+d[i ,a ,I] += sign * fciwfn[J]
+```
+将产生相同的中间张量 d。因此，我们可以将 compute_hc 函数改成分块式实现：
+
+```python
+@numba.njit
+def _compute_hc(v , fciwfn , norb , Elt , blocksize=60):
+    Elt_a , Elt_b = Elt
+    na , nb = fciwfn.shape
 ```
 
-为什么能称为这个**模型**的基态？记$|S\rangle=(|0,3\rangle-|1,2\rangle)/\sqrt2$，$|D_+\rangle=(|0,1\rangle+|2,3\rangle)/\sqrt2$。算符作用给出$H|S\rangle=-2t|D_+\rangle$、$H|D_+\rangle=U|D_+\rangle-2t|S\rangle$。这块的本征值是$(U\pm\sqrt{U^2+16t^2})/2$；其余为三个三重态的0和反对称双占据态的$U$。当$U>0,t\ne0$，所用负根最低。代码确实在全部六个行列式上核验残差，但利用了解析构造，**没有实现Davidson迭代，也没有实现分子ERI输入**。
+```python
+    sigma = np.zeros_like(fciwfn)
+    for Ka0 in range (0 ,n a , blocksize):
+        ma = min(na - Ka0 , blocksize)
+        Ka1 = Ka0 + ma
+        for Kb0 in range (0 ,n b , blocksize):
+            mb = min(nb - Kb0 , blocksize)
+            K b 1=K b 0+m b
+            d = np.zeros((norb ,norb ,ma ,mb))
+            for I , tab in enumerate (Elt_a[Ka0:Ka1]):
+                for a ,i ,J , sign in tab:
+                    for K in range (mb):
+                        d[i ,a ,I ,K] += sign * fciwfn[J ,Kb0+K]
+            for I , tab in enumerate (Elt_b[Kb0:Kb1]):
+                for a ,i ,J , sign in tab:
+                    for K in range (ma):
+                        d[i ,a ,K ,I] += sign * fciwfn[Ka0+K ,J]
+            g = v.dot(d.reshape(norb **2 , -1)).reshape(norb ,norb ,ma ,mb)
+            for I , tab in enumerate (Elt_a[Ka0:Ka1]):
+                for a ,i ,J , sign in tab:
+                    for K in range (mb):
+                        sigma[J ,Kb0+K] += sign * g[a ,i ,I ,K]
+            for I , tab in enumerate (Elt_b[Kb0:Kb1]):
+                for a ,i ,J , sign in tab:
+                    for K in range (ma):
+                        sigma[Ka0+K ,J] += sign * g[a ,i ,K ,I]
+    return sigma
+def compute_hc(h1 , eri , fciwfn , norb , nelec_a , nelec_b , blocksize=60):
+    Elt_a = make_Elt(norb , nelec_a)
+    Elt_b = make_Elt(norb , nelec_b)
+    v = absorb_h1(h1 , eri , nelec_a + nelec_b).reshape(norb **2 , -1)
+    return _compute_hc(v , fciwfn , norb , (Elt_a , Elt_b), blocksize)
+```
+对于分块计算算法，这里出现了一个新问题：应当如何选择块大小？不同的块大小各有优势：
 
-在生产问题中无法先知道这样的答案；本例的作用是提供一个符号、厄米性和$Hv$接口都能独立手查的小基准。
+- 较大的块可以减少 Python 代码中各种操作带来的开销，并提高矩阵乘法的效率
 
-## 5. Davidson怎样把大问题压到小空间
+```text
+   g = v.dot(d.reshape(norb**2 , -1))
+```
 
-设已保存正交试探向量组成的矩阵$V$，以及$W=HV$。在小矩阵$H_s=V^\dagger W$上解本征问题，得到最低Ritz对$(\theta,y)$，再恢复
+- 较小的块有利于内存管理。访问较小的数组发生缺页的可能性更低。
+- 考虑到 CPU 缓存的利用情况，可能需要根据缓存大小调整块大小。如果中间变量能够完全装入 CPU 缓存，就可以显著提高计算效率。
 
-$$
-u=Vy,\qquad r=Wy-\theta u.
-$$
+compute_hc 函数的另一个问题是在循环内部使用 np.zeros 函数创建 d 张量的缓冲区。这种操作的内存效率不高，因为它增加了内存分配的开销。此外，新分配的内存很可能对应尚未映射的虚拟内存，这可能导致更多缺页，增大缓存未命中的可能性。
+为了解决这个问题，我们可以将内存分配操作移到循环外，让 d 张量复用同一块内存作为缓冲区。此外，我们可以向 np.dot 函数传入一个缓冲区，复用内存来存放矩阵乘法的输出。调用 np.dot 函数后，我们交换 d 张量和 g 张量的缓冲区。这样程序就可以使用 g 缓冲区存放下一个 d 张量。由于 g 张量的内存仍处于热状态，这可以提高处理后续块时的缓存命中率。
 
-这里$u$已归一化。若$\|r\|$小，才有直接的本征方程证据；两次$\theta$相近却可能只是子空间没有增长。残差还有明确意义：对Hermitian矩阵，至少存在一个本征值距离$\theta$不超过$\|r\|$，但单凭此界不一定识别到基态或区分近简并态。
+```python
+@numba.njit
+def _compute_hc(v , fciwfn , norb , Elt , blocksize=60):
+    Elt_a , Elt_b = Elt
+    na , nb = fciwfn.shape
+    sigma = np.zeros_like(fciwfn)
+    d_buf = np.empty(norb **2*blocksize**2)
+    g_buf = np.empty(norb **2*blocksize**2)
+    for Ka0 in range (0 ,n a , blocksize):
+        ma = min(na - Ka0 , blocksize)
+        Ka1 = Ka0 + ma
+        for Kb0 in range (0 ,n b , blocksize):
+            mb = min(nb - Kb0 , blocksize)
+            K b 1=K b 0+m b
+            d = d_buf[:norb *norb*ma*mb].reshape(norb ,norb ,ma ,mb)
+            d[:] = 0.
+            ...
+            g = g_buf[:norb *norb*ma*mb].reshape(norb*norb ,ma*mb)
+            g = np.dot(v , d.reshape(norb **2 , -1), out=g)
+            g = g.reshape(norb ,norb ,ma ,mb)
+            d_buf , g_buf = g_buf , d_buf
+            ...
+```
 
-近似解$(H-\theta I)\delta\approx-r$，用行列式对角元$D_I=H_{II}$代替$H$，可形成Davidson扩展方向
+![](../assets/figures/fig-14-1.png)
 
-$$
-q_I\approx-\frac{r_I}{D_I-\theta}
-=\frac{r_I}{\theta-D_I}.
-$$
+**图 14.1** 14 个轨道和 7α + 7 β 个电子的 FCI compute_hc 性能
 
-整体负号不影响所张成的方向，但分母接近零会放大噪声，需要有符号截断或其他预条件策略。随后必须从$q$中减去已有空间的投影，必要时再次正交化；若剩余范数极小，应识别线性相关、换方向或重启，不能直接除以零。实际程序还需最大循环数、子空间重启、多根正交约束和未收敛返回状态。
+我们使用不同的块大小，测试了 compute_hc 函数在具有 14 个轨道和 7α + 7 β 个电子的体系上的性能。测试比较了使用 np.zeros 分配器的直接实现与经过内存访问优化的版本（标记为 np.empty）。结果如图 14.1 所示。
+这个测试清楚地展示了不同块大小对性能的影响。通常，较小的块比较大的块性能更好，这表明内存管理对性能的影响比 Python 解释执行的开销更大。对于 np.empty 分配器，块大小约为 40 时性能最佳。
+测试平台的每个 CPU 核心都有 1 MB 的 L2 缓存，所有 CPU 核心共享 20 MB 的 L3 缓存。对于这个 14 轨道体系，为了同时将 d 张量和 g 张量装入 L2 缓存，块大小不应超过 18，因为
 
-“矩阵自由”接口只承诺接收$c$、返回$Hc$。它允许用激发连接表或分块收缩构造结果，不存$D_{\rm CI}^2$个元素。然而缓存$V,W$仍需约$2kD_{\rm CI}$个数，重启是在有限内存和保留搜索信息间折中。大临时张量也应分块；把一个巨大的稠密辅助张量藏在matvec里，不算解决容量问题。
+![](../assets/math/eq-14-024.png){width=30%}
 
-## 练习与解题指引
+对于 L3 缓存，最大块大小可以大致选择为
 
-1. **符号复算。** 在本章排序下求$a_2^\dagger a_0|0,3\rangle$及$a_3^\dagger a_0|0,3\rangle$。  
-   答案：前者为$+|2,3\rangle$；后者为零，因为3已占据。符号与Pauli禁戒要分别处理。
-2. **变分上界。** 模型中只取$|S\rangle$的能量是多少？再加入$|D_+\rangle$为何会降低能量？  
-   答案：前者是0；耦合为$-2t$，二维块的最低根小于0。降低来自允许电荷涨落，不是对角元$U$本身变负。
-3. **预条件方向。** 若$D=(0,2,4)E_h$、$\theta=-1E_h$、$r=(0,0.2,-0.1)E_h$，求未正交化方向。  
-   答案：$q=(0,-1/15,1/50)$，无量纲。之后还要去除已有试探空间的分量并归一化；这一步不能从三个数单独判断。
+![](../assets/math/eq-14-025.png){width=49%}
 
-## 来源与新增内容
+然而，将块大小设为 16 以适应 L2 缓存可能导致性能变差。这是因为在该大小下问题被分解成 46000 个块，导致 Python 字节码解释产生了大量开销。
+对于较大的块，np.empty 分配器的性能明显优于 np.zeros 版本。当块大小为 20 时，两种实现的差异很小。然而，当块大小增加到 40 时，内存优化版本的速度几乎是 np.zeros 版本的两倍。为什么优化内存管理会带来如此显著的差异？为了理解这一点，我们使用 perf 性能分析器，考察块大小设为 40 时内存效率优化的效果。
+np.zeros 版本的性能分析输出如下：
 
-主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），正式第14章 **Post Hartree-Fock I: full configuration interaction**，全章印刷613–640页／PDF物理619–646页。开章页提取的DOI：[10.1016/B978-0-44-323837-6.00024-7](https://doi.org/10.1016/B978-0-44-323837-6.00024-7)。
+```bash
+$ perf python fci_zeros_allocator.py
+...
+8 ,681 ,115 page   -faults # 0.245 M/sec
+109 ,270 ,271 ,406 cycles # 3.083 GHz
+187 ,988 ,136 ,856 instructions # 1.72 insn per cycle
+11 ,589 ,167 ,229 branches # 326.946 M/sec
+97 ,273 ,047 branch   -misses # 0.84% of all
+                        branches
+      35.466817095 seconds time elapsed
+      25.798432000 seconds user
+       9.648909000 seconds sys
+```
+优化内存效率后，性能分析输出如下：
 
-定向阅读：印刷613–618、623–624页／PDF物理619–624、629–630页；目录定位为PDF物理15–17页。本笔记主动使用自己的递增创建顺序，不能直接混入采用另一种顺序的符号表。格点模型、位操作程序、解析检查、解释和练习均为本笔记新作。源公式仅文本定位，未做PDF视觉核对。进一步阅读可沿原章学习自旋分离direct CI、多级张量收缩、内存分块和流水线并行；这些生产实现没有在此展开。
+```bash
+$ perf python fci_empty_allocator.py
+...
+62 ,376 page    -faults # 0.003 M/sec
+65 ,411 ,436 ,911 cycles # 3.065 GHz
+153 ,148 ,554 ,394 instructions # 2.34 insn per cycle
+5 ,683 ,433 ,297 branches # 266.341 M/sec
+69 ,155 ,915 branch   -misses # 1.22% of all
+    branches
+      21.360130211 seconds time elapsed
+      21.199824000 seconds user
+       0.139998000 seconds sys
+```
+两个版本最显著的差异是缺页次数。在使用 np.zeros 积极分配新数组的版本中，发生了 870 万次次缺页。每次次缺页在内核空间中大约需要一微秒处理。因此，超过 9 秒（sys 时间）花在内核
+空间中管理与内存页相关的操作。此外，两个版本的用户时间相差近 4.5 秒。这一差异主要反映了新分配的内存导致 CPU 缓存未命中的影响。
+我们可以根据体系大小快速估算，以确定缺页的来源。新分配的 d 张量和 g 张量的总数为
+
+![](../assets/math/eq-14-026.png){width=30%}
+
+每个 d 张量或 g 张量占用
+
+![](../assets/math/eq-14-027.png){width=30%}
+
+对于此大小的数组，内存分配器使用 4 KB 的内存页。计算期间请求的 4 KB 内存页总数为
+这一计算结果与 870 万次次缺页完全吻合。
+
+## 14.7 并行计算
+
+如图 14.2 所示，compute_hc 函数的并行效率较低。使用 8 个线程时，加速比甚至小于 2。不难找出并行效率低的原因。在 compute_hc 函数中，np.dot 函数是唯一使用并行化的操作（通过底层 BLAS 库），其余操作均未并行化。串行代码很快成为计算时间的主要部分，抵消了并行化的收益。
+为了提高并行效率，一种方法是使用自动线程并行化技术并行执行串行代码中的 for 循环迭代，例如 Cython prange 函数提供的 OpenMP 线程或 Numba prange 函数提供的 Numba 线程。在应用自动线程并行化之前，我们先进一步分析 compute_hc 函数，以确定合适的并行方案。
+第 14.6 节实现的代码中，外层循环很难并行化，例如循环
+
+```text
+for Kb0 in range(0 , nb , blocksize)
+```
+或者
+
+```text
+for Ka0 in range(0 , na , blocksize)
+```
+这是因为在这些循环内部调用的 np.dot 函数也可能创建线程，从而导致嵌套线程。嵌套线程可能使 CPU 资源超额使用，并大幅增加上下文切换的开销。
+
+![](../assets/figures/fig-14-2.png)
+
+**图 14.2** 各种 FCI 实现中矩阵向量乘法的加速比
+
+为了对外层循环实现线程并行化，一种方案是使用不同的线程控制器分别管理不同的代码块。例如，np.dot 函数通常依赖 BLAS 库提供的特定线程控制器。可以使用 OPENBLAS_NUM_THREADS、MKL_NUM_THREADS 等环境变量控制 BLAS 库的线程。对于 OpenMP 和 Numba 线程，可以配置环境变量 OMP_NUM_THREADS 和 NUMBA_NUM_THREADS 来管理线程。请注意，除非明确设置了特定的环境变量，否则大多数线程控制器默认使用所有可用 CPU 核心进行并行化。为了应对线程管理的挑战，可以使用 threadpoolctl 库在代码中显式管理各种线程控制器的线程。
+对构造 d 张量和分配 g 张量的操作进行自动线程并行化面临不同的挑战。困难在于，不同线程在某些操作中可能访问相同的内存地址。例如，在以下构造 d 张量的代码中，将索引 I 并行化可能导致多个线程访问 d 张量的最后一个索引。
+
+```text
+for I , tab in enumerate (Elt_b[Kb0:Kb1]):
+    for a ,i ,J , sign in tab:
+        for K in range (ma):
+            d[i ,a ,K ,I] += sign * fciwfn[Ka0+K ,J]
+```
+即使没有竞争条件，通过不同处理器访问连续的内存地址也可能导致不同 CPU 核心之间发生缓存伪共享争用。如第 9 章所述，这会导致很高的缓存一致性开销。
+为了并行化 d 和 g 张量的代码，我们可以重构这两个张量，以避免低效的内存访问模式。例如，通过交换轨道索引和 String 索引（将布局从 d[i,a,K,I] 改为 d[K,I,i,a]），我们可以如下构造 d 张量：
+
+```text
+for I , tab in enumerate (Elt_b[Kb0:Kb1]):
+    for a ,i ,J , sign in tab:
+        for K in range (ma):
+d[K ,I ,i ,a] += sign * fciwfn[Ka0+K ,J] # (1)
+```
+这一修改将减少不同线程之间出现内存一致性问题的情况。然而，这一改变可能略微降低 CPU 缓存的效用，因为第 (1) 行的赋值涉及非连续的数据访问。
+可以通过自动线程并行化进一步优化 compute_hc 函数的效率。利用 OpenMP 提供的临界区和线程同步等功能，可以解决竞争条件并并行化更多循环。这减少了程序中串行执行的部分，从而提高并行性能。然而，这些功能需要通过 OpenMP 的 C/C++ 层 API 使用。FCI 代码必须用 C/C++ 编写，然后使用第 8 章介绍的 Python/C 接口方法导入 Python。这里省略用 C/C++ 编写的代码细节。
+与自动线程并行化不同，我们可以使用流水线执行器（第 10 章第 10.4 节）实现并行计算。为了将流水线执行器集成到 compute_hc 函数中，需要将 compute_hc 函数划分为三个不同的操作：build_d、dot_v 和 assemble_g。每个操作分别对应式 (14.27) 到式 (14.29) 中列出的一个步骤。
+
+```python
+@numba.njit(nogil=True)
+def build_d(task , fciwfn , norb , Elt):
+    Ka0 , Ka1 , Kb0 , Kb1 = task
+    ma = Ka1 - Ka0
+    mb = Kb1 - Kb0
+    Elt_a , Elt_b = Elt
+    d = np.zeros((norb , norb ,m a , mb))
+    for I , tab in enumerate (Elt_a[Ka0:Ka1]):
+        for a ,i ,J , sign in tab:
+            for K in range (mb):
+                d[i ,a ,I ,K] += sign * fciwfn[J ,Kb0+K]
+    for I , tab in enumerate (Elt_b[Kb0:Kb1]):
+        for a ,i ,J , sign in tab:
+            for K in range (ma):
+                d[i ,a ,K ,I] += sign * fciwfn[Ka0+K ,J]
+```
+
+```python
+return d , task # (1)
+@numba.njit(nogil=True)
+def dot_v(d_task , v):
+    d , task = d_task
+    norb ,m a , mb = d.shape[1:]
+    g = v.reshape(norb **2 , -1).dot(d.reshape(norb**2 ,ma*mb))
+return g.reshape(norb ,norb ,ma ,mb), task # (2)
+def assemble_g(g_task , norb , Elt , sigma_pool):
+    thread_id = threading.get_ident()
+    if thread_id in sigma_pool:
+        sigma = sigma_pool[thread_id]
+    else:
+        Elt_a , Elt_b = Elt
+        na = len(Elt_a)
+        nb = len(Elt_b)
+        sigma = np.zeros((na , nb))
+sigma_pool[thread_id] = sigma # (3)
+    _assemble_g(g_task , norb , Elt , sigma)
+@numba.njit(nogil=True)
+def _assemble_g(g_task , norb , Elt , sigma):
+    g , task = g_task
+    Ka0 , Ka1 , Kb0 , Kb1 = task
+    ma = Ka1 - Ka0
+    mb = Kb1 - Kb0
+    Elt_a , Elt_b = Elt
+    for I , tab in enumerate (Elt_a[Ka0:Ka1]):
+        for a ,i ,J , sign in tab:
+            for K in range (mb):
+                sigma[J ,Kb0+K] += sign * g[a ,i ,I ,K]
+    for I , tab in enumerate (Elt_b[Kb0:Kb1]):
+        for a ,i ,J , sign in tab:
+            for K in range (ma):
+                sigma[Ka0+K ,J] += sign * g[a ,i ,K ,I]
+```
+build_d、dot_v 和 assemble_g 操作需要在流水线中按顺序执行。每个操作的输出作为下一个操作的输入。因此，除了将必要的张量作为每个操作的结果返回之外，我们还输出当前作业的任务 ID，如第 (1) 行和第 (2) 行所示。该任务 ID 用于确定后续操作要处理哪个任务。
+assemble_g 函数需要访问输出变量 sigma。为了避免线程之间的竞争条件，给每个工作线程分配一个私有的 sigma 对象
+。这些对象缓存在 sigma_pool 字典中，如第 (3) 行所示。流水线处理完成后，我们可以汇总各线程的私有 sigma 对象，得到最终结果。
+为了尽量减少数据传输的开销，我们在 pipeline 函数中使用 ThreadPoolExecutor，使每个操作的输出能够在同一内存空间中共享。然而，Python 全局解释器锁（Global Interpreter Lock，GIL）可能严重影响线程并行化的效率。为了缓解这个问题，在 Numba JIT 编译器中启用 nogil=True 选项，以便为每个编译后的函数解除 GIL。
+优化后的 compute_hc 函数采用完全不同的方式实现，如下所示：
+
+```python
+def create_tasks(na ,n b , blocksize):
+    for Ka0 in range (0 ,n a , blocksize):
+        Ka1 = min(na , Ka0 + blocksize)
+        for Kb0 in range (0 ,n b , blocksize):
+            Kb1 = min(nb , Kb0 + blocksize)
+            yield Ka0 , Ka1 , Kb0 , Kb1
+def compute_hc(h1 , eri , fciwfn , norb , nelec_a , nelec_b , blocksize=40 , threads=2):
+    from threadpoolctl import ThreadpoolController
+    Elt_a = make_Elt(norb , nelec_a)
+    Elt_b = make_Elt(norb , nelec_b)
+    Elt = (Elt_a , Elt_b)
+    v = merge_h1_eri(h1 , eri , nelec_a + nelec_b).reshape(norb **2 , -1)
+    na = len(Elt_a)
+    nb = len(Elt_b)
+    tasks = create_tasks(na ,n b , blocksize)
+    sigma_pool = {}
+blas_cpus = (threads+1)//2 # (1)
+    remaining_cores = threads - blas_cores
+    with ThreadpoolController().limit(limits=blas_cpus , user_api= 'blas'):
+with ThreadPoolExecutor(max_workers=remaining_cpus) as q1: # (2)
+with ThreadPoolExecutor(max_workers=1) as q2: # (3)
+                sigmas = pipeline([
+(q1 , build_d , (fciwfn , norb , Elt)), # (4)
+(q2 , dot_v ,( v ,)), # (5)
+(q1 , assemble_g , (norb , Elt , sigma_pool)), # (6)
+                ] , tasks , dynamic_scheduler)
+    return sum (sigma_pool.values())
+```
+执行 build_d、dot_v 和 assemble_g 操作的计算成本各不相同。如何为每个操作合理分配资源，并在各个操作和任务之间实现
+平衡？经过一些实验和性能分析，我们观察到 build_d 和 assemble_g 消耗的总时间大致相当于 dot_v 的时间。因此，我们将一半可用线程分配给 dot_v，如第 (1) 行所示。dot_v 中的 np.dot 函数可以通过底层 BLAS 库并行执行。我们使用 threadpoolctl 库限制 np.dot 可以使用的线程数。为了避免嵌套多线程问题，我们限制 dot_v 函数只使用一个线程，如第 (3) 行所示。dot_v 操作在这个专用队列 q2 中执行，如第 (5) 行所示。其余线程分配给 build_d 和 assemble_g，如第 (2) 行所示。为了更有效地利用资源，build_d 和 assemble_g 共享同一个队列 q1，如第 (4) 行和第 (6) 行所示。
+
+![](../assets/figures/fig-14-3.png)
+
+**图 14.3** 各种 FCI compute_hc 实现的并行效率
+
+这个版本为流水线执行器调用了 dynamic_scheduler（见第 10 章）。其他作业调度器，例如 df_warmup_scheduler，也可以与流水线执行器配合使用。图 14.3 展示了这些调度器在不同线程数下的性能。
+compute_hc 函数的流水线执行使用 8 个线程时实现了约 4 倍的加速，相当于约 50% 的并行效率。虽然这个加速比仍远未达到理想的并行效率，但与第 14.6 节的常规实现相比，已经有了显著改善。
+这些测试中一个有趣的观察是，随着使用的线程增多，df_warmup_scheduler 比 dynamic_scheduler 更快。这是因为在 dynamic_scheduler 中，build_d 函数自由地处理任务，在任务队列中产生了过多的 d_tensor 对象。下游消费者 dot_v 函数未能及时消费这些 d_tensor 对象。在 dot_v 触发后续消费者 assemble_g 之前，build_d 生成的待处理任务已经占用了大量内存，影响了内存管理效率。
+对于 df_warmup_scheduler，build_d 操作创建若干初始任务后，任务生产者会被阻塞。一旦 dot_v 函数消费了 build_d 的一个输出，就可以向任务队列添加一个新的 build_d 任务。dot_v 任务为 assemble_g 操作生成初始任务后也会类似地被阻塞。build_d 生成的任务队列大小被限制为一定数量的待处理任务。在待处理任务被 dot_v 操作消费之前，不会产生额外任务。该操作本身会生成任务，然后被阻塞，直到任务被 assemble_g 函数消费。因此，内存消耗受到限制，内存管理的开销也降至最低。
+
+## 总结
+
+求解全组态相互作用（Full Configuration Interaction，FCI）波函数需要使用 Davidson 对角化算法。Davidson 求解器需要对哈密顿量和 FCI 波函数进行矩阵-向量运算。我们展示了如何实现和优化矩阵-向量函数。
+矩阵-向量运算是 FCI 程序中要求最高的任务。该运算可以用张量收缩来表述。一些张量是稀疏的，可以利用这一性质降低张量收缩的计算成本。我们使用了动态规划、LRU 缓存和查找表等技术来存储稀疏张量的非零值并为其建立索引。
+FCI 程序不仅计算密集，内存效率也是关键因素。为了提高内存效率，矩阵-向量函数中的张量收缩被重构为基于分块的算法，从而产生多个较小块的张量运算。这一优化减少了内存占用和缺页次数，并提高了 CPU 缓存利用率。
+我们讨论的另一个挑战是 FCI 程序的并行执行。除了在 BLAS 库中并行执行张量收缩外，我们还可以利用 Numba 和 Cython 编译，为某些 for 循环自动实现线程并行化。然而，有些计算问题没有适合自动线程并行化的循环。在这种情况下，可以使用我们在第 10 章开发的流水线执行器并行计算程序的不同部分。以 FCI 矩阵-向量运算为例，我们将矩阵-向量函数分解为三个独立操作。这些操作对内存和 CPU 有不同的需求。随后，我们测试了几种作业
+调度器，与流水线执行器配合使用，以优化负载均衡、CPU 利用率和内存占用。
+
+## 参考文献
+
+[1] Davidson, The iterative calculation of a few of the lowest eigenvalues and cor- responding eigenvectors of large real-symmetric matrices, Journal of Computational Physics 17 (1) (1975) 87–94, https://doi.org/10.1016/0021-9991(75)90065-0, https:// www.sciencedirect.com/science/article/pii/0021999175900650.
+[2] Saad, 8. Preconditioning Techniques, pp. 193–218, https://epubs.siam.org/doi/pdf/ 10.1137/1.9781611970739.ch8, https://doi.org/10.1137/1.9781611970739.ch8, https:// epubs.siam.org/doi/abs/10.1137/1.9781611970739.ch8.
+[3] Saad, 7. Filtering and Restarting Techniques, pp. 163–191, https://epubs.siam.org/ doi/pdf/10.1137/1.9781611970739.ch7, https://doi.org/10.1137/1.9781611970739.ch7, https://epubs.siam.org/doi/abs/10.1137/1.9781611970739.ch7.
+[4] Szabo, N.S. Ostlund, Modern Quantum Chemistry: Introduction to Advanced Elec- tronic Structure Theory, 1st edition, Dover Publications, Inc., Mineola, 1996.
+[5] Helgaker, P. Jørgensen, J. Olsen, Configuration-Interaction Theory, John Wi- ley & Sons, Ltd, 2000, Ch. 11, pp. 523–597, https://onlinelibrary.wiley.com/doi/ pdf/10.1002/9781119019572.ch11, https://doi.org/10.1002/9781119019572.ch11, https:// onlinelibrary.wiley.com/doi/abs/10.1002/9781119019572.ch11. CHAPTER E.R. Y. Y. A. T.

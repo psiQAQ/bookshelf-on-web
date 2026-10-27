@@ -1,169 +1,604 @@
-# 把表达式当作数据：表示、变换与导数 {#ch05}
+# 元编程与非数值计算 {#ch05 .unnumbered}
 
-本章为非官方原创学习笔记，不是原书译文。
+元编程（meta-programming）是指利用程序读取、生成或转换其他程序的技术。从名称来看，这似乎是一项迷人的技术。元编程不仅引人入胜，而且在科学计算应用中也是一项非常实用的技术。
+科学计算应用不仅包括数值计算。本章将介绍数值计算之外的三种编程技术：
 
-## 学习目标
+- 生成，
+- 计算，
+- 微分。
 
-读完本章，应能区分 Python 语法树、数学符号表达式和数值计算图；说明代码生成在什么地方跨过信任边界；手推一个前向自动微分规则，并判断它没有回答哪些数学问题。本章围绕一个无量纲多项式展开，不实现通用代数系统，也不把表达式解释器包装成生产级安全沙箱。
+在科学应用中，我们可能需要推导复杂的数学方程并为其编写程序。这个过程很容易引入错误。为了减少工作量并尽量降低编程错误的风险，一种有效的方法是利用符号计算推导公式，再借助代码生成和自动微分实现计算程序。
 
-## 同一公式可以有三种身份
+## 5.1 生成
 
-设 $x\in\mathbb R$，考察自造函数
+在 C/C++ 程序中，元编程通常指在编译阶段使用宏或模板编程等技术进行代码生成和自动代码推导。这些技术被视为高级特性，常常使 C/C++ 程序令人困惑。
+由于宏和模板的复杂性，Python 的语言规范没有采用类似设计。然而，这并不意味着 Python 无法使用元编程。事实上，作为一种动态编程语言，Python 可以将代码视为数据，并在运行时对其进行操作。这使得更灵活、更强大的元编程技术成为可能，例如：
 
-$$
-f(x)=3x^2+2x+1.
-$$
+- 在运行时处理函数。
+- 以编程方式处理函数。
+- 生成并注册类。
 
-这里 $x$ 与 $f$ 都无量纲，不对应分子能量。写成 Python 的 `3*x*x + 2*x + 1` 时，它首先是一段**语法**：乘法先于加法，变量名是 `x`。Python 的 AST（抽象语法树）保存这些结构，却不知道 `x` 是实数、矩阵还是一个重载了乘法的对象。`a*b` 与 `b*a` 的树不同；解释器不能仅凭乘法这个节点就交换次序。
+### 5.1.1 与 exec
 
-数学上的**符号表达式**则需要额外语义。若 $x$ 是实标量，可以合并同类项、求导，得到 $f'(x)=6x+2$。若它是矩阵，乘积求导和化简就必须尊重不交换性。更隐蔽的例子是 $\sqrt{x^2}=|x|$：只有补上 $x\geq0$，才能将右边改成 $x$。符号系统的假设不是注释，而是变换合法性的条件。
+Python 内置函数 eval 和 exec 可以解析并求值字符串中的代码。这一特性使我们能够动态组合代码字符串，并在运行时执行它们。
+eval 和 exec 的函数签名相似：
 
-**数值计算图**记录一次具体计算中的运算依赖。例如在 $x=2$ 处，先计算 $u=x*x=4$，再计算 $v=3u=12$，最后加上 $2x+1$ 得到 $17$。自动微分可以沿这些运算传播局部导数，而不必先构造简化后的符号公式。某些实现通过跟踪运行建立图，另一些采用程序变换；“自动微分一定是在运行时重载运算符”并不成立。
+```text
+eval(expr , globals=None , locals=None)
+exec(code , globals=None , locals=None)
+```
+eval 的第一个参数是代码表达式。它受到一些限制：
 
-| 表示 | 主要问题 | 不能单靠它保证的事情 |
-| --- | --- | --- |
-| Python AST | 程序写了什么语法结构？ | 数学恒等、无副作用、输入安全 |
-| 符号表达式 | 在给定假设下能怎样变换公式？ | 浮点稳定性、实际运行成本 |
-| 数值计算图 | 输出如何依赖本次计算的输入？ | 分支之外的行为、物理模型正确性 |
+- 必须是单个表达式。不允许赋值语句。
+- 允许推导式、字典推导式和其他推导式代码。
+- 不允许 if 子句或 for 循环等结构。
+- 可以使用表达式定义函数。但是，不能直接使用 def 或 class 关键字定义函数或类。
 
-把这三层混成一种“智能公式”，会把语法合法误认成数学正确，也会把导数算出来误认成模型验证完成。
-
-## 代码生成的收益与信任边界
-
-若同一运算结构反复用于许多参数，先生成专门代码，可能消除解释器逐节点分派的开销。一个合理流程是：受控模型描述 → 经检查的中间表示 → 生成源码 → 语法检查与测试 → 在明确授权的运行环境执行。每次变换都要保存输入、生成器版本和输出身份，否则报错位置只指向临时生成的代码，难以追溯。
-
-生成代码也有成本：编译耗时、缓存失效、调试困难，以及生成器自身的错误。只调用几次的小公式，直接写函数通常更清楚；大批重复结构才值得先测量生成是否划算。符号展开还有“表达式膨胀”风险，例如展开高次多项式可能比保留因式分解形式耗费更多运算且更不稳定。公共子表达式复用能减少重复计算，却可能改变浮点舍入路径，不能只检查源码长度。
-
-`eval`、`exec` 与对生成代码的执行都是权限边界。把用户字符串拼进源码，就可能把“输入一个公式”的权限升级成“运行任意程序”。传入空字典不等于建立安全沙箱；AST 解析成功也不意味着安全。属性访问、函数调用、推导式和对象运算都可能引入本来未授权的行为。对于只需要多项式的小工具，更可审计的方向是定义极小语言，拒绝其余语法，并自行解释允许的节点，而不是寻找更多黑名单词语。
-
-AST 改写同样需要语义约束。删除“返回值不依赖”的赋值，看似是优化，但其右侧函数可能写日志、修改共享对象或抛出异常。除非已经证明相关运算纯净，否则依赖图上的不连通不等于语句没有作用。本章不实现这种优化。
-
-## 自动微分：传播的是什么？ {#ch05-ad}
-
-给每个实数附带一个切向量，记为 $(a,\dot a)$，其中 $\dot a=da/dx$。沿加法、乘法传播：
-
-$$
-(a,\dot a)+(b,\dot b)=(a+b,\dot a+\dot b),
-$$
-
-$$
-(a,\dot a)(b,\dot b)=(ab,\dot a b+a\dot b).
-$$
-
-这就是一维双数/前向模式的规则，也可以从形式符号 $\varepsilon^2=0$ 展开乘积得到。常数的切向量为 $0$，自变量的种子是 $(x,1)$。对上述多项式，$x*x$ 的切向量是 $2x$，最终得到 $6x+2$；在 $x=2$ 处是 $14$。没有引入有限差分步长，因此没有步长截断误差，但数值运算仍有浮点舍入和溢出风险。
-
-对 $F:\mathbb R^n\to\mathbb R^m$，给定种子方向 $v$，一次前向传播求的是 $J_Fv$，不一定是整个雅可比矩阵。反向模式从输出端种入权重 $w$，计算 $J_F^T w$。少量输入、很多输出常适合前向；很多参数、单个标量目标常适合反向。反向需要保存或重算中间量，因而时间收益会伴随内存与检查点设计的代价。
-
-导数还是**所实现程序**的导数。若条件分支选择了某条路径，微分通常沿该路径进行；在不可微边界不能自动凭空产生唯一导数。若迭代求解在达到阈值时提前停止，对有限步迭代求导也不自动等于对精确收敛解求导。量子化学中的自洽场响应等问题还需要数学上的响应或隐式微分分析，不能只换一个数组库名字。
-
-## 完整原创例子：极小表达式语言中的值与导数 {#ch05-example}
-
-输入限定为变量 `x`、有限实常数及 `+`、`-`、`*`；负数可写成 `0-2`，不支持一元负号、幂、除法、函数和属性。先检查整棵树，再用双数解释，不调用 `eval`、`exec` 或 `compile`。长度和节点限制只是演示性的资源上限；面向敌意输入的服务仍须有进程资源隔离、解析器风险分析和独立审查。
-
-下面是完整静态示例，仅依赖 Python 标准库，不联网、不读写磁盘。本次写作只做语法与内容自查，未执行示例。
+exec 的代码字符串可以是任何原始 Python 代码。我们可以在代码字符串中放入赋值、创建函数和类的代码。使用 exec 对代码字符串求值，与在执行位置直接插入该代码的效果相同。
+eval 和 exec 在 globals 和 locals 字典提供的上下文中对代码字符串求值。默认情况下，这些字典对应当前的全局和局部命名空间。这一特性使我们能够控制代码字符串的执行环境。例如，通过自定义局部环境，我们可以使用 eval 函数模仿 Pandas DataFrame.eval 方法的功能，如下面的 simple_eval 函数所示。
 
 ```python
-import ast
-import math
-from dataclasses import dataclass
+In [1]: def simple_eval(df , expr):
+            return eval (expr ,{ } ,{ **df})
+In [2]: mole = pd.read_csv( 'water.csv')
+        simple_eval(mole , ' ( x+y+ z)/3')
+Out[2]:
+0 1.357033
+1 1.512567
+2 0.872433
+dtype: float64
+```
+这里将 Pandas DataFrame 视为字典，这是我们在第 2 章讨论过的一项特性。
+exec 和 eval 的功能互补。通常，它们用于不同的场景。eval 函数使我们能够在设计程序配置时引入编程能力。配置中的元素可以设计为 Python 表达式。在解析和解码配置时，可以使用 eval 动态求值这些表达式。另一方面，exec 常用于生成函数和类，然后将它们集成到 Python 程序中以扩展功能。
 
+### 5.1.2 以编程方式生成代码
 
-@dataclass(frozen=True)
-class Dual:
-    value: float
-    tangent: float
+第 3 章第 3.4.1 节所展示的 Jinja 模板技术以及 f-string，常用于组合程序代码。组合而成的函数可以使用 exec 或 eval 动态注册到 Python 运行时。此外，字符串操作技术还可用于生成其他编程语言的程序代码。在第 12 章，我们将展示一个完整的示例，利用 Jinja 模板技术生成 C 代码，以高效计算量子化学解析积分。
 
-    def __add__(self, other):
-        return Dual(self.value + other.value,
-                    self.tangent + other.tangent)
+### 5.1.3 在运行时处理类和函数
 
-    def __sub__(self, other):
-        return Dual(self.value - other.value,
-                    self.tangent - other.tangent)
+除了以字符串形式生成代码，我们还可以利用 Python 提供的元编程能力操作 Python 函数或类。在 Python 代码中使用装饰器就是此类元编程技术的常见例子。许多 Python 基础编程书籍，例如 Fluent Python: Clear, Concise, and Effective Programming [1]，都解释了装饰器的语法，因此这里不再讨论。
+对于类，Python 还提供 metaclass 关键字，允许动态修改类的功能。
 
-    def __mul__(self, other):
-        return Dual(self.value * other.value,
-                    self.tangent * other.value
-                    + self.value * other.tangent)
+```python
+class Foo(metaclass=Meta):
+    ...
+```
+通过指定 metaclass 关键字，在创建 Foo 类时会调用类工厂 Meta。Meta 类可以访问和修改 Foo 类的所有属性和方法，无论它们是公共的还是私有的。然而，metaclass 的使用相对少见。对元类感兴趣的读者可以参阅 Fluent Python: Clear, Concise, and Effective Programming 一书了解更多细节。这里我们将研究另一种方法，即利用 type 函数动态生成类。
+Python 中 type 函数的主要功能是确定对象的数据类型。其效果与访问对象的 __class__ 属性相同：object.__class__。type 的第二个功能是动态创建类：
 
+```text
+new_cls = type(cls_name , (bases ,), cls_attrs)
+```
+这里，cls_name 是表示类名的字符串，类似于在普通类中访问 cls.__name__。bases 是由作为父类的类组成的元组，在普通类中可以通过 cls.__bases__ 找到。cls_attrs 是记录类中属性和方法映射的字典，在普通类中可以通过 cls.__dict__ 访问。例如，
 
-def value_and_slope(source, x):
-    if type(source) is not str or len(source) > 200:
-        raise ValueError("expression length")
-    if type(x) not in (int, float):
-        raise ValueError("real scalar required")
-    if abs(x) > 1_000_000 or not math.isfinite(x):
-        raise ValueError("finite bounded input required")
-    try:
-        tree = ast.parse(source, mode="eval")
-    except SyntaxError as exc:
-        raise ValueError("expression syntax") from exc
-    nodes = list(ast.walk(tree))
-    allowed = (ast.Expression, ast.BinOp, ast.Add, ast.Sub,
-               ast.Mult, ast.Name, ast.Load, ast.Constant)
-    if len(nodes) > 64:
-        raise ValueError("node budget")
-    for node in nodes:
-        if type(node) not in allowed:
-            raise ValueError("unsupported syntax")
-        if isinstance(node, ast.Name) and node.id != "x":
-            raise ValueError("unknown variable")
-        if isinstance(node, ast.Constant):
-            v = node.value
-            if (type(v) not in (int, float)
-                    or abs(v) > 1_000_000 or not math.isfinite(v)):
-                raise ValueError("constant bound")
+```yaml
+dyn_cls = type( 'DynamicClass', (BaseClass , ClassMixin), {'a':4 2 , '__repr__': lambda self: f 'DynamicClass({self.a})', 'inc': lambda self , n=1: self.a + n})
+```
+这条语句等价于使用以下代码创建一个新类：
 
-    def visit(node):
-        if isinstance(node, ast.Constant):
-            return Dual(float(node.value), 0.0)
-        if isinstance(node, ast.Name):
-            return Dual(float(x), 1.0)
-        left, right = visit(node.left), visit(node.right)
-        if isinstance(node.op, ast.Add):
-            return left + right
-        if isinstance(node.op, ast.Sub):
-            return left - right
-        return left * right  # 已检查，其余唯一可能是乘法
+```python
+class DynamicClass(BaseClass , ClassMixin):
+    a=4 2
+    def __repr__(self):
+        return f'DynamicClass({self.a})', def inc(self , n=1):
+        return self.a + n
+dyn_cls = DynamicClass
+```
+用于动态创建类时，type 函数对于以编程方式生成具有相似功能的类尤其有用。量子化学中的平均场模型就是这样的例子，我们将在第 13 章展示。当使用 Python 类抽象平均场模型时，类之间的差异通常只涉及某些属性或方法中的细微特征。通过组合属性和方法，可以使用 type 函数动态生成特定平均场模型的新类。
 
-    result = visit(tree.body)
-    if not all(map(math.isfinite, (result.value, result.tangent))):
-        raise ValueError("nonfinite result")
-    return result
+### 5.1.4 AST
 
+Python 抽象语法树（Abstract Syntax Tree，AST）是 Python 程序结构的树形表示。这棵树中的每个节点，如函数、语句、赋值、函数调用等，都对应程序中特定的语法元素。例如，以下代码的 AST
 
-result = value_and_slope("3*x*x + 2*x + 1", 2.0)
-assert result == Dual(17.0, 14.0)
-assert value_and_slope("x*x - x*x", 3.0) == Dual(0.0, 0.0)
-for bad in ("x/2", "abs(x)", "x.real", "True", "y+1"):
-    try:
-        value_and_slope(bad, 2.0)
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("unexpectedly accepted: " + bad)
-print(result.value, result.tangent)
+```python
+def double(x):
+    return x * 2
+```
+如图 5.1 所示。在该图中，FunctionDef 节点表示函数定义，Return 节点表示 return 语句。可用节点类型的完整列表可以在 Python AST 文档 [2] 中找到。
+
+![](../assets/figures/fig-5-1.png)
+
+**图 5.1** 一个简单的 Python AST
+
+Python 标准模块 ast 提供了一套用于检查和修改 Python 程序 AST 的工具。虽然可以使用 ast 模块中的 Node 类直接构建 AST，但更常见的方法是修改现有函数的 AST，然后将修改后的 AST 编译回 Python 代码。ast.parse 函数可以解析函数的源代码以生成 AST。ast.unparse 函数执行与 ast.parse() 相反的操作，从 AST 树生成代码字符串。
+分析或修改 AST 需要遍历树的操作。一种简单的方法是使用 ast.walk 函数，这是一种通用函数，可以遍历给定节点的所有子节点。然而，如果任务涉及 AST 树中的特定节点或元素，推荐使用 ast.NodeVisitor 类遍历树，并使用 ast.NodeTransformer 类进行修改。为这两个类定义 visit_X 方法后，自定义函数将在类型为 X 的节点上被调用。这里，X 代表 AST 中的任何节点类型，例如 Assign、Call、Expr、Constant 等。让我们通过一个更贴近实际的例子来探索如何使用 NodeVisitor 和 NodeTransformer 类。
+假设我们想开发一个通过删除不可到达代码来优化 Python 程序的函数，可以使用以下算法实现该任务：
+
+1. 函数的 AST，以识别变量之间的所有依赖关系。
+
+我们可以假设这些依赖关系是通过赋值语
+句引入的。
+
+2. 依赖关系映射构成一棵依赖树，其根是函数的返回
+
+值。可到达变量是与
+根节点相连的叶节点。
+
+3. 映射中所有未连接的元素。这些是未使用的变
+
+量。
+
+4. AST 并删除涉及未使用变量的所有语句。5. 使用 ast.unparse 和 exec 函
+
+数将所得 AST 转换为 Python 代码。
+首先，我们使用 ast.NodeVisitor 类搜索与赋值语句相关的依赖关系映射。为此，我们创建 ast.NodeVisitor 的子类，并使用 visit_Assign 方法检查 Assign 节点。为了收集每个 Assign 节点中的所有变量，我们调用通用树遍历函数 ast.walk() 并筛选 ast.Name 节点，因为变量名由 ast.Name 节点表示。依赖关系是从一个字符串到多个字符串的映射，存储在字典中。
+
+```python
+import itertools , inspect , ast , textwrap
+class DepdenciesVisitor(ast.NodeVisitor):
+    def __init__(self):
+        self.deps = {}
+        self.returns = []
+    def visit_Assign(self , node):
+        args = [x. id for x in ast.walk(node.value)
+                if isinstance (x , ast.Name)]
+        for t in node.targets:
+            if isinstance (t , ast.Name):
+if t.id in self.deps: # (1)
+                    self.deps[t.id].extend(args)
+                else:
+                    self.deps[t.id] = args
+    def visit_Return(self , node):
+        self.returns.extend( [x.id for x in ast.walk(node.value) if isinstance (x , ast.Name)
+    ])
+```
+需要注意，有些变量可能在函数中被多次赋值，从而多次生成依赖关系映射。为了防止新的依赖关系覆盖已有依赖关系，我们必须检查依赖树中是否已经存在这些依赖关系，如第 (1) 行所示。
+依赖关系也可能来自函数调用、原位操作和异常。为了处理这些情况，可以自定义额外的方法，例如
+用于原位操作的 visit_AugAssign、在子程序修改输入变量时用于管理函数调用的 visit_Call，以及用于 try-exception 语句的 visit_Assert 和 visit_Raise。处理这些情况并不复杂。为简单起见，我们不详细讨论每一种情况。你可以参考 AST 文档，或借助 GPT 等工具或其他 AI 编程助手生成所需的 visit_ 代码。
+检查完整的 AST 后，所有变量的依赖关系都记录在字典 DepdenciesVisitor.deps 中。请注意，有些变量
+
+```yaml
+others indirectly. For example, the mappings like { 'b ': 'a ' , 'c ': 'b '} implies that
+```
+变量 c 依赖于变量 a。为此，我们可以追踪依赖链以识别所有间接依赖。在追踪过程中，变量之间可能存在循环依赖。为了打破循环依赖，我们在追踪时不断从依赖字典中删除已访问的条目。追踪依赖关系的过程由下面的 flatten_deps 函数实现，它根据提供的依赖字典识别所有必需的变量。其输出可用于确定不可到达的变量。这个函数使用动态规划技术，第 9 章第 9.7.3 节将对此进行解释。
+
+```python
+def flatten_deps(keys , deps):
+    if not keys or not deps:
+        return []
+    # Remove keys from deps to avoid potential circular dependency
+    sub_deps = {k: v for k ,v in deps.items() if k not in keys}
+    flattened = [flatten_deps(deps[k] , sub_deps)
+                 for k in keys if k in deps]
+    return set (itertools.chain(keys , *flattened))
+```
+获得不可到达变量的列表后，我们创建 ast.NodeTransformer 的子类以修改 AST。在这个类中，我们实现 visit_Assign 方法以消除涉及不可到达变量的赋值语句。如果 visit_ 方法返回 None，相应节点将从 AST 中删除。
+
+```python
+class RemoveUnreachable(ast.NodeTransformer):
+    def __init__(self , to_remove):
+        self.to_remove = set(to_remove)
+    def visit_Assign(self , node):
+        if any (isinstance(t , ast.Name) and t.id in self.to_remove
+               for t in node.targets):
+return None # Remove the node
+        return node
+```
+将所有组件组合起来，我们可以创建以下函数来优化给定函数。
+
+```python
+def remove_unreachable_statements(fn):
+    if callable (fn):
+        fn = textwrap.dedent(inspect.getsource(fn))
+    orig_code = ast.parse(fn)
+    visitor = DepdenciesVisitor()
+    visitor.visit(orig_code)
+    # Search for variables that are accessible from returns
+    referenced = flatten_deps(visitor.returns , visitor.deps)
+    unreachable = set(visitor.deps).difference(referenced)
+    filtered = RemoveUnreachable(unreachable).visit(orig_code)
+    return ast.unparse(filtered)
+```
+请注意，ast.parse 函数只能解析函数的代码字符串，而不能解析函数对象本身。为解决这个问题，我们使用 inspect.getsource 函数获取输入函数的源代码。
+Python 标准库 inspect 是代码生成任务的强大工具。虽然它不能直接修改或生成代码，但 inspect 提供了访问函数源代码、签名、参数注解、局部变量和许多其他细节的工具。
+让我们检查 remove_unreachable_statements 函数的结果
+
+```python
+In [1]: def fun1(x , y):
+            a=x+2
+            b=a * x
+            c=y * 9-b
+            d = f(b)
+            b=d
+            return b * a
+        print(remove_unreachable_statements(fun1))
+Out[1]:
+def fun1(x , y):
+    a=x+2
+    b=a * x
+    d = f(b)
+    b=d
+    return b * a
+In [2]: def fun2(x , y):
+            a=x+2
+            b=a * x
+            a ,b=a+b    ,a-b
+            c = f(y)
+            d=c
 ```
 
-预期输出是 `17.0 14.0`，所有断言通过。树的检查决定**允许描述什么**，双数规则决定**如何计算导数**；这两项责任没有相互替代。`x*x - x*x` 的测试也有用：它让同一输入沿两条路径影响输出，检查导数贡献是否正确相消。但这些测试远不足以证明通用解释器安全，更没有实现符号化简或反向模式。
+```python
+            return a
+        print(remove_unreachable_statements(fun2))
+Out[2]:
+def fun2(x , y):
+    a=x+2
+    b=a * x
+    a ,b=a+b    ,a-b
+    return a
+```
+基于 remove_unreachable_statements 函数，我们可以开发一个装饰器来转换函数对象。这需要使用 exec 在局部命名空间中编译 remove_unreachable_statements 的输出。
 
-## 练习与解题指引
+```python
+def optimize(fn):
+    ' ' 'A decorator , which can remove unreachable statements of a function
+    remove_unreachable_statements' ' '
+    new_fn = remove_unreachable_statements(fn)
+    new_code = ast.parse(new_fn)
+    # Remove the line containing the decorator from the AST
+    new_code.body[0].decorator_list = []
+    local_ns = {}
+    exec(ast.unparse(new_code), None , local_ns)
+    return local_ns[fn.__name__]
+```
+没有直接的方法将 AST 转换回函数对象。使用 exec 编译 AST 输出是常见做法。这个操作生成一个与输入函数同名的新函数，但它注册在局部命名空间中。然而，当在装饰器中调用 AST 代码时，装饰器本身也包含在生成的函数中，这可能导致循环依赖。为避免这种情况，我们在编译新代码之前清空函数的 decorator_list。
 
-1. 在上述语法中输入 `x*x*x`，令 $x=2$，应得到什么？哪一步体现了链式法则？
-   **答案：**值为 $8$，导数为 $12$。先得到 $(x^2,2x)$，再乘 $(x,1)$，切向量是 $2x\cdot x+x^2\cdot1=3x^2$。不要把 AST 中出现三次 `x` 误当成三项无权重求和。
+## 5.2 计算
 
-2. 若想支持除法，局部规则是什么，还须新增什么约束？
-   **关键步骤：**对 $b\ne0$，商的切向量为 $(\dot a b-a\dot b)/b^2$。必须同时添加 `ast.Div`、解释分支、分母为零处理及近零分母的数值风险测试；仅扩大白名单而不补语义会让已有默认乘法分支给出错误答案。
+符号计算常用于推导公式。Python 软件包 SymPy [3] 为微分、积分、代数操作、求解方程以及处理复函数等任务提供符号数学功能。
+符号是符号计算的核心元素。在 SymPy 中，sympy.Symbol 类是表示符号变量的基本数据结构。符号变量由字符串名称标识。符号的命名规则遵循 Python 变量名的规则，可以由字母、数字和下划线组成。除了使用 sympy.Symbol 类实例化符号变量， sympy.symbols 函数也常用于一次创建多个符号变量。例如，以下语句都是定义符号变量的有效方法：
 
-3. 有 $10^5$ 个参数、一个标量损失，为什么不分别用 $10^5$ 个前向种子？能否由此断定反向总更快？
-   **指引：**逐种子求完整梯度可能需要约 $10^5$ 次方向传播；反向可由一个输出种子汇集各参数贡献。但保存计算图可能超内存，重算、稀疏结构和批量切向量会改变成本，须结合实际计算图测量。
+```text
+x ,y , z = sympy.symbols( 'x y z' )
+x ,y , z = sympy.symbols( 'x ,y1 ,z2_')
+x ,y , z = sympy.symbols( 'x y ,_z1')
+x ,y , z = sympy.symbols([ 'x', 'y', 'z'])
+x02 , x03 , x12 , x13 , var1 , var2 = sympy.symbols( 'x(0:2)(2:4) y z' )
+```
+调用 sympy.symbols 时，不同变量的名称用逗号或空白字符分隔。为了减少输入量，sympy.symbols 还支持使用范围语法生成符号列表。在上面的例子中，x(0:2)(2:4) 中的切片 0:2 和 2:4 分别展开，从而创建六个变量。
+除了 Symbol 类，SymPy 程序中的另一个核心数据结构是符号表达式，由 sympy.Expr 类提供。符号表达式由符号、数字以及定义在符号上的数学函数组成。
+为了表示符号或表达式的集合，sympy.Matrix 类用于表示矩阵，sympy.Array 类则用于多维数组。sympy.Matrix 和 sympy.Array 类提供的某些方法，如转置、重塑和索引，与 NumPy 数组的对应操作有些相似。然而，其中大多数与 NumPy 中的方法不同。例如，sympy.Matrix 不支持用于逐元素操作的 ufunc。对两个矩阵调用 a * b 时，它执行标准矩阵乘法。
 
-## 进一步阅读与限制
+```text
+In [1]: a = sympy.Matrix(sympy.symbols( 'x(:2)(:3)')).reshape(2 ,3)
+        a.T * a
+Out[1]:
+Matrix([
+[ x00 **2 + x10 **2 , x00 *x01 + x10 *x11 , x00 *x02 + x10 *x12] , [x00*x01 + x10 *x11 , x01 **2 + x11 **2 , x01 *x02 + x11 *x12] , [x00*x02 + x10 *x12 , x01 *x02 + x11 *x12 , x02 **2 + x12 **2]])
+```
+符号表达式的 .subs() 方法可用于替换、求值、转换或简化符号表达式。它根据字典中定义的规则替换符号。例如，下面的例子展示如何使用 .subs() 方法按照仿射变换转换多项式表达式。
 
-本章没有展开 SymPy 的具体接口、张量指标代数、生成代码缓存、JAX 的追踪约束或 PyTorch 的梯度生命周期；也不提供对任意 Python 程序的安全执行方案。学习这些工具时，应分别核查符号假设、变换支持范围、数据类型和依赖版本，而不是将框架名当作正确性保证。
+```text
+In [2]: x ,y , z = sympy.symbols( ' xyz ' )
+        P=. 5 * x**2+. 5 * y**2
+        T = sympy.Matrix([[.7 ,. 1 ,0 . , 0.] , [0. ,. 9 , -.2 , .5] , [.3 ,0 . ,. 8 , 0.]])
+```
 
-## 来源与新增内容
+```python
+        xprime , yprime , zprime = T * Matrix([x ,y ,z , 1])
+        Ptransformed = P.subs({x: xprime , y: yprime , z: zprime} , simultaneous=True)
+        print(Ptransformed.expand())
+        print(Ptransformed.subs({x: 1.0 ,y :2 . 0 , z: 0.5}))
+Out[2]:
+0.245*x**2 + 0.07 *x*y + 0.41 *y**2 - 0.18 *y*z + 0.45 *y + 0.02 *z**2 - 0.1 *z+
+     0.125
+2.82500000000000
+```
+当对坐标轴应用仿射变换时，多项式也随之变换。请注意，替换中的某些符号，例如 x、y 和 z，也出现在替换目标中。默认替换过程依次应用替换规则。这会导致较早替换产生的符号在后续步骤中再次被替换。为了避免这种情况，我们使用 simultaneous=True 选项，确保所有替换同时进行。
+在符号变量和表达式的基础上，SymPy 为符号数学提供了一套全面的功能。虽然逐项详细讨论这些功能超出了本书的范围，但我们将概述 SymPy 的主要功能。建议读者查阅 SymPy 文档，了解具体功能的更多详细信息。
 
-主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（2025），第5章 **Meta-programming and non-numerical computation**，全章印刷页173–194／PDF物理页185–206；章节 DOI：[10.1016/B978-0-44-323837-6.00013-2](https://doi.org/10.1016/B978-0-44-323837-6.00013-2)，从开章页文本提取。
+- 和展开表达式。通用函数 sympy.simplify 提供这一功能。对于多项式，其他功能包括： -
 
-本章针对性阅读：印刷页173–174、176–178、181–182、186–187、190（PDF物理页185–186、188–190、193–194、198–199、202）；目录定位为PDF物理页11–12。参考范围用于确认代码生成、AST、符号计算和自动微分的主题，不沿用原书示例。本笔记的组织、解释、多项式、限制语言、代码、练习与推导均为新作。双数规则由链式法则独立推导，未声称已视觉核对原书公式；原书PDF物理页199的式(5.2)未采用，文本公式如需用于后续内容，应另作视觉核验。
+-
+
+- （收集表达式中某一项的相同幂次）。
+
+此外，SymPy 还提供对
+三角运算、指数和对数以及某些特殊函
+数的简化和展开功能，包括： -
+-
+-
+-
+
+- 表达式的。通常可以使用 sympy.diff 函数和 sympy.Derivative 类进行微分。对于以矩阵表示的符号表达式，SymPy 还可以计算雅可比矩阵。
+
+这一功能只适用于 Matrix 对象，由
+
+- 和不定积分。积分可通过 sympy.Integral 类或 sympy.integrate 函数进行。不定积分使用以下方式计算：
+
+```text
+   sympy.integrate(expr , variables)
+```
+定积分使用以下方式计算：
+
+```text
+sympy.integrate(expr , (variable , lower_limit , upper_limit))
+```
+指定积分限时，SymPy 中的变量 sympy.oo 表示 ∞。对于多变量积分，可以向 sympy.integrate 函数传递多个积分限。SymPy 还提供常见的积分变换。这些功能可在 sympy.integrals 模块中找到，包括： -
+-
+-
+-
+以及它们对应的逆变换
+-
+-
+-
+-
+
+- 表达式或序列的极限。这些功能与 sympy.limit 和 sympy.limit_seq 函数相关。
+- 函数在展开点附近的展开。sympy.series 函数提供这一功能。
+- 方程。通用函数 sympy.solve 可用于求解多种方程，包括多项式方程、超越方程和线性方程。SymPy 还为每种类型的方程提供专用求解器。sympy.solveset 函数旨在求出不等式或方程的有限集合或区间。对于线性方程，sympy.linsolve 是以矩阵形式求解的专用函数。对于非线性方程，可以使用 sympy.nonlinsolve 以矩阵形式求解。此外，sympy.nsolve 可用于数值求解非线性方程。
+- 微分方程（ODE）。求解 ODE 时，sympy.dsolve 函数与 sympy.Eq 和 sympy.Function 类结合使用。例如，微分方程
+
+![](../assets/math/eq-05-001.png){width=41%}
+
+xf (x) = cos (x)) 可以转换为 SymPy 代码
+
+```text
+f = sympy.Function( 'f')
+eq = sympy.Eq(x *f(x).diff(x), sympy.cos(x))
+sympy.dsolve(eq , f(x)))
+```
+为了表示函数的微分，可以使用 .diff 方法和 sympy.Derivative 类。
+
+- 微分方程（PDE）。sympy.pdsolve 函数可以作为求解 PDE 的起点。然而，求解 PDE 可能不像求解 ODE 那样直接。通常需要使用 sympy.sovlers.pde
+
+模块中的函数，例如 classify_pde、pde_separate、pde_separate_add、pde_separate_mul，为 PDE 求解过程提供提示。
+
+- 针对特定数学领域。SymPy 包含专为各种数学学科设计的模块，例如范畴论、密码学、微分几何、几何学、完整函数、李代数、多项式操作和统计学。SymPy 在线文档为这些领域的功能设有专门章节。
+- 广泛的特殊函数和多项式。特殊函数例如
+
+-
+-
+-
+-
+-
+以及许多其他函数可在 sympy.functions 和 sympy.functions.special 模块中找到。特殊多项式，例如
+-
+-
+-
+由 sympy.polys 模块提供。
+
+- 绘图。函数绘图由 sympy.plot 函数和 sympy.plotting 模块提供。sympy.plot 函数基于 Matplotlib 构建，提供与使用 Matplotlib 库相当的用户体验。
+- 生成。sympy.printing 模块提供生成各种编程代码的函数，例如 ccode()、fcode()、pycode() 和 julia_code()。此外，SymPy 可以使用 sympy.latex() 将表达式转换为 LaTeX 公式。
+
+除了数学功能，我们还可以在 SymPy 中找到量子物理的各种符号功能：
+
+- 针对常规量子系统，例如
+- 用于谐
+
+振子的 sympy.physics.sho 和 sympy.physics.qho_1d 模块。
+
+- 用于氢原子的 sympy.physics.hydrogen 模块。
+- Wigner 系数。sympy.physics.wigner 模块收集了 clebsch_gordan、racah、wigner_3j、wigner_6j、wigner_9j 和 wigner_d 等函数。
+- 用于角动量耦合和操作的 sympy.physics.quantum.spin 模块。可用功能包括：
+- 用于旋转矩阵的 WignerD 类。
+- 用于 J 的 J2 类
+- 用于沿 x、y 和 z 轴角动量的 Jx、Jy 和 Jz 类。- 用于 Jˆ Jˆ 的 Jplus 和 Jminus 类
+- 用于二次量子化的 sympy.physics.secondquant 模块。该模块中可以找到常见的二次量子化算符和操作：
+- 分别用于玻色子和费米子
+
+算符的 BosonicOperator 和 FermionicOperator 类。
+
+- 用于湮灭和产生算符的 Annihilator 和 Creator 类。
+- 用于以正规序表示的多体操作的 NO 类。
+- 用于推导表达
+
+式正规序表示的 wicks 函数。
+
+- 通过 sympy.Quaternion 类进行代数运算。
+
+SymPy 软件包可以处理大多数需要推导符号公式的场景。为了更精确地操作特定领域问题的符号表达式，有时我们可能希望从头开发具有自定义规则的符号程序。例如，在第 15 章，我们将展示如何为耦合簇理论定制符号程序。
+
+## 5.3 微分
+
+自动微分（automatic differentiation，AD）乍看之下可能很神奇。然而，AD 背后的原理并不复杂。对函数应用 AD 时，输入被包装，使得对输入执行的每个操作都被重载。函数求值时，重载的操作会创建计算图，以追踪输入如何被转换。然后对图中的每个节点应用微分规则。通过遍历整个图，可以得到函数的导数。这个过程与惰性求值技术密切相关，第 9 章第 9.8 节将更详细地介绍该技术。
+AD 技术是机器学习和神经网络发展的基石。神经网络领域的某些术语已成为 AD 中的常见概念，包括：
+
+- 传播。这个过程按照函数操作的定义顺序，从输入到输出执行这些操作。
+- 。这是计算函数对其输入的导数的过程。从函数输出开始，递归应用链式法则，计算每个中间操作对其输入的导数。
+- 微分。这种模式定义了输出对输入扰动的响应。
+- 微分。这种方法用于反向传播。它以逆序遍历计算图，计算每个中间节点的导数。
+
+有多种神经网络工具可用于执行自动微分，包括 PyTorch [4]、JAX [5]、TensorFlow [6] 和 autograd 等。尤其是 PyTorch 和 JAX，被广泛用于 AD 应用。
+
+### 5.3.1 PyTorch
+
+的学习门槛较低，因为它的运作方式与标准 Python 面向对象编程风格非常相似。让我们考虑一个计算库仑能的简单问题，以展示 PyTorch 的自动微分（AD）能力。给定一组坐标为 r、电荷为 Z 的点，库仑能可以计算为
+
+![](../assets/math/eq-05-002.png){width=70%}
+
+∑ ZiZj
+E =.)
+|ri − r j |
+这个函数可以使用 NumPy 广播规则实现。
+
+```python
+def coulomb_energy(coords: torch.Tensor , z: torch.Tensor):
+    zz = z[: ,None] * z
+    rr = coords[: ,None ,:] - coords
+    d = torch.linalg.norm(rr , axis=2)
+    tril = np.tril_indices( len(z), -1)
+    return (zz[tril] / d[tril]). sum()
+```
+为了启用 PyTorch 自动微分，我们将 np.linalg.norm 替换为 torch.linalg.norm。大多数 NumPy 函数在 PyTorch 中都有对应的函数。
+提供了几种方法来获取函数相对于其输入变量的导数。一种方法是使用 torch.func 模块提供的类似 JAX 的函数。例如，torch.func.grad 和 torch.func.hessian 函数分别可用于计算梯度和海森矩阵。
+
+```text
+In [1]: coords = torch.rand(2 ,3 )
+        Z = torch.rand(2 ,3 )
+        torch.func.grad(coulomb_energy , argnums=0)(coords ,Z )
+Out[1]:
+tensor([[ 0.1631 , 2.6309 , -1.6224] , [ -0.1631 , -2.6309 , 1.6224]] , grad_fn= <AddBackward0 >)
+In [2]: torch.func.hessian(coulomb_energy , argnums=1)(coords ,Z )
+Out[2]:
+tensor([[0.0000 , 2.3221] , [2.3221 , 0.0000]] , grad_fn= <ViewBackward0 >)
+```
+argnums 参数指定要使用自动微分求导的参数的位置。请注意，自动微分的输入变量必须是 torch.Tensor 对象。
+第二种方法采用反向传播来生成每个单独变量的梯度。在这种方法中，创建输入变量时必须指定关键字 requires_grad= True。这表示在反向传播期间应计算这些变量的梯度。为了计算梯度，我们首先进行前向传播以计算结果。然后在结果上调用 .backward() 方法来执行反向传播。完成这两个步骤后，可以通过输入变量的 .grad 属性访问梯度。例如，
+
+```python
+In [3]: coords = torch.rand(2 ,3 , requires_grad=True)
+        Z = torch.rand(2 ,3 , requires_grad=True)
+        e = coulomb_energy(coords ,Z )
+        e.backward()
+        print(coords.grad)
+        print(Z.grad)
+Out[3]:
+tensor([[ 0.1631 , 2.6309 , -1.6224] , [ -0.1631 , -2.6309 , 1.6224]])
+tensor([[0.0000 , 2.3221] , [2.3221 , 0.0000]])
+```
+请注意，.backward() 方法会给可微参数引入副作用。反向传播过程执行自动微分，并原地更新输入变量的梯度。当同一变量被多个函数的输出访问时，对每个输出调用 .backward() 方法会使梯度在同一个变量中累积，而不是只保留最近一次的梯度。
+
+```python
+In [4]: x = torch.tensor(1. , requires_grad=True)
+        y=x **2
+        y.backward()
+        print(x.grad)
+Out[4]: tensor(2.)
+In [5]: y = x * 3
+        y.backward()
+        print(x.grad)
+Out[5]: tensor(5.)
+```
+为了避免梯度累积，我们通过将 .grad 属性设为 None 或零向量来手动清除梯度。
+
+```python
+In [6]: x.grad = None
+        y=x * 3
+        y.backward()
+        print(x.grad)
+Out[6]: tensor(3.)
+```
+如果需要自定义某些函数的梯度，我们可以继承 torch.autograd.Function 类来修改求导规则。在子类中，提供 forward 和 backward 方法来定义前向和反向过程。例如，假设我们打算对库仑能函数实现以下求导，
+
+![](../assets/math/eq-05-003.png){width=47%}
+
+= − Zk) ∂xk |rk − r j |
+∂E ∑ Zj
+=, (5.4) ∂Zk |rk − r j |
+我们可以如下实现该子类。
+
+```python
+class CoulombEnergy(torch.autograd.Function):
+@staticmethod
+def forward(ctx , coords , z):
+zz = z[: ,None] * z
+rr = coords[: ,None ,:] - coords
+d = np.linalg.norm(coords[: ,None ,:] - coords , axis=2)
+tril = np.tril_indices( len(z), -1)
+res = (zz[tril] / d[tril]). sum()
+# ctx.save_for_backward can cache info in ctx for backward
+# computation. The saved info can be accessed in the .saved_tensors attribute.
+ctx.save_for_backward(coords ,z )
+return res
+@staticmethod
+def backward(ctx , grad_output):
+coords , z = ctx.saved_tensors
+zz = z[: ,None] * z
+rr = coords[: ,None ,:] - coords
+d = np.linalg.norm(coords[: ,None ,:] - coords , axis=2)
+with np.errstate(all='ignore'):
+r i n v=1 ./d
+rinv[np.diag_indices(len(z))] = 0.
+r_grad = -np.einsum( 'i ,j ,ijx ,ij ->ix',z ,z ,r r , rinv **3)
+z_grad = np.einsum( 'j ,ij ->i',z , rinv)
+# grad_output represents the factor associated with the current function.
+return grad_output * r_grad , grad_output * z_grad
+if __name__ == '__main__':
+coords = torch.rand(2 ,3 , requires_grad=True)
+Z = torch.rand(2 ,3 , requires_grad=True)
+e = CoulombEnergy. apply(coords ,Z )
+e.backward()
+print(coords.grad)
+print(Z.grad)
+```
+要使用这个子类，我们只需按照 forward 方法的函数签名调用 apply 方法来执行前向传播。接下来，与处理常规 PyTorch 操作类似，我们调用 .backward() 方法并访问前向传播输出的 .grad 属性，以获取自定义梯度的结果。
+
+### 5.3.2 JAX
+
+库由两个主要组件组成：jax 软件包侧重于数值计算和自动微分操作的高级 API，而 jaxlib 软件包提供针对特定硬件的计算加速所需的底层绑定。这两个组件作为独立的库分发。要启用 JAX 的计算能力，应安装两者。如果目的是探索 JAX 自动微分的功能，为简单起见可以只安装 CPU 后端。
+
+```bash
+$  pip install jax[cpu] jaxlib
+```
+如果希望启用 Nvidia 或 AMD GPU 的后端，或者在 Google Colab 笔记本中使用 TPU，就应安装相应的 JAX 后端。更多细节参见 JAX 文档 [7]。
+库采用函数式编程范式设计。JAX 的自动微分通过使用高阶函数实现。与 PyTorch 相比，新用户可能需要付出更多努力才能熟悉 JAX 程序。
+为了符合函数式编程风格，通常建议实现不产生副作用的函数。从 NumPy 程序转向 JAX 函数时，可能需要更新 NumPy 代码，以纳入以下做法：
+
+- 修改数组中的单个元素。
+- 使用常规赋值语句代替原地操作。
+- 将输入变量视为不可变的。
+
+对函数应用 JAX 自动微分时，必须评估该函数是否兼容 JAX 变换。JAX 自动微分系统的基础是前向和反向微分模式之间的变换 [8]。为了启用 JAX 自动微分，函数或操作必须可由 JAX 变换。Python 中大多数标准算术操作都可由 JAX 变换。然而，NumPy 函数不具备这种可由 JAX 变换的性质。鉴于 NumPy 在科学计算中的重要作用，JAX 引入了 jax.numpy 模块，
+
+```python
+import jax.numpy as jnp
+```
+在 JAX 自动微分应用中作为 NumPy 库的替代品。当一个函数完全使用 jnp 编写时，就认为它可由 JAX 变换。在大多数情况下，我们可以从 NumPy 程序出发，只需将 np 模块替换为 jnp。这可能会生成一个与 JAX 兼容的程序。
+对于库仑能问题，为了确保可以由 JAX 变换，我们必须使用 coulomb_energy 函数的另一种实现，在调用 norm 函数之前排除 rr 数组的对角项：
+
+```python
+def coulomb_energy(coords , z):
+    zz = z[: ,None] * z
+    rr = coords[: ,None ,:] - coords
+    # Note zeros are not differentiable for norm.
+    # They are discarded before calling norm.
+    tril = np.tril_indices( len(z), -1)
+    d = jnp.linalg.norm(rr[tril] , axis=1)
+    return (zz[tril] / d). sum()
+```
+如果复用上一节中 coulomb_energy 函数的实现，JAX 将为梯度返回 nan。这个问题源于 rr 矩阵对角项中的零，在处理 jnp.linalg.norm 函数的梯度时会导致非法值。这里我们不探究 PyTorch 和 JAX 处理 norm 函数的差异。读者只需注意，在梯度中遇到 nan 值时，jnp.linalg.norm 可能存在这个问题。
+现在，我们可以使用 jax.grad 函数计算梯度。
+
+```text
+In [7]: coords = jnp.array(np.random.rand(2 , 3))
+        Z = jnp.array(np.random.rand(2))
+        jax.grad(coulomb_energy , argnums=(0 , 1))(coords ,Z )
+Out[7]:
+(Array([[ -0.03555296 , -0.17780247 , 0.02858889] , [ 0.03555296 , 0.17780247 , -0.02858889]] , dtype=float32), Array
+    ([0.58357096 , 0.31454977] , dtype=float32))
+```
+jax.grad 函数用于计算标量值函数的梯度。如果函数输出数组，JAX 提供 jax.jacobian 函数来计算雅可比矩阵。
+
+```text
+In [8]: jax.jacobian(coulomb_energy , argnums=0)(coords ,Z )
+out[8]:
+[[ -0.03555296 -0.17780247 0.02858889]
+[ 0.03555296 0.17780247 -0.02858889]]
+```
+此外，JAX 提供 jax.jacfwd 和 jax.jacrev 函数来计算雅可比矩阵。这两个函数可以更精细地控制雅可比矩阵的计算。
+
+- 使用前向模式自动微分计算雅可比矩阵。对于输入多、输出较少的函数，这种方法很高效。
+- 使用反向模式自动微分。它更适合输出多、输入较少的函数。
+
+jax.jacobian 函数默认调用 jac.jacrev 版本。对于高阶导数，可以使用 jax.hessian 函数计算二阶导数。它本质上是嵌套雅可比运算的封装，等价于 jax.jacfwd(jax.jacrev(f))。
+值得一提的是，在许多场景中，并不需要构造显式的梯度向量（或雅可比矩阵）。我们通常只需要计算雅可比矩阵与某些位移的乘积。例如，在对损失函数进行梯度下降优化时，目标是评估损失函数响应参数空间中微小位移的变化。这个过程本质上等价于计算雅可比矩阵与位移向量的乘积。为了方便这些乘积运算，JAX 提供了 JVP（雅可比矩阵与向量的乘积）函数 jax.jvp 和 VJP（向量与雅可比矩阵的乘积）函数 jax.vjp。
+给定一个计算 f (x) 值的 Python 函数，jax.jvp 可以同时求出 f (x) 和乘积 ∂f (x) · v，而 jax.vjp 生成 f (x) 和 v · ∂f (x)。以 coulomb_energy 函数为例，我们可以使用 jax.jvp 对电荷变化引起的能量变化建模。jax.jvp 函数的输入包括函数 f (x)、计算 ∂f (x) 时所在的原始值，以及用于雅可比矩阵与向量相乘的切向量 v。原始值和切向量都是与 f (x) 的位置参数对应的元组。例如，下面的代码展示了如何调用库仑能函数的 jvp 操作。
+
+```text
+In [9]: coords = jnp.array(np.random.rand(2 , 3))
+        Z = jnp.array(np.random.rand(2))
+        disp = jnp.array(np.random.rand(2))
+        fun = lambda z: coulomb_energy(coords ,z )
+        primals = (Z ,)
+        tangents = (disp ,)
+        e , e_tangets = jax.jvp(fun , primals , tangents)
+```
+自定义 JAX 导数需要分别使用 JAX 函数 custom_jvp 或 custom_vjp 来定义前向模式或反向模式求导规则。JAX 导数自定义使用的编程模型不同于在 PyTorch 中直接实现 .forward() 和 .backward() 方法。在第 16 章中，我们将以耦合簇方法为例，说明如何为梯度计算自定义 JVP 和 VJP。
+
+## 总结
+
+在本章中，我们回顾了使用 eval 和 exec 生成代码的方法。我们讨论了抽象语法树（Abstract Syntax Tree，AST）在分析和修改 Python 代码中的应用。对于符号计算任务，我们简要概述了 SymPy 软件包的功能。此外，我们展示了由 PyTorch 和 JAX 提供支持的自动微分技术的基础知识。
+元编程代码可能难以理解。由于其灵活性和运行时修改能力，使用不当或错误使用可能导致难以调试的意外错误。虽然学习如何使用元编程是有益的，但不应滥用这项技术。
+
+## 参考文献
+
+[1] Ramalho, Fluent Python: Clear, Concise, and Effective Programming, O’Reilly Media, 2015, https://books.google.co.in/books?id=bIZHCgAAQBAJ.
+[2] Software Foundation, Python documentation - abstract syntax trees (ast), https:// docs.python.org/3/library/ast.html#abstract-grammar, 2024.
+[3] Meurer, C.P. Smith, M. Paprocki, O. ˇCertík,S.B. Kirpichev, M. Rocklin, A. Kumar, S. Ivanov, J.K. Moore, S. Singh, T. Rathnayake, S. Vig, B.E. Granger, R.P. Muller, F. Bonazzi, H. Gupta, S. Vats,F. Johansson, F. Pedregosa, M.J. Curry, A.R. Terrel, Š. Rouˇcka, A. Saboo, I. Fernando, S. Kulal, R. Cimrman, A. Scopatz, Sympy: symbolic computing in python, PeerJ Computer Science 3 (2017) e103, https://doi.org/10.7717/peerj-cs.103.
+[4] Ansel, E. Yang, H. He, N. Gimelshein, A. Jain, M. V oznesensky,B. Bao, P. Bell, D. Be- rard, E. Burovski, G. Chauhan, A. Chourdia, W. Constable, A. Desmaison, Z. DeVito, E. Ellison, W. Feng, J. Gong, M. Gschwind, B. Hirsh, S. Huang, K. Kalambarkar, L. Kirsch, M. Lazos, M. Lezcano, Y. Liang, J. Liang, Y. Lu, C.K. Luk, B. Maher, Y. Pan, C. Puhrsch, M. Reso, M. Saroufim, M.Y .Siraichi, H. Suk, S. Zhang, M. Suo, P. Tillet, X. Zhao, E. Wang, K. Zhou, R. Zou, X. Wang, A. Mathews, W. Wen, G. Chanan, P. Wu, S. Chintala, Pytorch 2: faster machine learning through dynamic python bytecode transformation and graph compilation, in: Proceedings of the 29th ACM International Conference on Archi- tectural Support for Programming Languages and Operating Systems, Vo l u m e2, ASPLOS ’24, Association for Computing Machinery, New York, NY ,USA, 2024, pp. 929–947, https://doi.org/10.1145/3620665.3640366.
+[5] Bradbury, R. Frostig, P. Hawkins, M.J. Johnson, C. Leary, D. Maclaurin, G. Necula, A. Paszke, J. VanderPlas,S. Wanderman-Milne, Q. Zhang, JAX: composable transformations of Python+NumPy programs, http://github.com/google/jax, 2018.
+[6] Abadi, A. Agarwal, P. Barham, E. Brevdo, Z. Chen, C. Citro, G.S. Corrado, A. Davis, J. Dean, M. Devin, S. Ghemawat, I. Goodfellow, A. Harp, G. Irving, M. Isard, Y. Jia, R. Jozefowicz, L. Kaiser, M. Kudlur, J. Levenberg, D. Mané, R. Monga, S. Moore, D. Murray, C. Olah, M. Schuster, J. Shlens, B. Steiner, I. Sutskever, K. Talwar, P. Tucker, V. Vanhoucke, V. Vasudevan, F. Viégas, O. Vinyals, P. Warden, M. Wattenberg, M. Wicke, Y. Yu, X. Zheng, TensorFlow: large-scale machine learning on heterogeneous systems, software available from https://www.tensorflow.org/, 2015.
+[7] JAX authors, Installing jax, https://jax.readthedocs.io/en/latest/installation.html, 2024. 193 L. Python A. J. J. M. The
+[8] JAX authors, Custom derivative rules for jax-transformable python functions, https:// jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html, 2024. CHAPTER The

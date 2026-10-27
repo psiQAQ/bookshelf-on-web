@@ -1,223 +1,677 @@
-# 图像首先是一组可解释的选择 {#ch03}
+# 可视化 {#ch03 .unnumbered}
 
-本章为非官方原创学习笔记，不是原书译文。
+可视化在数据处理和分析中起着至关重要的作用。与公式和理论分析相比，它可以帮助我们更直观地理解问题或思想。
+Python 提供了各种用于创建图形的开源工具。在科学数据领域，Matplotlib 是处理 NumPy 数组和 Pandas 数据对象中数据的主要工具。
+虽然 Matplotlib 非常适合创建二维图像，但它的三维可视化能力相当有限，而且性能较差。那么，我们有哪些三维可视化的选择？Mayavi 库就是其中一种选择。它专为科学数据可视化而设计。
+量子化学数据的可视化面临独特的挑战。除了使用 Matplotlib 和 Mayavi 等工具进行数据分析，我们还经常需要使用外部可视化软件来显示分子、晶体、波函数等对象的三维可视化结果。外部可视化软件包不能在 Python 中直接操作。我们必须通过特定的数据格式与它们交互，例如 Molden 和 Cube 文件。如何以编程方式生成这些文件？Python 中的 Jinja 模板技术提供了一些思路。
+本章将讨论如何使用这些 Python 工具完成数据可视化任务。
 
-图像并不是数据的透明窗口。坐标变换、颜色范围、插值、视角和等值面阈值，都改变读者最容易注意到的东西。好的科学图应允许读者重建这些选择，而不是只让画面看起来“像一个正确的轨道”。本章先处理二维尺度，再把同样的思想扩展到三维网格与轨道场。
+## 3.1 Matplotlib
 
-## 学习目标
-
-- 根据问题选择线性、对数、带符号颜色等编码，并说明被隐藏的信息。
-- 分清数据点、连接线、插值与误差条，不把绘图软件生成的细节当作新证据。
-- 用原点、步长向量、轴顺序和单位定义三维标量场。
-- 区分轨道振幅、振幅平方与电子密度，解释等值面的局限。
-
-## 3.1 从“想看什么”倒推编码
-
-画图前先用一句话写出问题。例如，“每次迭代是否将残差缩小约一个固定倍数？”与“最终残差距零还有多远？”需要的尺度不同。线性纵轴保留加法距离，相同高度差对应相同数值差；对数纵轴保留倍数距离，相同高度差对应相同比例。对数轴不是比线性轴更科学，只是强调另一个问题。
-
-对正数 $r$，以10为底的对数坐标可写为 $u=\log_{10}(r/r_0)$，其中 $r_0$ 是与 $r$ 同单位的参考量。对有量纲量直接取对数的写法应理解为先除以标注单位或参考量。本章的残差是无量纲数，所以取 $r_0=1$。零与负数没有普通实数对数；不要为了让图画出来而悄悄取绝对值或加一个未说明的小常数。有正负号的误差可分别展示符号与幅值，或使用明确标注线性过渡区的对称对数尺度。
-
-此外，还需要决定：
-
-- **连接线是否有意义。** 按时间采样的点可以连接以引导视线，但线段不代表期间已被观测。无序样本通常更适合散点，按表格顺序连线可能制造不存在的轨迹。
-- **误差条是什么。** 标准差、均值标准误、置信区间和数值误差界不是同一量。必须写出定义和样本数；没有估计依据就不要画“看起来可信”的误差条。
-- **坐标是否截断。** 柱长常被读成相对大小，截去零点可能严重夸大差异；精细比较的折线图可以使用非零起点，但应清楚标注范围与上下文。
-- **跨图能否比较。** 每张图自动缩放颜色，会让微弱噪声和强信号拥有相同饱和度。比较不同方法或参数时，通常要共享色标范围；若做了逐图归一化，必须告知读者。
-
-这些决定与使用哪套库无关。Matplotlib 的 Figure 管整个画布、Axes 管一个绘图区；用显式 Axes 对象组织绘图，有助于避免把标题和曲线加到错误子图上。Pandas 绘图快捷入口仍需要同样的轴和单位检查。工具可以默认选参数，但不能代替分析者负责。
-
-## 3.2 完整例子：同一组残差的两种尺度 {#ch03-scale-example}
-
-设一段**虚构迭代**给出残差 $[1,10^{-1},10^{-2},10^{-3}]$，迭代编号为0到3。它只用于解释尺度，不代表某种真实算法的收敛测量。在线性轴上，后三点挤在零附近；在对数轴上，它们等距下降，直接显示每步缩小10倍。
-
-为了不依赖图形后端，下面只用标准库生成一段完整 SVG 文本。程序不写文件、不打开浏览器；读者可将其唯一的标准输出保存成 `.svg` 后查看。这是本笔记新作的图形生成例子，不依赖原书插图。SVG 的屏幕纵坐标向下增加，因此数值越大，像素纵坐标越小。
+本节对 Matplotlib 采用以下导入约定。
 
 ```python
-import math
-from html import escape
-
-residual = [1.0, 0.1, 0.01, 0.001]
-assert all(value > 0.0 for value in residual)
-y_top, height = 40.0, 160.0
-
-
-def y_linear(value):
-    return y_top + height * (1.0 - value)
-
-
-def y_log(value):
-    return y_top + height * (-math.log10(value)) / 3.0
-
-
-assert math.isclose(y_linear(0.001), 199.84)
-assert math.isclose(y_log(0.001), 200.0)
-assert math.isclose(y_log(0.1) - y_log(1.0), height / 3.0)
-parts = [
-    '<svg xmlns="http://www.w3.org/2000/svg" width="560" height="260" '
-    'viewBox="0 0 560 260" role="img" aria-labelledby="plot-title">',
-    '<title id="plot-title">Toy residuals: linear and log scales</title>',
-    '<rect width="560" height="260" fill="white"/>',
-]
-for offset, title, y_map, ticks in [
-    (0, "linear", y_linear, [0.0, 0.5, 1.0]),
-    (280, "log10", y_log, [0.001, 0.01, 0.1, 1.0]),
-]:
-    x_left, x_right = offset + 50, offset + 230
-    parts.append(
-        f'<text x="{x_left}" y="20" font-size="13">'
-        f'{escape(title)}; residual (dimensionless)</text>'
-    )
-    for value in ticks:
-        y = y_map(value)
-        parts.append(
-            f'<line x1="{x_left}" y1="{y:.2f}" x2="{x_right}" '
-            f'y2="{y:.2f}" stroke="#dddddd"/>'
-        )
-        parts.append(
-            f'<text x="{x_left - 5}" y="{y + 4:.2f}" text-anchor="end" '
-            f'font-size="11">{value:g}</text>'
-        )
-    parts.append(
-        f'<path d="M {x_left} 40 V 200 H {x_right}" '
-        'fill="none" stroke="black"/>'
-    )
-    points = [(x_left + 60 * step, y_map(value))
-              for step, value in enumerate(residual)]
-    point_text = " ".join(f"{x:.2f},{y:.2f}" for x, y in points)
-    parts.append(
-        f'<polyline points="{point_text}" fill="none" stroke="#2166ac"/>'
-    )
-    for step, (x, y) in enumerate(points):
-        parts.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="3" fill="#2166ac"/>')
-        parts.append(
-            f'<text x="{x}" y="220" text-anchor="middle" '
-            f'font-size="11">{step}</text>'
-        )
-    parts.append(f'<text x="{x_left}" y="245" font-size="12">iteration</text>')
-parts.append('</svg>')
-svg = "\n".join(parts)
-assert svg.count('<circle ') == 8
-assert '50.00,40.00 110.00,184.00 170.00,198.40 230.00,199.84' in svg
-print(svg)
+import matplotlib.pyplot as plt
 ```
+绘图的典型工作流程可概括如下：
 
-预期输出是一个560×260的 SVG，左右各4个圆点。左图纵坐标像素为40、184、198.40、199.84；右图约为40、93.33、146.67、200。断言给出待运行的数值验收条件，图中文字、留白和窄屏可读性仍需实际查看，本次写作没有执行或渲染它。
+1. 一个 plt.Figure 对象和若干 plt.Axes 对象。
+2. Axes 对象提供的绘图函数。
+3. 根据需要调整坐标轴属性。
+4. 图形。
 
-两图并不矛盾：左图强调前一步的绝对下降量最大，右图强调下降比例相同。若报告只放对数图，最好同时给终值和停止阈值；对数图上的直线也不能证明后续一定继续收敛。例子中的线只是连接四个样本，不是对所有迭代编号拟合出的模型。
+第一步，我们可以使用 plt.figure() 函数创建一个 Figure 实例。在这个 Figure 中，有多种方法可以创建单个或多个图。
 
-## 3.3 从数组到空间：网格必须有坐标契约
+- `Figure.subplots()`：此函数创建一组图。这些图是 Axes 对象。
+- `Figure.add_subplot()`：在一个图形中添加单个图（即 Axes 对象）。
+- `Figure.subfigures()`：在一个图形中创建一组逻辑图形。在每个子图形中，执行实际绘图功能之前仍需创建图（Axes）。
+- `Figure.add_subfigure()`：在一个图形中添加单个逻辑图形。
+- `plt.subplot()`：创建图的快捷方式。此命令基本等同于 plt.figure().add_subplot()。
+- `plt.GridSpec()`：此类引入网格，可将图形划分为任意形状的子图。
+- `Figure.add_axes()`：此函数在图形中插入单个图。
 
-一个形状 `(nx, ny, nz)` 的数组并没有自带空间意义。要把它解释为场 $F(\mathbf r)$，还要提供原点 $\mathbf r_0$ 和三个步长向量：
-
-$$
-\mathbf r_{ijk}=\mathbf r_0+i\mathbf a+j\mathbf b+k\mathbf c,
-\qquad
-F_{ijk}=F(\mathbf r_{ijk}).
-$$
-
-$i,j,k$ 从0开始，分别对应数组的第0、1、2轴，$\mathbf a,\mathbf b,\mathbf c$ 是**每走一个网格指标**的位移，不是整条盒边。正交均匀网格只是特殊情况。若一步取样的体元是平行六面体，其体积为 $|\det[\mathbf a\ \mathbf b\ \mathbf c]|$；端点型积分还需要明确相应求积权重，不能不加区别地给所有边界点同样权重后声称精确归一化。
-
-一个常见差一错误是混淆“点数”与“区间数”。从 $-2$ 到 $2$ 包含两端共5个点，步长是 $(2-(-2))/(5-1)=1$，不是 $4/5$。若使用周期网格，通常又不重复采样周期末端。图形库默认把首轴当成行还是横坐标、是否将原点放在左上角，也需要核查；转置一下让图“看着顺眼”可能掩盖真正的轴顺序错误。
-
-导出体数据时，还要写清展平次序。例如规定 $k$ 最快变化，则线性位置为 `((i * ny) + j) * nz + k`。读写两端必须使用同一约定。总数正确但轴交换，仍会产生错误的三维对象。可以先用带明确方向的哨兵数据检查轴，例如令场值为 $100i+10j+k$，而不是一开始就用高度对称的球形数据。
-
-## 3.4 完整例子：带正负号的玩具场切片 {#ch03-grid-example}
-
-用长度尺度 $a=1$ bohr 定义无量纲坐标 $u=x/a$、$v=y/a$、$w=z/a$，构造
-
-$$
-F(x,y,z)=(u^2-v^2)\exp[-(u^2+v^2+w^2)].
-$$
-
-这是便于检验节点和符号的**无量纲玩具标量场**，不是归一化电子轨道，不是某个分子的波函数。选择它是因为 $x^2=y^2$ 的节点和平面交换后的反号可以独立手算。我们生成5×5×5网格，并打印 $z=0$ 切片的符号；没有调用量子化学程序或三维绘图库。
-
-```python
-import math
-
-length_bohr = 1.0
-axis_bohr = [-2.0, -1.0, 0.0, 1.0, 2.0]
-nx = ny = nz = len(axis_bohr)
-
-
-def field(x_bohr, y_bohr, z_bohr):
-    u, v, w = (coord / length_bohr for coord in (x_bohr, y_bohr, z_bohr))
-    return (u * u - v * v) * math.exp(-(u * u + v * v + w * w))
-
-
-# Axis order x, y, z; z changes fastest in the flat sequence.
-flat = [field(x, y, z) for x in axis_bohr
-        for y in axis_bohr for z in axis_bohr]
-assert len(flat) == 125
-
-
-def sample(ix, iy, iz):
-    return flat[((ix * ny) + iy) * nz + iz]
-
-
-assert math.isclose(sample(3, 2, 2), math.exp(-1.0))
-assert math.isclose(sample(2, 3, 2), -math.exp(-1.0))
-assert sample(3, 3, 2) == 0.0
-
-
-def sign_symbol(value):
-    if abs(value) < 1e-12:
-        return "0"
-    return "+" if value > 0.0 else "-"
-
-
-print("z = 0 bohr; columns x = -2..2 bohr; rows y = 2..-2 bohr")
-for iy in range(ny - 1, -1, -1):
-    print(" ".join(sign_symbol(sample(ix, iy, 2)) for ix in range(nx)))
-```
-
-预期输出：
+这里简要演示如何使用 Figure.add_subplot 方法。如果你有兴趣了解其他方法，建议查阅 Matplotlib 官方文档或专门的书籍，例如 Jake Vanderplas 的 Python Data Science Handbook: Essential Tools for Working with Data [1]。函数调用
 
 ```text
-z = 0 bohr; columns x = -2..2 bohr; rows y = 2..-2 bohr
-0 - - - 0
-+ 0 - 0 +
-+ + 0 + +
-+ 0 - 0 +
-0 - - - 0
+add_subplot(rows , cols , index)
+```
+将图形划分为 rows × cols 个单元格。根据参数 index，将按从左上到右下的顺序选择其中一个单元格，并在那里创建一个 Axes 对象。图 3.1 add_subplot 命令的效果。
+
+![](../assets/figures/fig-3-1.png)
+
+**图 3.1** add_subplot 的输出
+
+接下来，我们可以为得到的 Axes 对象创建基本图形。下面展示几个常见的可视化任务。这些任务的结果如图 3.2 所示。
+
+![](../assets/figures/fig-3-2.png)
+
+**图 3.2** 各种绘图函数的输出
+
+```python
+fig , ax = plt.subplots()
+# Line plots
+x = np.arange(10)
+y = np.random.rand(10).cumsum()
+ax.plot(x ,y )
+# Scatter plots
+ax.scatter(x ,y )
+# Error bars
+yerr = .1 * np.random.rand(len(x))
+ax.errorbar(x ,y , yerr=yerr)
+# Vertical bars
+np.random.seed(1)
+c a t=( 'A', 'B', 'C')
 ```
 
-这个输出故意只编码符号，不能用来比较不同位置的振幅。`1e-12` 是显示分类阈值，不是计算精度保证。若改成热图，应使用以零为中心的发散色标，正负两侧共享绝对范围，并说明坐标轴顺序、切片位置与单位。若画平方场 $F^2$，它处处非负，适合顺序色标，但原来的符号信息就消失了。
+```python
+weights = np.random.rand(2 ,3 )
+ax.bar(np.arange(.15 , .85 , .3) , weights[0] , width=.1)
+ax.bar(np.arange(.15 , .85 , .3)+.1 , weights[1] , width=.1)
+ax.set_xticks([.2 ,. 5 , .8] , labels=cat)
+# Horizontal bars
+ax.barh(np.arange(.1 ,. 7 , .25) , weights[0] , height=.1)
+ax.barh(np.arange(.1 ,. 7 , .25)+.1 , weights[1] , height=.1)
+ax.set_yticks([.15 ,. 4 , .65] , labels=cat)
+# Histogram
+ax.hist(np.random.standard_normal(100), bins=10)
+# Pie plots
+ax.pie(weights , labels=cat)
+# The value of a matrix
+xy = np.random.rand(10 ,10)
+ax.imshow(xy)
+# Contour
+X , Y = np.meshgrid(np.arange( -3.0 , 3.0 , .05), np.arange( -2.0 , 2.0 , .05))
+r 0=X **2 + (Y+1.) **2
+r1 = (X+1.5) **2 + (Y+.5) **2
+Z = .32 *np.exp( -2*r0) - .65 *np.exp( -r1)
+ax.contour(X ,Y ,Z )
+```
+得到基本图形后，我们可以通过调整 Axes 对象的各种属性来改善视觉外观，包括颜色、线型和坐标轴样式等。下面概述绘图时经常调整的一些属性：
 
-网格为说明离散表示而刻意很粗。真正的图像需要分别做盒长与步长收敛检查：扩大盒子检验是否截掉尾部，减小步长检验节点和等值面位置是否稳定。平滑插值只能增加显示像素，不能恢复未采到的结构。三维渲染再精致，也不能解除采样误差。
+- 标记。在 ax.scatter 和 ax.plot 图中，我们可以自定义数据点标记的可视化效果，包括形状、大小、颜色和透明度。常见的形状标记包括： -’表示圆形标记， -’表示方形标记， -’表示朝下的三角形标记， -’表示朝上的三角形标记， -’表示加号形标记， -’表示 X 形标记。
 
-## 3.5 轨道图不等于电子云照片
+标记大小可以用 markersize 关键字修改。要指定颜色，可以将’r’、’g’、’b’、’k’（黑色）、’c’（青色）等单个字母赋给 color 关键字。透明度可以用 alpha 关键字控制，它接受 0 到 1 之间的数字。
 
-对归一化的单电子空间轨道 $\psi(\mathbf r)$，$\int|\psi|^2d^3r=1$。若长度用 bohr，轨道的量纲是 bohr$^{-3/2}$，概率密度量纲是 bohr$^{-3}$。在独立粒子、正交空间轨道的描述中，给定占据数 $n_p$ 后，电子数密度可写为
+- ax.plot 方法的样式。关键字 linestyle（简称 ls）的选项包括：
 
-$$
-\rho(\mathbf r)=\sum_p n_p|\psi_p(\mathbf r)|^2.
-$$
+```text
+-          line ls= ' -. ' .
+```
+可以使用 marker 关键字突出数据点、使用 color 关键字设置颜色，以及使用 linewidth 关键字调整线宽，从而改善线条的外观。除了这些关键字，Matplotlib 还支持简写字符串表示法，同时指定数据标记、线型和线条颜色。例如，简写表示法’s --r’表示带有方形标记的红色虚线。
 
-这里 $n_p$ 是各空间轨道的电子占据数，密度积分给电子数；它不是随便把一张轨道图平方就得到任意多体态密度的通用捷径。对非正交基与一般多体态，应使用相应的一阶密度矩阵及一致的基约定。本章玩具场没有做归一化，所以不能套用概率或电子数解释。
+- 表示法。除了前面提到的单字母表示法，颜色也可以通过预定义名称指定，例如
 
-实轨道的两种颜色通常表示振幅的正负号，而不是正负电荷。整个轨道乘以 $-1$ 不改变密度，也不改变该单轨道态的物理预测；比较轨道时应考虑任意整体相位以及可能的轨道旋转。两个软件颜色相反，不必然说明计算矛盾。对复轨道，单一“正/负”更不充分，需要另行决定幅值与相位怎样编码。
+```text
+color= 'darkgreen ' and color= 'tab:purple ' . Furthermore, Matplotlib supports
+```
+通过 RGB 分量定义颜色，可以使用十六进制代码’#RRGGBB’，也可以使用三个浮点数的元组 (r, g, b)。Matplotlib 配色方案的详细说明可参见 Matplotlib 文档 [2–4]。
 
-等值面 $\psi=\pm c$ 也不是粒子的运动边界，更不自动包围某个固定概率。改变 $c$ 会改变表面大小与连接关系，低阈值更易暴露截断盒子的影响。若声称某区域含有特定概率，应积分 $|\psi|^2$ 并报告区域定义与求积误差，不能只凭默认等值面外观判断。
+- 坐标轴。可以使用 set_xlim、set_ylim、set_xticks 和 set_yticks 函数调整坐标轴。顾名思义，它们分别用于调整坐标轴的范围和坐标轴刻度的显示。可以使用 ax.set_xlabel 和 ax.set_ylabel 方法添加坐标轴标签。要启用对数坐标，
 
-量子化学常通过 Molden 或 Cube 等格式把数据交给专用查看器。前者需要解释基函数类型、排序、归一化与轨道系数；后者以网格体数据为核心，要明确坐标单位、原点、步长和字段含义。文件能被打开，只说明语法大致可读，不证明轨道方向、单位或相位正确。模板工具可以减少格式拼接错误，却不校验科学语义；本章不提供未经互操作测试的格式写出器。
+```text
+ax.set_xscale( 'log ')
+ax.set_yscale( 'log ')
+```
+可以调用这些方法。
 
-## 练习与解题指引
+- 。如果在任何绘图函数中使用了 label 关键字，ax.legend 方法可以为这些标签生成图例。ax.legend 方法中的 loc 关键字可以设置图例的位置。例如，
 
-1. **零残差怎么画？** 在残差例子末尾加一个零，能否直接接到普通对数图？  
-   **答案：** 不能。可以把低于已知分辨率的结果画成上界标记，并说明阈值；或者另给线性局部图。不能把0改成一个任意正数再当成观测值。若零来自下溢，也应区分其与数学上的精确零。
+```text
+ax.legend(loc= 'upper left ')
+```
+将图例放在图的左上角。其他常见位置
 
-2. **差一与单位。** 一个轴从0到6 bohr，含端点共4个点。步长与覆盖范围分别是什么？若误写成6 Å而数值不变，会怎样？  
-   **答案：** 步长是2 bohr，点位为0、2、4、6。改变单位却不换算会改变实际空间尺度，三维体积也随长度换算的三次方变化；图形外观可能仍然相似，因此不能靠目视排除。
+```text
+include 'upper center ' , 'upper right ' , 'center left ' , 'center right ' , etc.
+```
 
-3. **相位与密度。** 将玩具场整体变号，符号图和平方场怎样变化？怎样检查导出的轴没有交换？  
-   **答案：** 正负符号互换，平方场不变。检查轴应另用非对称哨兵场 $100i+10j+k$，核对原点及三个方向的相邻点；高度对称场可能使轴交换在外观上难以发现。
+- 和注释。ax.text 方法可以在图中插入说明文字。命令
 
-## 进一步阅读与边界
+```text
+ax.text(x , y , 'message ')
+```
+将’message’放在图中的坐标 (x, y) 处。此外，ax.annotate 方法提供了一种在文本旁插入更丰富信息元素的方法，例如箭头和其他注释符号。该方法需要指定文本和箭头的位置。例如，下面的语句将文本’message’放在坐标 (2, 2) 处，并绘制一个从 (2, 2) 指向 (1, 3) 的箭头。
 
-本章没有展开 Matplotlib 的完整 API、Mayavi 渲染、交互相机、Molden/Cube 的逐字段写入或 Jinja 模板语法。所给 SVG 是静态尺度演示，符号网格是离散数据检查工具，不替代真正的三维可视化及互操作测试。图像背后的线性代数与频域离散也需要误差检查，见[第4章](04-scientific-tools.qmd)。
+```text
+   ax.annotate('message', xy=(1 , 3), xytext=(2 , 2), arrowprops=dict(arrowstyle='->'))
+```
 
-## 来源与新增内容
+- 格式。在与文本相关的方法中，例如 ax.text、ax.annotate 以及前面提到的 ax.set_xlabel、ax.set_xticks 等，可以使用 fontfamily、fontsize 和 rotation 等参数调整文本外观。
 
-主题参考：Qiming Sun，*Python for Quantum Chemistry: A Full Stack Programming Guide*（Elsevier，2025），第3章 **Visualization**，全章印刷页119–143／PDF物理页133–157。开章页提取的章节 DOI：[10.1016/B978-0-44-323837-6.00011-9](https://doi.org/10.1016/B978-0-44-323837-6.00011-9)。
+此外，Matplotlib 支持在文本信息中使用 LaTeX 数学符号。
+例如，输入 Tex 风格的符号 r’$\mu_0$’可以显示 μ 0。请
+注意定义 Python 原始字符串的前缀 r。这确保原始字符串
+传递给 Matplotlib 函数时不会转换反斜杠字符。
+绘图工作流程的最后一步是显示或保存图像。通常调用 plt.show() 方法显示图像。然而，如果在 Jupyter Notebook 中启用了%matplotlib 魔法命令，就不必显式调用 plt.show() 函数。图像会自动显示。
+保存图像有两种常见方法。在显示图像的交互式窗口中，可以单击 Save 按钮并选择一种格式来保存图形。要在非交互式环境中保存图像，可以使用 Figure.savefig 函数，例如
 
-针对性使用：印刷页119–121、131、139–142（PDF物理页133–135、145、153–156）；目录定位为PDF物理页10。参考的是二维/三维可视化、采样网格和轨道交换格式这些主题。残差数据、SVG生成器、玩具场、坐标推理、图像诚实表达与练习均为本笔记新作，未复用原书势场、分子或轨道程序。网格关系与密度关系按本文符号独立说明；未采用原书印刷页131的势积分公式，也未进行原PDF公式或图像的视觉核对。图形输出和科学解释仍待独立审阅，未获公开发布批准。
+```text
+fig.savefig( 'result.png ')
+fig.savefig( 'result.jpg ')
+fig.savefig( 'result.svg ')
+fig.savefig( 'result.pdf ')
+```
+可以根据文件名的后缀自动选择合适的后端，以所需的图像格式渲染图形。
+为帮助你快速找到 Matplotlib 图形的基本配置，我们在图 3.3 中总结了 Matplotlib 的常用功能。
+到目前为止，我们概述了 Matplotlib 的使用方法。如果你正在寻找全面学习 Matplotlib 的指南，Jake Vanderplas 的 Python Data Science Handbook: Essential Tools for Working with Data, 2nd Edition 是一本出色的参考书。该书提供了使用 Matplotlib 的详细说明和示例。此外，浏览 Matplotlib 官方网站上的示例图库也是掌握 Matplotlib 的另一种有效方法。
+
+## 3.2 可视化
+
+中的几个绘图函数也支持 Pandas 数据对象的可视化。例如，ax.plot 函数可以识别 Series 和 DataFrame，自动选择索引和数据进行可视化。不过，可视化 Pandas 数据更常用的方法是 Series 和 DataFrame 对象的.plot() 方法。Pandas 的这一内置绘图功能扩展了
+
+![](../assets/figures/fig-3-3.png)
+
+**图 3.3** Matplotlib 绘图功能速查表
+
+API 的功能。具体而言，对于 DataFrame 对象，它可以自动选择数据列，并配置图例、刻度标签和其他可视化元素。
+Pandas.plot 方法支持 Matplotlib 提供的大多数绘图类型，例如 area、barh、density、hist、line、scatter、bar、box、hexbin、kde 和 pie。这些绘图函数的用法很直接。只需访问 DataFrame 对象的特定绘图函数.plot.{function_name}。例如，通过此 API 执行以下代码，可以生成图 3.4 所示的图形。
+
+```python
+fig , axs = plt.subplots(3 ,3 , figsize=(9 , 8))
+df = pd.DataFrame(np.random.rand(5 ,3), columns=[ 'x', 'y', 'z'])
+for i , key in enumerate (['line', 'density', 'box', 'area', 'bar', 'barh']):
+    getattr(df.plot , key)(ax=axs[i//3 ,i%3] , title=key)
+data = np.random.rand(200 ,3).cumsum(axis=1)
+df = pd.DataFrame(data , columns=[ 'x', 'y', 'z'])
+df.plot.hist(ax=axs[2 ,0] , title= 'hist')
+df.plot.scatter('x', 'y', ax=axs[2 ,1] , title= 'scatter')
+df.plot.hexbin('x', 'y', 'z', ax=axs[2 ,2] , title= 'scatter')
+```
+
+![](../assets/figures/fig-3-4.png)
+
+**图 3.4** Pandas 绘图方法
+
+要自定义 Pandas 图形，可以为 Pandas.plot 方法指定一些关键字参数，包括 label、style、xticks、yticks、xlim、ylim、title、alpha、kind、figsize 等。此外，可以使用 ax 关键字参数将输出导向特定的 Axes 对象。此选项有助于进一步增强和自定义 Pandas 图形。例如，
+
+```python
+In [3]: ax = plt.subplot(111)
+        df.plot.bar(ax=ax)
+        ax.legend(loc='upper left' )
+```
+除了 Pandas 内置的绘图函数，还有几个优秀的开源软件包可用于可视化 Pandas 数据。例如，Seaborn [5] 是一个基于 Matplotlib 的工具，专为 Pandas 数据可视化而设计。这个库专门用于 Pandas 数据的后处理和创建信息丰富的统计图形。
+
+## 3.3 三维绘图
+
+提供三维绘图功能。然而，它的三维绘图功能有些有限。处理大型三维图形时，例如蛋白质分子，Matplotlib 可能会显著变慢。为了有效可视化三维对象，我们应当考虑专为三维绘图设计的其他工具。
+在 Python 中自定义三维可视化的常用工具包包括 Mayavi [6]、PyVista [7]、VisPy [8] 和 Scikit-image [9]。在这些工具包中，Mayavi 特别适合可视化科学数据。它提供了与 Matplotlib 的 pylab 模块相近的使用体验。如果你已经熟悉 Matplotlib，转而使用 Mayavi 进行三维可视化并不困难。
+Mayavi 的安装过程比一般 Python 软件包更复杂。Mayavi 依赖 Python QT 库。根据官方安装说明，可以执行以下命令安装 Mayavi 和 PyQT5：
+
+```bash
+$ pip install mayavi PyQT5
+```
+然而，此命令只安装 QT 库的 Python 封装。要启用完整的可视化功能，还必须单独安装依赖库，包括 Visualization Toolkit（VTK）以及 GUI（图形用户界面）库 QtCore、QtGui、QtSvg 和 QtWidgets。这些库可以方便地通过操作系统提供的包管理器安装。例如，在 Ubuntu 发行版上，可以使用以下命令：
+
+```bash
+$ sudo apt install -y libqt5core5a libqt5gui5 libqt5svg5 libqt5widgets5 \
+        vtk9
+```
+如果运行的是 Conda 环境，应当通过 Conda 软件包安装 Mayavi、PyQT5 和依赖的 QT 库。
+要在 IPython 或 Jupyter Notebook 中使用 Mayavi，可能需要额外的配置步骤 [10]。在 IPython shell 中，可以使用 IPython 魔术命令 %gui qt 将 GUI 后端更改为 QT。要在 Jupyter Notebook 中使用 Mayavi，可能需要安装最新版本的 node.js，以及以下用于 Jupyter Notebook 的 IPython 扩展。
+
+```bash
+$ jupyter -labextension enable widgetsnbextension
+$ jupyter -labextension enable ipyenvents
+```
+为验证 Mayavi 的安装，我们可以运行该库提供的内置测试：
+
+```python
+In [1]: %gui qt
+In [2]: from mayavi import mlab
+        mlab.test_mesh()
+```
+
+![](../assets/figures/fig-3-5.png)
+
+**图 3.5** 使用 mlab.surf 绘制曲面的示例
+
+mayavi.mlab 可以渲染各种三维图形，包括曲面、等值线、点、线、条形图和矢量场。我们先来考察使用 mlab.surf 函数进行的简单曲面可视化。mlab.surf 函数旨在用地毯图可视化二维数组的值，其中 z 轴上的每个值对应二维平面上的一个数据点。下面的脚本展示了数据准备和三维图像绘制的步骤。输出结果如图 3.5 所示。
+
+```python
+from mayavi import mlab
+x , y = np.mgrid[ -10:10:100j , -10:10:100j] # (1)
+r = np.sqrt(x **2+y **2)
+z = np.sin(r)/r
+mlab.clf() # clear the current figure
+mlab.surf(x ,y ,z , warp_scale= 'auto')
+mlab.show()
+```
+np.mgrid 函数经常用于 Mayavi 三维可视化。它可以创建密集的多维网格。例如，第 (1) 行的语句生成一个由二维点组成的均匀 100 × 100 网格。这些点可以直接用于 Mayavi 函数。np.mgrid 使用索引语法（[]）和切片来指定均匀网格。切片 start:stop:step 定义起点和终点。step 参数可以是实数，表示点之间的间距；也可以是虚数，表示起点和终点之间的区间数。对于实数 step，切片的工作方式与 np.arange(start, stop, step) 相同。对于虚数 step，它等同于
+
+```python
+to np.linspace(start , stop , step.imag) .
+```
+
+![](../assets/figures/fig-3-6.png)
+
+**图 3.6** 由 Mayavi 可视化的分子
+
+使用 Mayavi 可视化复杂的分子性质也是可行的，例如电子密度分布和静电势曲面。我们来看一个用 Pandas DataFrame 表示的分子，其中’Q’表示与每个原子关联的有效电荷：
+
+```python
+mole = pd.DataFrame({
+    'symbol':[ 'O', 'H', 'H'] , 'x': [0.5009 , 1.4049 , -0.0934] , 'y': [2.7238 , 2.4390 , 1.9786] , 'z': [0.8464 , 0.6938 , 0.7321] , 'Q':[ -0.64 , 0.32 , 0.32] , })
+```
+我们可以先用 mlab.points3d 和 mlab.plot3d 函数绘制分子中的原子和键。下面的脚本生成如图 3.6 所示的分子视图：
+
+```python
+R=( 1 ,0 ,0 )
+G=( 0 ,1 ,0 )
+B=( 0 ,0 ,1 )
+W=( 1 ,1 ,1 )
+K=( 0 ,0 ,0 )
+color_map = pd.Series({
+    'H': (.8 ,. 8 , .8), 'C': (.6 ,. 6 , .6), 'N':B , 'O':R , })
+covalent_radius = pd.Series({
+    'H': 0.31 , 'C': 0.73 , 'N': 0.71 , 'O': 0.66 ,
+```
+
+```python
+})
+def plot_mole(mole):
+ geom = mole.loc[: ,'x':'z']
+ for symbol , xyz in geom.groupby(mole.symbol):
+     x ,y , z = xyz.to_numpy().T
+     mlab.points3d(x ,y ,z , scale_factor=covalent_radius[symbol] , resolution=30 , color=color_map[symbol])
+ # Bonds between atoms
+ geom = mole.loc[: ,'x':'z'].to_numpy()
+ radii = covalent_radius[mole.symbol].to_numpy()
+ dist = np.linalg.norm(geom[: ,None] - geom , axis=2)
+ conn = dist < radii[: ,None] + radii
+ for i ,j in np.argwhere(conn):
+     if i<j :
+         xyz = geom[[i ,j]]
+         mlab.plot3d(xyz[: ,0] , xyz[: ,1] , xyz[: ,2] , tube_radius=0.06)
+plot_mole(mole)
+```
+在这个绘图脚本中，我们使用了以下技术：
+
+- mlab.points3d 函数用于将球体绘制为原子。该函数可以处理多个点的坐标，并将它们作为单个对象进行渲染。
+- 使用不同的颜色和半径来区分不同类型的原子。与提供各种预定义配色方案的 Matplotlib 不同，Mayavi 没有颜色名称别名。颜色由一个三元素元组指定，每个元素表示对应颜色通道中 RGB 的比例。
+- 使用 mlab.plot3d 绘制原子之间的键。为了确定共价键，我们考虑原子之间的距离，并将其与相应共价半径之和进行比较。
+
+接下来可视化分子中静电势的等值线。精确计算静电势需要第 16 章开发的程序。为简单起见，我们采用简化模型表示三维空间中的静电势。在此模型中，原子的有效电荷近似为高斯分布，该分布随距原子中心的距离 s 衰减：
+
+![](../assets/math/eq-03-001.png){width=45%}
+
+ρ (s) = QN (ζ)e.) Q 是有效电荷，N(ζ) 是高斯分布 e 的归一化因子。参数 ζ 控制高斯分布的展宽，我们用共价半径来表征它。我们可以推导出静电势
+通过计算积分得到高斯分布电荷的 $V (r)$：
+
+![](../assets/math/eq-03-002.png){width=54%}
+
+$ρ (s)$
+$V (r) = ds (φ)dφ dθ = Q erf(r).)$
+$|s − r | r ζ$
+将分子中所有原子的贡献相加，我们可以得到一个 Python 函数，用于计算指定网格上的电势。
+
+```python
+def eval_potential(mole , grids):
+    assert grids.shape[0] == 3 # the x ,y , z components
+    xyz = mole.loc[: ,'x':'z'].to_numpy()
+    r = np.linalg.norm(grids.reshape(3 , -1) - xyz[: ,: ,None] , axis=1)
+    radii = covalent_radius[mole.symbol].to_numpy()
+    v = np.einsum( 'q ,qv ->v', mole.Q , erf(r/radii[: ,None]) / r)
+    return v.reshape(grids.shape[1:])
+```
+然后，我们使用 mlab.contour3d 函数可视化静电势的等值线。此函数需要使用空间中的三维网格对电势进行采样。我们将分子放在一个 4 × 4 × 4 的中心，并调用 np.mgrid 函数在这个盒子内部生成均匀网格。这种均匀采样方案对 mlab.contour3d 函数生成平滑等值线至关重要。网格被传入 eval_potential 函数以计算电势值。必须确保输出形状与网格形状相匹配。此外，采样网格的坐标和电势值都应组织为三维数组。默认情况下，mlab.contour3d 函数生成五个等值面。为了控制绘制哪些曲面，我们可以向 contour 关键字参数提供一个值列表来选择曲面。静电势的等值线如图 3.7 所示。
+
+```python
+def view_contour(mole ,f n , contours=5 , resolution=(80 ,80 ,80)):
+    mlab.figure(1 , bgcolor=W , fgcolor=K , size=(500 , 500))
+    mlab.clf()
+    plot_mole(mole)
+    xyz = mole.loc[: ,'x':'z'].to_numpy()
+    xyz_center = xyz.mean(axis=0)
+    # Create mesh in cubic
+    box_size = abs(xyz - xyz_center). max() * 2+4 .
+    nx ,n y , nz = resolution
+    xmin , ymin , zmin = xyz_center - box_size/2
+    xmax , ymax , zmax = xyz_center + box_size/2
+    grids = np.array(np.mgrid[xmin:xmax: complex(0 , nx), ymin:ymax:complex(0 , ny), zmin:zmax:complex(0 , nz)])
+```
+
+```text
+    v = fn(mole , grids)
+    mlab.contour3d(grids[0] , grids[1] , grids[2] ,v , contours=contours , transparent=True)
+    mlab.view(75 ,0 ,7 )
+    mlab.show()
+view_contour(mole , eval_potential)
+view_contour(mole , eval_potential ,[ -.1 , .1])
+```
+
+![](../assets/figures/fig-3-7.png)
+
+**图 3.7** 以等高线可视化静电势
+
+Mayavi 支持可视化给定曲面上的电势值。这一可视化任务可以使用 mlab.mesh 函数完成。与仅限于平面上二维网格的 mlab.surf 不同，mlab.mesh 允许我们使用三维空间中的二维网格表示曲面。该网格上的每个点由其 x、y 和 z 笛卡尔坐标定义。例如，这里我们创建一个以分子几何中心为中心的球面。球体的半径设置得略大于中心到最远原子的距离。
+我们使用 np.mgrid 为球体的极角和方位角生成均匀网格。随后将这些网格转换为笛卡尔坐标。这些网格上的电势值及其坐标被输入 mlab.mesh 函数。
+
+```python
+def view_sph_surface(mole ,f n , contours=5):
+    mlab.figure(1 , bgcolor=W , fgcolor=K , size=(500 , 500))
+    mlab.clf() # Clear figure
+    plot_mole(mole)
+    xyz = mole.loc[: ,'x':'z'].to_numpy()
+    xyz_center = xyz.mean(axis=0)
+```
+
+```python
+    # Create a sphere surface
+    radii = covalent_radius[mole.symbol].to_numpy()
+    r = (np.linalg.norm(xyz - xyz_center , axis=1) + radii). max()
+    phi , theta = np.mgrid[0:np.pi:80j , 0:2 *np.pi:80j]
+    x=r * np.sin(phi) * np.cos(theta)
+    y=r * np.sin(phi) * np.sin(theta)
+    z=r * np.cos(phi)
+    # The grids of the surface in Cartesian coordinates representation.
+    grids = np.array([x ,y ,z]) + xyz_center[: ,None ,None]
+    v = fn(mole , grids)
+    surface = mlab.mesh(grids[0] , grids[1] , grids[2] , scalars=v , transparent=True)
+    mlab.scalarbar(surface , orientation= 'vertical', label_fmt= '%.2f', nb_labels=5)
+    mlab.view(75 ,0 ,7 )
+    mlab.show()
+view_sph_surface(mole , eval_potential)
+```
+
+![](../assets/figures/fig-3-8.png)
+
+**图 3.8** 球面和柱面上的静电势强度
+
+作为另一个例子，我们为圆柱体表面构造二维网格。这个二维网格由三部分组成：底面、侧壁和顶面。对于两个端面，我们根据径向距离和方位角生成网格。对于侧壁，则根据方位角和高度创建网格。下面的代码展示了网格坐标。
+
+```python
+nx , ny = resolution
+r ,z=1 . 1 , 0.7
+h , theta = np.mgrid[ -z:z:complex(0 , nx), 0:2 *np.pi:complex(0 , ny)]
+u , theta = np.mgrid[0:r: complex(0 , nx), 0:2 *np.pi:complex(0 , ny)]
+grids = np.concatenate([
+    # top plate
+    [u * np.cos(theta), u * np.sin(theta), np.full((nx , ny), -z)] ,
+    # side wall
+    [r * np.cos(theta), r * np.sin(theta), h] ,
+    # bottom plate
+    [u * np.cos(theta), u * np.sin(theta), np.full((nx ,n y ) ,z ) ] , ] , axis=1) + xyz_center[: ,None ,None]
+```
+球面和圆柱面及其上的电势值如图 3.8 所示。这些可视化结果可以提供一些信息，例如另一个分子可能从哪些方向接近当前分子。
+对于三维空间中的一般曲面，创建二维曲面网格可能是一项困难的任务。在这种情况下，我们可能必须使用三角形网格定义曲面，然后调用 mlab.triangular_mesh 函数渲染曲面。为三维对象生成合适的三角形网格的过程超出了本书范围。这里不作详细讨论。
+从这些例子中，你可能注意到 Mayavi 和 matplotlib 之间不同的编码风格。Matplotlib 将绘图过程映射为面向对象的任务，使用各种实例管理图中的不同元素。我们可以通过创建和组合这些实例完成绘图任务。要修改图形外观，只需访问实例并调整其属性。mlab 模块并非完全面向对象。它在默认画布上工作，可视化元素被添加到该画布。可视化选项在全局命名空间中配置。最后，mlab 调用底层可视化引擎执行渲染。它的用法更偏向命令式，类似于 Matplotlib 库旧版的 pylab 接口。
+在 Mayavi 文档提供的示例图库中，你可能会找到一些使用 mlab.pipeline 函数创建可视化元素的例子。Mayavi 中的流水线（pipeline）是指一系列协作产生三维可视化结果的数据处理和可视化组件 [11]。流水线通常由以下组件组成：
+
+- 源，加载原始数据，并存储和验证原始数据。
+- 过滤器，对原始数据执行平滑、塑形和筛选等操作。
+- ，提供具体的可视化模型，例如曲面图、体渲染、等值线等。
+- ，进行可视化渲染的阶段。
+
+在图 3.9 所示的交互式窗口中，流水线组件以分层树结构显示。要修改可视化效果，我们可以在交互式窗口中检查每个组件的属性并调整其配置。
+
+![](../assets/figures/fig-3-9.png)
+
+**图 3.9** Mayavi 场景的布局和流水线
+
+mlab 三维绘图函数，例如 mlab.plot3d、mlab.surf、mlab.mesh 和 mlab.contour3d，是包含特定可视化任务所需全部中间组件的流水线类。当需要更细致地自定义可视化效果时，mlab.pipeline 函数能够定制或调整流水线组件。
+
+## 3.4 化学可视化
+
+在化学系统的背景下，有几个专门的分子可视化工具。给定一个分子结构文件，例如 XYZ、PDB（Protein Data Bank）、MOL（Molecular Design Limited）或 SDF（Structure Data File），可以方便地使用许多工具（如 PyMOL、Avogadro、py3Dmol）可视化分子的三维结构。在量子化学领域，可视化的重点转向分子内的电子，包括它们的轨道、密度和其他量子化学结果。遗憾的是，没有专门用于三维可视化量子化学结果的 Python 库。一个可行的选择是 Mayavi 库。然而，Mayavi 的功能相对基础，可能需要大量配置和编码才能达到令人满意的显示效果。
+可视化量子化学结果的一种更实用的方法是将其保存为专用文件格式，例如 Molden 和 Cube。量子化学可
+视化软件，如 VMD 或 Jmol，随后可以读取这些文件并生成三维显示。因此，这种方法的关键步骤是生成 Molden 或 Cube 文件。在此背景下，Jinja 模板技术对于高效生成 Molden 和 Cube 文件非常有用。
+
+### 3.4.1 模板
+
+Jinja 模板处理过程可以分为两个主要步骤：
+
+1. 使用 jinja2.Template 函数模板。Jinja 提供各种模板
+
+加载器，用于从文件导入模板。作为简单的替代方案，我们可以
+将 Python 的 open 函数与 jinja2.Template 函数一起使用，加载模板文件。
+
+2. 使用关键字参数调用.render() 方法来渲染模板。
+
+```python
+In [1] import jinja2
+       tpl = jinja2.Template( 'template_string {{ key }}' )
+       tpl.render(key=value)
+Out[1]:
+'template_string value'
+```
+接下来考察 Jinja 模板的语法 [12]。模板字符串中可以使用多种语法。然而，在我们使用 Molden 和 Cube 格式的场景中，只需要基本语法。
+
+#### 表达式
+
+表达式由符号 {{}} 表示。在模板渲染过程中，这些表达式中的变量会被提供给模板的 Python 对象替换。这些表达式可以是数字、字符串、列表和字典等基本 Python 变量，也可以是需要运行时求值的更复杂表达式。此类复杂表达式的例子包括数学表达式、访问对象属性、调用函数以及使用单行 if-else 语句。
+
+#### 控制语句
+
+控制语句由符号 {%%} 表示。Jinja 支持几种常见的控制语句，例如 if-else、for 循环、赋值等。if-else 语句可用于处理缺失值。例如，
+
+```yaml
+In [2]: jinja2.Template( ' ' '\
+        {% if key %}{{ key }}{% endif %}
+        {% if absent %}{{ absent }}{% endif %}' ' ').render(key='a')
+Out[2]:
+'a\n'
+```
+由 set 表示的赋值语句允许我们定义临时变量。这些变量可以在 Jinja 表达式中作为普通变量使用。例如，
+
+```yaml
+In [3]: jinja2.Template( ' ' '\
+        {% set x ,y , z = item.split() %}
+        { {z} }{ {y} }{ {x} } ' ' ').render(items=' abc ' )
+Out[3]:
+'\nc b a'
+```
+
+#### 空白字符控制
+
+空白字符控制与表达式或控制语句结合使用，例如 {%-, -%}、{{- 和 -}}。这些模板标签中的减号用于消除前导和尾随空白字符，以及控制语句引入的空行。例如，
+
+```yaml
+In [4]: jinja2.Template( ' ' '\
+        {% set x ,y , z = item.split() %}
+        {{ - z }} {{ y }} {{ x }}' ' ').render(items=' abc ' )
+Out[4]:
+' cba '
+```
+
+### 3.4.2 格式
+
+Molden 格式是用于存储量子化学信息的标准文件格式。这些信息包括分子几何结构、基组、电子轨道等。Molden 格式的一种常见应用是可视化分子轨道。通过适当配置，Molden 格式可以用于可视化自定义轨道。
+Molden 格式的结构有完善的文档记录，可以参考在线文档 https://www.theochem.ru.nl/molden/molden_format.html。下面，我们将使用 Jinja 模板展示 Molden 格式的结构。
+Molden 格式由一系列用方括号表示的区段组成，例如 [Molden Format]、[Atoms]、[GTO] 等。这些区段将 Molden 文件组织为不同的部分。
+
+```text
+molden_tpl = jinja2.Template( ' ' '\
+[Molden Format]
+Comment lines
+[Atoms] ({{ unit or 'Ang' }})
+{% - for element , atom_number ,x ,y , z in atoms %}
+{{ element }} {{ loop.index }} {{ atom_number }} {{ x }} {{ y }} {{ z }}
+{% - endfor %}
+```
+
+```text
+[GTO]
+{% - for gto_shells in gtos %}
+{{ loop.index }} 0
+{{ gto_shells }}
+{% endfor %}
+[5d]
+[7f]
+[MO]
+{% - for mo in mos %}
+{{ mo }}
+{% - endfor %}
+' ' ')
+```
+分子几何结构详述于 Molden 格式的 [Atoms] 区段。在这个区段中，每一行对应分子中的一个原子。
+要表示电子轨道，应同时提供基组信息和轨道系数。基组的详细信息包含在 [GTO] 区段中。在这里，Molden 格式要求分别指定每个原子的基组信息。请注意上述模板中的 {% endfor%} 符号。按照 Molden 格式规范，不同原子的基组之间必须插入空行。因此，Jinja 代码 {% for loop%} 中的尾随空白字符被有意保留，以满足这一要求。
+基组的配置由一系列壳层指定。每个壳层的结构在下面的 gto_shell_tpl 模板中列出。对于常规的高斯型轨道（Gaussian-type orbital，GTO）基组，其信息可以从 Basis Set Exchange（BSE）在线数据库获取，该数据库可通过 Python 软件包 basis-set-exchange 访问 [13,14]。
+
+```python
+from basis_set_exchange import get_basis
+from basis_set_exchange.manip import uncontract_general
+gto_shell_tpl = jinja2.Template( ' ' '\
+{{ spdf_shell }} {{ len(exponents) }} 1.00
+{% - for e_cs in zip(exponents , *coefficients) %}
+{{ ' '.join(e_cs) }}
+{% - endfor %}' ' ')
+def bse_to_gto_shell(shell):
+    spdfg = 'spdfg'
+    exponents = shell[ 'exponents']
+    coefficients = shell[ 'coefficients']
+    spdf_shell = ''.join(spdfg[l] for l in shell['angular_momentum'])
+    return gto_shell_tpl.render( spdf_shell=spdf_shell , exponents=exponents , coefficients=coefficients , len=len , zip=zip)
+```
+
+```python
+def gto_session(basis_name , element):
+    bse_data = get_basis(basis_name , element)
+    bse_data = uncontract_general(bse_data)
+    _ , basis = bse_data[ 'elements'].popitem()
+    return '\n'.join([bse_to_gto_shell(shell)
+                      for shell in basis['electron_shells']])
+```
+[GTO] 区段之后的 [5d] 和 [7f] 区段是可选的。这些区段指定原子基函数使用球面 D 和 F 函数。
+接下来，可以在 [MO] 区段中包含电子轨道。如下面的 mo_tpl 模板所示，对于每个轨道，MO 区段允许指定各种属性，包括对称性、轨道能量和占据数等，随后是一列轨道系数。处理轨道系数时，请注意 D、F 和 G 函数的顺序。例如，球面 D 函数
+
+```text
+arranged as D0 , D+1 , D -1 , D+2 , D -2 . For simplicity, we have omitted the reordering
+```
+过程。
+
+```python
+mo_tpl = jinja2.Template( ' ' '\
+Sym= {{ symmetry or 'A' }}
+Ene= {{ energy or 0.0 }}
+Spin= {{ spin or 'Alpha' }}
+Occup= {{ occupancy or 0.0 }}
+{% - for c in coefficients %}
+{{ loop.index }} {{ c }}
+{% - endfor %}' ' ')
+def mo_session(orbitals):
+    return [mo_tpl.render(coefficients=c) for c in orbitals]
+```
+将所有组件组合起来，我们可以创建 render_molden 函数：
+
+```python
+from basis_set_exchange.lut import element_Z_from_sym
+def render_molden(elements , coordinates , basis_name , orbitals):
+    x ,y , z = coordinates.T
+    atom_numbers = [element_Z_from_sym(ele) for ele in elements]
+    atoms = list(zip(elements , atom_numbers ,x ,y , z))
+    return molden_tpl.render( Z=element_Z_from_sym , atoms=atoms , gtos=[gto_session(basis_name , atom[0]) for atom in atoms] , mos=mo_session(orbitals))
+```
+例如，我们可以使用以下代码将一个分子的所有原子轨道输出到 Molden 文件中。
+
+```python
+import pandas as pd
+import pyscf
+mole = pd.DataFrame({
+    'symbol':[ 'O', 'H', 'H'] , 'x': [0.5009 , 1.4049 , -0.0934] , 'y': [2.7238 , 2.4390 , 1.9786] , 'z': [0.8464 , 0.6938 , 0.7321] , })
+basis = 'sto -3g'
+AOs = np.identity(5)
+elements = mole.symbol
+coordinates = mole.loc[: ,'x':'z'].to_numpy()
+with open ('demo.molden', 'w') as f:
+    f.write(render_molden(elements , coordinates , basis , AOs))
+```
+
+### 3.4.3 格式
+
+Cube 格式源自 Gaussian 计算化学软件。它已成为存储体积量子化学数据的事实标准。它非常适合在三维网格中详细表示分子轨道、电子密度和电势面。
+Gaussian 手册简要描述了 Cube 格式的结构。一些在线文档中可以找到更详细的说明 [15,16]。尽管 Cube 格式基于文本，但其数据表示必须遵循严格的预定格式。Cube 文件必须包含体积区域的原点、体素信息、分子中的原子和体积数据的详细信息。对于原子和体素信息，整数必须格式化为 5d，浮点数必须格式化为 12.6f。存储体积数据时，数字格式为 13.5E，每行六个数字。
+以下 Jinja 模板展示了 Cube 格式的结构。
+
+```text
+cube_tpl = jinja2.Template( ' ' '\
+Comment line 1
+Comment line 2
+{{ '%5d' % len(atoms) }} {{ '%12.6f' % origin[0] }} {{ '%12.6f' % origin[1]
+     }} {{ '%12.6f' % origin[2] }}
+{% - set vx = voxel[0] %}
+{% - set vy = voxel[1] %}
+{% - set vz = voxel[2] %}
+{{ '%5d' % n_voxels[0] }} {{ '%12.6f' % vx[0] }} {{ '%12.6f' % vx[1] }} {{
+    '%12.6f' % vx[2] }}
+{{ '%5d' % n_voxels[1] }} {{ '%12.6f' % vy[0] }} {{ '%12.6f' % vy[1] }} {{
+    '%12.6f' % vy[2] }}
+```
+
+```python
+{{ '%5d' % n_voxels[2] }} {{ '%12.6f' % vz[0] }} {{ '%12.6f' % vz[1] }} {{
+    '%12.6f' % vz[2] }}
+{% - set charge = 0 %}
+{% for atom_number ,x ,y , z in atoms -%}
+{{ '%5d' % atom_number }} {{ '%12.6f' % charge }} {{ '%12.6f '%x} }{ {
+    '%12.6f' % y }} {{ '%12.6f' % z }}
+{% endfor -%}
+{% for data in volumetric_data -%}
+{{ data }}
+{% endfor -%}
+' ' ')
+def render_cube(elements , coordinates , voxel , origin , data):
+    atom_numbers = [element_Z_from_sym(ele) for ele in elements]
+    x ,y , z = coordinates.T
+    atoms = list(zip(atom_numbers ,x ,y ,z ) )
+    n_voxels = data.shape
+    formatted_data = []
+    for ix in range (n_voxels[0]):
+        for iy in range (n_voxels[1]):
+            for iz in range (0 , n_voxels[2] , 6):
+                # In each line , writes up to 6 floats in the 13.5E format
+                formatted_data.append( ''.join(f'{v:13.5E}' for v in data[ix ,iy ,iz:iz+6]))
+    return cube_tpl.render( atoms=atoms , len=len , n_voxels=n_voxels , voxel=voxel , origin=origin , volumetric_data=formatted_data)
+```
+要可视化电子性质，可以创建网格，计算其在网格上的值，并使用此模板渲染 Cube 文件。
+例如，我们可以按如下方式创建一个 Cube 文件来可视化 p 型原子轨道。体素网格是一个 0.3 × 0.3 × 0.3 的立方体体积，沿 x、y 和 z 轴各分配了 60 个体素。为简单起见，我们使用量子化学程序 PySCF [17,18] 计算 p 轨道在这些网格上的值。请注意对分子几何结构进行的单位转换。Cube 文件中的所有距离数据都必须以玻尔为单位。
+
+```text
+# NOTE: all units are in Bohr
+boundary = [[ -9. , 9.] , [ -9. , 9.] ,
+```
+
+```python
+            [ -9. , 9.]]
+mesh = [60 ,6 0 , 60]
+mgrids = np.mgrid[[ slice(r[0] , r[1] ,m *1j)
+                   for r ,m in zip (boundary , mesh)]]
+grids = mgrids.reshape(3 , -1).T
+origin = mgrids[: ,0 ,0 ,0]
+voxel = np.array([mgrids[: ,1 ,0 ,0] - origin , mgrids[: ,0 ,1 ,0] - origin , mgrids[: ,0 ,0 ,1] - origin])
+# AO values on given grids
+basis = 'sto -3g'
+mol = pyscf.M(atom= list(mole.to_numpy()), basis=basis , verbose=0)
+ao = mol.eval_gto( 'GTOval', grids)
+ao_2pz = ao[: ,4].reshape(mesh)
+elements = mole.symbol
+coordinates = mole.loc[: ,'x':'z'].to_numpy() / 0.529177249
+with open ('demo.cub', 'w') as f:
+    f.write(render_cube(elements , coordinates , voxel , origin , ao_2pz))
+```
+
+## 总结
+
+本章探讨了用于科学数据可视化的二维和三维可视化技术，包括使用 Matplotlib 进行二维可视化和使用 Mayavi 进行三维可视化。对于量子化学数据的可视化，我们借助外部软件，并使用 Molden 和 Cube 文件交换数据。我们讨论了使用 Jinja 模板技术生成 Molden 和 Cube 文件。
+我们的讨论仅限于数据可视化的技术层面。除了可视化技术，更重大的挑战在于创建信息丰富的可视化结果，有效传达数据背后的故事。关于这一主题，Claus O. Wilke 的 Fundamentals of Data Visualization [19] 是一本出色的参考书。
+
+## 参考文献
+
+[1] VanderPlas, Python Data Science Handbook: Essential Tools for Working with Data, O’Reilly Media, Inc, Sebastopol, CA, 2016.
+[2] Hunter, D. Dale, E. Firing, M. Droettboom, the Matplotlib development team, Mat- plotlib examples - list of named colors, https://matplotlib.org/stable/gallery/color/named_ colors.html, 2024. CHAPTER J. J.
+[3] Hunter, D. Dale, E. Firing, M. Droettboom, the Matplotlib development team, Mat- plotlib users guide - specifying colors, https://matplotlib.org/stable/users/explain/colors/ colors.html, 2024.
+[4] Hunter, D. Dale, E. Firing, M. Droettboom, the Matplotlib development team, Mat- plotlib examples - color demo, https://matplotlib.org/stable/gallery/color/color_demo. html, 2024.
+[5] Waskom, seaborn: statistical data visualization, The Journal of Open Source Soft- ware 6 (60) (2021) 3021, https://doi.org/10.21105/joss.03021.
+[6] Ramachandran, G. Varoquaux, Mayavi: 3d visualization of scientific data, Computing in Science & Engineering 13 (2) (2011) 40–51, https://doi.org/10.1109/MCSE.2011.35.
+[7] Sullivan, A. Kaszynski, PyVista: 3d plotting and mesh analysis through a stream- lined interface for the visualization toolkit (VTK), The Journal of Open Source Software 4 (37) (2019) 1450, https://doi.org/10.21105/joss.01450.
+[8] developers, Vispy: interactive scientific visualization in Python, https://vispy.org/, 2024.
+[9] van der Walt, J.L. Schönberger, J. Nunez-Iglesias, F. Boulogne, J.D. Warner,N. Yager, E. Gouillart, T. Yu, the scikit-image contributors, scikit-image: image processing in Python, PeerJ 2 (2014) e453, https://doi.org/10.7717/peerj.453.
+[10] Mayavi on Jupyter, https://github.com/enthought/mayavi/blob/master/ examples/mayavi/mayavi_jupyter.ipynb, 2024.
+[11] Mayavi documentation - objects populating the mayavi pipeline, https://docs. enthought.com/mayavi/mayavi/mayavi_objects.html, 2024.
+[12] Jinja2 documentation - template designer documentation, https://jinja. palletsprojects.com/en/latest/templates/, 2024.
+[13] Schuchardt, B.T. Didier, T. Elsethagen, L. Sun, V. Gurumoorthi, J. Chase, J. Li, T.L. Windus, Basis set exchange: a community database for computational sci- ences, Journal of Chemical Information and Modeling 47 (3) (2007) 1045–1052, https:// doi.org/10.1021/ci600510j, pMID: 17428029.
+[14] Pritchard, D. Altarawy, B. Didier, T.D. Gibson, T.L. Windus, New basis set ex- change: an open, up-to-date resource for the molecular sciences community, Journal of Chemical Information and Modeling 59 (11) (2019) 4814–4820, https://doi.org/10.1021/ acs.jcim.9b00725, pMID: 31600445.
+[15] Bourke, Gaussian cube files, https://paulbourke.net/dataformats/cube/, 2024.
+[16] Skinn, Gaussian cube file format, https://h5cube-spec.readthedocs.io/en/latest/ cubeformat.html, 2024.
+[17] PySCF Developers, Quantum chemistry with Python, https://pyscf.org/, 2024.
+[18] Sun, X. Zhang, S. Banerjee, P. Bao, M. Barbry, N.S. Blunt, N.A. Bogdanov, G.H. Booth, J. Chen, Z.-H. Cui, J.J. Eriksen, Y. Gao, S. Guo, J. Hermann, M.R. Hermes, K. Koh, P. Koval, S. Lehtola, Z. Li, J. Liu, N. Mardirossian, J.D. McClain, M. Motta, B. Mussard, H.Q. Pham, A. Pulkin, W. Purwanto, P.J. Robinson, E. Ronca, E.R. Say- futyarova, M. Scheurer, H.F. Schurkus, J.E.T. Smith, C. Sun, S.-N. Sun, S. Upad- hyay, L.K. Wagner, X. Wang, A. White, J.D. Whitfield, M.J. Williamson, S. Wouters, J. Yang, J.M. Yu, T. Zhu, T.C. Berkelbach, S. Sharma, A.Y .Sokolov, G.K.-L. Chan, Recent developments in the PySCF program package, Journal of Chemical Physics 153 (2) (2020) 024109, https://doi.org/10.1063/5.0006074, https://pubs.aip.org/aip/jcp/ article-pdf/doi/10.1063/5.0006074/16722275/024109_1_online.pdf.
+[19] Wilke, Fundamentals of data visualization, https://clauswilke.com/dataviz/, 2024. 143 J. J. M.L. P. C.B. Vispy S. Enthought, Enthought, Pallets, K.L. B.P. P. B.

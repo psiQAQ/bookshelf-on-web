@@ -1,6 +1,6 @@
 # 量子化学 Python 直译：复核记录
 
-- 书目 id：`quantum-python-notes`
+- 书目 id：`python-for-quantum-chemistry-a-full-stack-programming-guide`（2026-10-28 由 `quantum-python-notes` 改名并合并原书缓存目录；本文件早期记录中的旧目录名与旧验证 URL 按当时状态保留）
 - 原书：*Python for Quantum Chemistry: A Full Stack Programming Guide*，Qiming Sun，Elsevier 2025
 - 来源 PDF SHA-256：`c7553b895fc4caf52359df14007190a83bc5b94162dea1d22f4dc41314e383aa`（717 页）
 - 译本形态：Quarto 书籍，`index.qmd` 加 17 个章节文件

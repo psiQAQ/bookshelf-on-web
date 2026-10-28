@@ -161,11 +161,8 @@ index-url = https://pypi.tuna.tsinghua.edu.cn/simple
 这两个目录将被追加到 sys.path 列表的末尾，从而扩展包搜索路径。请注意，Python 按以下顺序搜索模块和包：
 
 1. 输入脚本所在的目录；
-
-![公式图](../assets/math/eq-01-001.png){width=30%}
-
-[]{#eq-01-001}
-
+2. PYTHONPATH 中列出的目录；
+3. site-packages 目录；
 4. .pth 文件中列出的目录。
 
 #### 1.1.2.2 包依赖

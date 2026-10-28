@@ -74,7 +74,9 @@ class QuantumNotesTests(unittest.TestCase):
                     label = "图" if kind == "figures" else "表"
                     number = filename.removesuffix(".png").split("-", 1)[1].replace("-", ".")
                     self.assertRegex(text[match.end():], rf"^\s*\*\*{label} {re.escape(number)}\*\*\s*\S")
-        self.assertEqual(images, {"figures": 59, "tables": 18, "math": 228})
+        # 228 → 222: six equations that were really prose, code fragments or the
+        # Hankel matrix now live in the chapters as text / display math.
+        self.assertEqual(images, {"figures": 59, "tables": 18, "math": 222})
         self.assertEqual(referenced, set(self.metadata["assets"]))
 
     def test_fixed_math_scroll_style_and_disabled_execution(self):

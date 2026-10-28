@@ -508,34 +508,27 @@ NumPy 核心库使用 strides 属性计算数组中各个元素的内存地址�
 在上述例子中，strides 属性的值由数组的其他属性推导而来。乍看之下，strides 属性似乎是多余的。实际上，这是 NumPy 的一种精妙设计，为表示多维数组提供了灵活而高效的方式。strides 属性允许我们复用内存并在不同数组之间共享数据，从而有效减少内存消耗和数组间复制数据的成本。
 为了说明这一优势，我们来考虑 Hankel 矩阵（Hankel matrix）：
 
-![公式图](../assets/math/eq-02-003.png){width=32%}
+$$
+H=\begin{pmatrix}
+a_{0} & a_{1} & a_{2} & \cdots & a_{n-1}\\
+a_{1} & a_{2} & a_{3} & \cdots & a_{n}\\
+a_{2} & a_{3} & \cdots & \ddots & a_{2n-3}\\
+a_{n-1} & a_{n} & \cdots & a_{2n-3} & a_{2n-2}
+\end{pmatrix}
+\qquad (2.3)
+$$
 
 []{#eq-02-003}
 
-⎟⎟
-
-![公式图](../assets/math/eq-02-004.png){width=31%}
-
-[]{#eq-02-004}
-
-⎟
-Hankel 矩阵是一个方阵，其元素由向量得出。每个元素由公式 Hij = ai +j 定义。要构造 Hankel 矩阵，可以用嵌套循环实现代码
+Hankel 矩阵是一个方阵，其元素由向量得出。每个元素由公式 $H_{i,j} = a_{i+j}$ 定义。要构造 Hankel 矩阵，可以用嵌套循环实现代码：
 
 ```python
 def hankel_matrix(a):
-```
-⎟
-
-```python
     n = (a.size + 1) // 2
     out = np.empty((n, n), dtype=a.dtype)
     for i in range (n):
         for j in range (n):
             out[i,j] = a[i+j]
-```
-⎟
-
-```python
     return out
 ```
 可以使用 NumPy ufunc 风格的赋值对这段代码稍作优化。
@@ -543,10 +536,6 @@ def hankel_matrix(a):
 ```python
 def hankel_matrix(a):
     n = (a.size + 1) // 2
-```
-⎟
-
-```python
     out = np.empty((n, n), dtype=a.dtype)
     for i in range (n):
         out[i] = a[i:n]

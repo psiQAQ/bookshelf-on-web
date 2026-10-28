@@ -889,63 +889,28 @@ DIIS（Direct Inversion in the Iterative Subspace，迭代子空间直接反演�
 
 **公式 (13.37)**[]{#eq-13-035}
 
-B21 B 22 ··· B 2n 1 ⎟⎟ c2 ⎟⎟
-... ... .....
 将这些方程转换为 Python 程序并不困难。给定误差向量和试探向量的列表作为输入，下面的 extrapolate 函数生成一个解向量。
 
 ```python
 def extrapolate(errvecs, tvecs):
-```
-⎟ ⎟
-
-```text
     space = len(tvecs)
-```
-⎛
-
-```python
     B = np.zeros((space+1, space+1))
     B[-1,:-1] = B[:-1,-1] = 1.
-```
-⎜⎜
-
-```python
     g = np.zeros(space+1)
     g[-1] = 1
     for i,e 1 in enumerate (errvecs):
         for j,e 2 in enumerate (errvecs):
             if j<i :
-```
-⎜
-
-```text
                 continue
             B[i,j] = B[j,i] = e1.dot(e2)
     c = scipy.linalg.solve(B,g , assume_a= 'sym')[:-1]
     sol = tvecs[0] * c[0]
-```
-⎜
-
-```text
     for v,x in zip (tvecs[1:], c[1:]):
         sol += v * x
     return sol
 ```
 
-![公式图](../assets/math/eq-13-036.png){width=47%}
-
-[]{#eq-13-036}
-
-```python
-    return sol
-```
-在不动点迭代过程中，每次迭代的误差向量和试探...向量都会加入 DIIS 程序，以扩展误差向量和试探向量的⎜⎝空间 ⎜⎝
-
-![公式图](../assets/math/eq-13-037.png){width=30%}
-
-[]{#eq-13-037}
-
-这些向量被传递给 extrapolate 函数，以构造一个新的解，随后在不动点问题的下一次迭代中使用该解。
+在不动点迭代过程中，每次迭代产生的误差向量和试探向量都会加入 DIIS 程序，以扩展误差向量和试探向量的空间。这些向量被传递给 extrapolate 函数，以构造一个新的解，随后在不动点问题的下一次迭代中使用该解。
 如何在多次独立的函数调用之间记录这些状态？在 Python 中，通常有三种策略可以实现这一点：
 
 - 使用类。DIIS 状态作为类的属性存储。可以执行类的特定方法，在 SCF 迭代程序中更新这些状态。

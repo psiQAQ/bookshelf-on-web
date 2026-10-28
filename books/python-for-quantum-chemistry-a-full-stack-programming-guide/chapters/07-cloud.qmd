@@ -300,9 +300,6 @@ def geometry_on_pes(molecule, pes_params, existing_results=None):
     # This function should produce molecule configurations
     # based on the results of accomplished calculations.
     # Here is a fake implementation to demonstrate the functionality.
-```
-
-```python
     if len (existing_results) > 1:
         return []
     h2o_xyz = ' O000 ;H 0.757 0.587 0; H -0.757 0.587 0'
@@ -443,9 +440,6 @@ def launch_tasks(geom_grids, results_path, timeout=7200):
     for geom in geom_grids:
         job_conf = rpc_job_tpl.render(geom=geom).encode()
         job_id = hashlib.md5(job_conf).hexdigest()
-```
-
-```python
         bucket, key = results_path.replace( 's3://', '').split('/',1 )
         job_path = f 's3://{bucket}/{key}/{job_id}'
         s3_client.put_object(Bucket=bucket, Key=f'{key}/{job_id}/job.py', Body=job_conf)
@@ -518,9 +512,6 @@ def pes_app(config_file):
                     result = 'timeout'
                 results[key] = result
             geom_grids = geometry_on_pes(molecule, pes_params, results)
-```
-
-```python
     return results
 if __name__ == '__main__':
     pes_app(sys.argv[1])
@@ -578,9 +569,6 @@ def lambda_handler(event, context):
         return {'statusCode': 400}
     body = json.loads(event[ 'body'])
     job = body[ 'job']
-```
-
-```python
     if job.upper() != 'PES':
         msg = f 'Unknown job {job}'
         results = 'N/A'

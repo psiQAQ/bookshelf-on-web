@@ -250,9 +250,6 @@ class Queue:
         self.mutex = threading.Lock()
         self.not_full = threading.Condition(self.mutex)
         self.not_empty = threading.Condition(self.mutex)
-```
-
-```python
     def put(self, item):
         with self.mutex:
             while len (self._queue) >= self.max_size:
@@ -708,9 +705,6 @@ def get_j_task(k,d m, output_attr):
     shm = SharedMemory(filename, create=False)
     output = np.ndarray(dtype=dtype, shape=shape, buffer=shm.buf)
     n = dm.shape[0]
-```
-
-```python
     output[k] = np.einsum( 'ijl,ji->l', compute_eri(k, n), dm)
 def get_j(dm):
     n = dm.shape[0]
@@ -777,9 +771,6 @@ def get_j(dm):
 if __name__ == '__main__':
     n=5 0
     dm = np.identity(n)
-```
-
-```python
     print(get_j(dm).sum())
 ```
 multiprocessing.Lock 对象在共享内存空间中创建，并在每个子进程创建时分发给它。当进程获取或释放锁时，会修改共享内存的状态。所有子进程都能看到这些变化。
@@ -841,9 +832,6 @@ def communicate(server, client, channel, args):
      r, w = channel
  else:
      r = w = channel
-```
-
-```python
     proc = multiprocessing.Process(target=client, args=(r, *args))
     proc.start()
     server(w, *args)
@@ -910,9 +898,6 @@ def pipe_pickle_recv(fd, size, count):
         pickle.loads(buf.getvalue())
 def pipe_pickle_send(fd, size, count):
     a = np.ones(size, dtype= 'c')
-```
-
-```python
     for _ in range (count):
         buf = pickle.dumps(a)
         os.write(fd, len(buf).to_bytes(8, sys.byteorder))
@@ -1191,9 +1176,6 @@ comm.Abort(1) # (1)
     jmat = np.zeros((n, n))
     req = comm.Iallreduce(output, jmat) # Communication in background
     req.wait()
-```
-
-```python
     return output
 if rank == 0:
     dm = np.identity(150)
@@ -1280,9 +1262,6 @@ while elapsed < timeout: # (1)
      reqs = [comm.isend(( 'Terminate', None), i, tag=TAG)
              for i in workers]
      wait_all(reqs, timeout=0.5)
-```
-
-```python
     atexit.register(shutdown)
 def _build_chunks(iterable): # (2)
     iterable = iter(iterable)

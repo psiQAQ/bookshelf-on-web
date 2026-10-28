@@ -503,9 +503,6 @@ def schmidt_orth(s):
             dot_kj = np.dot(cs[:,k], s[:,j])
             cs[:,j] -= dot_kj * cs[:,k]
             fac -= dot_kj * dot_kj
-```
-
-```python
         if fac <= 0:
             raise RuntimeError(f'schmidt_orth fail. {j=} {fac=}' )
         fac = fac **-.5
@@ -1244,9 +1241,6 @@ $ numba coulomb_2e_OS.py --annotate -html coulomb_2e_OS.html
    def do_sum_parallel(A):
        n= len(A)
        a c c=0 .
-```
-
-```python
     for i in numba.prange(n):
         acc += np.sqrt(A[i])
     return acc
@@ -1295,9 +1289,6 @@ def matmul_nn_tiling_unrolled(a, b):
                             c[i+1,j] += a_ik1 * b_kj
                             c[i+2,j] += a_ik2 * b_kj
                             c[i+3,j] += a_ik3 * b_kj
-```
-
-```python
                 for i in range (i+4, i1):
                     for k in range (k0, k1):
             a_ik = a[i,k]
@@ -1330,9 +1321,6 @@ def unroll_schmidt_orth(n):
             for i in range (n):
                 code.append(f'cs[{j},{i}] -= dot_kj * cs[{k},{i}]')
             code.append('fac -= dot_kj * dot_kj')
-```
-
-```python
         code.append('fac = fac **-.5')
         code.append(f'cs[{j},{j}] = fac' )
                                         for i in range (j):
@@ -1372,9 +1360,6 @@ def schmidt_orth_recursive_unrolled(s):
     m=n/ /2
     c_block11 = schmidt_orth_recursive(s[:m,:m])
     s_block12 = np.dot(c_block11.T, s[:m,m:])
-```
-
-```python
     c_block12 = -np.dot(c_block11, s_block12)
     s_block22 = s[m:,m:] - np.dot(s_block12.T, s_block12)
     c_block22 = schmidt_orth_recursive(s_block22)
@@ -2378,9 +2363,6 @@ return Promise(np.transpose, array(cs[idx]))
 if __name__ == '__main__':
 s = np.eye(3)
 cs = schmidt_orth_lazy(s)
-```
-
-```python
     cs()
     print(Promise.count) # 113
     Promise.count = 0
@@ -2446,9 +2428,6 @@ return x
 if __name__ == '__main__':
 s = np.eye(3)
 cs = schmidt_orth_lazy(s)
-```
-
-```python
     t0 = time.perf_counter()
     print(cs.parallel_compute())
     t1 = time.perf_counter()

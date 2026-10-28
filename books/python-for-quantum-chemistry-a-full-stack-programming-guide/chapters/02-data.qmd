@@ -349,9 +349,6 @@ In [2]: a = np.ones((5,5,5,5))
         idx = np.arange(2)
         print(a[idx,idx,:,:].shape)
         print(a[:,idx,idx,:].shape)
-```
-
-```python
         print(a[:,:,idx,idx].shape)
         print(a[:,idx,:,idx].shape)
         print(a[idx,:,:,idx].shape)
@@ -1079,9 +1076,6 @@ return a.dot(fac) / n
 ```python
 class mparray(np.ndarray):
     @property
-```
-
-```python
     def rows(self):
         return self.shape[0]
     @property
@@ -1245,9 +1239,6 @@ Pandas DataFrame 是另一种用于存储表格数据的基本数据结构，其
 ```python
 In [1]: mole = pd.DataFrame({
             'symbol':[ 'O', 'H', 'H'], 'x': [0.5009, 1.4049, -0.0934], 'y': [2.7238, 2.4390, 1.9786], 'z': [0.8464, 0.6938, 0.7321], })
-```
-
-```python
         print(mole)
 Out[1]:
 symbol x y z
@@ -1275,9 +1266,6 @@ Pandas 提供了多种访问 DataFrame 中元素的方法。我们将在第 2.3.
 ```python
 In [5]: mole = pd.DataFrame([
 {'symbol': 'O', 'x': 0.5009 , 'y': 2.7238, 'z': 0.8464}, {'symbol': 'H', 'x': 1.4049 , 'y': 2.4390, 'z': 0.6938}, {'symbol': 'H', 'x': -0.0934, 'y': 1.9786, 'z': 0.7321}, ])
-```
-
-```python
         print(mole)
 Out[5]:
 symbol x y z
@@ -1699,9 +1687,6 @@ pd.concat 函数会自动对齐标签。如果两个 DataFrame 的标签不完�
 ```python
 In [39]: mole1 = pd.DataFrame([{
              'symbol': 'H', 'z': 0.5843, 'x': 0.2245, 'y': 3.6050, 'Zeff': 0.5}])
-```
-
-```python
          pd.concat([mole, mole1], axis=1)
 Out[39]:
 symbol x y z Zeff

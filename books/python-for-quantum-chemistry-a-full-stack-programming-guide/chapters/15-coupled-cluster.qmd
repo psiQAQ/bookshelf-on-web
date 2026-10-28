@@ -138,9 +138,6 @@ def update_CCD_amplitudes(H: h5py.Group,t 2, level_shift=0):
     t2out = t2out - t2out.transpose(0,1,3,2)
     t2out = t2out - t2out.transpose(1,0,2,3)
     oooo = 0.5 *einsum('klcd,cdij->ijkl',H [ 'oovv'], t2)
-```
-
-```python
     oooo += np.asarray(H[ 'oooo'])
     t2out += 0.5 *einsum('ijkl,abkl->abij', oooo, t2)
     t2out += 0.5 *einsum('abcd,cdij->abij',H [ 'vvvv'], t2)
@@ -177,9 +174,6 @@ def mo_integrals(mol: pyscf.gto.Mole, orbitals, Hfile=None):
         H['vovo'] = eri[no:,:no,no:,:no]
         H['oooo'] = eri[:no,:no,:no,:no]
         H['vvvv'] = eri[no:,no:,no:,no:]
-```
-
-```python
         hcore = pyscf.scf.hf.get_hcore(mol)
         hcore = einsum( 'pq,pi,qj->ij', hcore, orbitals, orbitals)
         hcore_mo = np.zeros([nmo *2]*2)
@@ -223,9 +217,6 @@ def mp2(H):
 def CCD_solve(mf: pyscf.scf.hf.RHF, conv_tol=1e-6, max_cycle=100):
     '''A fixed-point iteration solver for spin-orbital CCD'''
     mol = mf.mol
-```
-
-```python
     orbitals = mf.mo_coeff
     e_hf = mf.e_tot
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -708,9 +699,6 @@ def _contract_string_string(string1, string2) -> List[String]:
     output = [String(string2.operators, string1.factor * string2.factor, string1.deltas + string2.deltas)]
     for fop in reversed (string1.operators):
         #C ( x 1*x2*...,a 1 *a2*...) = C(x1, C(x2, ..., C(xn,a 1 *a2*...)))
-```
-
-```python
         output = flatten(_contract_fop_string(fop,s ) for s in output)
     return output
 def contract(string1, string2):
@@ -828,9 +816,6 @@ def on_HF_reference(string, tensors, output_indices=None) -> List[ str]:
             return f'{string.factor*2} * einsum("ijij->", h2_oooo)'
         else:
             return ''
-```
-
-```python
  vsymbols, osymbols = iter(VSYMBOLS),iter(OSYMBOLS)
  symbol_table = {}
 for delta in deltas: # (1)
@@ -936,9 +921,6 @@ class String:
     __slots__ = [ 'operators', 'factor', 'deltas', 'remaining']
     def __init__(self, operators, factor=1, deltas=None, remaining=None):
         self.operators: List[Union[FieldOperator, FOpGroup]] = operators
-```
-
-```python
         self.factor = factor
         self.deltas = deltas or []
         self.remaining = remaining or []
@@ -974,9 +956,6 @@ def _fgroup2str(fgroup, factor, deltas, remaining=None):
             remaining = [FOpGroup(remaining)]
     else:
             remaining = list(remaining)
-```
-
-```python
     return String(operators, factor, deltas, remaining)
 ```
 输出串中的算符可能包含 FOpGroup 的一个子集。该子集仍可能构成一个 FOpGroup 对象。这里引入辅助函数 _fgroup2str 来处理 FOpGroup 的子集，它根据该子集构造适当的 String 对象。
@@ -1058,9 +1037,6 @@ def _make_operator(factor, indices, label=None, symmetric=False):
     n= len(indices)
     assert n%2= =0
     operators_c = [Creation(x) for x in indices[:n//2].upper()]
-```
-
-```python
     operators_a = [Annihilation(x) for x in indices[n//2:].upper()]
     if symmetric and n>2 :
         operators = [FOpGroup(operators_c), FOpGroup(operators_a[::-1])]

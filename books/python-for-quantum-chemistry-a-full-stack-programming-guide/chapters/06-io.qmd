@@ -329,9 +329,6 @@ $ python -u example.py > log
 ```python
 In [15]: from io import BytesIO, StringIO
 In [16]: buf = io.StringIO()
-```
-
-```python
          buf.write('hello')
          buf.write(' world' )
          buf.seek(0)

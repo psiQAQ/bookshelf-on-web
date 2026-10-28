@@ -205,9 +205,6 @@ In [2]: def fun2(x, y):
             a,b=a+b ,a-b
             c = f(y)
             d=c
-```
-
-```python
             return a
         print(remove_unreachable_statements(fun2))
 Out[2]:

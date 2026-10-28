@@ -115,9 +115,6 @@ def make_strings(norb: int, noccupied: int):
         return [String.vacuum()]
     elif norb == noccupied:
         return [String.fully_occupied(norb)]
-```
-
-```python
     return (make_strings(norb-1, noccupied) +
             [s.add_occupancy(norb-1)
              for s in make_strings(norb-1, noccupied-1)])
@@ -172,9 +169,6 @@ Davidson 迭代从初始猜测 v0 开始，采用上述步骤改进子空间基�
 def davidson(A, A_diag, x0=None, tol=1e-5, maxiter=50, space=15):
     def precond(r, e):
         return r / (A_diag - e)
-```
-
-```python
     # The initial guess
     if x0 is None:
         x0 = 1. / (A_diag - A_diag.argmin() + 1e-2)
@@ -212,9 +206,6 @@ def davidson(A, A_diag, x0=None, tol=1e-5, maxiter=50, space=15):
             x0 -= v * np.dot(v, x0)
         norm = np.linalg.norm(x0)
         assert norm < 1e-10, 'Linearly dependent basis vectors'
-```
-
-```python
         x0 /= norm
     else:
         raise RuntimeError('davidson not converged' )
@@ -624,9 +615,6 @@ d[i,a,I] += sign * fciwfn[J]
 def _compute_hc(v, fciwfn, norb, Elt, blocksize=60):
     Elt_a, Elt_b = Elt
     na, nb = fciwfn.shape
-```
-
-```python
     sigma = np.zeros_like(fciwfn)
     for Ka0 in range (0,n a, blocksize):
         ma = min(na - Ka0, blocksize)

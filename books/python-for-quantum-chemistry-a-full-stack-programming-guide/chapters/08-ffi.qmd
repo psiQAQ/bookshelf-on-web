@@ -40,9 +40,6 @@ In [1]: with tempfile.NamedTemporaryFile(mode='w', dir='.') as f:
             print(f.name)
             f.write('hello')
             f.flush()
-```
-
-```python
             subprocess.check_call(['cat', f.name])
         print(os.path.exists(f.name))
 Out[1]:
@@ -169,9 +166,6 @@ class Atom(ctypes.Structure):
     def dumps(self) -> bytearray:
         '''Serializes the Atom object'''
         return bytearray (self)
-```
-
-```python
     @classmethod
     def loads(cls, buffer: Union[bytes, bytearray]) -> Atom:
         '''Deserializes binary data and constructs an Atom object'''
@@ -641,9 +635,6 @@ def blas_ddot(x: np.ndarray, y: np.ndarray) -> float:
     assert x.size == y.size
     size = ctypes.c_int(x.size)
     incx = ctypes.c_int(x.strides[0] // x.itemsize)
-```
-
-```python
     incy = ctypes.c_int(y.strides[0] // y.itemsize)
     out = libblas.ddot_(size,x , incx,y , incy)
     return out
@@ -1159,9 +1150,6 @@ librcopy.dcopy.argtypes = [ctypes.c_int, nparray_p, nparray_p]
 def dcopy(a: np.ndarray) -> np.ndarray:
     assert a.dtype == np.float64
     assert a.ndim == 1
-```
-
-```python
     assert a.flags.contiguous
     b = np.empty_like(a)
     librcopy.dcopy(a.size,a ,b )

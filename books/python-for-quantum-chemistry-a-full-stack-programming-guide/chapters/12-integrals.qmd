@@ -696,9 +696,6 @@ def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     Kabcd *= np.exp(-theta_ij*Rab.dot(Rab) - theta_kl *Rcd.dot(Rcd))
     Xpq, Ypq, Zpq = Rpq
     Xpa, Ypa,Z p a=R p-R a
-```
-
-```python
     @lru_cache(10000)
     def vrr(n,i x,i y, iz):
         if iz > 0:
@@ -743,9 +740,6 @@ y 和 z 方向也有结构类似的电子转移递推方程。当笛卡尔幂次
 ```python
 def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     ... # Code omitted for brevity
-```
-
-```python
     Xab, Yab, Zab = Rab
     Xcd, Ycd, Zcd = Rcd
     @lru_cache(10000)
@@ -826,9 +820,6 @@ def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     @lru_cache(10000)
     def vrr(n,i x,i y, iz):
         ...
-```
-
-```python
     @lru_cache(10000)
     def trr(ix,i y,i z,k x,k y, kz):
         ...
@@ -975,9 +966,6 @@ def contracted_ERI(f, bas_i, bas_j, bas_k, bas_l):
     Rc, Rd = bas_k.coordinates, bas_l.coordinates
     norm_ci = bas_i.norm_coefficients
     norm_cj = bas_j.norm_coefficients
-```
-
-```python
     norm_ck = bas_k.norm_coefficients
     norm_cl = bas_l.norm_coefficients
     nfi, nfj, nfk, nfl = map(n_cart, (li,l j,l k, ll))
@@ -1454,9 +1442,6 @@ def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
     Rt2 = np.empty((nf_kl, nf_ij))
     for kl,( e,f ,g ) in enumerate (reduced_cart_iter(lkl)):
         phase = (-1)**(e+f+g)
-```
-
-```python
         for ij,( t,u ,v ) in enumerate (reduced_cart_iter(lij)):
             Rt2[kl,ij] = phase * Rt[t+e,u+f,v+g]
     Etab = get_E_tensor(li,l j,a i,a j,R a, Rb)
@@ -2467,9 +2452,6 @@ def downward(n,t , prec=1e-15):
         f+ =x
     b=n+. 5
     f/ =b
-```
-
-```python
     o u t=[ f ]
     for i in range (n):
         b- =1
@@ -2611,9 +2593,6 @@ def rys_roots_weights(nroots, t):
     if t<1 e -8:
         leg_r, leg_w = scipy.special.roots_legendre(nroots *2)
         roots = leg_r[nroots:] **2
-```
-
-```python
         weights = leg_w[nroots:] * (1-t*roots)
     elif t > 50:
         hermit_r, hermit_w = scipy.special.roots_hermite(nroots *2)
@@ -2696,9 +2675,6 @@ def tabulate_chebfit():
         cs_i = []
         for a,b in intervals:
             # Map chebyshev nodes between (-1, 1) to the sample points
-```
-
-```python
             # between interval (a,b )
             xs = cheb_nodes *(b-a)/2 + (b+a)/2
             rws = np.empty((n,2,nrys))

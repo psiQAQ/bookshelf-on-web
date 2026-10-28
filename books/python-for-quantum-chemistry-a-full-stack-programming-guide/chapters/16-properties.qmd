@@ -287,9 +287,6 @@ def grad_hf_energy(mol, mo_energy, mo_coeff, nocc):
     s1 = mol.intor( 'int1e_ipovlp')
     aoslices = mol.aoslice_by_atom()
     de = np.zeros((mol.natm, 3))
-```
-
-```python
     for k in range (mol.natm):
         p0, p1 = aoslices[k,2:]
         h1 = grad_hcore(mol,k )
@@ -331,9 +328,6 @@ def finite_diff(mol, i_j, delta=1e-2):
     mol.set_geom_(coords, unit= 'Bohr')
     mf = mol.RHF(verbose=0).run()
     ehf1 = mf.e_tot
-```
-
-```python
     return (ehf0 - ehf1) / delta
 for i in range (mol.natm):
     for j in range (3):
@@ -447,9 +441,6 @@ def _fock_partial_deriv(mol, mo_coeff, nocc):
         s1ao[:,p0:p1] -= s1[:,p0:p1]
         s1ao[:,:,p0:p1] -= s1[:,p0:p1].transpose(0,2,1)
         s1_buf.append(s1ao)
-```
-
-```python
         j = einsum( 'xpqrs,qp->xrs', eri1[:,p0:p1], dm[:,p0:p1])
         k = einsum( 'xpqrs,sp->xrq', eri1[:,p0:p1], dm[:,p0:p1])
         v1 = -(j - k * .5)
@@ -493,9 +484,6 @@ def solve_mo1(mol, mo_energy, mo_coeff, nocc):
         vhf = einsum( 'pi,xpq,qj->xij', mo_v, get_vhf(eri, dm), mo_o)
         vhf /= e_v[:,None] - e_o
         return vhf.ravel()
-```
-
-```python
     f1, s1 = _fock_partial_deriv(mol, mo_coeff, nocc)
     s1 = einsum( 'pi,xpq,qj->xij', mo_coeff,s 1, mo_coeff)
     f1 = einsum( 'pi,xpq,qj->xij', mo_v,f 1, mo_o)
@@ -787,9 +775,6 @@ i2 = jnp.eye(2) # (2)
     H['oovv'] = vvoo.transpose(2,3,0,1)
     H['vovo'] = eri[no:,:no,no:,:no]
     H['oooo'] = eri[:no,:no,:no,:no]
-```
-
-```python
     H['vvvv'] = eri[no:,no:,no:,no:]
     hcore = mol.intor( 'int1e_kin') + mol.intor( 'int1e_nuc')
     hcore = einsum( 'pq,pi,qj->ij', hcore, orb, orb)
@@ -879,9 +864,6 @@ eri1 = mol.intor( 'int2e_ip1', aosym= 's1')
 eri1_partial = einsum( 'xpqrs,qj,rk,sl->xpjkl', eri1, mo0, mo0, mo0)
 eri = mol.intor( 'int2e', aosym= 's1')
 eri = einsum( 'pqrs,pi,qj,rk,sl->ijkl', eri, mo1, mo0, mo0, mo0)
-```
-
-```python
     aoslices = mol.aoslice_by_atom()[:,2:4]
     for i in range (mol.natm):
         p0, p1 = aoslices[i]

@@ -121,7 +121,15 @@ class ChapterMarkupTests(unittest.TestCase):
                 first = lines[reopen + 1] if reopen + 1 < len(lines) else ""
                 unbalanced = sum(last.count(c) for c in "([{") > sum(last.count(c) for c in ")]}")
                 tail = last[-1] in ",+*-/=&|(" if last else False
-                continues = last.endswith(":") or unbalanced or tail or first.strip()[:1] in (")]", "}")
+                langs = (lines[fences[position]].strip()[3:].strip(), lines[reopen].strip()[3:].strip())
+                indented = first[:1] == " " and bool(first.strip())
+                continues = (
+                    last.endswith(":")
+                    or unbalanced
+                    or tail
+                    or first.strip()[:1] in (")]", "}")
+                    or (indented and langs == ("python", "python"))
+                )
                 if continues:
                     offenders.append(f"{chapter}:{close + 1}")
         self.assertEqual(offenders, [], "code block split by a blank line")

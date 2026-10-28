@@ -2481,7 +2481,7 @@ parallel_compute 方法使用 ThreadPoolExecutor（详见第 10 章）启动任�
 
 [23] Numba Developers, Numba developer manual - notes on inlining, [readthedocs.io](https://numba.readthedocs.io/en/stable/developer/inlining.html), 2024.
 
-[24] Numba Developers, Extending numba - implementing @overload for numpy functions, [readthedocs.io](https://numba.readthedocs.io/en/stable/extending/overloading-guide.html#) implementing-overload-for-numpy-functions, 2024.
+[24] Numba Developers, Extending numba - implementing @overload for numpy functions, [readthedocs.io](https://numba.readthedocs.io/en/stable/extending/overloading-guide.html#implementing-overload-for-numpy-functions), 2024.
 
 [25] Numba Developers, Numba user manual - compiling code ahead of time, [readthedocs.io](https://numba.readthedocs.io/en/stable/user/pycc.html), 2024.
 

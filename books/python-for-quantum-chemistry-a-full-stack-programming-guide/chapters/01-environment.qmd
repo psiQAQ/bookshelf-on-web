@@ -1580,7 +1580,7 @@ $ ssh -fN -R 18888:localhost:8888 intermediate_server_ip
 
 [35] Python Packaging Authority, pyproject.toml speciﬁcation, [python.org](https://packaging.python.org/en/latest/specifications/pyproject-toml/#pyproject-toml-spec), 2024.
 
-[36] D. Holth, Pep 427 – the wheel binary package format 1.0, [python.org](https://peps.python.org/pep-) 0427/#ﬁle-name-convention, Sep. 2012.
+[36] D. Holth, Pep 427 – the wheel binary package format 1.0, [python.org](https://peps.python.org/pep-0427/#file-name-convention), Sep. 2012.
 
 [37] Python Packaging Authority, Controlling ﬁles in the distribution, [pypa.io](https://setuptools.pypa.io/en/latest/userguide/miscellaneous.html), 2024.
 

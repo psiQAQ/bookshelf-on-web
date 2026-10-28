@@ -634,9 +634,9 @@ if __name__ == '__main__':
 
 [8] PyTorch developers, Get started with PyTorch start locally, [pytorch.org](https://pytorch.org/getstarted/locally/), 2024.
 
-[9] CuPy Developers, Installing CuPy, [cupy.dev](https://docs.cupy.dev/en/stable/install.html#) installing-cupy, 2024.
+[9] CuPy Developers, Installing CuPy, [cupy.dev](https://docs.cupy.dev/en/stable/install.html#installing-cupy), 2024.
 
-[10] The JAX Authors, Installing JAX, [readthedocs.io](https://jax.readthedocs.io/en/latest/installation.html#) pip-installation-gpu-cuda-installed-via-pip-easier, 2024.
+[10] The JAX Authors, Installing JAX, [readthedocs.io](https://jax.readthedocs.io/en/latest/installation.html#pip-installation-nvidia-gpu-cuda-installed-via-pip-easier), 2024.
 
 [11] CuPy Developers, CuPy API reference - comparison table, [cupy.dev](https://docs.cupy.dev/en/stable/reference/comparison.html), 2024.
 

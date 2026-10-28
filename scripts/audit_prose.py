@@ -66,12 +66,20 @@ WEIGHT_FUNCTION_RE = re.compile(r"权函数(为|是)(?!\s*[\$`])")
 EQUATION_NUMBER_RE = re.compile(r"^\(\d+\.\d+\)")
 FORMULA_REMNANT_SYMBOLS = "∑∇√∫∂"
 
-# 链接被 PDF 换行切断：`[arrow](https://arrow). apache.org/cookbook/...`。
+# 链接被 PDF 换行切断的两种形状。
+# 形状一（主机名断开）：`[arrow](https://arrow). apache.org/cookbook/...` ——
 # 目标地址只到 `https://arrow`，`. apache.org/...` 退化成裸文本，点进去是死链。
-SPLIT_LINK_RE = re.compile(
+SPLIT_LINK_HOST_RE = re.compile(
     r"\]\((?P<url>[^)\s]+)\)\.?\s+"
     r"(?P<tail>(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}|[A-Za-z]{2,}/)"
 )
+# 形状二（路径或锚点断开）：目标以 `-`/`_`/`#` 收尾，续写在 `)` 之后退化成裸 ASCII 片段。
+# 例：`(https://peps.python.org/pep-) 0427/#ﬁle-name-convention`、
+# `.../gateway.html#) authentication-custom-ip`、`.../Custom_derivative_rules_) for_Python_code.html#...`。
+# 合法链接以 `#` 收尾但后面紧跟标点（如 `.../reference.html#, 2024.`）不会被判为断链。
+LINK_TARGET_RE = re.compile(r"\]\((?P<url>[^)\s]+)\)")
+TRUNCATED_URL_SUFFIXES = ("#", "-", "_")
+ASCII_TAIL_RE = re.compile(r"^(?:\.\s+|\s+)(?P<tail>[A-Za-z0-9#_/.\-]+)")
 
 CODE_PATTERNS = (
     (re.compile(r"^\s{2,}\S"), "缩进开头"),
@@ -200,13 +208,27 @@ def find_broken_links(path: Path):
     for number, line, in_code, in_math, in_ref in iter_lines(path):
         if in_code or in_math or "](" not in line:
             continue
-        for match in SPLIT_LINK_RE.finditer(line):
+        for match in SPLIT_LINK_HOST_RE.finditer(line):
             found.append({
                 "file": path.name,
                 "line": number,
                 "text": line.strip(),
                 "url": match.group("url"),
-                "reason": f"broken_link:{match.group('tail')}",
+                "reason": f"broken_link:host:{match.group('tail')}",
+            })
+        for match in LINK_TARGET_RE.finditer(line):
+            url = match.group("url")
+            if not url.endswith(TRUNCATED_URL_SUFFIXES):
+                continue
+            tail = ASCII_TAIL_RE.match(line[match.end():])
+            if not tail:
+                continue
+            found.append({
+                "file": path.name,
+                "line": number,
+                "text": line.strip(),
+                "url": url,
+                "reason": f"broken_link:truncated:{tail.group('tail')}",
             })
     return found
 

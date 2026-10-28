@@ -1058,7 +1058,7 @@ $ ray down -y config.yaml
 
 [20] Amazon Web Services, Deﬁne Lambda function handler in Python, [amazon.com](https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html), 2024.
 
-[21] Amazon Web Services, Authenticating using an API gateway method, [amazon.com](https://docs.aws.amazon.com/transfer/latest/userguide/authentication-api-gateway.html#) authentication-custom-ip, 2024.
+[21] Amazon Web Services, Authenticating using an API gateway method, [amazon.com](https://docs.aws.amazon.com/transfer/latest/userguide/authentication-api-gateway.html#authentication-custom-ip), 2024.
 
 [22] A. Solem, contributors, Celery - distributed task queue, [celeryq.dev](https://docs.celeryq.dev/en/stable/), 2024.
 

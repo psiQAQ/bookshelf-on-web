@@ -288,7 +288,12 @@ uv run python scripts/check_site.py .preview --preview --report reports/preview-
 
 ### 新增探测器：`find_broken_links`（含参考文献区的例外说明）
 
-其余探测器一律跳过 `::: {.ref-list}`（那里全是英文条目，按正文口径扫会产生大量噪声），但断链恰好集中在参考文献区，所以 `find_broken_links` 对 `in_ref` **不豁免**：它只认一种形状——`](…)` 之后跟着 `.` 和空格、再接一段看起来像域名续写的裸文本（`apache.org/cookbook/…`、`org/docs/…`、`io/en/latest/…`）。这个形状没有别的解释，不会误伤正常的英文条目。命中记 `broken_link:<续写片段>`，已加入 `STRICT_DETECTORS`，`--check` 会因此失败。
+其余探测器一律跳过 `::: {.ref-list}`（那里全是英文条目，按正文口径扫会产生大量噪声），但断链恰好集中在参考文献区，所以 `find_broken_links` 对 `in_ref` **不豁免**。它认两种形状，命中分别记 `broken_link:host:<续写片段>` 与 `broken_link:truncated:<续写片段>`：
+
+1. **主机名断开**：`](…)` 之后跟着 `.`（可省）和空格，再接一段看起来像域名续写的裸文本（`apache.org/cookbook/…`、`org/docs/…`、`io/en/latest/…`）。
+2. **路径或锚点断开**：链接目标以 `#`、`-`、`_` 收尾，`)` 之后跟着空格再接一段纯 ASCII 片段（`0427/#file-name-convention`、`authentication-custom-ip`、`for_Python_code.html#…`）。合法的 `…/reference.html#` 后面若紧跟标点或中文，没有续写片段，不会被判为断链。
+
+这两种形状都没有别的解释，不会误伤正常的英文条目。两者均纳入 `STRICT_DETECTORS`，`--check` 会因此失败。
 
 ### `find_suspect_code` 的 CJK 跳行写成显式口径
 
@@ -304,14 +309,67 @@ uv run python scripts/check_site.py .preview --preview --report reports/preview-
 - 门禁有效性（用历史版本取证）：`git show c7960b6:…/chapters/{09-performance,12-integrals,13-mean-field}.qmd` 落到临时目录后跑
   `find_formula_remnant()` → 命中 15 条，正是本轮修掉的这些行（13 章 6 条、09 章 2 条、12 章 7 条），说明判据不空转。
 - 第二轮返工的判据同样拿历史版本取证：`git show d9358f3:…/chapters/{06-io,07-cloud,08-ffi,12-integrals}.qmd` 落到临时目录后，`find_formula_remnant()` 命中 2 条（`12-integrals.qmd:2288` 的 `equation_number`、`:2341` 的 `weight_function`），`find_broken_links()` 命中 7 条（06 章 1、07 章 3、08 章 2、12 章 1）；当前仓库两者均为 0。
-- `uv run python -m unittest discover -s tests` → 138 项通过（2 跳过），其中 `FormulaRemnantTests` 9 项（含 `equation_number`、`权函数是` 两个新形态）、新增 `BrokenLinkTests` 3 项（断链命中、完好链接与普通正文不命中、代码围栏与 $$ 块不扫描）。
+- `uv run python -m unittest discover -s tests` → 141 项通过（2 跳过），其中 `FormulaRemnantTests` 9 项（含 `equation_number`、`权函数是` 两个新形态）、`BrokenLinkTests` 6 项（两种断链形状各一、完好链接与普通正文不命中、无续写片段不误报、代码围栏与 $$ 块不扫描）。
 - `uv run python scripts/validate.py --strict` → 0 问题；`uv run python scripts/check_math.py --check` → `allowed_commands=84 chapters=19 findings=0`；
   `uv run python scripts/build.py --quarto .local/tools/bin/quarto.exe` → `delivered=true`；`uv run python scripts/check_site.py dist` → 0 问题。
 - `uv run python scripts/check_math_render.py --root dist --check` → `display 222 inline 53 errors 0 unprocessed 0`。
 
 ### 已知限制
 
-- 判据是「指纹式」的：现在覆盖「`. )`／`,)` 句读」「权函数为/是后不是行内公式」「多个数学符号 + 等号」「句首公式编号」四种形态，以及「链接被切断」这一种断链形状；但如果压平副本恰好既无句读、又无数学符号、也不带编号（例如纯字母串被拆开），仍会漏；断链若切在路径中间而非句点之后（`https://host/dir` + 换行 + `file.html`），形状不同，也仍需人工通读；
+- 判据是「指纹式」的：现在覆盖「`. )`／`,)` 句读」「权函数为/是后不是行内公式」「多个数学符号 + 等号」「句首公式编号」四种形态，以及「链接被切断」的两种形状（主机名断开、目标以 `#`/`-`/`_` 收尾且后跟 ASCII 续写）；但如果压平副本恰好既无句读、又无数学符号、也不带编号（例如纯字母串被拆开），仍会漏；断链若切在目标以普通字母收尾、续写又不是域名形状的位置（例如 `https://host/direc` + 换行 + `tory/file.html`），形状不同，也仍需人工通读；
   这类只能靠人工通读或后续 OCR 逐条比对。
 - 白名单按「行内记号形状」写，属于对合法技术记号的显式豁免；新增章节里出现同形状的合法记号时要补白名单，否则会被误报（这是有意的摩擦）。
 - 本轮补回 (13.20)、(16.24)、(16.25) 三式后展示块由 220 增至 222（`tests/test_quantum_notes.py` 的期望值与注释同步更新），这三式在原书里没有对应公式图，因此没有 `eq-*` 锚点，锚点总数仍是 223。其余章节是否还有「整块公式在提取时丢失、只留压平正文」的情形，本轮只对审计点名的位置做了 PDF 逐页核对，未做全库逐式比对。
+
+## 断链的两种形状与链接地址还原（2026-10-29）
+
+### 问题与根因
+
+原书参考文献排到页边时会把 URL 折断，PDF 文本层在断点两侧各留半截，右边半截既不在链接目标里、也不是 Markdown 语法，于是变成读者可见的裸文本。上一轮只处理了「链接目标停在主机名一半」这一种（`[arrow](https://arrow). apache.org/cookbook/…`），`SPLIT_LINK_RE` 也只认「`)` + `.` + 域名续写」的形状，因此 `broken_links=0` 并不覆盖下面两种：
+
+1. **路径被切断**（`-` / `_` 处折断）：`[python.org](https://peps.python.org/pep-) 0427/#ﬁle-name-convention` —— 点进去是 404，`0427/#ﬁle-name-convention` 是裸文本。
+2. **锚点被切断**（`#` 处折断）：`[amazon.com](…/authentication-api-gateway.html#) authentication-custom-ip` —— 链接落到页首，锚点退化成裸片段。
+
+### 修复（7 条）
+
+| 文件:行 | 修复前（断点形状） | 还原后的目标 |
+| --- | --- | --- |
+| `chapters/01-environment.qmd:1583` | `pep-) 0427/#ﬁle-name-convention` | `https://peps.python.org/pep-0427/#file-name-convention` |
+| `chapters/07-cloud.qmd:1061` | `authentication-api-gateway.html#) authentication-custom-ip` | `…/authentication-api-gateway.html#authentication-custom-ip` |
+| `chapters/09-performance.qmd:2484` | `overloading-guide.html#) implementing-overload-for-numpy-functions` | `…/overloading-guide.html#implementing-overload-for-numpy-functions` |
+| `chapters/11-gpu.qmd:637` | `install.html#) installing-cupy` | `…/install.html#installing-cupy` |
+| `chapters/11-gpu.qmd:639` | `installation.html#) pip-installation-gpu-cuda-installed-via-pip-easier` | `…/installation.html#pip-installation-nvidia-gpu-cuda-installed-via-pip-easier` |
+| `chapters/16-properties.qmd:1280` | `Custom_derivative_rules_) for_Python_code.html#…` | `…/Custom_derivative_rules_for_Python_code.html#use-jax-custom-jvp-to-define-forward-mode-and-indirectly-reverse-mode-rules` |
+| `chapters/16-properties.qmd:1284` | `pytrees.html#) extending-pytrees` | `…/pytrees.html#extending-pytrees` |
+
+标签仍按 `host_label` 的口径用主机名（`python.org`、`amazon.com`、`readthedocs.io`、`cupy.dev`），文献题名不动。地址内的连字字形（`ﬁ`）与折断处丢失的连字符按站点实际 URL 还原成 ASCII：`11-gpu.qmd:639` 原书印的是 `pip-installation-gpu-cuda-…`，站点上该锚点实际是 `pip-installation-nvidia-gpu-cuda-…`；`16-properties.qmd:1280` 原书印的是 `…#use-jax-custom-jvp-to-deﬁne-forward-mode-and-indirectlyreverse-mode-rules`，两处都是换行丢字，按站点 id 还原。
+
+### 链接可用性核对（不只看语法）
+
+7 条目标全部 `curl -s -o /dev/null -w '%{http_code}'` 得 200；再用 curl 取回页面 HTML，抽出所有 `id="…"` 与锚点比对，确认锚点在页面里真实存在：
+
+- `peps.python.org/pep-0427/` → `file-name-convention`
+- `docs.aws.amazon.com/transfer/latest/userguide/authentication-api-gateway.html` → `authentication-custom-ip`
+- `numba.readthedocs.io/en/stable/extending/overloading-guide.html` → `implementing-overload-for-numpy-functions`
+- `docs.cupy.dev/en/stable/install.html` → `installing-cupy`
+- `jax.readthedocs.io/en/latest/installation.html` → `pip-installation-nvidia-gpu-cuda-installed-via-pip-easier`
+- `jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html` → `use-jax-custom-jvp-to-define-forward-mode-and-indirectly-reverse-mode-rules`
+- `jax.readthedocs.io/en/latest/pytrees.html` → `extending-pytrees`
+
+### 门禁扩展
+
+`scripts/audit_prose.py` 的 `find_broken_links` 改为两种形状并列识别：形状一保留原 `SPLIT_LINK_HOST_RE`（`)` + 可选 `.` + 空格 + 域名续写），形状二新增 `LINK_TARGET_RE` + `TRUNCATED_URL_SUFFIXES = ("#", "-", "_")` + `ASCII_TAIL_RE`（`)` 之后是纯 ASCII 续写片段，允许数字开头、含 `#`/`_`/`/`/`.`/`-`）。理由：链接目标以 `#`、`-`、`_` 收尾本身就说明它在词中断开，此时后面跟着 ASCII 片段没有别的解释；而合法的 `…/reference.html#` 后面紧跟标点或中文时没有续写片段，不会被误判。
+
+两处不误报的对照留在测试里：`chapters/06-io.qmd:708` 的 `[github.io](…/reference.html#), 2024.` 与 `01-environment.qmd:1493` 的 `https://<intermediate_server_ip>:18888`（原书占位符）都保持 0 命中。
+
+### 本次核验
+
+- 判据取证：`git show de935e0:…/chapters/{01-environment,07-cloud,09-performance,11-gpu,16-properties}.qmd` 落到临时目录后跑 `find_broken_links()` → 命中 7 条（`broken_link:truncated:` 7 条，续写片段与修复清单一一对应）；当前仓库 `broken_links=0`。
+- `uv run python -m unittest discover -s tests` → 141 项通过（2 跳过）；`BrokenLinkTests` 6 项覆盖两种形状、完好链接、无续写片段、代码围栏与 `$$` 块。
+- `uv run python scripts/audit_prose.py` → `bare_urls=0 suspect_code=0 english_residue=0 formula_remnant=0 broken_links=0 prose_in_fence=100`，`--check` 退出 0。
+- `uv run python scripts/validate.py --strict` → 0 问题；`check_math.py --check` → `allowed_commands=84 chapters=19 findings=0`；`build.py`（预览与正式）→ `delivered=true`；`check_site.py` 两处 → 0 问题；`check_math_render.py --root dist --check` → `display 222 inline 53 errors 0 unprocessed 0`。
+
+### 已知限制
+
+- 断链判据仍是指纹式的：目标以普通字母收尾、续写又不是域名形状的折断（`https://host/direc` + 换行 + `tory/file.html`）识别不到；本轮用 `](…)` 之后「空白 + 含 `#`/`_`/`/` 或数字开头的 ASCII 片段」的宽扫描对全书复核过一遍，命中 0，但这不是证明。
+- 链接可用性是**核对时**的结论：站点改版会挪动锚点，仓库里没有周期性外链检查；若后续有 CI 预算，可把 `check_links.py` 式的定时任务接上。

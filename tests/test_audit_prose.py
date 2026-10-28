@@ -197,7 +197,10 @@ class BrokenLinkTests(unittest.TestCase):
             "[28] The Ray Team, Ray documentation, [docs.ray](https://docs.ray). io/en/latest/cluster.html, 2024.\n\n"
             ":::\n"
         )
-        self.assertEqual([hit["reason"] for hit in hits], ["broken_link:apache.org", "broken_link:io/"])
+        self.assertEqual(
+            [hit["reason"] for hit in hits],
+            ["broken_link:host:apache.org", "broken_link:host:io/"],
+        )
 
     def test_intact_links_and_plain_prose_are_ignored(self):
         text = (
@@ -209,12 +212,49 @@ class BrokenLinkTests(unittest.TestCase):
         )
         self.assertEqual(self.scan(text), [])
 
+    def test_truncated_anchor_is_reported(self):
+        # 历史样本：目标以 `#` 收尾，锚点退化成裸 ASCII 文本（读者落到页首）。
+        hits = self.scan(
+            "::: {.ref-list}\n\n"
+            "[9] CuPy Developers, Installing CuPy, [cupy.dev](https://docs.cupy.dev/en/stable/install.html#) installing-cupy, 2024.\n\n"
+            ":::\n"
+        )
+        self.assertEqual([hit["reason"] for hit in hits], ["broken_link:truncated:installing-cupy"])
+
+    def test_truncated_path_is_reported(self):
+        # 历史样本：目标以 `-` / `_` 收尾（路径被换行切断），续写以数字或下划线开头。
+        hits = self.scan(
+            "::: {.ref-list}\n\n"
+            "[36] D. Holth, Pep 427, [python.org](https://peps.python.org/pep-) 0427/#file-name-convention, Sep. 2012.\n\n"
+            "[12] The JAX authors, Custom derivative rules, [readthedocs.io]"
+            "(https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_) "
+            "for_Python_code.html#use-jax-custom-jvp, 2024.\n\n"
+            ":::\n"
+        )
+        self.assertEqual(
+            [hit["reason"] for hit in hits],
+            ["broken_link:truncated:0427/#file-name-convention", "broken_link:truncated:for_Python_code.html#use-jax-custom-jvp"],
+        )
+
+    def test_truncated_suffix_without_continuation_is_ignored(self):
+        # 目标以 `#` 收尾但后面紧跟标点或中文：无续写片段，阅读无害，不报。
+        text = (
+            "::: {.ref-list}\n\n"
+            "[9] B. Pritchard, Basis set exchange api documentation, "
+            "[github.io](https://molssibse.github.io/basis_set_exchange-apidoc/reference.html#), 2024.\n\n"
+            ":::\n"
+            "该页面见 [参考手册](https://example.org/manual.html#)，另有说明。\n"
+        )
+        self.assertEqual(self.scan(text), [])
+
     def test_code_fence_and_math_block_are_ignored(self):
         text = (
             "```bash\ncurl -O https://example.org/x\n```\n"
             "$$\na = b qquad (1.1)\n$$\n"
         )
         self.assertEqual(self.scan(text), [])
+        # 同样的断链形状写在围栏里不报（围栏内容不是 Markdown 链接）。
+        self.assertEqual(self.scan("```text\n[cupy.dev](https://docs.cupy.dev/install.html#) installing-cupy\n```\n"), [])
 
 
 class BookReportTests(unittest.TestCase):

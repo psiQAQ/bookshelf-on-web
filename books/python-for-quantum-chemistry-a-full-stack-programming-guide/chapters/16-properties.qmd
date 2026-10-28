@@ -1277,11 +1277,11 @@ VJP 自定义规则可直接用于反向传播，而 JVP 自定义则涉及线�
 
 [11] The JAX authors, Custom derivative rules for JAX-transformable Python functions, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html), 2024.
 
-[12] The JAX authors, Use jax.custom_jvp to deﬁne forward-mode (and, indirectly, reverse-mode) rules, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_) for_Python_code.html#use-jax-custom-jvp-to-deﬁne-forward-mode-and-indirectlyreverse-mode-rules, 2024.
+[12] The JAX authors, Use jax.custom_jvp to deﬁne forward-mode (and, indirectly, reverse-mode) rules, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html#use-jax-custom-jvp-to-define-forward-mode-and-indirectly-reverse-mode-rules), 2024.
 
 [13] The JAX authors, jax.custom_jvp with nondiff_argnums, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html#jax-custom-jvp-withnondiff-argnums), 2024.
 
-[14] The JAX authors, Extending PyTrees, [readthedocs.io](https://jax.readthedocs.io/en/latest/pytrees.html#) extending-pytrees, 2024.
+[14] The JAX authors, Extending PyTrees, [readthedocs.io](https://jax.readthedocs.io/en/latest/pytrees.html#extending-pytrees), 2024.
 
 [15] The JAX authors, Implicit function differentiation of iterative implementations, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html#implicit-function-differentiation-of-iterative-implementations), 2024.
 

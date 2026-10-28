@@ -61,9 +61,6 @@ ax.errorbar(x,y , yerr=yerr)
 # Vertical bars
 np.random.seed(1)
 c a t=( 'A', 'B', 'C')
-```
-
-```python
 weights = np.random.rand(2,3 )
 ax.bar(np.arange(.15, .85, .3) , weights[0] , width=.1)
 ax.bar(np.arange(.15, .85, .3)+.1, weights[1], width=.1)

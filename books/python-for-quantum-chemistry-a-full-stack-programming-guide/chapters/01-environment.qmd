@@ -954,9 +954,6 @@ keywords = ["pychem-book", "ldd"]
 dependencies = [
 "pipreqs>=0.4", "click"
 ]
-```
-
-```text
 [project.scripts]
 pyldd = "pyldd.cli:main"
 ```

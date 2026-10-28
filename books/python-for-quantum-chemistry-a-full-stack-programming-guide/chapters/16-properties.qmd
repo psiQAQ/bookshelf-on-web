@@ -57,9 +57,6 @@ mol = Molecule.from_xyz(xyz)
 gtos = mol.assign_basis({ 'N': '6-31g'})
 model = RHF(mol, gtos)
 wfn = scf_iter(model)
-```
-
-```python
 boundary = [[-5., 5.], [-5., 5.], [-5., 5.]]
 mesh = [20,2 0, 20]
 mgrids = np.mgrid[[ slice(r[0], r[1],m *1j) for r,m in zip (boundary, mesh)
@@ -886,9 +883,6 @@ def f_jvp(primals, tangents):
 def f(a,x , b):
     ...
 @f.defjvp
-```
-
-```python
 def f_jvp(a,b , primals, tangents):
     ...
     return primals_out, jvp_product

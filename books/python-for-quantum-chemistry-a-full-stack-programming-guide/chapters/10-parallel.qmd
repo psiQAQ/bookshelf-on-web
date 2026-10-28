@@ -1048,9 +1048,6 @@ omp_sched = { # refer to the omp_sched_t enum in OpenMP documentation
 chunk_size = 8
 # The path should be replaced with the actual path on the user's system.
 gomp = ctypes.CDLL( 'path/to/libgomp')
-```
-
-```python
 gomp.omp_set_num_threads(4)
 gomp.omp_set_schedule(omp_sched['guided'], chunk_size)
 ```

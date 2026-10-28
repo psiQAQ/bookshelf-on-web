@@ -15,7 +15,7 @@ from scripts.publishing import ROOT, load_yaml
 
 BOOK = ROOT / "books/python-for-quantum-chemistry-a-full-stack-programming-guide"
 EMPTY_ITEM = re.compile(r"^\s{0,6}[-*+]\s*$")
-OUTPUT_MARKER = re.compile(r"^(In \[|Out\[|CPU times|Wall time|Wall clock|%\d|\d+(\.\d+)? seconds)")
+OUTPUT_MARKER = re.compile(r"^(In \[|Out\[|CPU times|Wall time|Wall clock|RuntimeWarning|Name:|%\d|\d+(\.\d+)? seconds)")
 DANGLING_TAIL = re.compile(r"^\s{0,6}[-*+]\s+.*(?:例如|包括|如下|分别|由)\s*[-–—]\s*$")
 
 
@@ -135,6 +135,22 @@ class ChapterMarkupTests(unittest.TestCase):
                 if continues:
                     offenders.append(f"{chapter}:{close + 1}")
         self.assertEqual(offenders, [], "code block split by a blank line")
+    def test_no_adjacent_fences_without_prose(self):
+        """两个围栏之间只剩空行时，除输出块外都属于同一段代码被切断。"""
+        offenders = []
+        for chapter in self.chapters:
+            lines = self.read(chapter)
+            fences = [index for index, line in enumerate(lines) if line.strip().startswith("```")]
+            for position in range(0, len(fences) - 3, 2):
+                close, reopen = fences[position + 1], fences[position + 2]
+                if any(line.strip() for line in lines[close + 1:reopen]):
+                    continue
+                first = next((line for line in lines[reopen + 1:fences[position + 3]] if line.strip()), "")
+                if OUTPUT_MARKER.match(first.strip()):
+                    continue
+                offenders.append(f"{chapter}:{close + 1}")
+        self.assertEqual(offenders, [], "adjacent code fences without prose")
+
     def test_text_fences_carry_no_python_code(self):
         """标成 text 的围栏里若是可解析的 Python 语句，就是语言标记错了（§3.4.3 的同类问题）。"""
         offenders = []

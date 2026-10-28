@@ -31,7 +31,7 @@ $$
 
 []{#eq-12-001}
 
-rA = r − R A. (12.2) N(α,l) 是径向部分 r e 的归一化因子。这里，l 称为 GTO 函数的角动量。Ylm(r) 是实值固体谐函数（solid harmonics）。高斯基函数和积分的其他记号约定，以及本章 Python 代码中使用的变量，汇总于表 12.1。
+$N(\alpha,l)$ 是径向部分 $r^{l}e^{-\alpha r^{2}}$ 的归一化因子。这里，$l$ 称为 GTO 函数的角动量。$Y_{lm}(\mathbf{r})$ 表示实值固体谐函数（solid harmonics）。高斯基函数和积分的其他记号约定，以及本章 Python 代码中使用的变量，汇总于表 12.1。
 式 (12.1) 中的归一化因子 N(α,l) 可以计算为：
 
 $$
@@ -134,9 +134,6 @@ Basis Set Exchange [1]（BSE）数据库是获取量子化学基组的标准资�
 ```python
 from functools import lru_cache
 import basis_set_exchange as bse
-```
-
-```python
 @dataclass
 class CGTO:
     ... # Code omitted for brevity
@@ -1311,9 +1308,6 @@ Ycd * hrr[:,:,:,kx,ky ,kz ,lx,ly-1,lz])
 ( hrr[: ,:,:,kx,ky,kz+1,lx,ly,lz-1] +
 Zcd * hrr[:,:,:,kx,ky,kz ,lx ,ly,lz-1])
 eri = np.zeros((lij+1, lij+1, lij+1, lj+1, lj+1, lj+1, lk+1, lk+1 , lk+1 , ll+1 , ll+1, ll+1))
-```
-
-```text
 eri[:,:,:,0,0,0] = hrr[:,:,:,:lk+1,:lk+1,:lk+1]
 for jx,j y,j z in product(range(lj+1),range(lj+1),range(lj+1)):
     for ix in range (lij+1-jx):
@@ -2011,9 +2005,6 @@ for i in range (nfi): # (8)
 for j in range (nfj): # (9)
 for k in range (nfk): # (10)
 for l in range (nfl): # (11)
-```
-
-```python
 out[i0+i,j0+j,k0+k,l0+l] += fac * buf[i,j,k,l] # (12)
 ```
 JIT 编译大幅降低了第 (3) 行至第 (12) 行代码中嵌套循环的开销和数据移动的成本。此外，为了尽量减少内存管理开销，我们将输出 ERI 张量直接传递给 contracted_ERI 函数，如第 (1) 行所示。这一改动使计算结果能够直接写入输出张量中。对于满足条件 li + lj + lk + ll < 6 的 ERI 计算，直接执行代码展开，如第 (2) 行所示。如果不满足该条件，contracted_ERI 函数将自动回退到经 Numba 编译的 Rys 算法。
@@ -2079,9 +2070,6 @@ C -1.2095 -0.7442 0.0000
 C 0.0000 -1.3990 0.0000
 C 1.2095 -0.7442 0.0000
 C 1.2095 0.7442 0.0000
-```
-
-```python
 H 0.0000 2.4939 0.0000
 H -2.1994 1.3083 0.0000
 H -2.1994 -1.3083 0.0000

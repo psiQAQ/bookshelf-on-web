@@ -1036,9 +1036,6 @@ def f():
     cos = math.cos
     return [cos(i) for i in range (10000)]
 # Inefficient
-```
-
-```python
 def f():
     return [math.cos(i) for i in range (10000)]
 ```
@@ -1384,9 +1381,6 @@ llvm.set_option('', '--debug-only=loop-vectorize')
 ```python
 import numpy as np
 from matmul import matmul_nn_tiling
-```
-
-```python
 def find_instr(func, keyword, sig=0, limit=5):
     count = 0
     for l in func.inspect_asm(func.signatures[sig]).split('\n'):

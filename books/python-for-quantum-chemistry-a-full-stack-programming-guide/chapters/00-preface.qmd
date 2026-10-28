@@ -75,7 +75,7 @@ Python 属于解释型语言，执行底层基础操作需要额外开销，特�
 
 ## 从哪里获取支持信息
 
-本书使用的所有代码示例均可在 GitHub 仓库 https:// github.com/sunqm/py-qc-book/ 中获取。我们鼓励读者在该仓库的 GitHub 问题讨论区发表意见和提出问题。
+本书使用的所有代码示例均可在 [sunqm/py-qc-book 仓库](https://github.com/sunqm/py-qc-book/) 中获取。我们鼓励读者在该仓库的 GitHub 问题讨论区发表意见和提出问题。
 
 ## 致谢
 

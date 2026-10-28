@@ -307,9 +307,6 @@ import threading
 from contextlib import contextmanager
 #Implement the readahead function using the producer-consumer model.
 @contextmanager
-```
-
-```python
 def readahead(h5obj, tasks, maxsize=3):
     assert maxsize > 0
     cache = {}

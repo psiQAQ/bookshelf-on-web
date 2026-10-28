@@ -218,9 +218,6 @@ task_definition:
 py_config = yaml.safe_load(config)
 ecs_client = boto3.client( 'ecs')
 response = ecs_client.register_task_definition( **py_config['task_definition'])
-```
-
-```python
 print(yaml.dump(response))
 ```
 如果之前已经创建了采用 FARGATE 模式的基本 ECS 集群，可以从任务配置中删除设置 "resourceRequirements"。
@@ -262,9 +259,6 @@ networkConfiguration:
 {%- endfor %}
 ''')
 ec2_client = boto3.client( 'ec2')
-```
-
-```python
 resp = ec2_client.describe_subnets()
 subnets = [v[ 'SubnetId'] for v in resp['Subnets']]
 config = task_config_tpl.render( task='dft-demo', job_id= '219a3d6c', threads=2, subnets=subnets)
@@ -357,14 +351,11 @@ DFT 执行器的 start.sh 脚本执行以下操作：1. 从 S3 存储中获取�
 
 下面给出 start.sh 的一种可能实现：
 
-```yaml
+```bash
 #!/bin/bash
 # Set the default time limit to 1 hour
 TIMEOUT=${1:-3600}
 S3PATH=$1
-```
-
-```text
 aws s3 copy $S3PATH/job.py ./
 if (timeout $TIMEOUT python job.py > job.log); then
   aws s3 copy job.log $S3PATH/
@@ -465,9 +456,6 @@ fut.set_result(result) # (2)
 from contextlib import contextmanager
 from threading import Thread
 from xmlrpc.server import SimpleXMLRPCServer
-```
-
-```python
 @contextmanager
 def rpc_service(funcs):
     '''Creates an RPC service in background'''
@@ -713,9 +701,6 @@ import pyscf
 from gpu4pyscf.dft import RKS
 from celery import Celery
 import boto3
-```
-
-```python
 app = Celery( 'dft-pes', broker= 'sqs://')
 s3 = boto3.client( 's3')
                                         @app.task

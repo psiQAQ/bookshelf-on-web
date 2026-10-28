@@ -22,7 +22,7 @@ SCHEMA = 1
 
 CJK_RE = re.compile(r"[\u4e00-\u9fff]")
 # URL 在中文与全角标点处截断，避免把后续正文吞进链接
-URL_RE = re.compile(r"https?://[^\s\u4e00-\u9fff（）［］｛｝「」『』【】《》〈〉，。、；：！？…]+")
+URL_RE = re.compile(r"https?://\s?[^\s\u4e00-\u9fff（）［］｛｝「」『』【】《》〈〉，。、；：！？…]+")
 URL_TRAILING = ".,;:!?)]}'\""
 LETTERS_RE = re.compile(r"[A-Za-z]")
 # 公式残片里的数学符号：命中就跳过，避免把排版拆散的公式当成代码

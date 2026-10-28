@@ -376,9 +376,6 @@ Create a Python function to query basis sets from bse:
     elements=n
 - Let the server return basis set in json format.
 - Timeout 10s.
-```
-
-```python
 - Handle error in response.
 - Use the following signature
 '''

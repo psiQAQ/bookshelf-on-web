@@ -315,7 +315,7 @@ def readahead(h5obj, tasks, maxsize=3):
     cache = {}
     # This mutex lock is shared by the prefetch function and loader.
     # It must be held whenever mutating the cache.
-mutex = threading.RLock() # (1)
+    mutex = threading.RLock() # (1)
     not_full = threading.Condition(mutex)
     not_empty = threading.Condition(mutex)
     terminate = False
@@ -326,7 +326,7 @@ mutex = threading.RLock() # (1)
             # Use a condition variable to block the producer.
             # To prevent the cache storing too many items.
             data = np.asarray(h5obj[task])
-            with not_full
+            with not_full:
                 cache[task] = data
                 not_empty.notify()
                 while len (cache) >= maxsize:
@@ -343,8 +343,8 @@ mutex = threading.RLock() # (1)
         return data
     yield loader
     terminate = True
-    with not_full
-# release any locks in prefetch, then the terminate condition in prefetch function will be triggered
+    with not_full:
+        # release any locks in prefetch, then the terminate condition in prefetch function will be triggered
         not_full.notify()
     daemon.join()
 ```
@@ -470,9 +470,6 @@ def _inject_readahead(f, keyword):
 @contextmanager
 def readahead(h5obj, tasks, maxsize=3):
     assert maxsize > 0
-```
-
-```python
 cache = {}
     mutex = threading.RLock()
 not_full = threading.Condition(mutex)
@@ -511,9 +508,6 @@ if cache[key].refcount <= 0: # (3)
             cache.pop(key)
             not_full.notify()
     return data
-```
-
-```text
     yield Loader()
     terminate = True
     with not_full
@@ -576,9 +570,6 @@ class Delta:
  def __repr__(self):
      ops = '' .join(op.label for op in self.indices)
      return f'Delta({ops})'
-```
-
-```python
 class Tensor:
     def __init__(self, indices: List[FieldOpeartor], label=None):
         self.indices = indices
@@ -992,9 +983,6 @@ def _contract_fgroup_fgroup(fgroup1: FOpGroup, fgroup2: FOpGroup) -> List[
             factor = (math.comb(degen1,k ) * math.comb(degen2,k )
                       * math.factorial(k) * (-1)**((degen1-k)*degen2))
             yield _fgroup2str(fgroup2[k:], factor, deltas, fgroup1[k:])
-```
-
-```text
     yield String([fgroup2],( -1)**(degen1*degen2), remaining=[fgroup1])
 ```
 在 FieldOperator 和 FOpGroup 的四个收缩函数基础上，我们可以实现 _contract_fop_string 函数。

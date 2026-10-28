@@ -1046,9 +1046,6 @@ $ cat fcopy.pyf
 python module fcopy ! in
 interface ! in :fcopy
         subroutine dcopy(len_bn,inarray,outarray) ! in :fcopy:fcopy.f90
-```
-
-```text
             integer*4, optional,intent(in),check(len(inarray)>=len_bn), depend(inarray) :: len_bn= len(inarray)
             real*8 dimension(len_bn),intent( in) :: inarray
             real*8 dimension(len_bn),intent(out),depend(len_bn) :: outarray

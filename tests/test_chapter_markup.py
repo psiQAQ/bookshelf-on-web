@@ -15,6 +15,7 @@ from scripts.publishing import ROOT, load_yaml
 
 BOOK = ROOT / "books/python-for-quantum-chemistry-a-full-stack-programming-guide"
 EMPTY_ITEM = re.compile(r"^\s{0,6}[-*+]\s*$")
+OUTPUT_MARKER = re.compile(r"^(In \[|Out\[|CPU times|Wall time|Wall clock|%\d|\d+(\.\d+)? seconds)")
 DANGLING_TAIL = re.compile(r"^\s{0,6}[-*+]\s+.*(?:例如|包括|如下|分别|由)\s*[-–—]\s*$")
 
 
@@ -107,7 +108,7 @@ class ChapterMarkupTests(unittest.TestCase):
         self.assertEqual(offenders, [], "code block split by a blank line")
 
     def test_no_code_block_split_by_a_blank_line(self):
-        """闭合围栏 + 空行 + 新围栏，且上一行以冒号/运算符结尾或括号未闭合，说明一块代码被切成两块。"""
+        """闭合围栏与下一个开围栏之间只有空行，且内容明显是同一段代码时，说明被切断。"""
         offenders = []
         for chapter in self.chapters:
             lines = self.read(chapter)
@@ -119,21 +120,21 @@ class ChapterMarkupTests(unittest.TestCase):
                     continue
                 last = next((line.rstrip() for line in reversed(lines[fences[position]:close]) if line.strip()), "")
                 first = lines[reopen + 1] if reopen + 1 < len(lines) else ""
+                if OUTPUT_MARKER.match(first.strip()):
+                    continue  # REPL 提示或计时输出是独立的输出块
                 unbalanced = sum(last.count(c) for c in "([{") > sum(last.count(c) for c in ")]}")
                 tail = last[-1] in ",+*-/=&|(" if last else False
-                langs = (lines[fences[position]].strip()[3:].strip(), lines[reopen].strip()[3:].strip())
-                indented = first[:1] == " " and bool(first.strip())
                 continues = (
                     last.endswith(":")
                     or unbalanced
                     or tail
-                    or first.strip()[:1] in (")]", "}")
-                    or (indented and langs == ("python", "python"))
+                    or first.strip()[:1] in (")", "]", "}")
+                    or last[:1] == " "
+                    or (first[:1] == " " and bool(first.strip()))
                 )
                 if continues:
                     offenders.append(f"{chapter}:{close + 1}")
         self.assertEqual(offenders, [], "code block split by a blank line")
-
     def test_text_fences_carry_no_python_code(self):
         """标成 text 的围栏里若是可解析的 Python 语句，就是语言标记错了（§3.4.3 的同类问题）。"""
         offenders = []

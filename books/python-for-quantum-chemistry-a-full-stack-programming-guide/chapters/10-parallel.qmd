@@ -438,9 +438,6 @@ def df_warmup_scheduler(queue,f n, tasks, args, max_workers=8):
     def fn_with_future(task):
         return fn(_ensure(task), *args)
     future_buf = deque()
-```
-
-```text
     for task in tasks:
         future_buf.append(queue.submit(fn_with_future, task))
         if len (future_buf) > max_workers:
@@ -470,9 +467,6 @@ def dynamic_scheduler(queue,f n, tasks, args, max_workers=8):
     '''Dynamic scheduler submits tasks only if they are ready to proceed'''
     def fn_with_future(task):
         return fn(_ensure(task), *args)
-```
-
-```text
     future_buf = deque()
     for task in tasks:
 # Block the submission to prevent the task queue being filled with too many operations of the same type
@@ -937,9 +931,6 @@ def socket_transfer(size, count):
     r, w = socket.socketpair()
     communicate(socket_send, socket_recv,( r, w), (size, count))
     r.close()
-```
-
-```text
     w.close()
 ```
 使用共享内存（shm）传输 NumPy 数组时，最好只传输数组的数据缓冲区，并在客户端重建数组。这可以通过在服务器端将数据复制到共享内存来实现。在客户端，共享内存直接映射到 NumPy 数组，从而无需在重建数组时再次复制数据。
@@ -971,9 +962,6 @@ def shm_file_recv(shm_file, size, count, guard):
         with guard.for_recv():
             shm = SharedMemory(name=shm_file)
             buf = np.ndarray(shape=(size,), dtype= 'c', buffer=shm.buf)
-```
-
-```python
 def shm_file_send(shm_file, size, count, guard):
     data = np.ones(shape=(size,), dtype= 'c')
     for _ in range (count):
@@ -1219,9 +1207,6 @@ def wait():
  func = None
  while True:
      label, args = comm.recv(tag=TAG)
-```
-
-```text
      match label:
          case 'Terminate': return
          case 'Func': func = args

@@ -331,9 +331,6 @@ def view_contour(mole,f n, contours=5, resolution=(80,80,80)):
     xmin, ymin, zmin = xyz_center - box_size/2
     xmax, ymax, zmax = xyz_center + box_size/2
     grids = np.array(np.mgrid[xmin:xmax: complex(0, nx), ymin:ymax:complex(0, ny), zmin:zmax:complex(0, nz)])
-```
-
-```text
     v = fn(mole, grids)
     mlab.contour3d(grids[0], grids[1], grids[2],v , contours=contours, transparent=True)
     mlab.view(75,0 ,7 )
@@ -518,9 +515,6 @@ def bse_to_gto_shell(shell):
     coefficients = shell[ 'coefficients']
     spdf_shell = ''.join(spdfg[l] for l in shell['angular_momentum'])
     return gto_shell_tpl.render( spdf_shell=spdf_shell, exponents=exponents, coefficients=coefficients, len=len, zip=zip)
-```
-
-```python
 def gto_session(basis_name, element):
     bse_data = get_basis(basis_name, element)
     bse_data = uncontract_general(bse_data)

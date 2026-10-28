@@ -255,13 +255,10 @@ Matrix([
 ```
 符号表达式的 .subs() 方法可用于替换、求值、转换或简化符号表达式。它根据字典中定义的规则替换符号。例如，下面的例子展示如何使用 .subs() 方法按照仿射变换转换多项式表达式。
 
-```text
+```python
 In [2]: x,y , z = sympy.symbols( ' xyz ' )
         P=. 5 * x**2+. 5 * y**2
         T = sympy.Matrix([[.7,. 1,0 ., 0.], [0.,. 9,-.2, .5], [.3,0 .,. 8, 0.]])
-```
-
-```python
         xprime, yprime, zprime = T * Matrix([x,y ,z , 1])
         Ptransformed = P.subs({x: xprime, y: yprime, z: zprime}, simultaneous=True)
         print(Ptransformed.expand())

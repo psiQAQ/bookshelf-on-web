@@ -91,9 +91,6 @@ class CGTO:
   - 0.03349460
   - 0.23472695
   - 0.81375733
-```
-
-```text
   coordinates:
   -0 .
   -0 .
@@ -459,9 +456,6 @@ def primitive_overlap(li: int, lj: int,a i : float, aj: float, Ra: np.ndarray, R
     aij = ai + aj
     Rab = Ra - Rb
     Rp = (ai * R a+a j * Rb) / aij
-```
-
-```python
 Rpa = Rp - Ra
 theta_ij = ai * aj / aij
 @lru_cache(1000)
@@ -1278,9 +1272,6 @@ for iz in range (l4+1-kz): # (4)
                 elif k y>0 :
                     val = Yjl * trr[ix,iy,iz,kx,ky-1,kz]
                     val -= aij/akl * trr[ix,iy+1,iz,kx,ky-1,kz]
-```
-
-```text
                     if ky > 1:
                         val += (ky-1)*.5/akl * trr[ix,iy,iz,kx,ky-2,kz]
                     if iy > 0:
@@ -1557,9 +1548,6 @@ Zcd * hrr[ix,iy,iz,kx,ky,kz ,lx ,ly,lz-1])
     for ly in range (1, ll+1-lx):
         for lz in range (ll+1-ly):
             l s u m=l x+l y+l z
-```
-
-```text
             for kx,k y,k z in reduced_cart_iter(lkl-lsum):
                 hrr[ix,iy,iz,kx,ky,kz,lx,ly,lz] = \
 ( hrr[ix ,iy,iz,kx,ky+1,kz,lx,ly-1,lz] +
@@ -1915,7 +1903,7 @@ if __name__ == '__main__':
 请注意，展开高角动量基函数可能生成大量 C 代码。为了在代码体积和计算效率之间取得平衡，通常只需对低角动量 GTO 进行展开，例如 li + lj + lk + ll < 6。
 我们可以用 C 语言创建一个驱动函数，根据每个基函数的角动量选择适当的展开后的 C 函数。
 
-```yaml
+```python
 driver_tpl = jinja2.Template( '''
 int run_eri_unrolled(double *eri, int li, int lj, int lk, int ll, double ai, double aj, double ak, double al, double *Ra, double *Rb, double *Rc, double *Rd, void ( *boys_fn)(int, double, double []))
 {
@@ -1929,9 +1917,6 @@ int run_eri_unrolled(double *eri, int li, int lj, int lk, int ll, double ai, dou
 {%- if li + lj + lk + ll <= max_roots %}
 {%- set ijkl = li *l1**3+l j *l1**2+l k *l 1+l l% }
     case {{ ijkl }}: run_eri_{{ li }}{{ lj }}{{ lk }}{{ ll }}(eri,a i,a j, ak,a l,R a,R b,R c,R d, boys_fn); break;
-```
-
-```python
 {%- endif %}
 {%- endfor %}
 {%- endfor %}

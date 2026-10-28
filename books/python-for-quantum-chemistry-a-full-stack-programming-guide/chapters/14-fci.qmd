@@ -495,9 +495,6 @@ def make_Elt(norb, nelec):
             sign1, strK1 = strI.annihilate(q)
             for p in uoccs:
                 sign2, strJ = strK1.create(p)
-```
-
-```python
 # Applying a^\dagger_p a_q on address of strI leads to to address of the output string (strJ)
                 table_k.append([p,q , strings_address[strJ], sign1 *sign2])
         for p in occs:
@@ -817,9 +814,6 @@ def build_d(task, fciwfn, norb, Elt):
         for a,i ,J , sign in tab:
             for K in range (ma):
                 d[i,a,K,I] += sign * fciwfn[Ka0+K,J]
-```
-
-```python
 return d, task # (1)
 @numba.njit(nogil=True)
 def dot_v(d_task, v):

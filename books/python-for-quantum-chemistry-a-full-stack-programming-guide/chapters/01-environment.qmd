@@ -589,9 +589,6 @@ http://localhost:8080
 [distutils]
 index-servers =
     local
-```
-
-```text
 [local]
 repository: http://localhost:8080
 username: placeholder
@@ -1336,9 +1333,6 @@ class KohnShamDFTMixin:
 class SCFOptimizationMixin:
     def check_convergence(self):
         print('Default convergence checker' )
-```
-
-```python
 class DFTOptimizationMixin(SCFOptimizationMixin):
     def check_convergence(self):
         super().check_convergence()

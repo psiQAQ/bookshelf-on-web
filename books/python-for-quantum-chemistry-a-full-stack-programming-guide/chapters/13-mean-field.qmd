@@ -126,54 +126,51 @@ def scf_iter(model, wfn: SCFWavefunction = None) -> SCFWavefunction:
 
 ```python
 class RHF:
- def __init__(self, mol, gtos):
-     self.mol = mol
-     self.gtos = gtos
-     self.threshold = 1e-6
- @lru_cache
- def get_hcore_s(self):
-     mol = self.mol
-```
-
-```python
-s = overlap_MD.get_matrix(self.gtos, overlap_MD.primitive_overlap)
-t = overlap_MD.get_matrix(self.gtos, overlap_MD.primitive_kinetic)
-v= sum( -z * coulomb_1e_MD.get_matrix(self.gtos, Rc)
-        for z,R c in zip (mol.nuclear_charges, mol.coordinates))
-return t+v,s
-def get_initial_guess(self):
-h, s = self.get_hcore_s()
-return self.make_wfn(*self.eigen(h, s))
-@property
-@lru_cache
-def eri_tensor(self):
-return eri_OS_unrolled(self.gtos)
-@lru_cache(2) # (1)
-def get_jk(self, wfn):
-dm = wfn.density_matrices
-j = einsum( 'ijkl,lk->ij', self.eri_tensor, dm)
-k = einsum( 'ijkl,jk->il', self.eri_tensor, dm)
-return j,k
-def get_veff(self, wfn):
-j, k = self.get_jk(wfn)
-return j-k * .5
-def get_fock(self, wfn, hcore, s):
-veff = self.get_veff(wfn)
-return hcore + veff
-def eigen(self, fock, overlap):
-e, c = scipy.linalg.eigh(fock, overlap)
-return c,e
-def make_wfn(self, orbitals, energies):
-return RestrictedCloseShell(self, orbitals, energies)
-def check_convergence(self, wfn, wfn_old):
-t1 = t2 = self.threshold * 1e3
-t3 = self.threshold
-dm = wfn.density_matrices
-dm_old = wfn_old.density_matrices
-return (np.linalg.norm(dm - dm_old) < t1
-    and np.linalg.norm(self.orbital_gradients(wfn)) < t2
-            and abs (self.total_energy(wfn)
-                    - self.total_energy(wfn_old)) < t3)
+    def __init__(self, mol, gtos):
+        self.mol = mol
+        self.gtos = gtos
+        self.threshold = 1e-6
+    @lru_cache
+    def get_hcore_s(self):
+        mol = self.mol
+        s = overlap_MD.get_matrix(self.gtos, overlap_MD.primitive_overlap)
+        t = overlap_MD.get_matrix(self.gtos, overlap_MD.primitive_kinetic)
+        v= sum( -z * coulomb_1e_MD.get_matrix(self.gtos, Rc)
+                for z,Rc in zip(mol.nuclear_charges, mol.coordinates))
+        return t+v,s
+    def get_initial_guess(self):
+        h, s = self.get_hcore_s()
+        return self.make_wfn(*self.eigen(h, s))
+    @property
+    @lru_cache
+    def eri_tensor(self):
+        return eri_OS_unrolled(self.gtos)
+    @lru_cache(2) # (1)
+    def get_jk(self, wfn):
+        dm = wfn.density_matrices
+        j = einsum( 'ijkl,lk->ij', self.eri_tensor, dm)
+        k = einsum( 'ijkl,jk->il', self.eri_tensor, dm)
+        return j,k
+    def get_veff(self, wfn):
+        j, k = self.get_jk(wfn)
+        return j-k * .5
+    def get_fock(self, wfn, hcore, s):
+        veff = self.get_veff(wfn)
+        return hcore + veff
+    def eigen(self, fock, overlap):
+        e, c = scipy.linalg.eigh(fock, overlap)
+        return c,e
+    def make_wfn(self, orbitals, energies):
+        return RestrictedCloseShell(self, orbitals, energies)
+    def check_convergence(self, wfn, wfn_old):
+        t1 = t2 = self.threshold * 1e3
+        t3 = self.threshold
+        dm = wfn.density_matrices
+        dm_old = wfn_old.density_matrices
+        return (np.linalg.norm(dm - dm_old) < t1
+                and np.linalg.norm(self.orbital_gradients(wfn)) < t2
+                and abs(self.total_energy(wfn)
+                        - self.total_energy(wfn_old)) < t3)
     def total_energy(self, wfn):
         hcore, s = self.get_hcore_s()
         j, k = self.get_jk(wfn)
@@ -189,7 +186,7 @@ return (np.linalg.norm(dm - dm_old) < t1
         occ = wfn.occupancies
         return fock_mo[occ!=0, occ[:,None]==0].ravel() * 2.
 class RestrictedCloseShell(SCFWavefunction):
-    def __init__(self,m f, orbitals, energies):
+    def __init__(self,mf, orbitals, energies):
         self.gtos = mf.gtos
         self.orbitals = orbitals
         self.energies = energies
@@ -1100,9 +1097,6 @@ class DIIS:
         obj.keys = attrs[ 'keys']
         obj.head = attrs[ 'head']
         return obj
-```
-
-```python
 class _HashableVector:
     def __init__(self, vec: Union[np.ndarray, h5py.Dataset]):
         self.data = vec
@@ -1137,9 +1131,6 @@ class RHFVeffClient(VeffClient):
     def accept(self, mf):
         j, k = mf.get_jk()
         return j-. 5 * k
-```
-
-```python
 class KSVeffClient(VeffClient):
  def accept(self, mf):
      ...

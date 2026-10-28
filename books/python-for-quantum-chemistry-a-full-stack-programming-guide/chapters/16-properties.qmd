@@ -733,9 +733,6 @@ def update_CCD_amplitudes(H,t 2, level_shift=0):
  eijab = e_o + e_o[:,None] - e_v[:,None,None] - e_v[:,None,None,None]
  t2out = t2out / eijab
  return t2out
-```
-
-```python
 def get_CCD_corr_energy(H, t2):
     return .25 * einsum('ijab,abij->',H [ 'oovv'], t2)
 def mp2(H):
@@ -821,9 +818,6 @@ def mo_integrals(coords, mf: pyscf.scf.hf.RHF):
 def mo_integrals_jvp(mf, primals, tangents):
     coords, = primals
     primals_out = mo_integrals(coords, mf)
-```
-
-```python
 mol = mf.mol
 disp, = tangents
 assert disp.shape == (mol.natm,3 )
@@ -923,9 +917,6 @@ cycle=19, E(CCD)=Traced<ConcreteArray(-109.03387828514111, dtype=float64)>
     pval = (ShapedArray(float64[]), None)
     recipe = JaxprEqnRecipe(eqn_id=<object object at 0x7f50e407bc40>, in_tracers=(Traced<ShapedArray(...
   primal = Array(-2.76017473e-05, dtype=float64)
-```
-
-```text
   tangent = Traced<ShapedArray(float64[])>with<JaxprTrace(level=1/0)> with
     pval = (ShapedArray(float64[]), None)
     recipe = JaxprEqnRecipe(eqn_id=<object object at 0x7f50e407bda0>, in_tracers=(Traced<ShapedArray(...
@@ -1008,9 +999,6 @@ def _Mole_flatten(mol):
     children = (coords,)
     metadata = (mol,[ 'coords'])
     return children, metadata
-```
-
-```python
 jax.tree_util.register_pytree_node( pyscf.gto.mole.Mole, _Mole_flatten, _tree_unflatten)
 ```
 由于这两个类已注册为 JAX PyTree 节点，因此不再需要将 coords 变量显式传递给 CCD 程序。我们只需将 mf 对象传递给 CCD 程序，因为它通过 mol 对象携带可微属性 coords。CCD_solve 和 mo_integrals 的函数签名已更新，以反映这一变化。
@@ -1143,9 +1131,6 @@ def fixed_point(H, conv_tol=1e-5, max_cycle=100):
 def fp_fwd(H, conv_tol=1e-4, max_cycle=100): # (1)
     t2 = fixed_point(H, conv_tol, max_cycle)
     return t2,( H, t2)
-```
-
-```python
 def fp_bwd(conv_tol, max_cycle, res, cotangent): # (2)
     H, t2_star = res
     L = solve_lambda(H, t2_star, cotangent)

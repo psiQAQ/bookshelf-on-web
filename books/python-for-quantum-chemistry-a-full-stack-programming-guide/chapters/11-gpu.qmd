@@ -435,9 +435,6 @@ def kernel_v3(output, eri, dm):
                 for j in range (BLOCK):
                     s += eri[i0+i,j0+j,k,l] * dm_t[i,j]
     output[k, l ]=s
-```
-
-```python
 def get_j_v3(eri, dm):
     n = dm.shape[0]
     assert n % BLOCK == 0

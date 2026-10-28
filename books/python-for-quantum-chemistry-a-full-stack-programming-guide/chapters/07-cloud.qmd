@@ -182,9 +182,6 @@ taskDefinition:
       resourceRequirements:
         - type: GPU
           value: "1"
-```
-
-```text
   requiresCompatibilities:
     - EC2
   memory: "4GB"

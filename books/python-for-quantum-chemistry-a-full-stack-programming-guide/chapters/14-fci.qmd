@@ -83,9 +83,6 @@ class String:
         assert orbital_id not in self.occupied_orbitals
         return String(self.occupied_orbitals.union([orbital_id]))
     def __hash__(self):
-```
-
-```python
         return hash (tuple(self.occupied_orbitals))
     def __eq__(self, other):
         return self.occupied_orbitals == other.occupied_orbitals
@@ -104,7 +101,6 @@ class String:
         sign = (-1) ** sum(i > orbital_id for i in self.occupied_orbitals)
         return sign, String(self.occupied_orbitals.union([orbital_id]))
 ```
-† †
 将二次量子化算符作用于 String 对象时，可能产生正号或负号。在 String 表示中，我们约定算符按轨道索引从低到高的顺序依次作用，例如
 为确定符号正负，我们只需统计索引大于目标轨道索引的算符数量。该数量表示重排二次量子化算符所需的置换次数，亦即符号翻转次数。所需的符号调整逻辑均由 annihilate 和 create 方法负责处理。
 给定轨道数和占据数后，可以通过程序生成所有可能的 CI 串。这就是下面的 make_strings 函数的功能，它与第 9 章介绍的 dets 函数基本相同。
@@ -584,9 +580,6 @@ def make_Elt(norb, nelec):
      for q,p in product(occs , uoccs):
          binJ = binI ^ (1 <<q )^( 1< <p )
          if p>q :
-```
-
-```python
                 sign = sign_cache[p] * sign_cache[q]
             else:
                 sign = -sign_cache[p] * sign_cache[q]
@@ -598,9 +591,7 @@ def make_Elt(norb, nelec):
 ## 14.6 优化内存效率
 
 第 14.5 节的 compute_hc 函数分配了两个临时四指标张量 d 和 g。这些临时变量占用大量内存。例如，对一个包含 14 个轨道和 7α + 7 β 个电子的体系，FCI 波函
-数包含 = 11778624 个系数，占用约 100 MB 内存。程序执行期间观察到的实际内存占用接近 40 GB。主要原因是 d 张量和 g 张量，两者
-=
-的规模均为 × 142 2.31 × 109。
+数包含 $\inom{14}{7}^{2} = 11778624$ 个 float64 系数，占用约 100 MB 内存。程序执行期间观察到的实际内存占用接近 40 GB。主要来源是 d 张量和 g 张量，二者的规模均为 $\inom{14}{7}^{2} 	imes 142 = 2.31 	imes 10^{9}$。
 为降低内存使用，我们必须分块切片处理 d 和 g 张量。在此算法中，必须审慎处理 Elt 查找表给出的地址，因其可能越界超出当前分块边界。例如，在语句
 
 ```text

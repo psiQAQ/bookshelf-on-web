@@ -227,9 +227,6 @@ def computation_task(buffer):
 def prefetch(buffer):
     global buf_empty
     while True:
-```
-
-```text
         with mutex:
             if not buf_empty:
                 ready_for_write.wait()
@@ -332,9 +329,6 @@ def pipeline(ops, tasks):
             return [queue.submit(ops[1], task.result()) for task in proc0()
     ]
         def proc2():
-```
-
-```python
             return [queue.submit(ops[2], task.result()) for task in proc1()
     ]
         ...
@@ -358,9 +352,6 @@ def scheduler(queue,f n, tasks):
 def pipeline(ops, tasks):
     with ThreadPoolExecutor() as queue:
         def proc0():
-```
-
-```python
             return scheduler(queue, ops[0], tasks)
         def proc1():
             return scheduler(queue, ops[1], proc0())
@@ -389,9 +380,6 @@ def pipeline(ops, tasks):
                 def proc2():
                     return scheduler(queue3, ops[2], proc1())
                 with ThreadPoolExecutor() as ...:
-```
-
-```python
                     ...
                     return [future.result() for future in proc_last()]
 ```

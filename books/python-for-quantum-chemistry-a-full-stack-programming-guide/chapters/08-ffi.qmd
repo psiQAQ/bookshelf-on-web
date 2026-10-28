@@ -94,7 +94,7 @@ C 语言标准。不同的 C 和 C++ 编译器对半精度类型的支持可能�
 
 #### 8.2.1.3 字符串
 
-Python、C 与 C++ 对字符串类型的规范截然不同。Python 字符串采用 Unicode 编码，而 C 字符串则表示为以 NUL 字符（ ）结尾的 char 数组。因此，无法在 C 或 C++ 函数中直接操纵 Python 字符串对象。只有 Python 的 bytes 或 bytearray 对象能与 C 的 char 类型直接兼容。要在 C/C++ 中处理 Python 字符串，可通过 .encode() 与 .decode() 方法在 Unicode 与 bytes 之间相互转换。
+Python、C 与 C++ 对字符串类型的规范截然不同。Python 字符串采用 Unicode 编码，而 C 字符串则表示为以 NUL 字符（`\0`）结尾的 char 数组。因此，无法在 C 或 C++ 函数中直接操纵 Python 字符串对象。只有 Python 的 bytes 或 bytearray 对象能与 C 的 char 类型直接兼容。要在 C/C++ 中处理 Python 字符串，可通过 .encode() 与 .decode() 方法在 Unicode 与 bytes 之间相互转换。
 
 ```text
 a_str = 'py-str'
@@ -293,9 +293,6 @@ cdef unsigned long _comb_int_long(unsigned long N, unsigned long k):
     nterms = min(k,N-k )
     v a l=1
     for j in xrange (1, nterms + 1):
-```
-
-```python
         # Overflow check
         if val > ULONG_MAX // (M - j):
             return 0
@@ -308,7 +305,6 @@ cdef unsigned long _comb_int_long(unsigned long N, unsigned long k):
 ```python
 cdef extern from "..."
 ```
-。
 编译 Cython 程序时，编译器只处理 .pyx 文件。与编译 C/C++ 源代码类似，编译器会沿着 -I 选项或 cythonize() 中的 include_path 选项指定的路径，以及 sys.path 中的路径，搜索所依赖的 .pxd 文件和 C/C++ 头文件。
 将 Cython 代码编译为 Python 扩展有两种常见方法。
 

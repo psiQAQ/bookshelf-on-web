@@ -587,7 +587,6 @@ $$
 
 []{#eq-12-026}
 
-− θij X
 这些递推关系可以转换为递归动态规划函数。
 
 ```python
@@ -614,9 +613,6 @@ E_cart = np.zeros((li+1, lj+1, li+lj+1, 3))
 for i in range (li+1):
 for j in range (lj+1):
 for t in range (li+lj+1):
-```
-
-```python
                 E_cart[i,j,t] = get_E(i,j ,t )
     return E_cart
 ```
@@ -940,9 +936,6 @@ return 0.
 if i= =k= =0 :
 return np.ones((3, nroots))
 if k= =0 :
-```
-
-```python
             return ((Rpa - Rpq *theta/aij*rt) * trr(i-1,k )+
                     (i-1)*.5/aij*(1-theta/aij*rt) * trr(i-2, k))
         if i= =0 :
@@ -1075,9 +1068,6 @@ def get_eri_tensor(f, gtos):
     nao = offsets[-1]
     buf = np.empty((nao, nao, nao, nao))
     for i, bas_i in enumerate (gtos):
-```
-
-```python
         i0, i1 = offsets[i], offsets[i+1]
         for j, bas_j in enumerate (gtos):
             j0, j1 = offsets[j], offsets[j+1]
@@ -1261,9 +1251,6 @@ for ix in range (l4+1):
                     val = Xpa *vrr[ni,i x-1,i y, iz]
                     val -= theta/aij *Xpq*vrr[ni+1,i x-1,i y, iz]
                     if ix > 1:
-```
-
-```text
                         val += (ix-1)*.5/aij * (vrr[ni,i x-2,i y, iz] -
                                         theta/aij*vrr[ni+1,i x-2,i y,i z ] )
                     vrr[ni,ix,iy,iz] = val
@@ -1394,9 +1381,6 @@ for j in range (lj+1):
         for l in range (ll+1):
             for k in range (lkl+1-l):
                     if j>0 :
-```
-
-```text
                     hrr[i,j,k,l] = hrr[i+1,j-1,k,l] + Rab *hrr[i,j-1,k,l]
                 elif l>0 :
                     hrr[i,j,k,l] = hrr[i,j,k+1,l-1] + Rcd *hrr[i,j,k,l-1]
@@ -1513,9 +1497,6 @@ def get_R_tensor(l, theta, Rpq):
                 Rt[n,t,u,v] = (t-1) * Rt[n+1,t-2,u,v]
                 Rt[n,t,u,v] += Rpq[0] * Rt[n+1,t-1,u,v]
             elif t= =1 :
-```
-
-```text
                 Rt[n,1,u,v] = Rpq[0] * Rt[n+1,0,u,v]
             ...
 ```
@@ -1742,9 +1723,6 @@ Numba 对 Python 类的支持有限，这意味着涉及 Python 类的函数无�
     ('angular_momentum', numba.int64), ('exponents', numba.float64[::1]), ('coefficients', numba.float64[::1]), ('coordinates', numba.float64[::1]), ('norm_coefficients', numba.float64[::1]), ])
 class jitCGTO:
     def __init__(self, angular_momentum: int, exponents: np.ndarray, coefficients: np.ndarray, coordinates: np.ndarray):
-```
-
-```text
         self.angular_momentum = angular_momentum
         self.exponents = exponents
         self.coefficients = coefficients
@@ -2290,9 +2268,6 @@ Xcd * hrr[kx ,ky ,kz,lx-1,ly,lz])
 def hrr_address(lk, ll):
     lkl = lk + ll
     def addr(kx,k y,k z,l x,l y, lz):
-```
-
-```python
         k_idx = (kx * (lkl+1) + ky) * (lkl+1) + kz
         return ((k_idx * (ll+1) + lx) * (ll+1) + ly) * (ll+1) + lz
     adr0, adr1,a d r 2=[ ],[ ],[ ]
@@ -2441,7 +2416,6 @@ $$
 
 []{#eq-12-046}
 
-∑
 该权函数的矩由 Boys 函数给出。
 
 $$
@@ -2553,9 +2527,6 @@ def schmidt_orth(moments, nroots):
     '''
     s = np.zeros((nroots+1, nroots+1))
     for j in range (nroots+1):
-```
-
-```python
         for i in range (nroots+1):
             s[i,j] = moments[i+j]
     return np.linalg.inv(np.linalg.cholesky(s))
@@ -2614,9 +2585,6 @@ def find_polyroots(cs, nroots):
      return np.array([-cs[0] / cs[1]])
  A = mp.matrix(nroots)
  for m in range (nroots-1):
-```
-
-```python
         A[m+1,m] = mp.mpf(1)
     for m in range (nroots):
         A[0,m] = -cs[nroots-1-m] / cs[nroots]
@@ -2644,7 +2612,6 @@ $$
 
 []{#eq-12-053}
 
-∑
 当 t 足够大时，我们可以按如下方式近似该积分：
 
 $$
@@ -2654,8 +2621,7 @@ $$
 
 []{#eq-12-054}
 
-∞ √ ∞ ′
-通过变量代换 x x，我们可以将该积分与厄米求积公式（Hermite quadrature）联系起来。当 t = 50 时，dx 和 dx 之间的差仅为 7.49e-18。因此，我们用以下代码近似 Rys 求积公式：
+通过变量代换 $x' = \sqrt{t}\,x$，我们可以将该积分与厄米求积公式（Hermite quadrature）联系起来。当 t = 50 时，$\int_{0}^{1}e^{-tx^{2}}dx$ 与 $\int_{0}^{\infty}e^{-tx^{2}}dx$ 之间的差仅为 7.49e-18。因此，我们用以下代码近似 Rys 求积公式：
 
 ```python
 import scipy.special

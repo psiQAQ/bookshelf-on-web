@@ -323,9 +323,6 @@ def main():
             mod = importlib.import_module(name)
             print(mod)
         except Exception:
-```
-
-```python
             print(f'Module {name} not found' )
 if __name__ == '__main__':
     main()
@@ -1167,9 +1164,6 @@ services:
   runner:
     image: local-gpu-runner:latest
     volumes:
-```
-
-```text
          - /data/github-runner:/home/runner
          - /data/modelA:/data
        command: /home/runner/run.sh
@@ -1311,9 +1305,6 @@ class HartreeFock(SelfConsistentField):
     pass
 class KohnShamDFT(SelfConsistentField):
     def check_convergence(self):
-```
-
-```python
         print('Convergence checker for DFT' )
         converged = ...
         return super ().check_convergence() and converged

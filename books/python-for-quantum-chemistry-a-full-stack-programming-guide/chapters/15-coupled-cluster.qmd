@@ -639,9 +639,6 @@ def commutable(op1: FieldOpeartor, op2: FieldOpeartor):
 def _contract_fop_fop( fop1: FieldOperator, fop2: FieldOperator) -> List[String]:
     output = []
     if not commutable(fop1, fop2):
-```
-
-```python
         output.append(String([],1 , [Delta([fop1, fop2])]))
     output.append(String([fop2],- 1, remaining=[fop1]))
     return output
@@ -683,9 +680,6 @@ def _contract_fop_string( fop: FieldOperator, string: String) -> List[String]:
     factor = string.factor
     deltas = string.deltas
     if len (operators) == 0:
-```
-
-```python
         return [String(operators, factor, deltas, [fop]+remaining)]
     # C(x,a 1 *a2*...) = C(x, a1) *a2*a3*...
 # = delta(x ,a1)*a2*a3*... + C(remaining,a 2 *a3*...)

@@ -1562,9 +1562,6 @@ def schmidt_orth(double[:, ::1] s):
         for k in prange(j, schedule= 'static', nogil=True):
             dot_kj = 0.
             for i in range (n):
-```
-
-```python
                 dot_kj = dot_kj + cs[k,i] * s[j,i]
             fac -= dot_kj * dot_kj
             dot_kj_buf[k] = dot_kj
@@ -1754,9 +1751,6 @@ CPU times: user 369 ms, sys: 1.11 s, total: 1.48 s
 Wall time: 6.66 s
 In [3]: %%time
         with h5py.File('test_chunk.h5', 'w') as f:
-```
-
-```text
             d = f.create_dataset( 'test', (20000,20000), dtype= 'f8', chunks=(200,200))
             d[:,:600] = 1.
 CPU times: user 321 ms, sys: 56.9 ms, total: 378 ms
@@ -1902,9 +1896,6 @@ def save_sparse(h5obj, a):
         h5obj['col'] = a.col
         h5obj['shape'] = a.shape
     else:
-```
-
-```python
         raise NotImplementedError
 def load_sparse(h5obj):
     assert 'data' in h5obj
@@ -1937,9 +1928,6 @@ with h5py.File('test_block.h5', 'r+') as f:
         f[f'test/{task_id}'] = data
     with ThreadPoolExecutor() as worker:
         for task_id in range (100):
-```
-
-```python
             # code to generate data
             data = np.ones((10000,100))
             # save data asynchronously
@@ -2222,9 +2210,6 @@ class Determinant:
  def __init__(self, occupied_orbitals: List):
      self.occupied_orbitals = occupied_orbitals
  def __repr__(self):
-```
-
-```python
         return f'Det{self.occupied_orbitals}'
     @classmethod
     def vacuum(cls):

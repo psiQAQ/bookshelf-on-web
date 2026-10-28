@@ -210,9 +210,6 @@ In [11]: np.save(np.random.rand(2,2 , 3), 'rand.npy')
 ```python
 In [12]: np.savez( 'multi.npz', arr1=np.random.rand(2,2 , 3), arr2=np.eye(4), index=np.arange(5))
          with np.load('rand.npz') as npz_ar:
-```
-
-```python
              print(npz_ar['arr1'].shape)
              print(npz_ar['arr2'].shape)
              print(npz_ar['index'].shape)

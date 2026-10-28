@@ -89,7 +89,7 @@ from yaml import _yaml
 
 使用 importlib.import_module 函数可在运行时按需动态加载模块。执行语句
 
-```text
+```python
 b = importlib.import_module( 'a')
 ```
 加载模块，与标准 import 语句的效果相同：
@@ -204,9 +204,6 @@ from . import module_b # (1)
 class A:
     pass
 def factory():
-```
-
-```bash
     return module_b.B()
 $ cat module_b.py
 from . import module_a
@@ -289,7 +286,7 @@ Python 中的这一特性被称为命名空间包（namespace package），允�
 
 python -m 命令是启用 CLI 的最简单方法。它只要求在模块中定义代码块
 
-```text
+```python
 if __name__ == '__main__':
     ...
 ```
@@ -1479,9 +1476,6 @@ def query_gpt(request):
     ...
     try:
         response = openai.Completion.create( engine=model, prompt=request, max_tokens=150
-```
-
-```text
         )
     ...
 ```

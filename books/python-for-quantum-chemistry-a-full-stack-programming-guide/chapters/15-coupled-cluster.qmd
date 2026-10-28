@@ -440,7 +440,7 @@ def _search_tasks(f, keyword):
 ```
 获得 I/O 操作列表后，我们接着通过 update_CCD_amplitudes 函数的 AST 注入 readahead 函数。根据 with 语句的 AST 文档，以下代码块
 
-```text
+```python
 with f() as var:
     code_block
 ```
@@ -757,9 +757,6 @@ def hamiltonian(n, factor):
 def excitation(n):
     return _make_operator(.25, 'V'*n+ 'O'*n ,f 'T{n}')
 def deexcitation(n):
-```
-
-```python
     return _make_operator(.25, 'O'*n+ 'V'*n ,f 'T{n}')
 def bra_projector(n):
     bra_tensor, bra = _make_operator(.25, 'O'*n+ 'V'*n)
@@ -1105,13 +1102,13 @@ F2 += 0.03125 * einsum("lkcd,ablk,cdji->baij", h2_oovv,t 2, t2)
 ```
 由于我们假定左矢投影算符（bra projectors）具有反对称性，这意味着在实际 CCD 程序中使用 F2 张量之前，应先对其进行反对称化处理。
 
-```text
+```python
 F2 = F2 - F2.transpose(0,1,3,2)
 F2 = F2 - F2.transpose(1,0,2,3)
 ```
 此外，尽管我们没有使用任何耦合簇（coupled cluster，CC）图解法来参数化正规序哈密顿量（normal-ordered Hamiltonian），仍然可以在结果中找到它的踪迹。借助双电子张量的反对称性，可以在以下项中辨认出 Fock 矩阵：
 
-```text
+```python
 F2 += -0.5 * einsum("ac,cbji->abij", h1_vv, t2)
 F2 += 0.5 * einsum("akkc,cbji->abij", h2_voov, t2)
 F2 += 0.5 * einsum("ki,abjk->baji", h1_oo, t2)

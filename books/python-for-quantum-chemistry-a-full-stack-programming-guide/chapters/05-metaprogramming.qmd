@@ -238,7 +238,7 @@ def optimize(fn):
 符号计算常用于推导公式。Python 软件包 SymPy [3] 为微分、积分、代数操作、求解方程以及处理复函数等任务提供符号数学功能。
 符号是符号计算的核心元素。在 SymPy 中，sympy.Symbol 类是表示符号变量的基本数据结构。符号变量由字符串名称标识。符号的命名规则遵循 Python 变量名的规则，可以由字母、数字和下划线组成。除了使用 sympy.Symbol 类实例化符号变量， sympy.symbols 函数也常用于一次创建多个符号变量。例如，以下语句都是定义符号变量的有效方法：
 
-```text
+```python
 x,y , z = sympy.symbols( 'x y z' )
 x,y , z = sympy.symbols( 'x,y1,z2_')
 x,y , z = sympy.symbols( 'x y,_z1')
@@ -297,7 +297,7 @@ Out[2]:
 ```
 定积分使用以下方式计算：
 
-```text
+```python
 sympy.integrate(expr, (variable, lower_limit, upper_limit))
 ```
 指定积分限时，SymPy 中的变量 sympy.oo 表示 ∞。对于多变量积分，可以向 sympy.integrate 函数传递多个积分限。SymPy 还提供常见的积分变换。这些功能可在 sympy.integrals 模块中找到，包括：

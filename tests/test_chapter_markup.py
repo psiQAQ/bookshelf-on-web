@@ -7,6 +7,7 @@ shows empty items or a sentence that stops mid-way. These checks fail if such a
 hole is reintroduced.
 """
 
+import ast
 import re
 import unittest
 
@@ -105,30 +106,55 @@ class ChapterMarkupTests(unittest.TestCase):
                     offenders.append(f"{chapter}:{index + 1}")
         self.assertEqual(offenders, [], "code block split by a blank line")
 
-    def test_no_fence_gap_splitting_a_block(self):
-        """一个代码块的闭合围栏后紧跟空行与新围栏（上一行以冒号结尾、下一段继续缩进）说明被切成两块。"""
+    def test_no_code_block_split_by_a_blank_line(self):
+        """闭合围栏 + 空行 + 新围栏，且上一行以冒号/运算符结尾或括号未闭合，说明一块代码被切成两块。"""
         offenders = []
         for chapter in self.chapters:
             lines = self.read(chapter)
-            for index, line in enumerate(lines):
-                if line.strip() != "```":
+            fences = [index for index, line in enumerate(lines) if line.strip().startswith("```")]
+            for position in range(0, len(fences) - 3, 2):
+                close, reopen = fences[position + 1], fences[position + 2]
+                gap = lines[close + 1:reopen]
+                if any(line.strip() for line in gap) or len(gap) > 2:
                     continue
-                previous = next((l.rstrip() for l in reversed(lines[:index]) if l.strip()), "")
-                probe = index + 1
-                blanks = 0
-                while probe < len(lines) and not lines[probe].strip():
-                    blanks += 1
-                    probe += 1
-                if probe >= len(lines) or not lines[probe].strip().startswith("```"):
-                    continue
-                if blanks > 2:
-                    continue
-                following = lines[probe + 1] if probe + 1 < len(lines) else ""
-                if not previous.endswith(":"):
-                    continue
-                indent = len(following) - len(following.lstrip())
-                if indent >= 8 or following.startswith(("return", ")", "]", "...")):
-                    offenders.append(f"{chapter}:{index + 1}")
+                last = next((line.rstrip() for line in reversed(lines[fences[position]:close]) if line.strip()), "")
+                first = lines[reopen + 1] if reopen + 1 < len(lines) else ""
+                unbalanced = sum(last.count(c) for c in "([{") > sum(last.count(c) for c in ")]}")
+                tail = last[-1] in ",+*-/=&|(" if last else False
+                continues = last.endswith(":") or unbalanced or tail or first.strip()[:1] in (")]", "}")
+                if continues:
+                    offenders.append(f"{chapter}:{close + 1}")
         self.assertEqual(offenders, [], "code block split by a blank line")
+
+    def test_text_fences_carry_no_python_code(self):
+        """标成 text 的围栏里若是可解析的 Python 语句，就是语言标记错了（§3.4.3 的同类问题）。"""
+        offenders = []
+        for chapter in self.chapters:
+            lines = self.read(chapter)
+            index = 0
+            while index < len(lines):
+                line = lines[index]
+                if line.strip() != "```text":
+                    index += 1
+                    continue
+                close = index + 1
+                while close < len(lines) and lines[close].strip() != "```":
+                    close += 1
+                body = lines[index + 1:close]
+                if not any(re.match(r"^\s*\[[\w.\-]+\]\s*$", item) for item in body):
+                    try:
+                        tree = ast.parse(chr(10).join(body))
+                    except SyntaxError:
+                        tree = None
+                    if tree is not None and any(
+                        isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.For, ast.While, ast.If,
+                                          ast.With, ast.Assign, ast.Import, ast.ImportFrom, ast.Return,
+                                          ast.AugAssign, ast.Try))
+                        for node in tree.body
+                    ):
+                        offenders.append(f"{chapter}:{index + 1}")
+                index = close + 1
+        self.assertEqual(offenders, [], "python code marked as text")
+
 if __name__ == "__main__":
     unittest.main()

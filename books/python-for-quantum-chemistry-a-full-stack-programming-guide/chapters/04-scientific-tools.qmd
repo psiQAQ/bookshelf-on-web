@@ -85,12 +85,12 @@ SciPy 支持多种稀疏矩阵存储格式，各格式对应适用的场景。CS
 
 scipy.sparse 为每种存储格式都提供了专用类，它们均继承自 scipy.sparse.spmatrix 类。各格式都可以通过对应的类来实例化，调用 scipy.sparse.{format}_array 或 scipy.sparse.{format}_matrix，其中占位符 {format} 替换为前述格式即可。例如，若需实例化 CSR 矩阵，可以直接由稠密矩阵构建，
 
-```text
+```python
 scipy.sparse.csr_array(np.eye(4))
 ```
 或从另一个稀疏矩阵构造，
 
-```text
+```python
 scipy.sparse.csr_array(scipy.sparse.eye(4, format='coo'))
 ```
 给定数据列表及其行索引和列索引，我们可以如下创建稀疏矩阵：
@@ -110,7 +110,7 @@ scipy.sparse.csr_array((data, indices, indptr), shape=(4, 4))
 ```
 不同存储格式之间的转换可以通过两种方法完成。一种是使用每个稀疏矩阵类的.to{format}()方法。另一种是使用前面讨论过的类实例化函数{format}_array 或{format}_matrix。例如，下面的代码片段展示了从 COO 格式到其他格式的转换。
 
-```text
+```python
 a_coo = scipy.sparse.coo_array(np.eye(4))
 # convert to dense numpy array
 a_coo.toarray()
@@ -429,7 +429,7 @@ $ pip install mkl_fft mkl mkl -service
 ```
 Intel FFT 库使用起来很直接。它不像 FFTW 那样需要复杂配置，例如创建或缓存计划（参见第 4.4.3 节）。此外，内存对齐并非强制要求，尽管对齐内存可以提高性能。mkl_fft.interfaces.scipy_fft 模块遵循 scipy.fft 和 numpy.fft 的 API。下面的代码示例说明如何使用兼容接口从 SciPy 和 NumPy 无缝过渡到 mkl_fft。
 
-```text
+```python
 y = scipy.fft.rfft(x, workers=4)
 y = mkl_fft.interfaces.scipy_fft.rfft(x, workers=4)
 y = numpy.fft.rfft(x)
@@ -466,7 +466,7 @@ x[:] = np.random.random(shape)
 ```
 或者，可以使用
 
-```text
+```python
 x = pyfftw.byte_align(x)
 ```
 来确保数组的内存对齐。只有输入数组中的数据没有正确对齐时，这条语句才会创建新数组。

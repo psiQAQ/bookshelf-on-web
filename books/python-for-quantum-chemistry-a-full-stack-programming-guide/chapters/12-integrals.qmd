@@ -566,9 +566,6 @@ def get_R_tensor(l, theta, Rpq):
     for t in range (l+1):
         for u in range (l+1):
             for v in range (l+1):
-```
-
-```python
 Rt[t,u,v] = get_R(0,t ,u ,v )
 return Rt
 ```
@@ -1601,14 +1598,14 @@ Xcd * hrr[ix,iy,iz,kx ,ky ,kz,lx-1,ly,lz])
 
 建议将所有 NumPy ufunc 和广播代码替换为显式的 for 循环迭代，尤其是嵌套循环中的操作。例如，在前面演示的重叠积分迭代代码中，
 
-```text
+```python
 for j in range (lj+1):
     for i in range (lij+1-j):
         S[i,j] = S[i+1,j-1] + Rab * S[i,j-1]
 ```
 算术计算和赋值涉及三个笛卡尔方向上的广播操作。这段广播代码应使用循环块改写。
 
-```text
+```python
 for j in range (lj+1):
     for i in range (lij+1-j):
         for m in range (3):
@@ -1649,9 +1646,6 @@ for i in range (lij+1):
         I4dz[i,0,k,l,n] = I4dz[i,0,k+1,l-1,n] + Zcd * I4dz[i,0,k,l-1,n]
 for j in range (lj):
   for i inrange(lij-j):
-```
-
-```text
     for k in range (lk+1):
       for l in range (ll+1):
         for n in range (nroots):
@@ -1665,7 +1659,7 @@ for j in range (lj):
 
 访问高维 NumPy 数组中的元素时，需要多次整数乘法和加法，将数组下标转换为内存物理地址。这种转换可能带来显著开销，尤其是对维数很多的数组。例如，第 12.1.4.2 节所述 OS 方案中的 hrr 张量是一个九维数组。其内存地址计算如下
 
-```text
+```python
 sum(hrr.shape[i] * hrr.strides[i] for i in range(9))
 ```
 其中涉及 9 次乘法和 8 次加法。为了减少这一开销，一种有效方法是使用较低维的中间张量，如下例中的 sub 张量。
@@ -1691,9 +1685,6 @@ for ix in range (lij+1):
             for kz in range (lkl+1-lsum-kx-ky):
               sub[kx,ky,kz,lx,ly,lz] = \
 ( sub[kx ,ky,kz+1,lx,ly,lz-1] +
-```
-
-```text
 Zcd * sub[kx,ky,kz ,lx ,ly,lz-1])
       for ly in range (1,l l + 1-lx):
         for lz in range (ll+1-lx-ly):
@@ -1796,9 +1787,6 @@ v a l=f 'vrr_{n}_{ix}{iy}{iz}'
 if i z>0 :
  print(f'double {val} = Zpa *({vrr(n,ix,iy,iz-1)}) - theta/aij *({vrr(n+1, ix,iy,iz-1)});')
  if iz > 1:
-```
-
-```python
       print(f'{val} += ({iz}-1)*.5/aij * (({vrr(n,ix,iy,iz-2)}) - theta/aij
     *({vrr(n+1,ix,iy,iz-2)}));')
     return val
@@ -1839,9 +1827,6 @@ def trr(n,i x,i y,i z,k x,k y, kz):
       print(f'{val} += {(ky-1)*.5}/akl * ({trr(n,ix,iy,iz,kx,ky-2,kz)} -
     theta_akl*({trr(n+1,ix,iy,iz,kx,ky-2,kz)}));')
     if iy > 0:
-```
-
-```python
       print(f'{val} += {iy *.5}/aa * ({trr(n+1,ix,iy-1,iz,kx,ky-1,kz)});')
     return val
   if k x>0 :
@@ -1922,9 +1907,6 @@ double _boys[32];
 boys_fn({{ order + 1 }}, theta_r2, _boys);
 ''')
 def unrolling(li,l j,l k,l l ) :
-```
-
-```python
   print(c_tpl.render(name=f'run_eri_{li}{lj}{lk}{ll}', order=li+lj+lk+ll))
   n=0
   for i, (ix,i y, iz) in enumerate (iter_cart_xyz(li)):
@@ -2061,7 +2043,7 @@ for k in range (nfk): # (10)
 for l in range (nfl): # (11)
 ```
 
-```text
+```python
 out[i0+i,j0+j,k0+k,l0+l] += fac * buf[i,j,k,l] # (12)
 ```
 JIT 编译大幅降低了第 (3) 行至第 (12) 行代码中嵌套循环的开销和数据移动的成本。此外，为了尽量减少内存管理开销，我们将输出 ERI 张量直接传递给 contracted_ERI 函数，如第 (1) 行所示。这一改动使计算结果能够直接写入输出张量中。对于满足条件 li + lj + lk + ll < 6 的 ERI 计算，直接执行代码展开，如第 (2) 行所示。如果不满足该条件，contracted_ERI 函数将自动回退到经 Numba 编译的 Rys 算法。
@@ -2299,14 +2281,14 @@ def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
 
 即使数据位于高速 L1 缓存中，内存访问的延迟也绝不可忽略。在递推关系（RR）迭代中，可以通过复用存储在寄存器中的数据来降低内存访问开销。例如，重叠积分函数包含以下水平递推关系（HRR）迭代结构：
 
-```text
+```python
 for j in range (1, lj+1):
     for i in range (lij+1-j):
         S[i,j] = Xab * S[i,j-1] + S[i+1,j-1]
 ```
 为计算一个元素 S[i,j]，这段代码需要两次内存访问来加载 S[i,j-1] 和 S[i+1,j-1]。S[i+1,j-1] 可以在相邻迭代中复用，从而将内存访问次数减少 50%。这项优化将代码转换为
 
-```text
+```python
 for j in range (1, lj+1):
     s0 = S[0,j-1]
     for i in range (lij+1-j):
@@ -2961,9 +2943,6 @@ def transform_outcore(gtos, mo):
       with h5py.File(f'{tmpdir}/eri.h5', 'w') as f:
         yield f.create_dataset('eri', (nmo_pair, nao_pair), dtype='f8', chunks=(320,320)) # (1)
   with temp_h5dat() as dataset:
-```
-
-```python
     p 1=0
     def save_data(buf):
       nonlocal p1

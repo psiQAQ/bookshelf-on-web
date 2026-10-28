@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 
 这里简要演示如何使用 Figure.add_subplot 方法。如果你有兴趣了解其他方法，建议查阅 Matplotlib 官方文档或专门的书籍，例如 Jake Vanderplas 的 Python Data Science Handbook: Essential Tools for Working with Data [1]。函数调用
 
-```text
+```python
 add_subplot(rows, cols, index)
 ```
 将图形划分为 rows × cols 个单元格。根据参数 index，按从左上到右下的顺序选定对应单元格，并在该处创建一个 Axes 对象。图 3.1 展示了 add_subplot 命令的效果。
@@ -108,7 +108,7 @@ color='darkgreen' and color='tab:purple'.Furthermore,Matplotlibsupports
 
 - 坐标轴。可以使用 set_xlim、set_ylim、set_xticks 与 set_yticks 函数调整坐标轴。顾名思义，它们分别用于调节坐标轴的取值范围和刻度显示。可以使用 ax.set_xlabel 与 ax.set_ylabel 方法添加坐标轴标签。若要启用对数坐标，
 
-```text
+```python
 ax.set_xscale('log')
 ax.set_yscale('log')
 ```
@@ -116,7 +116,7 @@ ax.set_yscale('log')
 
 如果在任何绘图函数中使用了 label 关键字，ax.legend 方法可以为这些标签生成图例。ax.legend 方法中的 loc 关键字可以设置图例的位置。例如，
 
-```text
+```python
 ax.legend(loc='upper left')
 ```
 将图例放在图的左上角。其他常见位置
@@ -127,7 +127,7 @@ include'upper center','upper right','center left','center right',etc.
 
 - 文本和注释。ax.text 方法可以在图中插入说明文字。命令
 
-```text
+```python
 ax.text(x, y, 'message')
 ```
 该命令将’message’置于图内坐标 (x, y) 处。此外，ax.annotate 方法支持在文本旁附带更丰富的指示元素，例如箭头与其他注释符号。该方法须指定文字与箭头的具体坐标。例如，下面的语句将文本’message’置于坐标 (2, 2) 处，并绘制从 (2, 2) 指向 (1, 3) 的箭头。
@@ -145,7 +145,7 @@ ax.text(x, y, 'message')
 绘图工作流程的最后一步是展示或保存图像。通常调用 plt.show() 方法显示图形。如果在 Jupyter Notebook 中启用了%matplotlib 魔法命令，就不必显式调用 plt.show()，图像会自动显示出来。
 保存图像主要有两种途径。在交互式图形窗口中，单击 Save 按钮并选择对应格式即可保存图表。若在非交互式脚本环境下保存图像，可调用 Figure.savefig 函数，例如
 
-```text
+```python
 fig.savefig('result.png')
 fig.savefig('result.jpg')
 fig.savefig('result.svg')
@@ -264,9 +264,6 @@ color_map = pd.Series({
     'H': (.8,. 8, .8), 'C': (.6,. 6, .6), 'N':B , 'O':R , })
 covalent_radius = pd.Series({
     'H': 0.31, 'C': 0.73, 'N': 0.71, 'O': 0.66,
-```
-
-```python
 })
 def plot_mole(mole):
  geom = mole.loc[:,'x':'z']
@@ -620,9 +617,6 @@ def render_cube(elements, coordinates, voxel, origin, data):
 ```text
 # NOTE: all units are in Bohr
 boundary = [[-9., 9.], [-9., 9.],
-```
-
-```python
             [-9., 9.]]
 mesh = [60,6 0, 60]
 mgrids = np.mgrid[[ slice(r[0], r[1],m *1j)

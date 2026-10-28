@@ -127,12 +127,12 @@ eri = cp.asarray(eri) # Transfer to memory on GPU
 
 - 内存管理。为尽量减少 GPU 上内存分配和初始化的开销，CuPy 使用内存池（memory pool）管理 GPU 设备上的内存。删除 CuPy 数组对象时，CuPy 不会立即释放数组的内存，而是将内存保留在内存池中以供复用，这有助于 CuPy 减少内存分配的开销。只有新数组无法放入现有内存池时，内存池才会扩展。在某些情况下，即使 nvidia-smi 命令显示有足够的空闲 GPU 内存，创建新 CuPy 数组对象时仍可能遇到 OutOfMemoryError。要解决这个问题，可能需要使用以下方法手动调整内存池大小 [13]：
 
-```text
+```python
 cupy.get_default_memory_pool().set_limit()
 ```
 内存池扩展后不会自动收缩。因此，程序占用的 GPU 内存可能超过实际需要。要解决这个问题，可以调用
 
-```text
+```python
 cupy.get_default_memory_pool().free_all_blocks()
 ```
 来释放未使用的内存块并减小内存池大小。
@@ -189,7 +189,7 @@ def get_j(eri, dm):
 ```
 请注意，与 PyTorch 类似，JAX 函数默认使用 float32 数据类型。要使用 float64 精度，必须使用以下语句配置库：
 
-```text
+```python
 jax.config.update('jax_enable_x64', True)
 ```
 以更改默认数据类型。
@@ -225,7 +225,7 @@ output = get_j(eri_gpu, dm)
 创建空数组并调用 .set() 方法的两行代码可能显得不够简洁，但它们对使用固定内存至关重要。我们不能使用 cupy.asarray(eri_cpu) 等函数将创建 CuPy 数组和数据传输合并为一步来简化这个过程。这是因为 cupy.asarray 函数是一种异步操作。数据传输完成之前，输入数组中的数据可能被写入。为避免这些异步操作中潜在的竞态条件（race conditions），CuPy 始终在 cupy.asarray 函数中创建输入 NumPy 数组的副本，即使使用固定内存也是如此。这给数据传输增加了开销。
 要将数据从设备传输到固定内存，可以创建一个固定缓冲区并使用 CuPy 数组对象的 .get() 方法，通过 out 关键字选项指定数据的目标位置。
 
-```text
+```python
 output_cpu = output.get(out=cupyx.empty_pinned((n, n)))
 ```
 除了优化数据传输，固定内存还用于各种其他场景。例如，它是异步数据传输和零复制（zero-copy）技术的先决条件；零复制技术允许 GPU 直接访问主机内存的地址。然而，使用固定内存也有一些缺点。固定内存始终驻留在物理内存中，这可能减少其他应用可用的分页内存。此外，固定系统内存是一项资源密集型操作，比普通系统内存分配的开销更大。传输小型数组时，无须使用固定内存。
@@ -255,7 +255,7 @@ output = get_j(eri_gpu, dm)
 这里创建了一个设置为 non_blocking=True 的新流。这使该流能够与默认流一起异步运行。将新流赋给 stream 关键字参数，即可配置 CuPy 函数使用这个新流。在本例中，数据传输放在新流上，而 get_j 的计算放在默认流上。如果两个流并发执行，默认流可能尝试访问尚未填入所需数据的内存地址，导致先读后写错误。为确保缓冲区中的数据已准备好，如第 (1) 行所示，在继续执行 get_j 函数之前对新流执行同步。
 或者，我们可以使用 Stream 类提供的上下文管理器来管理流的执行。在 Stream 上下文中，无须为 CuPy 函数指定 stream 关键字。除非显式关联到其他流对象，否则 CuPy 函数将在新流上执行。
 
-```text
+```python
 with cp.cuda.stream.Stream(non_blocking=True) as sm:
     eri_gpu = cp.empty_like(eri_cpu)
     eri_gpu.set(eri_cpu)
@@ -302,9 +302,6 @@ __global__ void _kernel_v1(double *output, double *eri, double *dm, int n)
     size_t kl;
     double dm_ji = dm[j *n+i];
     for (kl = 0; kl < nn; ++kl) {
-```
-
-```text
         atomicAdd(&output[kl], eri[(i *n+j)*nn+kl] * dm_ji);
     }
 }
@@ -391,7 +388,7 @@ def get_j(eri, dm):
 ```
 JIT 生成的 GPU 内核采用以下函数签名 [27]：
 
-```text
+```python
 func[griddim, blockdim, stream, sharedmem]( *arguments)
 ```
 内核函数与 CUDA C++ 使用的内核启动语法相同：
@@ -490,7 +487,7 @@ def get_j(eri, dm):
 ```
 生成的内核函数具有以下函数签名：
 
-```text
+```python
 func(griddim, blockdim, args, shared_mem=0, stream=None)
 ```
 如果打算使用多个流启动内核，方法与使用其他 CuPy 函数时类似。你可以使用上下文管理器为自定义内核设置默认流，也可以显式地向内核传入一个 Stream 实例。
@@ -521,9 +518,6 @@ void kernel_v1(double *output, double *eri, double *dm, int n)
     if(err != cudaSuccess){
         fprintf(stderr, "CUDA error %s\n" , cudaGetErrorString(err));
     }
-```
-
-```text
 }
 extern "C"
 void kernel_v2(double *output, double *eri, double *dm, int n)

@@ -594,7 +594,7 @@ def make_Elt(norb, nelec):
 数包含 $\inom{14}{7}^{2} = 11778624$ 个 float64 系数，占用约 100 MB 内存。程序执行期间观察到的实际内存占用接近 40 GB。主要来源是 d 张量和 g 张量，二者的规模均为 $\inom{14}{7}^{2} 	imes 142 = 2.31 	imes 10^{9}$。
 为降低内存使用，我们必须分块切片处理 d 和 g 张量。在此算法中，必须审慎处理 Elt 查找表给出的地址，因其可能越界超出当前分块边界。例如，在语句
 
-```text
+```python
 d[a,i,J] += sign * fciwfn[I]
 ```
 中，任意索引 J 很可能不位于 d 张量当前的子块内。
@@ -609,12 +609,12 @@ $$
 
 语句
 
-```text
+```python
 d[a,i,J] += sign * fciwfn[I]
 ```
 与语句
 
-```text
+```python
 d[i,a,I] += sign * fciwfn[J]
 ```
 将产生完全相同的中间张量 d。因此，可将 compute_hc 函数改成分块式实现：
@@ -794,7 +794,7 @@ for Ka0 in range(0, na, blocksize)
 为了对外层循环实现线程并行化，一种方案是使用不同线程控制器分别管理不同代码块。例如，np.dot 函数通常依赖 BLAS 库提供的特定线程控制器。可以使用 OPENBLAS_NUM_THREADS、MKL_NUM_THREADS 等环境变量控制 BLAS 库的线程数。对于 OpenMP 和 Numba 线程，可以配置环境变量 OMP_NUM_THREADS 和 NUMBA_NUM_THREADS 来管理线程。请注意，除非明确设置了特定环境变量，否则大多数线程控制器默认使用所有可用 CPU 核心进行并行化。为了应对线程管理的挑战，可以使用 threadpoolctl 库在代码中显式管理各种线程控制器的并发线程。
 对构造 d 张量与分配 g 张量的操作实施自动线程并行化面临不同挑战。困难在于不同线程在某些操作中可能访问相同的内存地址。例如在以下构造 d 张量的代码中，将索引 I 并行化可能导致多个线程同时访问 d 张量的最后一个索引位置。
 
-```text
+```python
 for I, tab in enumerate (Elt_b[Kb0:Kb1]):
     for a,i ,J , sign in tab:
         for K in range (ma):

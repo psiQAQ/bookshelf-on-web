@@ -281,17 +281,17 @@ for i,n in enumerate (idx1):
 ```
 输出数组的形状是 (len(idx1), len(idx2))。为了得到这样的形状，应当通过 idx1[:,None] 与 idx2 之间的广播构造地址数组。输出数组的行来自 idx1，列来自 idx2。因此，idx1 应放在数组 a 的行维度上，idx2 放在列维度上。可以推导出一个高效的花式索引表达式来替代嵌套循环：
 
-```text
+```python
 output = a[idx1[:,None], idx2]
 ```
 接下来，我们交换索引 idx1 和 idx2 的形状，考察以下花式索引表达式的效果：
 
-```text
+```python
 output = a[idx1, idx2[:,None]]
 ```
 由于 idx1 和 idx2[:,None] 之间的广播，可以预期 idx2 选出的元素将构成输出数组的行，而 idx1 将构成列。idx1 中的元素选择数组 a 的行，并在 fancy_index_decomposed 函数中充当地址数组的列。当地址数组被展平时，它对应最内层循环。因此，花式索引代码的效果等同于以下嵌套循环：
 
-```text
+```python
 for j,m in enumerate (idx2):
     for i,n in enumerate (idx1):
         output[j,i] = a[n,m]
@@ -311,7 +311,7 @@ np.arange(n)[:,None] * m + lookup
 ```
 到 a 时，第 i 行的地址与使用语句 a[i,lookup[i,:]] 索引 a 的元素具有相同效果。因此，花式索引赋值代码选择元素的方式等同于以下嵌套循环。
 
-```text
+```python
 for i in range (n):
     a[i,lookup[i,:]] = b[i,:]
 ```
@@ -605,18 +605,18 @@ b = np.ones((100,100,100,100))
 ```
 以下两个操作所花费的时间几乎相同。
 
-```text
+```python
 c=a+b
 c = a.transpose(2,0,3,1) + b.transpose(2,0,3,1)
 ```
 如果两个数组的最小步长位于对应维度上，无论它是第一个、最后一个还是任何中间维度，NumPy 都可以识别最小步长并将其放在最内层迭代中，从而实现高效的内存访问。请注意，ufunc 的输出不保证采用 C 连续布局。为了优化内存访问效率，NumPy 可能为输出选择接近操作数布局的布局。例如，下面代码片段中的输出数组 c 的布局与以下布局相同：
 
-```text
+```python
 c = a.transpose(2,0,3,1) + b.transpose(2,1,3,0)
 ```
 如果 ufunc 的操作数具有不同的数据布局，更具体地说，如果它们的最小步长不位于对应维度上，NumPy 就无法优化内存访问模式。在这种情况下，NumPy 将对输出使用默认的 C 连续存储布局。处理 ufunc 操作时，NumPy 按照 C 连续内存访问模式遍历所有维度。这仅对输出数据的布局是最优的。如果遇到最小步长不位于对应维度上的数组，我们至少应尝试优化一个操作数的访问模式。这可以通过将该操作数的最小步长与输出的最小步长对齐来实现，即将其放在最后一个维度。这种方法确保只有一个操作数的访问效率较低。例如，在下面两种转置求和中，第一种比第二种效率更高。
 
-```text
+```python
 c = a.transpose(0,3,2,1) + b
 c = a.transpose(3,1,0,2) + b.transpose(1,3,0,2)
 ```
@@ -635,7 +635,7 @@ for s in range (2):
 ```
 的八维数组。在量子化学中，这个八维数组可以用来表示电子排斥积分。此代码片段可以看作对 Hartree-Fock 交换元素的调整（矩阵 b）。通过引入该八维数组的四维数组视图，我们可以将代码片段改写为更易读的形式。
 
-```text
+```python
 for s in range (2):
     # Extract a spin component of array a
     a_view = a[s,:,s,:,s,:,s,:]
@@ -990,9 +990,6 @@ In [1]: print(mp.mpf('0.0'))
         print(mp.mpf('0.1'))
         print(mp.mpf(0.1))
 Out[1]:
-```
-
-```text
 0.0
 0.1
 0.1000000000000000055511151231
@@ -1147,9 +1144,6 @@ In [1]: atom_type = np.dtype([
             ('symbol', 'U2'), ('x', float), ('y', float), ('z', float)
         ])
         mole = np.array([( 'H', 0.5, 0.5, 0.5), ( 'H',0,0 , 0)],
-```
-
-```text
                      dtype=atom_type)
 ```
 
@@ -1478,9 +1472,6 @@ Name: 0, dtype: object
 ```text
 In [18]: mole.loc[:2, 'x':'z']
 Out[18]:
-```
-
-```text
 xyz
 0 0.5009 2.7238 0.8464
 1 1.4049 2.4390 0.6938
@@ -1615,7 +1606,7 @@ mole.query('symbol == "H" & x>0&x<3 . 0&y>0&y<3 . 0&z>0&z<
 ```
 或者以更符合 Python 风格的方式编写：
 
-```text
+```python
 mole.query('symbol == "H" & 0<x<3 . 0&0<y<3 . 0&0<z< 3.0')
 ```
 实际上，字符串表达式不限于选择元素。使用 DataFrame 类的 eval 方法，字符串表达式也可以用于简单的数值计算。例如，使用 eval 方法求值前面的字符串过滤条件，可以创建一个掩码数组。使用这个掩码数组选择元素，得到的输出与使用 query 方法相同：
@@ -1895,7 +1886,7 @@ symbol H1 H2 O0
 ```
 使用 groupby 可以通过一行代码实现相同的功能。
 
-```text
+```python
 out = cluster.groupby( 'monomer').apply(lambda df: df.set_index( 'symbol').Q)
 ```
 在拆分步骤中，groupby 根据指定列的值对表分类。它为每个类别生成一个 DataFrame，然后将其作为参数传递给 apply 方法指定的函数。

@@ -279,7 +279,7 @@ kmat = einsum( 'ijkl,jk->il', eri, dm)
 利用八重对称性的一种方法是修改 get_eri_tensor 函数。我们可以计算 ERI 张量中的必要积分，然后根据置换关系 (13.11) 填充张量的其余部分。然而，这种算法需要大量内存来存储 ERI 张量，并且填充整个张量会产生显著的内存访问开销。
 一种改进方法是只计算不重复的积分，并根据八重对称性通过八种缩并方式使用这些积分。以交换矩阵为例，八种缩并模式如下：
 
-```text
+```python
 einsum('ijkl,jk->il', eri, dm)
 einsum('ijkl,ik->jl', eri, dm)
 einsum('ijkl,jl->ik', eri, dm)
@@ -468,12 +468,12 @@ kmat = build_k(gtos,d m-dm_prev) + kmat_prev
 
 在 McMurchie-Davidson ERI 算法（第 12 章第 12.1.3.2 节）中，特定高斯型轨道（GTO）壳层四元组的单个 ERI 块 sub_eri 通过中间 R 和 E 张量的张量收缩构建：
 
-```text
+```python
 sub_eri = einsum( 'ijp,pq,qkl->ijkl',E ,R ,E )
 ```
 这里我们暂时不考虑基函数收缩的问题。计算它对 J 矩阵的贡献时，可以得到以下收缩操作：
 
-```text
+```python
 jmat[k0:k1,l0:l1] = einsum( 'ji,ijp,pq,qkl->kl', dm[j0:j1,i0:i1],E ,R ,E , optimize=True)
 ```
 优化收缩顺序可以减少积分计算所需的计算量。可以先进行密度矩阵与其中一个 E 张量的收缩，然后再与 R 张量和另一个 E 张量收缩。我们可以将这一过程应用于每个 ERI 块，并按如下方式实现计算 J 矩阵的函数：
@@ -911,9 +911,6 @@ def xc_deriv_tensor2(density, xc_code):
         # First transforms to
         #[[uu_uu, ud_ud, ud_dd],
         # [ud_uu, ud_ud, ud_dd],
-```
-
-```python
         # [dd_uu, dd_ud, dd_dd]]
         qgg = raw_xc[ 'v2sigma2'][[[0,1 ,2 ], [1,3 ,4 ], [2,4 , 5]]]
         # Expands to
@@ -1389,7 +1386,7 @@ kmat = np.einsum( 'pij,pkl,jk->il', cderi, cderi,d m, optimize=True)
 einsum 的 optimize=True 选项会优化张量收缩顺序。如果按输入中指定的顺序进行收缩，两个 cderi 张量之间的收缩规模将为 N。使用这一优化后，首先对 cderi 张量和密度矩阵 dm 进行张量收缩，生成一个中间张量。然后将这个中间张量与另一个 cderi 张量收缩。因此，J 和 K 矩阵的计算复杂度分别按 N NABF 和 N NABF 缩放，其中 NAO 表示轨道基函数的数量，NABF 表示辅助基函数的数量。
 构建 K 矩阵时，optimize=True 选项会引入两个大小为 N 的中间张量的内存开销。第一个中间张量来自收缩
 
-```text
+```python
 tmp = einsum('pij,jk->pik', cderi, dm)
 ```
 如果 cderi 和 tmp 张量按 C 顺序存储，为满足 BLAS 库中矩阵乘法对内存连续性的要求，后续收缩
@@ -1400,25 +1397,25 @@ einsum('pik,pkl->il', tmp, cderi) requirestheindicesof thetmp tensortobe
 需要将 tmp 张量的索引从 pik 转置为 ipk。这次转置会创建另一个中间张量。
 为尽量减小内存占用并降低张量转置操作的开销，可以采用另一种张量排列方式。例如，构建 cderi 张量时，可以将辅助函数的索引放在两个 AO 索引之间。利用两个 AO 基之间的对称性，K 矩阵的收缩
 
-```text
+```python
 einsum('ipj,jk,lpk->il', cderi, dm, cderi)
 ```
 只产生一个中间张量，从而不再需要张量转置。
 
-```text
+```python
 tmp = einsum('ipj,jk->ipk', cderi, dm)
 kamt = einsum('ipk,lpk->il', tmp, cderi)
 ```
 然而，这些优化超出了 optimize=True 设置的能力。
 在均场方法中，密度矩阵通常通过占据分子轨道的乘积计算。计算 K 矩阵时，可以先将 cderi 张量与占据轨道收缩，再使用所得张量构成 K 矩阵。例如，对于 RHF 密度矩阵
 
-```text
+```python
 mo_occupied = mo[:,:nocc]
 dm = einsum('it,jt->ij', mo_occupied, mo_occupied) * 2
 ```
 交换矩阵可以计算为
 
-```text
+```python
 tmp = einsum('jt,pij->tpi', mo_occupied, cderi)
 kmat = einsum('tpi,tpj->ij', tmp, tmp) * 2
 ```

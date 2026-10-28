@@ -277,7 +277,7 @@ np.transpose(a).copy()
 
 如前所示，使用朴素实现转置矩阵，
 
-```text
+```python
 a.T.copy(order='C')
 ```
 对大矩阵而言不利于缓存。在对 10000 × 10000 的测试中，L1 缓存的未命中率约为 80%。这一高缓存未命中率表明 CPU 必须频繁从内存访问数据。
@@ -394,9 +394,6 @@ $$
 ```python
 @numba.njit(cache=True)
 def matmul_nn_tiling(a, b):
-```
-
-```python
     '''Matrix multiplication a * b with loop tiling'''
     arow, acol = a.shape
     brow, bcol = b.shape
@@ -630,9 +627,6 @@ Line # Hits Time Per Hit % Time Line Contents
 6 500 81657.0 163.3 0.0 for j in range(n):
 7 500 154634.0 309.3 0.0 fac = s[j ,j]
 8 124750 20412051.0 163.6 2.5 for k in range(j):
-```
-
-```python
 9 124750 327342723.0 2624.0 40.3 dot_kj = np.
     dot(cs[:,k], s[:,j])
 10 124750 362190394.0 2903.3 44.6 cs[: ,j] -=
@@ -967,7 +961,7 @@ for i in range (len(list1)):
 
 在适用的情况下，最好使用生成器表达式（generator expression），而不是先创建列表或元组再遍历。生成器表达式按需产生元素，而创建列表或元组需要消耗额外内存。
 
-```text
+```python
 # Recommended:
 sum(func(i) for i in a_list)
 # Not recommended:
@@ -978,7 +972,7 @@ sum([func(i) for i in a_list])
 
 列表推导式（list comprehension）使用专门的 LIST_APPEND 指令向目标列表添加元素。它在迭代期间只涉及一次操作。相比之下，先循环再追加的方法需要在每次迭代时加载目标列表、访问其 append 方法并调用该方法。
 
-```text
+```python
 # Recommended:
 result = [x * 2 for x in a_list]
 # Not recommended:
@@ -1014,9 +1008,6 @@ result = {}
 for key in dict1:
     result[key] = dict1[key]
 for key in dict2:
-```
-
-```text
     result[key] = dict2[key]
 ```
 
@@ -1024,7 +1015,7 @@ for key in dict2:
 
 Python 解释器有一条专门用于交换变量的 ROT_TWO 指令，适合这种情况。
 
-```text
+```python
 # Recommended:
 x,y=y ,x
 # Not recommended:
@@ -1037,7 +1028,7 @@ y = temp
 
 拼接两个字符串最有效的方法是使用 str1 + str2。然而，拼接多个字符串时，{string}.join 方法更高效。这是因为用于拼接的 sum 函数实际上将该过程变成一系列 str1 + str2 操作。每次操作都涉及创建和消除临时对象。
 
-```text
+```python
 # Recommended:
 combined = ''.join(['s', 't', 'r', 'i', 'n', 'g', 's'])
 # Not recommended:
@@ -1495,7 +1486,7 @@ for x in array:
 ```
 即使 x 和 array 的类型都已显式声明，Cython 仍无法完全消除 Python 痕迹，并为这一迭代生成高效的 C 代码。生成的代码首先从可迭代对象（array）中提取一个元素，作为中间 Python 对象，然后使用 Python-C API 将中间变量绑定到 x。同样，enumerate 和 zip 等其他循环迭代器也是 Cython 编译不支持的语法糖。最高效的迭代方法是先使用 range 再索引，这与优化纯 Python 代码的做法完全相反。
 
-```text
+```python
 for i in range (len(array)):
     x = array[i]
 ```
@@ -2055,7 +2046,7 @@ LRU 缓存优化这些函数。
 
 缓存 NumPy 数组时，可能需要处理与浮点数舍入有关的问题。如果可以接受浮点数中的微小误差，就可以使用 np.round 函数去掉不重要的小数位。这种方法可能使较小的负值被舍入为 -0.0。为了去掉负零，只需将舍入后的数组加上 0.0。例如，要将数组限制为仅保留 6 位小数，可以使用下面的语句计算数组哈希：
 
-```text
+```python
 hash((a.round(6) + 0.0).tobytes())
 ```
 Python 没有内置的不可变（冻结）字典。要对以字典形式提供的输入进行哈希，一种常见的变通方法是将字典转换为键值对组成的元组。也可以使用 collections 模块中的 namedtuple 类。
@@ -2089,7 +2080,7 @@ class NotHashable:
 与命令式编程不同，程序也可以采用仅依赖纯函数（pure function）的风格编写。纯函数是一种数学过程，它
 计算结果而不产生任何副作用（不修改非局部变量或输入参数）。通过适当定义纯函数 f1、f2 等，整个计算可以看作一系列嵌套的函数调用：
 
-```text
+```python
 f_n(..., f_2(f_3(f_1(x), f_2(x)), f_4(x)), ...)
 ```
 这种编程风格称为函数式编程（functional programming，FP）。
@@ -2137,7 +2128,7 @@ cs[j] /= fac **.5 # (7)
 ```
 第 (1) 至 (4) 行的语句创建了不受任何副作用影响的局部变量。第 (5) 行和第 (7) 行涉及原位操作，它们会修改 cs 数组，因此引入副作用。根据局部变量 fac 与输入元素 s[j,j] 的关联机制，第 (6) 行可能改变 s[j,j] 的值并引入副作用。为消除第 (5) 至 (7) 行的副作用，我们可以使用普通赋值语句代替原位修改，例如：
 
-```text
+```python
 fac = fac- dot_kj * dot_kj
 ```
 虽然赋值语句两侧使用了相同的变量名 fac，但左侧的实例现在指向一个新的局部对象，而不是表达式 fac - dot_kj * dot_kj 中的那个对象。由此得到无副作用的实现。
@@ -2165,9 +2156,6 @@ def schmidt_orth_side_effects_free(s):
     c s=[ ]
     guess = np.eye(n)
     for j in range (n):
-```
-
-```python
 dot_kj = [np.dot(cs[k], s[j]) for k in range (j)] # (1)
 fac = s[j,j] - sum(x * x for x in dot_kj) # (2)
 vec = guess[j] - sum(dot_kj[k] * cs[k] for k in range (j)) # (3)
@@ -2316,9 +2304,6 @@ def dot(a,b ) :
 def subtract(a, b):
     return defer(np.subtract,a ,b )
 def multiply(a, b):
-```
-
-```python
     return defer(np.multiply,a ,b )
 def divide(a, b):
     return defer(np.divide,a ,b )

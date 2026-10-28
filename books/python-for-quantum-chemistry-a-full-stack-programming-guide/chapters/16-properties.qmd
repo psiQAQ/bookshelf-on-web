@@ -703,13 +703,13 @@ def mo_integrals(coords, mf: pyscf.scf.hf.RHF):
 - 消除每个函数中的任何副作用（side-effects）。这意味着函数不应修改导数计算所依赖的输入参数或全局变量。理想情况下，为了采用函数式编程风格，最好还要消除任何副作用，包括对不可微输入参数的修改。在当前的 CCD 程序中，这些函数已经没有副作用，无需进一步操作。
 - 避免任何原位修改（in-place modifications）。虽然对局部变量的原位修改不被视为函数的副作用，但它们可能干扰 JAX 追踪中间变量状态的能力。在 update_CCD_amplitudes 函数中，有几条语句涉及原位操作。应将它们改写，以确保与 JAX 的追踪功能兼容。例如，以下语句涉及对局部变量的原位修改：
 
-```text
+```python
 Fvv[np.diag_indices(nvir)] -= e_v
 t2out += .5 * einsum('ijkl,abkl->abij', oooo, t2)
 ```
 应将其改为：
 
-```text
+```python
 Fvv = Fvv - jnp.diag(e_v)
 t2out = t2out + .5 * einsum('ijkl,abkl->abij', oooo, t2)
 ```
@@ -801,7 +801,7 @@ i2 = jnp.eye(2) # (2)
 第(1)行中的参数 coords 没有被 mo_integrals 函数显式使用。你可能会问：我们能否像处理普通 Python 函数那样删除这个参数？答案是否定的。如果删除 coords 参数，JAX 就无法检测到 mo_integrals 对 coords 的依赖，并会在自动微分（automatic differentiation，AD）过程中错误地排除对 mo_integrals 的微分。mo_integrals 函数隐式依赖于原子核坐标。由于我们需要 mf 对象提供积分计算，coords 必须与 mf 中存储的分子结构一致。
 在第 15 章介绍的 mo_integrals 中，我们使用切片表示法 ::2 和 1::2 为 α 和 β 轨道赋值分子轨道（molecular orbital，MO）积分。这些赋值在第 (2) 行中被使用 2 × 2 矩阵 i2 的 einsum 操作取代。如果希望使用花式索引（fancy indexing）编写赋值代码，可以使用 JAX 的 .at 和 .set 方法，如以下代码所示。
 
-```text
+```python
 output = output.at[::2,::2,::2,::2].set(eri)
 ```
 请注意，这段代码会创建 output 数组的新副本，而不是原地更新它。使用.at 方法时应当谨慎。建议查阅 JAX 的.at 方法文档[10]，了解更多细节。
@@ -962,12 +962,12 @@ cycle=19, E(CCD)=Traced<ConcreteArray(-109.03387828514111, dtype=float64)>
 好在 JAX 提供了可定制的 PyTree 节点，用于为 JAX 自动微分函数管理类属性。借助这一功能，我们可以使用类作为原始值，在 JAX 函数之间传递各种可微分属性，从而大大简化函数签名。
 什么是 PyTree？在 JAX 中，PyTree 表示以树状结构组织的数据集合。当可微分参数由嵌套的 Python 内置数据容器组成时，例如列表、元组和字典，JAX 会将其识别为 PyTree。JAX 可以将 PyTree 的叶节点（leaves）展平为列表，供内部处理。对于导数的输出，则应用逆操作 unflatten，将叶节点重新组装成原来的树状结构。可以通过以下 JAX 函数获取叶节点和 PyTree 定义：
 
-```text
+```python
 jax.tree_util.tree_flatten()
 ```
 可以使用以下函数从叶节点重建 PyTree：
 
-```text
+```python
 jax.tree_util.tree_unflatten()
 ```
 下面的例子取自 JAX 文档，展示了叶节点、树定义以及这两个函数的用法：
@@ -1028,7 +1028,7 @@ def _Mole_flatten(mol):
     return children, metadata
 ```
 
-```text
+```python
 jax.tree_util.register_pytree_node( pyscf.gto.mole.Mole, _Mole_flatten, _tree_unflatten)
 ```
 由于这两个类已注册为 JAX PyTree 节点，因此不再需要将 coords 变量显式传递给 CCD 程序。我们只需将 mf 对象传递给 CCD 程序，因为它通过 mol 对象携带可微属性 coords。CCD_solve 和 mo_integrals 的函数签名已更新，以反映这一变化。
@@ -1119,7 +1119,7 @@ def solve_lambda(H, t2_star, v):
 ```
 jax.vjp 函数生成操作 vjp_Ht，借此计算向量 Λ 与雅可比矩阵（Jacobian）的乘积。式 (16.44) 右侧的项充当 CPHF 方程中的「力」，它通过 JAX AD 求得：
 
-```text
+```python
 jax.jacrev(lambda t2: get_CCD_corr_energy(H, t2))(t2_star)
 ```
 solve_lambda 函数的输出对应于耦合簇能量泛函理论中的退激发算符 Λ [17]。在耦合簇能量泛函的框架下，Λ 的方程通过复杂的图解
@@ -1177,12 +1177,12 @@ t2 的迭代被集中到一个专门的 fixed_point 函数中。随后，CCD 能
 在原始函数 fixed_point 中，已经应用了 DIIS 加速。与最初的 CCD-AD 程序不同，这个版本不要求 DIIS 函数能被 JAX 变换。DIIS 迭代仅由 JAX 前向传播执行。在反向传播期间，JAX 调用自定义的 fp_bwd 函数，从而跳过 DIIS 过程。
 请注意 fp_bwd 和 solve_lambda 中的匿名 lambda 函数。它们针对同一个 update_CCD_amplitudes 函数的可微变量定义。在 solve_lambda 中，可微变量是 t2，对应的 VJP 操作为：
 
-```text
+```python
 jax.vjp(lambda t2: update_CCD_amplitudes(H, t2), t2_star)
 ```
 在 fp_bwd 中，可微变量是 H。VJP 操作通过以下代码编写：
 
-```text
+```python
 jax.vjp(lambda H: update_CCD_amplitudes(H, t2_star), H)
 ```
 与原始 CCD-AD 程序相比，本节介绍的隐式微分方法计算成本更低，内存占用也更少。这些优势归功于 CCD_solve 中的 DIIS 加速，

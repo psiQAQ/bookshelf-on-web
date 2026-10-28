@@ -511,9 +511,6 @@ abort(400) # Bad request if any field is missing
  return jsonify({'id': job_id, 'status': PENDING}), 202
 @app.route('/dft-energy/<id>', methods=[ 'GET'])
 def query_dft_result(id):
-```
-
-```python
     job = jobs_db.get( id)
     if job is None:
 abort(404) # Not found if the job ID does not exist
@@ -688,9 +685,6 @@ def run_dft(geometry, basis_set, xc_func):
         orbital_energies = np.frombuffer( next(result).body, dtype).reshape(shape)
         return energy, orbital_energies
 if __name__ == '__main__':
-```
-
-```python
     e, mo_energy = run_dft( ' O000 ;H 0.757 0.587 0; H -0.757 0.587 0' , '
     sto-3g', 'b3lyp')
     print("DFT energy:" ,e )

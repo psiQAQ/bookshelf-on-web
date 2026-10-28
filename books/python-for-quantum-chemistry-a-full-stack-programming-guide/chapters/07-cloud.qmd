@@ -199,7 +199,7 @@ response = ecs_client.register_task_definition( **py_config['task_definition'])
 ```
 虽然可以改进提示词以生成更好的代码样例，但在当前情境下我们不再进行这种改进。上面的代码样例足够清楚地说明了 boto3 ECS 客户端的 register_task_definition 函数的参数。生成的 YAML 配置样例也很容易理解。基于这个代码样例，我们可以调整某些设置，得到如下注册任务定义的脚本：
 
-```text
+```python
 config_tpl = '''
 task_definition:
   family: dft-demo
@@ -527,7 +527,7 @@ if __name__ == '__main__':
 ```
 RPC 服务器程序可以作为任务部署在 ECS 上。
 
-```text
+```python
 rpc_server_config = '''
 family: pes-rpc-server
 containerDefinitions:
@@ -764,7 +764,7 @@ $ docker push 987654321000.dkr.ecr.us -east-1.amazonaws.com/python-qc/celery
 ```
 然后，我们使用新的 Docker 镜像注册一个 ECS 任务定义。
 
-```text
+```python
 config = yaml.safe_load( '''
 family: celery-gpu-worker
 networkMode: awsvpc
@@ -773,9 +773,6 @@ containerDefinitions:
   image: 987654321000.dkr.ecr.us-east-1.amazonaws.com/python-qc/celery-dft
     :1.0
   environment:
-```
-
-```python
   - name: OMP_NUM_THREADS
     value: "4"
 runtimePlatform:
@@ -1017,9 +1014,6 @@ available_node_types:
       ImageId: ami-0b54855df82eef3a3 # Ubuntu 22.04 with Deep learning
     tools
 setup_commands:
-```
-
-```text
 - sudo apt install -y python3-pip
 - pip install ray[default] boto3 pyscf gpu4pyscf-cuda12x
 ```

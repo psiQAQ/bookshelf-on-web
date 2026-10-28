@@ -1077,7 +1077,7 @@ chunk_size = 8
 gomp = ctypes.CDLL( 'path/to/libgomp')
 ```
 
-```text
+```python
 gomp.omp_set_num_threads(4)
 gomp.omp_set_schedule(omp_sched['guided'], chunk_size)
 ```

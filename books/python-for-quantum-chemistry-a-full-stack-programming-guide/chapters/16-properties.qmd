@@ -11,13 +11,22 @@
 计算与单电子算符（single-electron operators）期望值相关的分子性质十分直接。这些性质均可表示为原子轨道（atomic orbital，AO）积分与单粒子约化密度矩阵的乘积。例如，偶极矩、实空间中的电子密度和分子静电势（Molecular Electrostatic Potential，MEP）等性质都属于此类。
 MEP 是研究分子反应性的实用工具。我们用 MEP 来展示如何根据积分和密度矩阵计算这些性质。特定位置处的 MEP 可以通过张量收缩计算：
 
-![公式图](../assets/math/eq-16-001.png){width=53%}
+$$
+\begin{aligned}
+V_{\mathrm{MEP}}(\mathbf{r})&=\int\frac{\rho\left(\mathbf{r}^{\prime}\right)}{\left|\mathbf{r}-\mathbf{r}^{\prime}\right|}d\mathbf{r}^{\prime}-\sum_{A}\frac{Z_{A}}{\left|\mathbf{r}-\mathbf{R}_{A}\right|}\\
+&=\sum_{\mu\nu}V_{\mu\nu}(\mathbf{r})\gamma_{\nu\mu}-\sum_{A}\frac{Z_{A}}{\left|\mathbf{r}-\mathbf{R}_{A}\right|},
+\end{aligned}
+\qquad (16.1)
+$$
 
 []{#eq-16-001}
 
 其中
 
-![公式图](../assets/math/eq-16-002.png){width=47%}
+$$
+V_{\mu\nu}(\mathbf{r})=\int\frac{\mu^{*}(\mathbf{r}^{\prime})\nu(\mathbf{r}^{\prime})}{|\mathbf{r}-\mathbf{r}^{\prime}|}d\mathbf{r}^{\prime}.
+\qquad (16.2)
+$$
 
 []{#eq-16-002}
 
@@ -70,58 +79,92 @@ with open ('mep.cub', 'w') as f:
 
 可以使用微扰理论解析计算 Hartree-Fock 方法的核梯度。限制性 HF（restricted HF，RHF）能量可用占据的 HF 轨道表示：其中 HF 轨道满足正交归一性约束
 
-![公式图](../assets/math/eq-16-003.png){width=42%}
+$$
+\mathbf{C}^{\dagger}\mathbf{S}\mathbf{C}-\mathbf{1}=0.
+\qquad (16.4)
+$$
 
 []{#eq-16-003}
 
 为了优化 HF 轨道，可以构造拉格朗日函数（Lagrangian）以引入归一性约束
 
-![公式图](../assets/math/eq-16-004.png){width=49%}
+$$
+\mathcal{L}=E(\mathbf{C})-\sum_{ij}e_{ij}(\mathbf{C}^{\dagger}\mathbf{S}\mathbf{C}-\mathbf{1})_{ij}.
+\qquad (16.5)
+$$
 
 []{#eq-16-004}
 
 分子轨道的驻定条件为
 
-![公式图](../assets/math/eq-16-005.png){width=39%}
+$$
+\frac{\partial\mathcal{L}}{\partial C}=0.
+\qquad (16.6)
+$$
 
 []{#eq-16-005}
 
 由此得到 Hartree-Fock-Roothaan 方程
 
-![公式图](../assets/math/eq-16-006.png){width=40%}
+$$
+\mathbf{FC}=\mathbf{SC}e.
+\qquad (16.7)
+$$
 
 []{#eq-16-006}
 
 对于正则 HF 轨道，拉格朗日乘子 e 是一个对角矩阵。
 计算能量对核坐标的导数时，我们可以用拉格朗日函数代替能量 E。这得到以下能量导数方程：
 
-![公式图](../assets/math/eq-16-007.png){width=50%}
+$$
+\frac{dE(\mathbf{C})}{dX_{A}}=\frac{d\mathcal{L}}{dX_{A}}=\frac{\partial\mathcal{L}}{\partial X_{A}}+\frac{\partial\mathcal{L}}{\partial C}\frac{dC}{dX_{A}}.
+\qquad (16.8)
+$$
 
 []{#eq-16-007}
 
 应用驻定条件 (16.6) 和 RHF 能量 (16.3)，可以按如下方式计算能量导数：
 
-![公式 (16.9)](../assets/math/eq-16-008.png){width=63%}
+$$
+\begin{aligned}
+\frac{dE(\mathbf{C})}{dX_{A}}=\frac{\partial\mathcal{L}}{\partial X_{A}}&=\sum_{i}\frac{\partial h_{ii}^{\mathrm{core}}}{\partial X_{A}}+\frac{1}{2}\sum_{ij}\left(\frac{\partial(ii|jj)}{\partial X_{A}}-\frac{\partial(ij|ji)}{\partial X_{A}}\right)+\frac{\partial E_{\mathrm{nn}}}{\partial X_{A}}\\
+&\quad-\sum_{i}e_{i}\left(\mathbf{C}^{\dagger}\frac{\partial\mathbf{S}}{\partial X_{A}}\mathbf{C}\right)_{ii}.
+\end{aligned}
+\qquad (16.9)
+$$
 
-**公式 (16.9)**[]{#eq-16-008}
+[]{#eq-16-008}
 
 然后我们利用密度矩阵 D
 
-![公式图](../assets/math/eq-16-009.png){width=44%}
+$$
+D_{\nu\mu}=2\sum_{i}^{n/2}C_{\nu i}C_{\mu i},
+\qquad (16.10)
+$$
 
 []{#eq-16-009}
 
 以及能量加权密度矩阵（energy-weighted density matrix）D
 
-![公式图](../assets/math/eq-16-010.png){width=45%}
+$$
+D_{\nu\mu}^{e}=2\sum_{i}^{n/2}e_{i}C_{\nu i}C_{\mu i},
+\qquad (16.11)
+$$
 
 []{#eq-16-010}
 
 将能量导数的表达式改写为式 (16.9) 所示的形式：
 
-![公式 (16.12)(16.13)(16.14)(16.15)](../assets/math/eq-16-011.png){width=56%}
+$$
+\begin{aligned}
+\sum_{i}\frac{\partial h_{ii}^{\mathrm{core}}}{\partial X_{A}}&=\sum_{\mu\nu}D_{\nu\mu}\frac{\partial h_{\nu\mu}^{\mathrm{core}}}{\partial X_{A}}\qquad (16.12)\\
+J^{(X_{A})}&=\sum_{ij}\frac{\partial(ii|jj)}{\partial X_{A}}=\sum_{\mu\nu\kappa\lambda}D_{\nu\mu}D_{\lambda\kappa}\frac{\partial(\mu\nu|\kappa\lambda)}{\partial X_{A}}\qquad (16.13)\\
+K^{(X_{A})}&=\sum_{ij}\frac{\partial(ij|ji)}{\partial X_{A}}=\sum_{\mu\nu\kappa\lambda}\frac{1}{2}D_{\lambda\mu}D_{\nu\kappa}\frac{\partial(\mu\nu|\kappa\lambda)}{\partial X_{A}}\qquad (16.14)\\
+\sum_{i}e_{i}\left(\mathbf{C}^{\dagger}\frac{\partial\mathbf{S}}{\partial X_{A}}\mathbf{C}\right)_{ii}&=\sum_{\mu\nu}D_{\nu\mu}^{e}\frac{\partial S_{\mu\nu}}{\partial X_{A}}.\qquad (16.15)
+\end{aligned}
+$$
 
-**公式 (16.12)(16.13)(16.14)(16.15)**[]{#eq-16-011}
+[]{#eq-16-011}
 
 有关 Hartree-Fock 方法核梯度的详细推导，请参阅 Szabo 所著 *Modern Quantum Chemistry* 的附录 C。
 
@@ -129,13 +172,22 @@ with open ('mep.cub', 'w') as f:
 
 积分的导数取决于基函数对电子坐标的导数。考虑一个以原子 A 为中心的笛卡尔高斯函数：该基函数对核坐标的导数可直接转换为对电子坐标的导数
 
-![公式图](../assets/math/eq-16-012.png){width=37%}
+$$
+\frac{\partial}{\partial X_{B}}\chi_{m_{x}m_{y}m_{z},A}=\begin{cases}
+-\frac{\partial}{\partial x}\chi_{m_{x}m_{y}m_{z},A},&A=B\\
+0,&A\neq B
+\end{cases}.
+\qquad (16.17)
+$$
 
 []{#eq-16-012}
 
 这些导数可以表示为两个笛卡尔高斯函数的组合（s 型函数除外）：
 
-![公式图](../assets/math/eq-16-013.png){width=30%}
+$$
+\frac{\partial}{\partial x}\chi_{m_{x}m_{y}m_{z},A}=l\chi_{m_{x}-1,m_{y}m_{z}}-2\alpha\chi_{m_{x}+1,m_{y}m_{z}}.
+\qquad (16.18)
+$$
 
 []{#eq-16-013}
 
@@ -149,7 +201,10 @@ PySCF 软件包在其 Mole 类中提供了通用积分求值方法 intor()。通
 
 **表 16.1** 核梯度积分的 PySCF 积分名称代码。
 
-![公式图](../assets/math/eq-16-014.png){width=51%}
+$$
+\frac{\partial S_{\mu\nu}}{\partial X_{A}}=-\langle\nabla_{x}\chi_{\mu_{A}}|\chi_{\nu}\rangle-\langle\nabla_{x}\chi_{\nu_{A}}|\chi_{\mu}\rangle^{*}.
+\qquad (16.19)
+$$
 
 []{#eq-16-014}
 
@@ -175,13 +230,19 @@ eri_A = eri_A + eri_A.transpose(0,3,4,1,2)
 ```
 h 由动能算符（kinetic operator）和核吸引算符（nuclear attraction operator）组成。动能积分导数与重叠积分导数类似。对于核吸引算符 Vnuc，计算既需要作用于基函数的导数，也需要算符自身的导数：
 
-![公式图](../assets/math/eq-16-015.png){width=52%}
+$$
+\frac{\partial V_{\mathrm{nuc}}}{\partial X_{A}}=\frac{\partial}{\partial X_{A}}\frac{-Z_{A}}{|\mathbf{r}-\mathbf{R}_{A}|}=-\nabla_{x}\frac{-Z_{A}}{|\mathbf{r}-\mathbf{R}_{A}|}.
+\qquad (16.20)
+$$
 
 []{#eq-16-015}
 
 然后利用分部积分公式（integration-by-parts formula）将式 (16.20) 转换为基函数的导数：
 
-![公式图](../assets/math/eq-16-016.png){width=65%}
+$$
+-\langle\mu|\nabla_{x}\frac{-Z_{A}}{|\mathbf{r}-\mathbf{R}_{A}|}|\nu\rangle=\langle\nabla_{x}\mu|\frac{-Z_{A}}{|\mathbf{r}-\mathbf{R}_{A}|}|\nu\rangle+\langle\mu|\frac{-Z_{A}}{|\mathbf{r}-\mathbf{R}_{A}|}|\nabla_{x}\nu\rangle.
+\qquad (16.21)
+$$
 
 []{#eq-16-016}
 
@@ -202,9 +263,15 @@ def grad_hcore(mol, atom_id):
 
 计算式 (16.9) 中的 HF 核梯度（nuclear gradients）时，可利用积分中的置换对称性（permutation symmetry）简化计算。例如，K 项可简化为：
 
-![公式 (16.22)](../assets/math/eq-16-017.png){width=70%}
+$$
+\begin{aligned}
+K^{(X_{A})}&=\sum_{\mu\nu\kappa\lambda}\frac{1}{2}D_{\lambda\mu}D_{\nu\kappa}\biggl(\Bigl(\frac{\partial\mu}{\partial X_{A}}\nu|\kappa\lambda\Bigr)+\Bigl(\mu\frac{\partial\nu}{\partial X_{A}}|\kappa\lambda\Bigr)+\Bigl(\mu\nu|\frac{\partial\kappa}{\partial X_{A}}\lambda\Bigr)+\Bigl(\mu\nu|\kappa\frac{\partial\lambda}{\partial X_{A}}\Bigr)\biggr)\\
+&=-4\sum_{\mu\nu\kappa\lambda}\frac{1}{2}D_{\lambda\mu}D_{\nu\kappa}((\nabla_{x}\mu_{A})\nu|\kappa\lambda).
+\end{aligned}
+\qquad (16.22)
+$$
 
-**公式 (16.22)**[]{#eq-16-017}
+[]{#eq-16-017}
 
 类似的变换也可用于 J 项和重叠项。将这些简化与前面介绍的积分函数结合起来，就可以得到计算 RHF 核梯度的程序。
 
@@ -279,7 +346,10 @@ for i in range (mol.natm):
 
 在量子化学中，用于计算解析核梯度（analytical nuclear gradients）的程序通常很复杂。通过与有限差分法所得结果比对，验证这些程序的正确性至关重要。有限差分梯度应使用两点差分格式（two-point stencil）计算，因为该公式只引入二次误差：
 
-![公式图](../assets/math/eq-16-018.png){width=51%}
+$$
+f^{\prime}=\frac{f(x+h)-f(x-h)}{2h}+O(h^{2}).
+\qquad (16.23)
+$$
 
 []{#eq-16-018}
 
@@ -301,21 +371,36 @@ for i in range (mol.natm):
 一阶轨道的系数可以由 Hartree-Fock-Roothaan 方程的一阶展开导出：
 求解该方程的一种标准方法，是将零阶分子轨道（molecular orbitals，MO）作为基函数来变换方程。这会得到一阶轨道虚轨道-占据轨道块的方程：占据轨道-占据轨道块和虚轨道-虚轨道块则可由正交归一约束导出的一阶方程确定：
 
-![公式图](../assets/math/eq-16-019.png){width=62%}
+$$
+(\mathbf{C}^{1})^{\dagger}+\mathbf{S}^{1}+\mathbf{C}^{1}=0\rightarrow\begin{cases}
+C_{ij}^{1}=-\frac{1}{2}S_{ij}^{1}&i,j\in\text{occupied}\\
+C_{ab}^{1}=-\frac{1}{2}S_{ab}^{1}&a,b\in\text{virtual}
+\end{cases}.
+\qquad (16.26)
+$$
 
 []{#eq-16-019}
 
 将式 (16.25) 和式 (16.26) 结合，可以导出闭壳层 RHF 模型的耦合微扰 Hartree-Fock（coupled perturbed Hartree-Fock，CPHF）方程：
 
-![公式图](../assets/math/eq-16-020.png){width=67%}
+$$
+(e_{a}-e_{i})C_{ai}^{1}+\sum_{bj}\bigl(4(ai|jb)C_{bj}^{1}-(ab|ji)C_{bj}^{1}-(aj|bi)C_{bj}^{1}\bigr)=-f_{ai},
+\qquad (16.27)
+$$
 
 []{#eq-16-020}
 
 其中
 
-![公式 (16.28)](../assets/math/eq-16-021.png){width=57%}
+$$
+\begin{aligned}
+f_{ai}&=\frac{\partial h_{ai}^{\mathrm{core}}}{\partial X_{A}}+\sum_{j}\frac{2\partial(ai|jj)}{\partial X_{A}}-\frac{\partial(aj|ji)}{\partial X_{A}}-\frac{\partial S_{ai}}{\partial X_{A}}e_{i}^{0}\\
+&\quad-\sum_{jk}(2(ai|jk)-(ak|ji))S_{kj}^{1}.
+\end{aligned}
+\qquad (16.28)
+$$
 
-**公式 (16.28)**[]{#eq-16-021}
+[]{#eq-16-021}
 
 尽管式 (16.28) 中的四指标积分以分子轨道（MO）基表示，但并无必要显式构造这些分子轨道积分。可以采用更高效的计算流程：
 
@@ -329,9 +414,16 @@ for i in range (mol.natm):
 在此过程中，我们可以利用积分和密度矩阵中的置换对称性（permutation symmetry）进一步降低计算成本。例如，式 (16.28) 中的项
 可以改写为：
 
-![公式 (16.29)](../assets/math/eq-16-022.png){width=65%}
+$$
+\begin{aligned}
+\sum_{j}\frac{\partial(aj|ji)}{\partial X_{A}}&=\sum_{\mu\lambda}C_{\mu a}C_{\lambda i}\bigg(\frac{1}{2}\sum_{\nu\kappa}D_{\nu\kappa}\frac{\partial(\mu\nu|\kappa\lambda)}{\partial X_{A}}\bigg)\\
+&=\frac{1}{2}\sum_{\mu\lambda}C_{\mu a}C_{\lambda i}(1+P(\mu,\lambda))\\
+&\quad\cdot\sum_{\nu\kappa}\bigg(D_{\nu\kappa}((\nabla_{x}\mu_{A})\nu|\kappa\lambda)+D_{\nu\kappa}((\nabla_{x}\nu_{A})\mu|\kappa\lambda)\bigg).
+\end{aligned}
+\qquad (16.29)
+$$
 
-**公式 (16.29)**[]{#eq-16-022}
+[]{#eq-16-022}
 
 以类似方式改写式 (16.28) 的其他项之后，我们就可以着手编写式 (16.28) 的计算程序。
 
@@ -375,7 +467,10 @@ def get_vhf(eri, dm):
 ```
 耦合微扰 Hartree–Fock（CPHF）方程 (16.27) 本质上是一个线性方程
 
-![公式图](../assets/math/eq-16-023.png){width=41%}
+$$
+(\mathbf{I}+\mathbf{A})x=\mathbf{b}.
+\qquad (16.30)
+$$
 
 []{#eq-16-023}
 
@@ -428,28 +523,42 @@ d m=d m+d m . T
 
 许多量子化学问题可以表述为涉及方阵 A 和向量 b 的线性方程，
 
-![公式图](../assets/math/eq-16-024.png){width=41%}
+$$
+x+Ax=b.
+\qquad (16.31)
+$$
 
 []{#eq-16-024}
 
 矩阵 A 往往计算成本过高，或者尺寸太大而无法完整存入内存中。在这种情况下，直接构造矩阵 A 然后使用稠密矩阵的常规线性代数技术求解线性方程，并不现实。取而代之的是，编写一个计算 A 与 x 乘积的函数来表示矩阵 A。为了求解线性方程 (16.31)，我们必须依靠迭代求解方法。
 一种方法是将问题改写为不动点迭代（fixed-point iteration）问题：
 
-![公式图](../assets/math/eq-16-025.png){width=41%}
+$$
+x=b-Ax.
+\qquad (16.32)
+$$
 
 []{#eq-16-025}
 
 不动点迭代可以使用 DIIS 方法加速。另一种选择是采用 Krylov 子空间（Krylov subspace）方法迭代求解方程 [3,4]。
 矩阵 A 和向量 b 的 Krylov 空间 {v0,v 1,..,v n− 1} 通过递归的矩阵-向量乘法生成
 
-![公式 (16.33)(16.34)](../assets/math/eq-16-026.png){width=40%}
+$$
+\begin{aligned}
+v_{0}&=b,\qquad (16.33)\\
+v_{i+1}&=Av_{i}.\qquad (16.34)
+\end{aligned}
+$$
 
-**公式 (16.33)(16.34)**[]{#eq-16-026}
+[]{#eq-16-026}
 
 解 x 可以用基向量表示
 用基向量 v 表示 A 和 b，可以推导出系数 c 的线性方程：
 
-![公式图](../assets/math/eq-16-027.png){width=50%}
+$$
+\sum_{i}(v_{j}\cdot v_{i}+v_{j}\cdot A\cdot v_{i})c_{i}=v_{j}\cdot b.
+\qquad (16.36)
+$$
 
 []{#eq-16-027}
 
@@ -459,9 +568,12 @@ d m=d m+d m . T
 - 反复进行矩阵-向量乘法的过程可能导致基向量中出现极大数值。此外，生成的基向量可能接近线性相关，从而引起后续线性代数计算的数值问题。为解决这一问题，每次生成新向量时，都需要检查已有基向量之间是否存在线性相关性。一旦检测到线性相关，就应停止生成 Krylov 空间。
 - 在求解子空间线性方程 (16.36) 之前，没有必要生成所有线性无关的基向量 v。通常，较小的 Krylov 子空间就足以达到所需精度。为了高效截断 Krylov 子空间，我们可以求解子空间方程 (16.36) 并计算残差（residual）
 
-![公式 (16.37)](../assets/math/eq-16-028.png){width=39%}
+$$
+\sigma=Ax_{i}-b
+\qquad (16.37)
+$$
 
-**公式 (16.37)**[]{#eq-16-028}
+[]{#eq-16-028}
 
 每次生成新基向量时都执行上述计算。如果残差的大小低于收敛阈值，就可以停止生成基向量的迭代。函数 solve_krylov 的实现代码如下：
 
@@ -506,7 +618,10 @@ return x
 ```
 我们来考虑如何将初始猜测（initial guess）纳入线性方程求解器。给定初始猜测 x0，原线性方程的解可以写为 x = x 0 + x。然后我们可以将线性方程 (16.31) 改写为
 
-![公式图](../assets/math/eq-16-029.png){width=46%}
+$$
+x^{\prime}+Ax^{\prime}=b-Ax_{0}-x_{0}.
+\qquad (16.38)
+$$
 
 []{#eq-16-029}
 
@@ -522,7 +637,10 @@ def solve_krylov(A,b , x0=None, tol=1e-5, maxiter=50):
 Krylov 子空间迭代方法可能遇到收敛问题。在有限的迭代步数内，生成的 Krylov 空间可能无法充分表示线性方程的解。为解决收敛困难，一种方法是将未收敛的结果作为初始猜测，然后再次调用求解器。另一种方法是将未收敛的结果作为不动点迭代方程 (16.32) 的初始猜测，并配合 DIIS 求解。
 式 (16.31) 的基本假设是矩阵 A 相对于单位矩阵较「小」，本质上充当单位矩阵的扰动。然而，这一假设在实践中未必总是成立，Krylov 求解器也未必总能得到收敛解。为调整微扰矩阵 A 的强度，我们可以引入对角矩阵 d 并改写线性方程
 
-![公式图](../assets/math/eq-16-030.png){width=70%}
+$$
+x+(I+d)^{-1}(A-d)x=(I+d)^{-1}b.
+\qquad (16.39)
+$$
 
 []{#eq-16-030}
 
@@ -943,31 +1061,48 @@ print(dmf.mol.coords)
 我们前面开发的 CCD_solve 函数使用不动点迭代（fixed-point iteration）求解 t2 张量。在这一迭代过程中，JAX AD 为每次迭代生成追踪器（tracer）。每个追踪器负责存储该次迭代的 t2 中间状态，导致内存占用显著增加。可以使用隐式微分（implicit differentiation）技术优化这段 AD 代码 [15,16]。
 考虑一个关于可微变量 a（例如核坐标）和某些自由变量 x（例如 CCD 程序中的 t2 张量）的方程：
 
-![公式图](../assets/math/eq-16-031.png){width=42%}
+$$
+\mathbf{x}=f(a,\mathbf{x}(a)).
+\qquad (16.40)
+$$
 
 []{#eq-16-031}
 
 利用不动点迭代可以得到该方程的解 x，CCD_solve 函数中采用的就是这种方法。所得的 x 随后用于计算另一个量，例如 CCD 能量。可以用拉格朗日乘子（Lagrange multiplier）Λ 构造 CCD 能量的拉格朗日函数（Lagrangian），以纳入约束条件 (16.40)：
 
-![公式图](../assets/math/eq-16-032.png){width=52%}
+$$
+\mathcal{L}(a,\mathbf{x},\Lambda)=E(a,\mathbf{x})-\Lambda\cdot(\mathbf{x}-f(a,\mathbf{x})).
+\qquad (16.41)
+$$
 
 []{#eq-16-032}
 
 随后，我们可以继续寻找拉格朗日函数的极大值或极小值。拉格朗日函数的驻定条件给出两个方程：
 
-![公式 (16.42)(16.43)](../assets/math/eq-16-033.png){width=45%}
+$$
+\begin{aligned}
+\frac{\partial\mathcal{L}}{\partial\Lambda}&=\mathbf{x}-f(a,\mathbf{x})=0,\qquad (16.42)\\
+\frac{\partial\mathcal{L}}{\partial\mathbf{x}}&=0.\qquad (16.43)
+\end{aligned}
+$$
 
-**公式 (16.42)(16.43)**[]{#eq-16-033}
+[]{#eq-16-033}
 
 第一个方程对应于约束条件 (16.40)。第二个方程定义了 Λ。简化后，它可以写成以下形式：
 
-![公式图](../assets/math/eq-16-034.png){width=48%}
+$$
+\left(\mathbf{I}-\frac{\partial f(a,\mathbf{x})}{\partial\mathbf{x}}\right)\cdot\Lambda=\frac{\partial E(a,\mathbf{x})}{\partial\mathbf{x}}.
+\qquad (16.44)
+$$
 
 []{#eq-16-034}
 
 利用式 (16.41) 中定义的拉格朗日函数，就可以计算能量导数：
 
-![公式图](../assets/math/eq-16-035.png){width=51%}
+$$
+\frac{dE(a,\mathbf{x})}{da}=\frac{d\mathcal{L}}{da}=\frac{\partial\mathcal{L}}{\partial a}=\frac{\partial E}{\partial a}+\Lambda\cdot\frac{\partial f(a,\mathbf{x})}{\partial a}.
+\qquad (16.45)
+$$
 
 []{#eq-16-035}
 

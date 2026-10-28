@@ -1153,13 +1153,13 @@ Python/C API 是开发可导入模块接口的标准方法。尽管 Python/C API
 
 [1] GNU Compiler Collection Team, Gcc documentation - half-precision ﬂoating point, [gnu.org](https://gcc.gnu.org/onlinedocs/gcc/Half-Precision.html), 2024.
 
-[2] The Clang Team, Clang documentation - half-precision ﬂoating point, [clang.llvm](https://clang.llvm). org/docs/LanguageExtensions.html#half-precision-ﬂoating-point, 2024.
+[2] The Clang Team, Clang documentation - half-precision ﬂoating point, [clang.llvm.org](https://clang.llvm.org/docs/LanguageExtensions.html#half-precision-floating-point), 2024.
 
 [3] NumPy Developers, Numpy reference data types, [numpy.org](https://numpy.org/doc/stable/reference/arrays.dtypes.html), 2024.
 
 [4] E.V. Smith, Pep 557 – data classes, [python.org](https://peps.python.org/pep-0557/), Jun. 2017.
 
-[5] D. Bader, Python’s instance, class, and static methods demystiﬁed, [realpython](https://realpython). com/instance-class-and-static-methods-demystiﬁed, 2024.
+[5] D. Bader, Python’s instance, class, and static methods demystiﬁed, [realpython.com](https://realpython.com/instance-class-and-static-methods-demystified), 2024.
 
 [6] A. Rigo, M. Fijalkowski, Cfﬁ documentation, [readthedocs.io](https://cffi.readthedocs.io/en/latest/), 2024.
 

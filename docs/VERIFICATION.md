@@ -256,6 +256,20 @@ uv run python scripts/check_site.py .preview --preview --report reports/preview-
   并把被并成一段的「占据轨道-占据轨道块和虚轨道-虚轨道块则可由正交归一约束导出的一阶方程确定：」拆回独立段落（其后接 (16.26)）。
 - `chapters/16-properties.qmd:411-413`：计算流程的有序列表被空行切断，「2. 对积分张量与密度」与「矩阵在原子轨道基中执行张量收缩；」原本是两段，按 PDF p685 合回一条「2. 对积分张量与密度矩阵在原子轨道基中执行张量收缩；」，并去掉第 3 条前的空行，使三条重新成为同一列表。
 
+独立审计复核时又点出两处漏网（都在 (12.62) 展示块的紧邻正文里，第一轮按清单逐条修时没扫到），本轮一并修掉：
+
+- `chapters/12-integrals.qmd:2288-2289`：句首残留公式编号 `(12.62)`；`e^{-x^{2}}` 压平成裸 `e`；`1/√α_{ij}` 压平成 `1/ j`（读者看到的是 1/j，数学上就是错的）；整句还被 PDF 硬换行劈成两行。按 PDF p538 重写为「为了与高斯-埃尔米特求积中的权函数 $$e^{-x^{2}}$$ 对应，权重和节点按 $$1/\sqrt{\alpha_{ij}}$$ 缩放，如下面代码片段的第 (1) 行和第 (2) 行所示。按照求积公式，积分计算的实现如下：」。
+- `chapters/12-integrals.qmd:2341`（(12.63) 之后）：同一自然句的另一种写法「W (x) 是权函数……权函数是 e」——`W(x)` 与 `e^{-t x^{2}}` 都是行内公式，按 PDF p539 改成 $$W(x)$$、$$e^{-t x^{2}}$$、$$[0,1]$$，与紧随其后的 (12.64) 块一致。
+
+参考文献区还有一类读者可见、但此前被 `in_ref` 整段豁免而躲过审计的缺陷：URL 在句点处被 PDF 换行切断，链接目标只到主机名的一半，后半截退化成裸文本。已按原书重排 7 条（审计点名 5 条，`find_broken_links` 又扫出 2 条）：
+
+- `chapters/06-io.qmd:738`：`[arrow](https://arrow). apache.org/cookbook/py/ﬂight.html` → `[arrow.apache.org](https://arrow.apache.org/cookbook/py/flight.html)`；
+- `chapters/07-cloud.qmd:1037`、`:1071`、`:1075`：`[docs.aws](https://docs.aws). amazon.com/…`、`[docs](https://docs). aws.amazon.com/…`、`[docs.ray](https://docs.ray). io/en/latest/cluster.html` → 还原为完整地址（标签统一成主机名，与 `scripts/format_references.py` 的 `host_label` 口径一致）；
+- `chapters/08-ffi.qmd:1156`、`:1162`：`[clang.llvm](https://clang.llvm). org/docs/…`、`[realpython](https://realpython). com/…` → 同上；
+- `chapters/12-integrals.qmd:2996`：`[api.semanticscholar](https://api.semanticscholar). org/CorpusID:118893131` → `[api.semanticscholar.org](https://api.semanticscholar.org/CorpusID:118893131)`。
+
+被切断处的连字字形（`ﬂight`、`conﬁgure`、`ﬂoating`、`demystiﬁed`）在地址里一并还原成 ASCII，否则链接解析不到原页；文献条目的标题文字保持原样不动。
+
 展示块变化：删掉 12 章那个误裁块（220 → 219），补回 (13.20)（219 → 220），再补回 (16.24)、(16.25)（220 → 222）；锚点仍为 223。
 
 ### 门禁设计（`scripts/audit_prose.py::find_formula_remnant`）
@@ -263,13 +277,18 @@ uv run python scripts/check_site.py .preview --preview --report reports/preview-
 口径：只扫正文——非代码围栏、非 `$$` 块、非 `::: {.ref-list}` 参考文献区、行内不含 `$`、不含行内代码。命中任一即报：
 
 1. `formula_remnant:punctuation`：整行含 `. )` 或 `,)` 这类 LaTeX 句读（这是压平副本最稳的指纹）；
-2. `formula_remnant:weight_function`：出现「权函数为」且后面**不是**行内公式（清单里被压平的字形）；
-3. `formula_remnant:operators`：`∑∇√∫∂` 出现 ≥2 次且整行含 `=`（压平的公式定义）。
+2. `formula_remnant:weight_function`：出现「权函数**为**」或「权函数**是**」且后面**不是**行内公式（同一自然句的两种写法在 PDF 提取后都会留下压平字形，`权函数是 e` 就是 (12.63) 后面那一处）；
+3. `formula_remnant:operators`：`∑∇√∫∂` 出现 ≥2 次且整行含 `=`（压平的公式定义）；
+4. `formula_remnant:equation_number`：整行以 `(12.62)` 这类公式编号开头且行内没有 `$`——公式本体已排在紧邻的 $$$$ 块里，句首这个编号是文本层遗留。
 
 白名单是「形状相同但本身合法」的行内记号，先按正则把它们从行里摘掉再判定：`(itemsize * (n+1),)`（步长元组）、`(0., 0., 0.)`（坐标）、
 `vrr(...)`／`({vrr(...)})`（f-string 示例）、`(slice(None),)*axis + (0,0)`（索引等价写法）、前言里明说「照原样保留」的 `P (x) = x exp(− ax).)` 样例。
 `formula_remnant` 已加入 `STRICT_DETECTORS`，`--check` 会因此失败，并接入 CI（`validate.yml` 的「Validate and build the public registry」步骤
 跑 `uv run python scripts/audit_prose.py --check --report reports/prose-audit.json`）。
+
+### 新增探测器：`find_broken_links`（含参考文献区的例外说明）
+
+其余探测器一律跳过 `::: {.ref-list}`（那里全是英文条目，按正文口径扫会产生大量噪声），但断链恰好集中在参考文献区，所以 `find_broken_links` 对 `in_ref` **不豁免**：它只认一种形状——`](…)` 之后跟着 `.` 和空格、再接一段看起来像域名续写的裸文本（`apache.org/cookbook/…`、`org/docs/…`、`io/en/latest/…`）。这个形状没有别的解释，不会误伤正常的英文条目。命中记 `broken_link:<续写片段>`，已加入 `STRICT_DETECTORS`，`--check` 会因此失败。
 
 ### `find_suspect_code` 的 CJK 跳行写成显式口径
 
@@ -281,17 +300,18 @@ uv run python scripts/check_site.py .preview --preview --report reports/preview-
 
 ### 本次核验
 
-- `uv run python scripts/audit_prose.py` → `bare_urls=0 suspect_code=0 english_residue=0 formula_remnant=0 prose_in_fence=100`，`--check` 退出 0。
+- `uv run python scripts/audit_prose.py` → `bare_urls=0 suspect_code=0 english_residue=0 formula_remnant=0 broken_links=0 prose_in_fence=100`，`--check` 退出 0（六个探测器里，`STRICT_DETECTORS = ("bare_urls", "suspect_code", "english_residue", "formula_remnant", "broken_links")` 这五个必须清零，`prose_in_fence` 留作待人工甄别的清单）。
 - 门禁有效性（用历史版本取证）：`git show c7960b6:…/chapters/{09-performance,12-integrals,13-mean-field}.qmd` 落到临时目录后跑
   `find_formula_remnant()` → 命中 15 条，正是本轮修掉的这些行（13 章 6 条、09 章 2 条、12 章 7 条），说明判据不空转。
-- `uv run python -m unittest discover -s tests` → 133 项通过（2 跳过），其中新增 `FormulaRemnantTests` 7 项。
+- 第二轮返工的判据同样拿历史版本取证：`git show d9358f3:…/chapters/{06-io,07-cloud,08-ffi,12-integrals}.qmd` 落到临时目录后，`find_formula_remnant()` 命中 2 条（`12-integrals.qmd:2288` 的 `equation_number`、`:2341` 的 `weight_function`），`find_broken_links()` 命中 7 条（06 章 1、07 章 3、08 章 2、12 章 1）；当前仓库两者均为 0。
+- `uv run python -m unittest discover -s tests` → 138 项通过（2 跳过），其中 `FormulaRemnantTests` 9 项（含 `equation_number`、`权函数是` 两个新形态）、新增 `BrokenLinkTests` 3 项（断链命中、完好链接与普通正文不命中、代码围栏与 $$ 块不扫描）。
 - `uv run python scripts/validate.py --strict` → 0 问题；`uv run python scripts/check_math.py --check` → `allowed_commands=84 chapters=19 findings=0`；
   `uv run python scripts/build.py --quarto .local/tools/bin/quarto.exe` → `delivered=true`；`uv run python scripts/check_site.py dist` → 0 问题。
-- `uv run python scripts/check_math_render.py --root dist --check` → `display 222 inline 47 errors 0 unprocessed 0`。
+- `uv run python scripts/check_math_render.py --root dist --check` → `display 222 inline 53 errors 0 unprocessed 0`。
 
 ### 已知限制
 
-- 判据是「指纹式」的：能覆盖本轮观察到的三类形态，但如果压平副本恰好既无 `. )`／`,)` 句读、又无数学符号，仍会漏（例如纯字母串被拆开的情况）；
+- 判据是「指纹式」的：现在覆盖「`. )`／`,)` 句读」「权函数为/是后不是行内公式」「多个数学符号 + 等号」「句首公式编号」四种形态，以及「链接被切断」这一种断链形状；但如果压平副本恰好既无句读、又无数学符号、也不带编号（例如纯字母串被拆开），仍会漏；断链若切在路径中间而非句点之后（`https://host/dir` + 换行 + `file.html`），形状不同，也仍需人工通读；
   这类只能靠人工通读或后续 OCR 逐条比对。
 - 白名单按「行内记号形状」写，属于对合法技术记号的显式豁免；新增章节里出现同形状的合法记号时要补白名单，否则会被误报（这是有意的摩擦）。
 - 本轮补回 (13.20)、(16.24)、(16.25) 三式后展示块由 220 增至 222（`tests/test_quantum_notes.py` 的期望值与注释同步更新），这三式在原书里没有对应公式图，因此没有 `eq-*` 锚点，锚点总数仍是 223。其余章节是否还有「整块公式在提取时丢失、只留压平正文」的情形，本轮只对审计点名的位置做了 PDF 逐页核对，未做全库逐式比对。

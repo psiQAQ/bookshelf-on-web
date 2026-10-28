@@ -1034,7 +1034,7 @@ $ ray down -y config.yaml
 
 [8] Amazon Web Services, Control trafﬁc to your AWS resources using security groups, [amazon.com](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html), 2024.
 
-[9] Amazon Web Services, Conﬁguration and credential ﬁle settings, [docs.aws](https://docs.aws). amazon.com/cli/latest/userguide/cli-conﬁgure-ﬁles.html, 2024.
+[9] Amazon Web Services, Conﬁguration and credential ﬁle settings, [docs.aws.amazon.com](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html), 2024.
 
 [10] Amazon Web Services, IAM roles, [amazon.com](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html), 2024.
 
@@ -1068,11 +1068,11 @@ $ ray down -y config.yaml
 
 [25] A. Solem, contributors, Celery documentation - backends and brokers, [celeryq.dev](https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/index.html), 2024.
 
-[26] Amazon Web Services, Environment variables to conﬁgure the AWS CLI, [docs](https://docs). aws.amazon.com/cli/latest/userguide/cli-conﬁgure-envvars.html, 2024.
+[26] Amazon Web Services, Environment variables to conﬁgure the AWS CLI, [docs.aws.amazon.com](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html), 2024.
 
 [27] M. Movsisyan, Flower documentation, [readthedocs.io](https://flower.readthedocs.io/en/latest/), 2024.
 
-[28] The Ray Team, Ray documentation cluster yaml conﬁguration options, [docs.ray](https://docs.ray). io/en/latest/cluster/vms/references/ray-cluster-conﬁguration.html#cluster-conﬁg, 2024.
+[28] The Ray Team, Ray documentation cluster yaml conﬁguration options, [docs.ray.io](https://docs.ray.io/en/latest/cluster/vms/references/ray-cluster-configuration.html#cluster-config), 2024.
 
 :::
 

@@ -10,6 +10,7 @@ from scripts.audit_prose import (
     SUSPECT_CODE_SKIPS_CJK,
     audit_book,
     find_bare_urls,
+    find_broken_links,
     find_english_residue,
     find_formula_remnant,
     find_prose_in_fence,
@@ -130,6 +131,16 @@ class FormulaRemnantTests(unittest.TestCase):
         hits = self.scan("- 权函数为 1，区间为 [− 1, 1]。\n")
         self.assertEqual([hit["reason"] for hit in hits], ["formula_remnant:weight_function"])
 
+    def test_weight_function_is_variant_is_reported(self):
+        # 同一句的另一种写法：`权函数是 e`（原书 the weight function is e^{-t x^2}）
+        hits = self.scan("其中 n 是非负整数，W (x) 是权函数。在 Rys 求积中，权函数是 e，积分区间为 [0, 1]，\n")
+        self.assertEqual([hit["reason"] for hit in hits], ["formula_remnant:weight_function"])
+
+    def test_equation_number_remnant_is_reported(self):
+        # 历史样本：12 章 (12.62) 展示块之后的句首编号残留
+        hits = self.scan("(12.62) 为了与高斯-埃尔米特求积中的权函数对应，权重和节点按比例缩放。\n")
+        self.assertEqual([hit["reason"] for hit in hits], ["formula_remnant:equation_number"])
+
     def test_operator_remnant_is_reported(self):
         hits = self.scan("τ = 1 ∇ χμ ·∇ χνγ 我们可以对 XC 矩阵进行数值积分：\n")
         self.assertEqual([hit["reason"] for hit in hits], ["formula_remnant:operators"])
@@ -146,7 +157,7 @@ class FormulaRemnantTests(unittest.TestCase):
     def test_fence_math_block_reference_list_and_inline_math_are_ignored(self):
         text = (
             "```python\nout = f(itemsize * (n+1),)\n```\n"
-            "$$\na = f(x,)\\ \\qquad (1.1)\n$$\n"
+            "$$\na = b qquad (1.1)\n$$\n"
             "::: {.ref-list}\n\n[1] A. Author, Title, 12(3),)\n\n:::\n"
             "权函数为 $\\frac{1}{\\sqrt{1-x^{2}}}$，区间为 $[-1,1]$。\n"
         )
@@ -168,6 +179,42 @@ class FormulaRemnantTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             path = write_qmd(Path(name), "mesh = [60, 60, 60]\n")
             self.assertEqual(len(find_suspect_code(path)), 1)
+
+
+class BrokenLinkTests(unittest.TestCase):
+    """链接目标被 PDF 换行切断，后半截退化成裸文本。"""
+
+    def scan(self, text):
+        with tempfile.TemporaryDirectory() as name:
+            path = write_qmd(Path(name), text)
+            return find_broken_links(path)
+
+    def test_split_link_in_reference_list_is_reported(self):
+        # 历史样本：06 章 [arrow](https://arrow). apache.org/cookbook/…
+        hits = self.scan(
+            "::: {.ref-list}\n\n"
+            "[24] Apache Software Foundation, Arrow cookbook, [arrow](https://arrow). apache.org/cookbook/py/flight.html, 2022.\n\n"
+            "[28] The Ray Team, Ray documentation, [docs.ray](https://docs.ray). io/en/latest/cluster.html, 2024.\n\n"
+            ":::\n"
+        )
+        self.assertEqual([hit["reason"] for hit in hits], ["broken_link:apache.org", "broken_link:io/"])
+
+    def test_intact_links_and_plain_prose_are_ignored(self):
+        text = (
+            "::: {.ref-list}\n\n"
+            "[23] Apache Software Foundation, Arrow memory, [apache.org](https://arrow.apache.org/docs/python/memory.html), 2024.\n\n"
+            ":::\n"
+            "详见 [NumPy 文档](https://numpy.org/doc/stable/)。\n"
+            "扫描报告写在 [reports/link.json](reports/link.json) 里。\n"
+        )
+        self.assertEqual(self.scan(text), [])
+
+    def test_code_fence_and_math_block_are_ignored(self):
+        text = (
+            "```bash\ncurl -O https://example.org/x\n```\n"
+            "$$\na = b qquad (1.1)\n$$\n"
+        )
+        self.assertEqual(self.scan(text), [])
 
 
 class BookReportTests(unittest.TestCase):

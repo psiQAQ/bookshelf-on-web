@@ -2285,8 +2285,7 @@ $$
 []{#eq-12-042}
 []{#eq-12-043}
 
-(12.62) 为了与高斯-埃尔米特求积中的权函数 e 对应，权重和
-节点按 1/ j 缩放，如下面代码片段的第 (1) 行和第 (2) 行所示。按照求积公式，积分计算的实现如下：
+为了与高斯-埃尔米特求积中的权函数 $e^{-x^{2}}$ 对应，权重和节点按 $1/\sqrt{\alpha_{ij}}$ 缩放，如下面代码片段的第 (1) 行和第 (2) 行所示。按照求积公式，积分计算的实现如下：
 
 ```python
 def primitive_overlap(li,l j,a i,a j,R a, Rb):
@@ -2338,7 +2337,7 @@ $$
 
 []{#eq-12-045}
 
-其中 n 是非负整数，W (x) 是权函数。在 Rys 求积中，权函数是 e，积分区间为 [0, 1]，
+其中 $n$ 是非负整数，$W(x)$ 是权函数。在 Rys 求积中，权函数是 $e^{-t x^{2}}$，积分区间为 $[0, 1]$，
 
 $$
 \int_{0}^{1}e^{-t x^{2}}f(x^{2})d x=\sum_{n}w_{n}f(x_{n}^{2}).
@@ -2994,7 +2993,7 @@ return out
 
 [14] W.H. Press, S.A. Teukolsky, W.T. Vetterling, B.P. Flannery, Numerical Recipes 3rd Edition: The Art of Scientiﬁc Computing, 3rd edition, Cambridge University Press, USA, 2007.
 
-[15] V. I. Lebedev, D.N. Laikov, A quadrature formula for the sphere of the 131st algebraic order of accuracy, Doklady. Mathematics 59 (1999) 477–481, [api.semanticscholar](https://api.semanticscholar). org/CorpusID:118893131.
+[15] V. I. Lebedev, D.N. Laikov, A quadrature formula for the sphere of the 131st algebraic order of accuracy, Doklady. Mathematics 59 (1999) 477–481, [api.semanticscholar.org](https://api.semanticscholar.org/CorpusID:118893131).
 
 :::
 

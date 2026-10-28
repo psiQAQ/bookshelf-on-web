@@ -735,7 +735,7 @@ if __name__ == '__main__':
 
 [23] Apache Software Foundation, Apache arrow document memory and io interfaces, [apache.org](https://arrow.apache.org/docs/python/memory.html), 2024.
 
-[24] Apache Software Foundation, Apache arrow cookbook - arrow ﬂight, [arrow](https://arrow). apache.org/cookbook/py/ﬂight.html, 2022.
+[24] Apache Software Foundation, Apache arrow cookbook - arrow ﬂight, [arrow.apache.org](https://arrow.apache.org/cookbook/py/flight.html), 2022.
 
 [25] Dask Development Team, Dask: library for dynamic task scheduling, [pydata.org](http://dask.pydata.org), 2016.
 

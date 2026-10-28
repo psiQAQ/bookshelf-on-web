@@ -60,8 +60,18 @@ FORMULA_REMNANT_WHITELIST = (
     re.compile(r"`P \(x\) = x exp\(− ax\)\.\)`"),         # 前言里明说「照原样保留」的样例
 )
 FORMULA_REMNANT_PUNCT = re.compile(r"\.\)|,\)")
-WEIGHT_FUNCTION_RE = re.compile(r"权函数为(?!\s*\$)")
+# 「权函数为」与「权函数是」是同一自然句的两种写法，PDF 提取两种都会留下压平串（`权函数是 e`）
+WEIGHT_FUNCTION_RE = re.compile(r"权函数(为|是)(?!\s*[\$`])")
+# 句首残留的公式编号：`(12.62) 为了与……` —— 公式本体已在 $$ 块里，这里的编号是文本层遗留
+EQUATION_NUMBER_RE = re.compile(r"^\(\d+\.\d+\)")
 FORMULA_REMNANT_SYMBOLS = "∑∇√∫∂"
+
+# 链接被 PDF 换行切断：`[arrow](https://arrow). apache.org/cookbook/...`。
+# 目标地址只到 `https://arrow`，`. apache.org/...` 退化成裸文本，点进去是死链。
+SPLIT_LINK_RE = re.compile(
+    r"\]\((?P<url>[^)\s]+)\)\.?\s+"
+    r"(?P<tail>(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}|[A-Za-z]{2,}/)"
+)
 
 CODE_PATTERNS = (
     (re.compile(r"^\s{2,}\S"), "缩进开头"),
@@ -162,6 +172,8 @@ def find_formula_remnant(path: Path):
             residue = pattern.sub("", residue)
         if FORMULA_REMNANT_PUNCT.search(residue):
             reason = "formula_remnant:punctuation"
+        elif EQUATION_NUMBER_RE.match(residue):
+            reason = "formula_remnant:equation_number"
         elif WEIGHT_FUNCTION_RE.search(residue):
             reason = "formula_remnant:weight_function"
         elif sum(residue.count(symbol) for symbol in FORMULA_REMNANT_SYMBOLS) >= 2 and "=" in residue:
@@ -175,6 +187,27 @@ def find_formula_remnant(path: Path):
             "url": "",
             "reason": reason,
         })
+    return found
+
+
+def find_broken_links(path: Path):
+    """链接目标被 PDF 换行切断，后半截退化成裸文本（读者点进去是死链）。
+
+    参考文献区（`in_ref`）在这里**不豁免**：断链在 ref-list 里最集中，其它探测器跳过
+    那一区是为了不误伤英文条目，但「`](url).` 后面紧跟裸域名」没有别的解释。
+    """
+    found = []
+    for number, line, in_code, in_math, in_ref in iter_lines(path):
+        if in_code or in_math or "](" not in line:
+            continue
+        for match in SPLIT_LINK_RE.finditer(line):
+            found.append({
+                "file": path.name,
+                "line": number,
+                "text": line.strip(),
+                "url": match.group("url"),
+                "reason": f"broken_link:{match.group('tail')}",
+            })
     return found
 
 
@@ -238,7 +271,7 @@ def find_english_residue(path: Path):
 
 # 这三类一旦非空就是缺陷，`--check` 会因此失败；`prose_in_fence` 混有合法文档字符串与
 # 报错信息，只作为待人工甄别的清单，不参与 `--check`。
-STRICT_DETECTORS = ("bare_urls", "suspect_code", "english_residue", "formula_remnant")
+STRICT_DETECTORS = ("bare_urls", "suspect_code", "english_residue", "formula_remnant", "broken_links")
 
 # `find_suspect_code` 的显式口径：只看整行没有中文的行。
 # 带中文的行里夹着代码片段时，机械判据的误报率过高（`C/C++` 会命中 `++` 运算符、
@@ -253,6 +286,7 @@ DETECTORS = (
     ("prose_in_fence", find_prose_in_fence),
     ("english_residue", find_english_residue),
     ("formula_remnant", find_formula_remnant),
+    ("broken_links", find_broken_links),
 )
 
 

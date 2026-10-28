@@ -110,10 +110,10 @@ def check_site(site: Path, expected_slugs: set[str]) -> list[Issue]:
     return issues
 
 
-def registered_slugs(root: Path = ROOT) -> set[str]:
-    """Slugs recorded in the publish registry, so CI need not repeat them."""
-    registry = load_yaml(root / "catalog/books.yaml")
-    books = registry.get("books") if isinstance(registry, dict) else None
+def registered_slugs(root: Path = ROOT, registry: str = "catalog/books.yaml") -> set[str]:
+    """Slugs recorded in a registry, so CI need not repeat them."""
+    entries = load_yaml(root / registry)
+    books = entries.get("books") if isinstance(entries, dict) else None
     return {str(book["id"]) for book in books or [] if isinstance(book.get("id"), str)}
 
 
@@ -121,9 +121,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("site", type=Path)
     parser.add_argument("--book", action="append", default=[])
+    parser.add_argument("--preview", action="store_true",
+                        help="Expect the slugs of catalog/preview.yaml instead of catalog/books.yaml")
     parser.add_argument("--report", type=Path, default=Path("reports/links.json"))
     args = parser.parse_args()
-    issues = check_site(args.site, set(args.book) or registered_slugs())
+    expected = set(args.book) or registered_slugs(
+        registry="catalog/preview.yaml" if args.preview else "catalog/books.yaml")
+    issues = check_site(args.site, expected)
     report = write_report(args.report, issues, site=str(args.site))
     print(f"Site check: {'PASS' if report['ok'] else 'FAIL'}; {len(issues)} issue(s); {args.report}")
     return 0 if report["ok"] else 1

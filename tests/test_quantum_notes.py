@@ -9,7 +9,7 @@ from scripts.publishing import ROOT, book_config, check_qmd, explicit_anchors, l
 
 class QuantumNotesTests(unittest.TestCase):
     def setUp(self):
-        self.book = ROOT / "books/quantum-python-notes"
+        self.book = ROOT / "books/python-for-quantum-chemistry-a-full-stack-programming-guide"
         self.metadata = load_yaml(self.book / "metadata.yaml")
 
     def test_preface_sixteen_ordered_chapters_and_static_guide(self):

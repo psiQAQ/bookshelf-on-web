@@ -8,7 +8,7 @@
 
 Implemented: two short original sample books, light/dark themes, formulas, static code, chapter navigation and explicit anchors; JSON Schemas and machine-readable validation; isolated rendering, multi-book assembly, local HTML/CSS link/resource checks and publication boundary checks; locked Python dependencies, PR validation and a **manual-only** Pages workflow.
 
-The public registry `catalog/books.yaml` currently publishes one book: the Chinese translation of Qiming Sun's *Python for Quantum Chemistry: A Full Stack Programming Guide*, live at <https://notes.psiqaq.cn/bookshelf-on-web/books/quantum-python-notes/>. Both original samples remain **drafts without human approval**; they appear only in `catalog/preview.yaml`, an explicitly separate local-preview registry. No original PDF hash or page number is invented. Existing unregistered book materials are untouched and excluded.
+The public registry `catalog/books.yaml` currently publishes one book: the Chinese translation of Qiming Sun's *Python for Quantum Chemistry: A Full Stack Programming Guide*, live at <https://notes.psiqaq.cn/bookshelf-on-web/books/python-for-quantum-chemistry-a-full-stack-programming-guide/>. Both original samples remain **drafts without human approval** and are no longer registered anywhere, so local preview and Pages now show the same single book. The book id was renamed from `quantum-python-notes` on 2026-10-28; paths recorded in evidence files from earlier runs still use the old directory name. No original PDF hash or page number is invented. Existing unregistered book materials are untouched and excluded.
 
 Not implemented: PDF/OCR extraction inside the build pipeline (the translation's assets were produced by throwaway scripts under the ignored `.local/` directory), Pagefind cross-book search, knowledge graphs or incremental rendering. Quarto search is per project, not library-wide.
 
@@ -26,18 +26,18 @@ uv run python scripts/build.py
 uv run python scripts/check_site.py dist
 ```
 
-The default build publishes only explicitly registered, eligible books to `dist/`. With the current empty registry it produces an empty portal. `validate.py` without `--strict` reports ineligibility as warnings; the publishing builder **always** uses strict validation and never silently skips ineligible entries.
+The default build publishes only explicitly registered, eligible books to `dist/`. With an empty registry it produces an empty portal. `validate.py` without `--strict` reports ineligibility as warnings; the publishing builder **always** uses strict validation and never silently skips ineligible entries.
 
-### Local-only sample preview
+### Local-only preview
 
 ```sh
 uv run python scripts/validate.py --preview --report reports/preview-validation.json
 uv run python scripts/build.py --preview
-uv run python scripts/check_site.py .preview --book sample-linear-algebra --book sample-waves --report reports/preview-links.json
+uv run python scripts/check_site.py .preview --preview --report reports/preview-links.json
 uv run python -m http.server 8000 --bind 127.0.0.1 --directory .preview
 ```
 
-Open `http://127.0.0.1:8000/`, then `books/sample-linear-algebra/` and `books/sample-waves/`. **Do not deploy `.preview/`.** It is distinct from `dist/`, bears local-preview notices, and does not change approval status. Serve only the generated directory, never the repository root.
+Open `http://127.0.0.1:8000/`, then `books/python-for-quantum-chemistry-a-full-stack-programming-guide/`. The two original samples stay unregistered, so this preview now lists the same single book as `dist/`. **Do not deploy `.preview/`.** It is distinct from `dist/`, bears local-preview notices, and does not change approval status. Serve only the generated directory, never the repository root.
 
 If Quarto is not on PATH, append `--quarto .local/tools/bin/quarto.exe` to either build command (Windows local installation used during verification). For real-render integration tests:
 
@@ -49,6 +49,16 @@ QUARTO_TEST_EXECUTABLE=quarto uv run python -m unittest discover -s tests -v
 ```
 
 Without that environment variable the real-render test is explicitly skipped. Windows may also skip the symlink test when symlink privileges are unavailable.
+
+### Reference lists
+
+```sh
+uv run python scripts/format_references.py --check
+uv run python scripts/format_references.py --chapters 09-performance.qmd
+uv run python scripts/format_references.py --report reports/references.json
+```
+
+Each `## 参考文献` section must become a `::: {.ref-list}` block with one paragraph per entry, and every URL must be an inline `[host](URL)` link rather than bare text. `--check` reports what would change and exits non-zero; `tests/test_references.py` asserts both the helpers and the committed chapters.
 
 ## Publication contract
 

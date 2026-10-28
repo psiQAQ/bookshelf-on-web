@@ -387,6 +387,15 @@ class CheckSiteTests(unittest.TestCase):
             encoding="utf-8",
         )
         self.assertEqual(registered_slugs(Path(self.temporary.name)), {"sample-waves", "sample-linear-algebra"})
+        (registry / "preview.yaml").write_text(
+            "books:\n- id: python-for-quantum-chemistry-a-full-stack-programming-guide"
+            "\n  path: books/python-for-quantum-chemistry-a-full-stack-programming-guide/metadata.yaml\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(
+            registered_slugs(Path(self.temporary.name), registry="catalog/preview.yaml"),
+            {"python-for-quantum-chemistry-a-full-stack-programming-guide"},
+        )
         (registry / "books.yaml").write_text("books: []\n", encoding="utf-8")
         self.assertEqual(registered_slugs(Path(self.temporary.name)), set())
 

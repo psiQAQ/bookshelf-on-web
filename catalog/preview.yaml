@@ -1,8 +1,4 @@
 # LOCAL PREVIEW ONLY. Never consumed by the publishing build.
 books:
-- id: sample-linear-algebra
-  path: books/sample-linear-algebra/metadata.yaml
-- id: sample-waves
-  path: books/sample-waves/metadata.yaml
-- id: quantum-python-notes
-  path: books/quantum-python-notes/metadata.yaml
+- id: python-for-quantum-chemistry-a-full-stack-programming-guide
+  path: books/python-for-quantum-chemistry-a-full-stack-programming-guide/metadata.yaml

@@ -20,7 +20,7 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-BOOK = ROOT / "books/quantum-python-notes"
+BOOK = ROOT / "books/python-for-quantum-chemistry-a-full-stack-programming-guide"
 
 BOOTSTRAP = r'''
 import os

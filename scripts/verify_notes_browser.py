@@ -26,7 +26,7 @@ def main():
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     origin = f"http://127.0.0.1:{server.server_port}"
-    book = "/books/quantum-python-notes/"
+    book = "/books/python-for-quantum-chemistry-a-full-stack-programming-guide/"
     chapters = sorted((artifact / book.lstrip("/") / "chapters").glob("*.html"))
     report = {"ok": False, "browser": "", "pages": [], "interactions": [], "failed_requests": [], "console_errors": []}
     try:
@@ -91,7 +91,7 @@ def main():
                 hrefs = results.evaluate_all("els => els.map(e => e.href)")
                 assert hrefs and all(book in href for href in hrefs), hrefs
                 results.first.click()
-                page.wait_for_url("**/books/quantum-python-notes/**")
+                page.wait_for_url("**/books/python-for-quantum-chemistry-a-full-stack-programming-guide/**")
                 page.keyboard.press("Escape")
                 # Theme control is in the collapsible sidebar on narrow screens.
                 toggle = page.locator("a.quarto-color-scheme-toggle:visible")

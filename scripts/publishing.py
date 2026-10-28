@@ -88,6 +88,23 @@ def schema_errors(root: Path, name: str, value: Any) -> list[str]:
     return [f"{'/'.join(map(str, error.absolute_path))}: {error.message}" for error in validator.iter_errors(value)]
 
 
+HOME_LINK = '<a class="qs-home-link" href="">← 返回书库</a>'
+
+# The library index sits above books/<id>/, at a depth that differs between the book landing
+# page and chapters/, and the site is served under a repository prefix on Pages. Derive the
+# prefix from the current URL instead of hard-coding a relative path; the empty href above is
+# harmless before this runs and keeps the static output free of root-relative links.
+HOME_LINK_SCRIPT = """<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var m = window.location.pathname.match(/^(.*\\/)books\\/[^\\/]+\\//);
+  if (!m) { return; }
+  document.querySelectorAll("a.qs-home-link").forEach(function (a) {
+    a.href = m[1] + "index.html";
+  });
+});
+</script>"""
+
+
 def book_header_style() -> str:
     return (
         "<style>"
@@ -96,7 +113,13 @@ def book_header_style() -> str:
         " .page-columns, #quarto-document-content, main.content { min-width: 0; }"
         " #quarto-document-content p, #quarto-document-content li, #quarto-document-content td"
         " { overflow-wrap: anywhere; }"
+        " .qs-home { margin: 0.25rem 0 0.5rem; }"
+        " a.qs-home-link { display: inline-block; padding: 0.15em 0.6em; border-radius: 4px;"
+        " border: 1px solid rgba(128, 128, 128, 0.45); font-size: 0.9rem; text-decoration: none; }"
+        " a.qs-home-link:hover { text-decoration: underline; }"
+        " .nav-footer a.qs-home-link { margin-top: 0.5rem; }"
         "</style>"
+        + HOME_LINK_SCRIPT
     )
 
 
@@ -104,7 +127,9 @@ def book_config(metadata: dict) -> dict:
     return {
         "project": {"type": "book", "output-dir": "_book"},
         "book": {"title": metadata["title"], "chapters": metadata["chapters"],
-                 "page-navigation": True, "reader-mode": True, "search": True},
+                 "page-navigation": True, "reader-mode": False, "search": True,
+                 "sidebar": {"header": f'<div class="qs-home">{HOME_LINK}</div>'},
+                 "page-footer": HOME_LINK},
         "format": {"html": {"lang": metadata["language"], "theme": {"light": "cosmo", "dark": "darkly"},
                             "html-math-method": "mathjax", "toc": True, "number-sections": True,
                             "code-copy": True, "code-overflow": "scroll",

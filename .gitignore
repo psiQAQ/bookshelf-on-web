@@ -25,3 +25,6 @@ _book/
 /.preview.previous/
 /dist.previous/
 /.build-*/
+
+# Per-task git worktrees (AGENTS.md parallel workflow)
+/.worktrees/

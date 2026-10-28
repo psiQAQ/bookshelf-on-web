@@ -8,7 +8,7 @@
 
 已实现：两本简短原创样例、浅深主题、公式、静态代码、章节导航与显式锚点；JSON Schema 与机器可读校验；隔离渲染、多书组装、站内 HTML/CSS 链接与资源检查、发布边界检查；锁定 Python 依赖、PR 验证和**仅手动触发**的 Pages 工作流。
 
-正式注册表 `catalog/books.yaml` 当前发布一本书：Qiming Sun《Python for Quantum Chemistry: A Full Stack Programming Guide》的中文直译，线上地址 <https://notes.psiqaq.cn/bookshelf-on-web/books/quantum-python-notes/>。两本原创样例仍为**未经人工批准的草稿**，仅登记于明确隔离的本地预览注册表 `catalog/preview.yaml`。不虚构原始 PDF 哈希或页码。已有未登记书籍材料未被修改，也不进入构建。
+正式注册表 `catalog/books.yaml` 当前发布一本书：Qiming Sun《Python for Quantum Chemistry: A Full Stack Programming Guide》的中文直译，线上地址 <https://notes.psiqaq.cn/bookshelf-on-web/books/python-for-quantum-chemistry-a-full-stack-programming-guide/>。两本原创样例仍为**未经人工批准的草稿**，且已不再登记，因此本地预览与 Pages 现在都只有这一本书。书目 id 于 2026-10-28 由 `quantum-python-notes` 改名，早期验证记录中的旧目录名按当时状态原样保留。不虚构原始 PDF 哈希或页码。已有未登记书籍材料未被修改，也不进入构建。
 
 未实现：构建流水线内的 PDF/OCR 提取（译本的图片资产由忽略目录 `.local/` 下的一次性脚本产出）、Pagefind 跨书搜索、知识图谱或增量渲染。Quarto 搜索仅覆盖单个项目，不覆盖整个书库。
 
@@ -26,18 +26,18 @@ uv run python scripts/build.py
 uv run python scripts/check_site.py dist
 ```
 
-默认构建只把正式登记且具备发布资格的书籍组装至 `dist/`；当前空注册表生成空门户。`validate.py` 不带 `--strict` 时将资格问题报告为警告；正式构建**始终**采用严格校验，不会静默跳过不具备资格的登记条目。
+默认构建只把正式登记且具备发布资格的书籍组装至 `dist/`；空注册表生成空门户。`validate.py` 不带 `--strict` 时将资格问题报告为警告；正式构建**始终**采用严格校验，不会静默跳过不具备资格的登记条目。
 
-### 仅限本地的样例预览
+### 仅限本地的预览
 
 ```sh
 uv run python scripts/validate.py --preview --report reports/preview-validation.json
 uv run python scripts/build.py --preview
-uv run python scripts/check_site.py .preview --book sample-linear-algebra --book sample-waves --report reports/preview-links.json
+uv run python scripts/check_site.py .preview --preview --report reports/preview-links.json
 uv run python -m http.server 8000 --bind 127.0.0.1 --directory .preview
 ```
 
-打开 `http://127.0.0.1:8000/`，再访问 `books/sample-linear-algebra/` 和 `books/sample-waves/`。**不得部署 `.preview/`。** 它与 `dist/` 分离、带有本地预览提示，不改变审核状态。只托管生成目录，不要托管仓库根目录。
+打开 `http://127.0.0.1:8000/`，再访问 `books/python-for-quantum-chemistry-a-full-stack-programming-guide/`。两本原创样例不再登记，因此本地预览与 `dist/` 现在列出同一本书。**不得部署 `.preview/`。** 它与 `dist/` 分离、带有本地预览提示，不改变审核状态。只托管生成目录，不要托管仓库根目录。
 
 若 Quarto 不在 PATH，可在任一构建命令后添加 `--quarto .local/tools/bin/quarto.exe`（本次 Windows 验证使用的本地安装）。真实渲染集成测试：
 
@@ -49,6 +49,16 @@ QUARTO_TEST_EXECUTABLE=quarto uv run python -m unittest discover -s tests -v
 ```
 
 未设置该环境变量时，真实渲染测试会明确跳过。Windows 缺少创建符号链接权限时也会跳过符号链接测试。
+
+### 参考文献
+
+```sh
+uv run python scripts/format_references.py --check
+uv run python scripts/format_references.py --chapters 09-performance.qmd
+uv run python scripts/format_references.py --report reports/references.json
+```
+
+每章 `## 参考文献` 必须写成 `::: {.ref-list}` 围栏块、每条独占一段，URL 一律换成 `[站点名](URL)` 内联链接而不是裸文本。`--check` 只报告差异并以非零码退出；`tests/test_references.py` 同时约束辅助函数与已提交章节。
 
 ## 发布契约
 

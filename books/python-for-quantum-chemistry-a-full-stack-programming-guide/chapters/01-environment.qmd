@@ -177,9 +177,9 @@ index-url = https://pypi.tuna.tsinghua.edu.cn/simple
 
 ```text
 mypkg
-    __init__.py
-    module_a.py
-    module_b.py
+├── __init__.py
+├── module_a.py
+└── module_b.py
 ```
 module_a 和 module_b 的实现如下：
 
@@ -252,12 +252,12 @@ class B(module_a.A):
 
 ```text
 ...
-    core_repo
-        mypkg
-                                        __init__.py
-    extensions
-        mypkg_ext
-module_a.py
+├── core_repo
+│   └── mypkg
+│       └── __init__.py
+└── extensions
+    └── mypkg_ext
+        └── module_a.py
 ...
 ```
 父包名为 mypkg，内含一个 __init__.py 文件。导入 mypkg 时，mypkg.__path__ 属性记录包的所有目录。此时 Python 无法导入 module_a.py，因为不知道该到哪里
@@ -921,26 +921,23 @@ PEP 8 [28] 是 Python 社区推荐的编码风格指南。它涵盖缩进、行�
 
 ```text
 .
-    doc
-        conf.py
-        index.rst
-    LICENSE.txt
-    README.md
-    package_name
-        __init__.py
-        module1.py
-        subpackage
-            __init__.py
-            module2.py
-        ...
-    ...
-                                        pyproject.toml
-                   requirements.txt
-```
-
-```text
-                              setup.py
- tests
+├── doc
+│   ├── conf.py
+│   └── index.rst
+├── LICENSE.txt
+├── README.md
+├── package_name
+│   ├── __init__.py
+│   ├── module1.py
+│   ├── subpackage
+│   │   ├── __init__.py
+│   │   └── module2.py
+│   └── ...
+├── ...
+├── pyproject.toml
+├── requirements.txt
+├── setup.py
+└── tests
 ```
 
 - doc 目录包含以 reStructuredText 或 Markdown 格式编写的文档文件。使用文档工具 Sphinx [34] 可以从这些文件生成网页或 PDF 文档。

@@ -308,7 +308,10 @@ CPU 从内存获取数据时，首先将数据载入缓存。缓存行是在主�
 如第 2 章所述，高维数组（张量）的形状和遍历张量的循环顺序对程序效率有显著影响。遍历张量时，最好在内层循环中访问连续内存，以最大限度提高缓存效率。当数组按行主序存储时，建议在最内层循环中遍历最后一个索引。对于列主序数组，建议在最内层循环中遍历第一个索引。
 下面使用矩阵乘法程序说明步长和循环顺序对程序性能的影响。矩阵乘法的公式为
 
-![公式图](../assets/math/eq-09-001.png){width=43%}
+$$
+C_{ij}=\sum_{k}A_{ik}B_{jk}.
+\qquad (9.1)
+$$
 
 []{#eq-09-001}
 
@@ -376,7 +379,10 @@ c = matmul_nn_v3(a,b ) # 77.4 s
 缓存未命中，并从主存传输新的缓存行，增加计算延迟。
 在 matmul_nn_v2 中，我们重新排列矩阵中的元素，以确保顺序访问内存。通过在第(2)行转置矩阵 b，我们使最内层循环连续访问矩阵 b。最内层循环现在遍历转置后的矩阵 b 的行，这些行在内存中是连续的，而不是遍历原矩阵 b 的列。这本质上是一种新的矩阵乘法 matmul_nt，其中 t 表示第二个矩阵转置，
 
-![公式图](../assets/math/eq-09-002.png){width=43%}
+$$
+C_{ij}=\sum_{k}A_{ik}B_{jk}.
+\qquad (9.2)
+$$
 
 []{#eq-09-002}
 
@@ -456,21 +462,36 @@ SIMD 可以显著提高 CPU 的算术计算吞吐量。吞吐量取决于 SIMD �
 性能分析（profiling）是程序优化中常见的任务。通过分析性能分析结果，我们可以找出程序中的热点。优化工作应首先集中在这些热点上。
 我们将使用施密特正交化（Schmidt orthogonalization）算法说明程序性能分析和优化所涉及的技术。给定与一组基向量 u 对应的重叠矩阵 S，我们可以确定一个上三角系数矩阵 C，表示正交归一基 v
 
-![公式 (9.7)](../assets/math/eq-09-003.png){width=44%}
+$$
+\begin{aligned}
+\mathbf{v}_{i} &= \sum_{m}C_{mi}\mathbf{u}_{m}, \qquad (9.6)\\
+\sum_{mn}C_{mi}S_{mn}C_{nj} &= \delta_{ij}. \qquad (9.7)
+\end{aligned}
+$$
 
-**公式 (9.7)**[]{#eq-09-003}
+[]{#eq-09-003}
 
 C 可以通过以下施密特正交化过程获得
 
-![公式 (9.9)](../assets/math/eq-09-004.png){width=45%}
+$$
+\begin{aligned}
+\tilde{\mathbf{v}}_{j} &= \mathbf{u}_{j}-\sum_{k}\mathbf{v}_{k}\mathbf{v}_{k}\cdot\mathbf{u}_{j}, \qquad (9.8)\\
+\mathbf{v}_{j} &= \frac{\mathbf{v}'_{j}}{\sqrt{\tilde{\mathbf{v}}_{j}\cdot\tilde{\mathbf{v}}_{j}}}. \qquad (9.9)
+\end{aligned}
+$$
 
-**公式 (9.9)**[]{#eq-09-004}
+[]{#eq-09-004}
 
 其中
 
-![公式 (9.10)(9.11)](../assets/math/eq-09-005.png){width=48%}
+$$
+\begin{aligned}
+\tilde{\mathbf{v}}_{j}\cdot\tilde{\mathbf{v}}_{j} &= S_{jj}-\sum_{k}d_{kj}^{2}, \qquad (9.10)\\
+d_{kj} &= \mathbf{v}_{k}\cdot\mathbf{u}_{j}=\sum_{m}C_{mk}S_{mj}. \qquad (9.11)
+\end{aligned}
+$$
 
-**公式 (9.10)(9.11)**[]{#eq-09-005}
+[]{#eq-09-005}
 
 这些方程可转换为如下的 schmidt_orth 函数：
 
@@ -1046,31 +1067,64 @@ Python 使用 for 循环逐元素对数组和列表执行算术运算的速度�
 NumPy 提供了各种高效的向量化（vectorization）函数和张量操作。通过消除 for 循环并使用张量操作，可以获得与 Python 编译技术或 C/C++ 实现相当甚至更高的性能。然而，要达到这种性能水平，程序可能需要完全重新设计，以满足向量化和张量操作的要求。
 例如，第 9.2 节中的 schmidt_orth 函数可以使用矩阵分块和矩阵乘法重写。分块表示下的重叠矩阵
 
-![公式图](../assets/math/eq-09-006.png){width=70%}
+$$
+\mathbf{S}=\begin{pmatrix}
+\mathbf{S}_{11} & \mathbf{S}_{12}\\
+\mathbf{S}_{21} & \mathbf{S}_{22}
+\end{pmatrix}.
+\qquad (9.12)
+$$
 
 []{#eq-09-006}
 
 S =.) 假设 S11 可以用系数矩阵 C11 正交化，我们便可以变换整个重叠矩阵：
 
-![公式图](../assets/math/eq-09-007.png){width=49%}
+$$
+\begin{aligned}
+&\begin{pmatrix}\mathbf{C}_{11}^{T} & \mathbf{0}\\ \mathbf{0} & \mathbf{1}\end{pmatrix}
+\begin{pmatrix}\mathbf{S}_{11} & \mathbf{S}_{12}\\ \mathbf{S}_{21} & \mathbf{S}_{22}\end{pmatrix}
+\begin{pmatrix}\mathbf{C}_{11} & \mathbf{0}\\ \mathbf{0} & \mathbf{1}\end{pmatrix}\\
+&=\begin{pmatrix}\mathbf{1} & \mathbf{C}_{11}^{T}\mathbf{S}_{12}\\ \mathbf{S}_{12}\mathbf{C}_{11} & \mathbf{S}_{22}\end{pmatrix}.
+\end{aligned}
+\qquad (9.13)
+$$
 
 []{#eq-09-007}
 
 然后，我们将剩余基投影到 C11。
 
-![公式图](../assets/math/eq-09-008.png){width=67%}
+$$
+\begin{aligned}
+&\begin{pmatrix}\mathbf{1} & \mathbf{0}\\ -(\mathbf{C}_{11}^{T}\mathbf{S}_{12})^{T} & \mathbf{1}\end{pmatrix}
+\begin{pmatrix}\mathbf{1} & \mathbf{C}_{11}^{T}\mathbf{S}_{12}\\ \mathbf{S}_{12}\mathbf{C}_{11} & \mathbf{S}_{22}\end{pmatrix}
+\begin{pmatrix}\mathbf{1} & -\mathbf{C}_{11}^{T}\mathbf{S}_{12}\\ \mathbf{0} & \mathbf{1}\end{pmatrix}\\
+&=\begin{pmatrix}\mathbf{1} & \mathbf{0}\\ \mathbf{0} & \tilde{\mathbf{S}}_{22}\end{pmatrix}.
+\end{aligned}
+\qquad (9.14)
+$$
 
 []{#eq-09-008}
 
 此变换修改重叠矩阵块 S22
 
-![公式图](../assets/math/eq-09-009.png){width=47%}
+$$
+\tilde{\mathbf{S}}_{22}=\mathbf{S}_{22}-\mathbf{S}_{12}\mathbf{C}_{11}\mathbf{C}_{11}^{T}\mathbf{S}_{12}.
+\qquad (9.15)
+$$
 
 []{#eq-09-009}
 
 S22 = S 22 − S 12C11C S12.) 将 schmidt_orth 函数应用于 S˜，得到系数矩阵的子块 C22。结合这两步正交化变换，我们得到正交化系数。
 
-![公式图](../assets/math/eq-09-010.png){width=68%}
+$$
+\begin{aligned}
+\mathbf{C} &= \begin{pmatrix}\mathbf{C}_{11} & \mathbf{0}\\ \mathbf{0} & \mathbf{1}\end{pmatrix}
+\begin{pmatrix}\mathbf{1} & -\mathbf{C}_{11}^{T}\mathbf{S}_{12}\\ \mathbf{0} & \mathbf{1}\end{pmatrix}
+\begin{pmatrix}\mathbf{1} & \mathbf{0}\\ \mathbf{0} & \mathbf{C}_{22}\end{pmatrix}\\
+&= \begin{pmatrix}\mathbf{C}_{11} & -\mathbf{C}_{11}\mathbf{C}_{11}^{T}\mathbf{S}_{12}\mathbf{C}_{22}\\ \mathbf{0} & \mathbf{C}_{22}\end{pmatrix}.
+\end{aligned}
+\qquad (9.16)
+$$
 
 []{#eq-09-010}
 

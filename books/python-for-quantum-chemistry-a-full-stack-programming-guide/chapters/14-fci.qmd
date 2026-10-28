@@ -16,28 +16,42 @@
 
 在组态相互作用（CI）方法中，电子波函数表示为 Slater 行列式的线性组合，这些行列式也称为组态：
 
-![公式图](../assets/math/eq-14-001.png){width=43%}
+$$
+|\Psi\rangle=\sum_{I}C_{I}|\Phi_{I}\rangle.
+\qquad (14.1)
+$$
 
 []{#eq-14-001}
 
 Slater 行列式 |Φ ⟩表示电子在特定轨道中的占据情况。展开系数 C 通过变分极小化 CI 能量求得，满足如下述本征值方程：
 
-![公式图](../assets/math/eq-14-002.png){width=40%}
+$$
+\mathbf{H}\mathbf{C}=\mathbf{C}E,
+\qquad (14.2)
+$$
 
 []{#eq-14-002}
 
 其中哈密顿矩阵的元素为
 
-![公式图](../assets/math/eq-14-003.png){width=44%}
+$$
+H_{IJ}=\langle\Phi_{I}|\hat{H}|\Phi_{J}\rangle.
+\qquad (14.3)
+$$
 
 []{#eq-14-003}
 
 FCI 方法要求在波函数展开中计入全部行列式。在非相对论计算中，α 自旋与 β 自旋电子数分别守恒。对于具有 n 个轨道和 kα + kβ 个电子的系统，FCI
 波函数包含这些行列式。每个行列式均可表示为 α 与 β 自旋电子组态的乘积： Iα 和 Iβ 分别表示 α 和 β 电子的产生算符组态：
 
-![公式 (14.5)(14.6)](../assets/math/eq-14-004.png){width=43%}
+$$
+\begin{aligned}
+I_{\alpha} &= \hat{a}_{i_{1}\alpha}^{\dagger}\hat{a}_{i_{2}\alpha}^{\dagger}\cdots, \qquad (14.5)\\
+I_{\beta} &= \hat{a}_{i_{1}\beta}^{\dagger}\hat{a}_{i_{2}\beta}^{\dagger}\cdots. \qquad (14.6)
+\end{aligned}
+$$
 
-**公式 (14.5)(14.6)**[]{#eq-14-004}
+[]{#eq-14-004}
 
 在许多场合，Iα 和 Iβ 分别称为 α 串和 β 串。
 由于行列式数量呈指数增长，FCI 方法仅适用于相对较小的系统。考虑一个包含 20 个空间轨道的半填充波函数体系，其中有 10 个 α 电子与 10 个 β 电子。FCI
@@ -118,25 +132,40 @@ def make_strings(norb: int, noccupied: int):
 通常，FCI 方法仅需计算哈密顿量最低的几个本征态，分别对应基态波函数与低能激发态。在量子化学中，Davidson 对角化算法 [1,2] 常用于计算最低本征值和本征向量。
 给定一组基向量 {v0, v1, …, vn−1}，可将矩阵 A 及其本征向量 x 表示如下：
 
-![公式 (14.7)(14.8)](../assets/math/eq-14-005.png){width=41%}
+$$
+\begin{aligned}
+Ax &= \lambda x, \qquad (14.7)\\
+h_{ij} &= v_{i}^{\dagger}Av_{j}, \qquad (14.8)\\
+x &= \sum_{i}c_{i}v_{i}. \qquad (14.9)
+\end{aligned}
+$$
 
-**公式 (14.7)(14.8)**[]{#eq-14-005}
+[]{#eq-14-005}
 
 本征值问题由此化简为一个可以高效求解的较小问题：
 
-![公式图](../assets/math/eq-14-006.png){width=39%}
+$$
+\mathbf{h}\mathbf{c}=e\mathbf{c}.
+\qquad (14.10)
+$$
 
 []{#eq-14-006}
 
 对于近似本征向量 x，可以针对最低本征值 e0 构造残差：
 
-![公式图](../assets/math/eq-14-007.png){width=51%}
+$$
+\sigma=Ax-e_{0}x=\sum_{i}(Av_{i}-e_{0}v_{i})c_{i0}.
+\qquad (14.11)
+$$
 
 []{#eq-14-007}
 
 为尽量降低矩阵与向量乘法的计算开销，使用预先计算的乘积 Avi 构造残差，再利用该残差生成新的基向量：
 
-![公式图](../assets/math/eq-14-008.png){width=43%}
+$$
+v_{n}=\frac{\sigma}{\theta-\mathrm{diag}(A)},
+\qquad (14.12)
+$$
 
 []{#eq-14-008}
 
@@ -197,7 +226,10 @@ def davidson(A, A_diag, x0=None, tol=1e-5, maxiter=50, space=15):
 ```
 在迭代过程中，新的基向量加入子空间前，必须相对于现有基向量完成正交化。若缺少该步骤，子空间本征值问题将退化为广义本征值问题：
 
-![公式图](../assets/math/eq-14-009.png){width=40%}
+$$
+Hc=Sce.
+\qquad (14.13)
+$$
 
 []{#eq-14-009}
 
@@ -213,9 +245,16 @@ def matvec(x)
 参数 h1 是单电子积分矩阵，eri 是双电子积分张量。其他参数包括轨道数 norb、α 串算符数（nelec_a）和 β 串算符数（nelec_b）。compute_hc 是 FCI 方法中计算最密集的耗时部分。它可以使用高效的高维张量收缩算法求值，第 14.4 节将对此作深入讨论。
 Davidson 算法需要的另一个参数是哈密顿量的对角元素。这些元素可以使用 Slater-Condon 规则 [4] 计算。
 
-![公式 (14.14)](../assets/math/eq-14-010.png){width=69%}
+$$
+\begin{aligned}
+\langle I_{\alpha}I_{\beta}|H|I_{\alpha}I_{\beta}\rangle
+&=\sum_{i\in\{I_{\alpha},I_{\beta}\}}h_{ii}+\frac{1}{2}\sum_{ij\in\{I_{\alpha},I_{\beta}\}}(ii|jj)\\
+&\quad-\frac{1}{2}\sum_{ij\in I_{\alpha}}(ij|ji)-\frac{1}{2}\sum_{ij\in I_{\beta}}(ij|ji).
+\end{aligned}
+\qquad (14.14)
+$$
 
-**公式 (14.14)**[]{#eq-14-010}
+[]{#eq-14-010}
 
 得益于 NumPy 的花式索引（fancy indexing）功能，计算对角元素的程序实现相当简捷。
 
@@ -269,7 +308,10 @@ Davidson 对角化可用于计算本征谱低端的多个本征态。在 Davidso
 - 将已收敛的本征态排除在基生成过程之外。可以使新生成的基向量与已收敛的本征态正交。这样，所得基向量就只能改进未收敛的本征态。
 - 对已收敛的本征态添加惩罚项。在进行矩阵向量积 A(x) 计算时，为已收敛的本征向量 t 引入惩罚项 s
 
-![公式图](../assets/math/eq-14-011.png){width=42%}
+$$
+Ax+\sum_{i}s t_{i}(t_{i}\cdot x).
+\qquad (14.15)
+$$
 
 []{#eq-14-011}
 
@@ -293,57 +335,92 @@ Davidson 对角化可用于计算本征谱低端的多个本征态。在 Davidso
 
 二次量子化的无自旋哈密顿量可表示为 [5]
 
-![公式图](../assets/math/eq-14-012.png){width=58%}
+$$
+\hat{H}=\sum_{pq}h_{pq}\hat{E}_{pq}+\frac{1}{2}\sum_{pqrs}(pq|rs)(\hat{E}_{pq}\hat{E}_{rs}-\delta_{rq}\hat{E}_{ps}),
+\qquad (14.16)
+$$
 
 []{#eq-14-012}
 
 其中
 
-![公式图](../assets/math/eq-14-013.png){width=46%}
+$$
+\hat{E}_{pq}=\hat{a}_{p\alpha}^{\dagger}\hat{a}_{q\alpha}+\hat{a}_{p\beta}^{\dagger}\hat{a}_{q\beta}.
+\qquad (14.17)
+$$
 
 []{#eq-14-013}
 
 矩阵元素为
 
-![公式 (14.18)](../assets/math/eq-14-014.png){width=56%}
+$$
+\begin{aligned}
+H_{I_{\alpha}I_{\beta},J_{\alpha}J_{\beta}}
+&=\sum_{pq}\tilde{h}_{pq}\langle I_{\alpha}I_{\beta}|\hat{E}_{pq}|J_{\alpha}J_{\beta}\rangle\\
+&\quad+\frac{1}{2}\sum_{pqrs}(pq|rs)\langle I_{\alpha}I_{\beta}|\hat{E}_{pq}\hat{E}_{rs}|J_{\alpha}J_{\beta}\rangle,
+\end{aligned}
+\qquad (14.18)
+$$
 
-**公式 (14.18)**[]{#eq-14-014}
+[]{#eq-14-014}
 
 其中 h˜ 是修饰后的单电子算符
 
-![公式图](../assets/math/eq-14-015.png){width=47%}
+$$
+\tilde{h}_{pq}=h_{pq}-\frac{1}{2}\sum_{r}(pr|rq).
+\qquad (14.19)
+$$
 
 []{#eq-14-015}
 
 请注意，这个单电子算符与 Fock 算符无关。对指标 r 的求和涉及所有轨道。
 给定粒子数算符
 
-![公式图](../assets/math/eq-14-016.png){width=47%}
+$$
+\hat{N}=\sum_{p}\hat{E}_{pp}=\sum_{pq}\hat{E}_{pq}\delta_{pq},
+\qquad (14.20)
+$$
 
 []{#eq-14-016}
 
 我们可以在行列式基底中构造一个对角矩阵
 
-![公式图](../assets/math/eq-14-017.png){width=53%}
+$$
+\sum_{pq}\langle I_{\alpha}I_{\beta}|\hat{E}_{pq}\delta_{pq}|J_{\alpha}J_{\beta}\rangle=N_{elec}\delta_{I_{\alpha}J_{\alpha}}\delta_{I_{\beta}J_{\beta}}.
+\qquad (14.21)
+$$
 
 []{#eq-14-017}
 
 利用这个对角矩阵，我们将哈密顿量的单电子部分并入双电子积分，从而简化哈密顿矩阵：
 
-![公式 (14.22)](../assets/math/eq-14-018.png){width=54%}
+$$
+H_{I_{\alpha}I_{\beta},J_{\alpha}J_{\beta}}=\sum_{pqrs}V_{pqrs}\langle I_{\alpha}I_{\beta}|\hat{E}_{pq}\hat{E}_{rs}|J_{\alpha}J_{\beta}\rangle,
+\qquad (14.22)
+$$
 
-**公式 (14.22)**[]{#eq-14-018}
+[]{#eq-14-018}
 
-![公式 (14.23)](../assets/math/eq-14-019.png){width=55%}
+$$
+V_{pqrs}=\frac{1}{2}(pq|rs)+\frac{1}{2N_{elec}}(\delta_{rs}\tilde{h}_{pq}+\delta_{pq}\tilde{h}_{rs}).
+\qquad (14.23)
+$$
 
-**公式 (14.23)**[]{#eq-14-019}
+[]{#eq-14-019}
 
 在 Epˆ 和 Erˆ 之间插入单位算符分解后，哈密顿矩阵被自然分解为张量收缩
 E 张量定义为
 
-![公式 (14.25)(14.26)](../assets/math/eq-14-020.png){width=66%}
+$$
+\begin{aligned}
+E_{pq,I_{\alpha}I_{\beta}J_{\alpha}J_{\beta}}
+&=\langle I_{\alpha}I_{\beta}|\hat{E}_{pq}|J_{\alpha}J_{\beta}\rangle
+=E_{pq,I_{\alpha}J_{\alpha}}^{\alpha}\delta_{I_{\beta}J_{\beta}}+E_{pq,I_{\beta}J_{\beta}}^{\beta}\delta_{I_{\alpha}J_{\alpha}}, \qquad (14.25)\\
+E_{pq,I_{\alpha}J_{\alpha}}^{\alpha} &= \langle I_{\alpha}|\hat{a}_{p\alpha}^{\dagger}\hat{a}_{q\alpha}|J_{\alpha}\rangle. \qquad (14.26)
+\end{aligned}
+$$
 
-**公式 (14.25)(14.26)**[]{#eq-14-020}
+[]{#eq-14-020}
 
 E 张量的元素仅有三个可能的取值：0、+1 和 − 1。我们可以使用二次量子化代数精确确定其数值，代码示例如下：
 
@@ -369,13 +446,25 @@ def make_Etensor(norb, nelec):
 ```
 根据式 (14.4) 中行列式的结构，我们可将 FCI 波函数展开系数组织为矩阵 CJαJβ。该矩阵的行和列分别对应 α 串与 β 串。矩阵向量乘积 HC 由此可分解为三步张量收缩：
 
-![公式 (14.27)](../assets/math/eq-14-021.png){width=62%}
+$$
+\begin{aligned}
+D_{rs,K_{\alpha}K_{\beta}} &= \sum_{J_{\alpha}}E_{rs,K_{\alpha}J_{\alpha}}^{\alpha}C_{J_{\alpha}K_{\beta}}+\sum_{J_{\beta}}E_{rs,K_{\beta}J_{\beta}}^{\beta}C_{K_{\alpha}J_{\beta}}, \qquad (14.27)\\
+G_{pq,K_{\alpha}K_{\beta}} &= \sum_{pqrs}V_{pqrs}D_{rs,K_{\alpha}K_{\beta}}, \qquad (14.28)
+\end{aligned}
+$$
 
-**公式 (14.27)**[]{#eq-14-021}
+[]{#eq-14-021}
 
-![公式 (14.29)](../assets/math/eq-14-022.png){width=68%}
+$$
+\begin{aligned}
+(\mathbf{H}\mathbf{C})_{I_{\alpha}I_{\beta}}=\sigma_{I_{\alpha}I_{\beta}}
+&=\sum_{pq,K_{\alpha}}E_{pq,I_{\alpha}K_{\alpha}}^{\alpha}G_{pq,K_{\alpha}I_{\beta}}\\
+&\quad+\sum_{pq,K_{\beta}}E_{pq,I_{\beta}K_{\beta}}^{\beta}G_{pq,I_{\alpha}K_{\beta}}.
+\end{aligned}
+\qquad (14.29)
+$$
 
-**公式 (14.29)**[]{#eq-14-022}
+[]{#eq-14-022}
 
 这些张量收缩可以使用 einsum 函数快速实现。
 
@@ -520,7 +609,10 @@ d[a,i,J] += sign * fciwfn[I]
 中，任意索引 J 很可能不位于 d 张量当前的子块内。
 由于 E 张量具有置换对称性：
 
-![公式图](../assets/math/eq-14-023.png){width=44%}
+$$
+E_{pq,I_{\alpha}J_{\alpha}}^{\alpha}=E_{qp,J_{\alpha}I_{\alpha}}^{\alpha},
+\qquad (14.30)
+$$
 
 []{#eq-14-023}
 
@@ -622,13 +714,17 @@ def _compute_hc(v, fciwfn, norb, Elt, blocksize=60):
 这个测试清楚地展示了不同块大小对性能的影响。通常，较小的块比较大的块性能更好，这表明内存管理对性能的影响比 Python 解释执行的开销更大。对于 np.empty 分配器，块大小约为 40 时性能最佳。
 测试平台的每个 CPU 核心都有 1 MB 的 L2 缓存，所有 CPU 核心共享 20 MB 的 L3 缓存。对于这个 14 轨道体系，为了同时将 d 张量和 g 张量装入 L2 缓存，块大小不应超过 18，因为
 
-![公式图](../assets/math/eq-14-024.png){width=30%}
+$$
+14^{2}\times18^{2}\times2\times8\;\mathrm{B}\approx0.97\;\mathrm{MB}.
+$$
 
 []{#eq-14-024}
 
 对于 L3 缓存，最大块大小可以大致选择为
 
-![公式图](../assets/math/eq-14-025.png){width=49%}
+$$
+14^{2}\times80^{2}\times2\times8\;\mathrm{B}\approx19.14\;\mathrm{MB}.
+$$
 
 []{#eq-14-025}
 
@@ -668,13 +764,17 @@ $ perf python fci_empty_allocator.py
 空间中管理与内存页相关的操作。此外，两个版本的用户时间相差近 4.5 秒。这一差异主要反映了新分配的内存导致 CPU 缓存未命中的影响。
 根据体系大小进行快速估算，可以确定缺页的具体来源。新分配的 d 张量与 g 张量总数为
 
-![公式图](../assets/math/eq-14-026.png){width=30%}
+$$
+2\times\left(\binom{14}{7}/40\right)^{2}\approx14792.
+$$
 
 []{#eq-14-026}
 
 每个 d 张量或 g 张量占用
 
-![公式图](../assets/math/eq-14-027.png){width=30%}
+$$
+14^{2}\times40^{2}\times8\;\mathrm{B}=2450\;\mathrm{KB}.
+$$
 
 []{#eq-14-027}
 

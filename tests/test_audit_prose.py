@@ -7,9 +7,11 @@ from pathlib import Path
 from scripts.audit_prose import (
     DETECTORS,
     STRICT_DETECTORS,
+    SUSPECT_CODE_SKIPS_CJK,
     audit_book,
     find_bare_urls,
     find_english_residue,
+    find_formula_remnant,
     find_prose_in_fence,
     find_suspect_code,
 )
@@ -111,6 +113,63 @@ class EnglishResidueTests(unittest.TestCase):
         self.assertEqual([hit["reason"] for hit in hits], ["english_residue"])
 
 
+class FormulaRemnantTests(unittest.TestCase):
+    """公式排成 $$ 块之后留在正文里的「压平副本」。"""
+
+    def scan(self, text):
+        with tempfile.TemporaryDirectory() as name:
+            path = write_qmd(Path(name), text)
+            return find_formula_remnant(path)
+
+    def test_latex_punctuation_remnant_is_reported(self):
+        # 历史样本：13 章 (13.38) 之后压平成正文的副本
+        hits = self.scan("(ij|kl) = Tpij Tpkl.) 在实践中，RI 方法也称为密度拟合。\n")
+        self.assertEqual([hit["reason"] for hit in hits], ["formula_remnant:punctuation"])
+
+    def test_weight_function_remnant_is_reported(self):
+        hits = self.scan("- 权函数为 1，区间为 [− 1, 1]。\n")
+        self.assertEqual([hit["reason"] for hit in hits], ["formula_remnant:weight_function"])
+
+    def test_operator_remnant_is_reported(self):
+        hits = self.scan("τ = 1 ∇ χμ ·∇ χνγ 我们可以对 XC 矩阵进行数值积分：\n")
+        self.assertEqual([hit["reason"] for hit in hits], ["formula_remnant:operators"])
+
+    def test_legitimate_technical_marks_are_whitelisted(self):
+        text = (
+            "np.diagonal 生成一个步长为 (itemsize * (n+1),) 的视图。\n"
+            "下面的配置表示位于 (0., 0., 0.) 的氢原子。\n"
+            "3. 在 f-string 中将函数调用 vrr(...) 替换为({vrr(...)})。\n"
+            "v[(slice(None),)*axis + (0,0)] 等价于数组索引。\n"
+        )
+        self.assertEqual(self.scan(text), [])
+
+    def test_fence_math_block_reference_list_and_inline_math_are_ignored(self):
+        text = (
+            "```python\nout = f(itemsize * (n+1),)\n```\n"
+            "$$\na = f(x,)\\ \\qquad (1.1)\n$$\n"
+            "::: {.ref-list}\n\n[1] A. Author, Title, 12(3),)\n\n:::\n"
+            "权函数为 $\\frac{1}{\\sqrt{1-x^{2}}}$，区间为 $[-1,1]$。\n"
+        )
+        self.assertEqual(self.scan(text), [])
+
+    def test_chinese_line_is_still_scanned_by_this_detector(self):
+        # 审计点名的残片全部是「中文 + 压平公式」，所以这条探测器不能吃 CJK 跳行。
+        hits = self.scan("S =.) 假设 S11 可以用系数矩阵 C11 正交化，我们便可以变换整个重叠矩阵：\n")
+        self.assertEqual(len(hits), 1)
+
+    def test_suspect_code_cjk_skip_is_explicit(self):
+        # 口径：suspect_code 只看整行没有中文的行；含中文的代码残片交给 formula_remnant。
+        self.assertTrue(SUSPECT_CODE_SKIPS_CJK)
+        text = "这里 mesh = np.zeros((3, 3)) 初始化。\n"
+        self.assertEqual(self.scan(text), [])
+        with tempfile.TemporaryDirectory() as name:
+            path = write_qmd(Path(name), text)
+            self.assertEqual(find_suspect_code(path), [])
+        with tempfile.TemporaryDirectory() as name:
+            path = write_qmd(Path(name), "mesh = [60, 60, 60]\n")
+            self.assertEqual(len(find_suspect_code(path)), 1)
+
+
 class BookReportTests(unittest.TestCase):
     def setUp(self):
         self.report = audit_book()
@@ -136,8 +195,9 @@ class BookReportTests(unittest.TestCase):
         json.dumps(self.report, ensure_ascii=False)
 
     def test_strict_detectors_are_cleared(self):
-        # 存量已在 2026-10-28 清零：正文裸 URL 全部转成行内链接、公式拆行残片随
-        # `$$` 化消失、整句英文残留统一翻译。这三类再出现就是缺陷。
+        # 存量已在 2026-10-29 清零：正文裸 URL 全部转成行内链接、疑似代码行清完、
+        # 英文残留统一翻译、公式图转 LaTeX 后残留的压平副本逐条修完（见
+        # docs/VERIFICATION.md 的「公式残片与压平副本清理」一节）。这四类再出现就是缺陷。
         self.assertEqual({key: self.report["totals"][key] for key in STRICT_DETECTORS}, {key: 0 for key in STRICT_DETECTORS})
 
     def test_prose_in_fence_does_not_grow(self):

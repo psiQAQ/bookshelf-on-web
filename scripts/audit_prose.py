@@ -46,6 +46,23 @@ SKIP_LINE_RE = (
     re.compile(r"^\$"),                      # 独立公式
 )
 
+# 「公式转 LaTeX 后残留的压平副本」：公式本体已在上方的 $$ 块里，正文却还留着一份
+# 文本层压平的字形串。整行含 `. )` / `,)` 这类 LaTeX 句读、或「权函数为」后面不是
+# 行内公式、或一行里堆着多个数学符号又带等号，都按残片处理。
+# 白名单是「形状相同但本身合法」的行内记号（元组、坐标、代码引用），先摘掉再判。
+FORMULA_REMNANT_WHITELIST = (
+    re.compile(r"\(itemsize \* \(n\+1\),\)"),          # 步长元组 (itemsize * (n+1),)
+    re.compile(r"\(0\., 0\., 0\.\)"),                    # 坐标 (0., 0., 0.)
+    re.compile(r"\(\{vrr\(\.\.\.\)\}\)"),                # f-string 改写示例 ({vrr(...)})
+    re.compile(r"\{vrr\(\.\.\.\)\}"),                    # 同上，去掉外层括号的写法
+    re.compile(r"vrr\(\.\.\.\)"),                         # 正文里引用函数调用 vrr(...)
+    re.compile(r"\(slice\(None\),\)\*axis \+ \(0,0\)"),     # 索引等价写法
+    re.compile(r"`P \(x\) = x exp\(− ax\)\.\)`"),         # 前言里明说「照原样保留」的样例
+)
+FORMULA_REMNANT_PUNCT = re.compile(r"\.\)|,\)")
+WEIGHT_FUNCTION_RE = re.compile(r"权函数为(?!\s*\$)")
+FORMULA_REMNANT_SYMBOLS = "∑∇√∫∂"
+
 CODE_PATTERNS = (
     (re.compile(r"^\s{2,}\S"), "缩进开头"),
     (re.compile(r"\b(def|class|import|from|return|yield|lambda|assert|raise|global|nonlocal)\b\s*[(\w]"), "Python 关键字"),
@@ -110,7 +127,7 @@ def find_suspect_code(path: Path):
         if in_code or in_math or in_ref:
             continue
         stripped = line.strip()
-        if not stripped or CJK_RE.search(stripped):
+        if not stripped or (SUSPECT_CODE_SKIPS_CJK and CJK_RE.search(stripped)):
             continue
         if any(pattern.search(stripped) for pattern in SKIP_LINE_RE):
             continue
@@ -126,6 +143,38 @@ def find_suspect_code(path: Path):
                     "reason": f"suspect_code:{reason}",
                 })
                 break
+    return found
+
+
+def find_formula_remnant(path: Path):
+    """正文里残留的「压平公式副本」：公式已排成 $$ 块，这里又留了一份文本层字形串。"""
+    found = []
+    for number, line, in_code, in_math, in_ref in iter_lines(path):
+        if in_code or in_math or in_ref:
+            continue
+        stripped = line.strip()
+        if not stripped or "$" in line or "`" in stripped:
+            continue
+        if any(pattern.search(stripped) for pattern in SKIP_LINE_RE):
+            continue
+        residue = stripped
+        for pattern in FORMULA_REMNANT_WHITELIST:
+            residue = pattern.sub("", residue)
+        if FORMULA_REMNANT_PUNCT.search(residue):
+            reason = "formula_remnant:punctuation"
+        elif WEIGHT_FUNCTION_RE.search(residue):
+            reason = "formula_remnant:weight_function"
+        elif sum(residue.count(symbol) for symbol in FORMULA_REMNANT_SYMBOLS) >= 2 and "=" in residue:
+            reason = "formula_remnant:operators"
+        else:
+            continue
+        found.append({
+            "file": path.name,
+            "line": number,
+            "text": stripped,
+            "url": "",
+            "reason": reason,
+        })
     return found
 
 
@@ -189,13 +238,21 @@ def find_english_residue(path: Path):
 
 # 这三类一旦非空就是缺陷，`--check` 会因此失败；`prose_in_fence` 混有合法文档字符串与
 # 报错信息，只作为待人工甄别的清单，不参与 `--check`。
-STRICT_DETECTORS = ("bare_urls", "suspect_code", "english_residue")
+STRICT_DETECTORS = ("bare_urls", "suspect_code", "english_residue", "formula_remnant")
+
+# `find_suspect_code` 的显式口径：只看整行没有中文的行。
+# 带中文的行里夹着代码片段时，机械判据的误报率过高（`C/C++` 会命中 `++` 运算符、
+# `open()`、`plt.show()` 这类正文里顺口提到的函数名会命中「函数调用行」），所以这一子集
+# 不在 suspect_code 的口径内；「中文 + 被压平的公式/代码残片」改由 `find_formula_remnant`
+# 与人工复核兜底。若要扩到这里，必须先把中文骨架之外的 ASCII 片段切出来再比对代码特征。
+SUSPECT_CODE_SKIPS_CJK = True
 
 DETECTORS = (
     ("bare_urls", find_bare_urls),
     ("suspect_code", find_suspect_code),
     ("prose_in_fence", find_prose_in_fence),
     ("english_residue", find_english_residue),
+    ("formula_remnant", find_formula_remnant),
 )
 
 
@@ -230,7 +287,11 @@ def audit_book(book: Path = BOOK) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--report", type=Path, default=None, help="把 JSON 报告写到这个路径")
-    parser.add_argument("--check", action="store_true", help="严格项（裸 URL、疑似代码行、英文残留）有命中时退出 1")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="严格项（裸 URL、疑似代码行、英文残留、公式残片）有命中时退出 1",
+    )
     parser.add_argument("--check-all", action="store_true", help="任何探测器有命中时退出 1")
     args = parser.parse_args()
 

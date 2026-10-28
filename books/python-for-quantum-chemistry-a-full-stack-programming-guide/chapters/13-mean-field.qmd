@@ -566,7 +566,7 @@ $$
 
 []{#eq-13-010}
 
-Exc[ρ]= exc[ρ]ρ (r)d r.) 然而，为简单起见，本节将 XC 泛函 ϵxc[ρ] 定义为 Exc 的被积函数：
+然而，为简单起见，本节将 XC 泛函 $\epsilon_{\mathrm{xc}}[\rho]$ 定义为 $E_{\mathrm{xc}}$ 的被积函数：
 
 $$
 E_{\mathrm{xc}}[\rho]=\int\epsilon_{\mathrm{xc}}[\rho]d^3\mathbf{r},
@@ -611,8 +611,18 @@ $$
 
 []{#eq-13-015}
 
-对于广义梯度近似（Generalized Gradient Approximation，GGA）泛函 ϵxc[ρ,σ]，它还依赖于收缩后的密度梯度
-σ↑↑ =∇ ρ ↑ ·∇ ρ↑, σ ↑↓ =∇ ρ ↑ ·∇ ρ↓, σ ↓↓ =∇ ρ ↓ ·∇ ρ↓.) 自旋向上轨道的 XC 矩阵元素可以计算为
+对于广义梯度近似（Generalized Gradient Approximation，GGA）泛函 $\epsilon_{\mathrm{xc}}[\rho,\sigma]$，它还依赖于收缩后的密度梯度
+
+$$
+\begin{aligned}
+\sigma_{\uparrow\uparrow} &= \nabla\rho_{\uparrow}\cdot\nabla\rho_{\uparrow}, &
+\sigma_{\uparrow\downarrow} &= \nabla\rho_{\uparrow}\cdot\nabla\rho_{\downarrow}, &
+\sigma_{\downarrow\downarrow} &= \nabla\rho_{\downarrow}\cdot\nabla\rho_{\downarrow}.
+\end{aligned}
+\qquad (13.20)
+$$
+
+自旋向上轨道的 XC 矩阵元素可以计算为
 
 $$
 \begin{aligned}
@@ -633,7 +643,7 @@ $$
 
 []{#eq-13-017}
 
-(V ↑)μν = ωn χμ(rn)χν (rn)vρ ↑ +∇ (χμ(rn)χν (rn)) · v ∇ ρ↑,) 其中
+其中
 
 $$
 v_{\nabla\rho\uparrow}=2\nabla\rho_{\uparrow}\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\uparrow}}+\nabla\rho_{\downarrow}\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\downarrow}}.
@@ -651,7 +661,7 @@ $$
 
 []{#eq-13-019}
 
-τ = 1 ∇ χμ ·∇ χνγ) 我们可以对 XC 矩阵进行数值积分：
+我们可以对 XC 矩阵进行数值积分：
 
 $$
 \begin{aligned}
@@ -717,7 +727,7 @@ $$
 
 []{#eq-13-025}
 
-(V ↑)μν = ωnxs [rn]v [rn].) 这里，对 s 的求和仅限于与 ↑ 相关的变量
+这里，对 $s$ 的求和仅限于与 $\uparrow$ 相关的变量
 类似地，fxc 积分可以通过张量收缩计算
 
 $$
@@ -1311,7 +1321,7 @@ $$
 
 []{#eq-13-038}
 
-(ij|kl) = Tpij Tpkl.) 在实践中，RI 方法也称为密度拟合（density fitting，DF）近似，经常用于分解 ERI 张量。在这种近似中，引入一组辅助基函数（auxiliary basis functions，ABF）φp 来展开张量：
+在实践中，RI 方法也称为密度拟合（density fitting，DF）近似，经常用于分解 ERI 张量。在这种近似中，引入一组辅助基函数（auxiliary basis functions，ABF）$\phi_{p}$ 来展开张量：
 
 $$
 T_{pij}\approx\sum_q(\mathbf{M}^{-1})_{pq}(q|ij),
@@ -1320,7 +1330,7 @@ $$
 
 []{#eq-13-039}
 
-Tpij ≈ (M)pq(q|ij),) 其中，(q|ij) 表示三中心双电子（3c2e）排斥积分，矩阵 M 是双中心双电子（2c2e）积分张量的 CD：
+其中，$(q|ij)$ 表示三中心双电子（3c2e）排斥积分，矩阵 $\mathbf{M}$ 是双中心双电子（2c2e）积分张量的 CD：
 
 $$
 (p|q)=\sum_r M_{pr}M_{qr}.

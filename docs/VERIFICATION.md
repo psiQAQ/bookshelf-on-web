@@ -168,7 +168,7 @@ uv run python scripts/check_site.py .preview --preview --report reports/preview-
 - 门禁漏检补修：`00-preface.qmd:78` 的 `https:// github.com/sunqm/py-qc-book/`（`//` 后被抽入空格、且未做超链接）改为 `[sunqm/py-qc-book 仓库](https://github.com/sunqm/py-qc-book/)`；`scripts/audit_prose.py` 的 `URL_RE` 原为 `https?://[^\s…]+`，`://` 后一旦有空格就永远匹配不到，改为 `https?://\s?[^\s…]+`，使这类缺陷能被 `bare_urls` 抓住。
 - 读者可见的公式碎渣：`12-integrals.qmd:34` 残留「rA = r − R A. (12.2) N(α,l) 是径向部分 r e 的归一化因子…」，按 PDF p485 英文原文改为「$N(\alpha,l)$ 是径向部分 $r^{l}e^{-\alpha r^{2}}$ 的归一化因子。这里，$l$ 称为 GTO 函数的角动量。$Y_{lm}(\mathbf{r})$ 表示实值固体谐函数（solid harmonics）。高斯基函数和积分的其他记号约定，以及本章 Python 代码中使用的变量，汇总于表 12.1。」
 - 第五轮核验：`uv run python -m unittest discover -s tests` → 112 项通过（2 跳过）；`scripts/validate.py --strict` → 0 问题；`scripts/audit_prose.py` → `bare_urls=0`、`suspect_code=0`、`english_residue=0`、`prose_in_fence=100`，`--check` 退出 0；`scripts/build.py --preview --quarto .local/tools/bin/quarto.exe` → `delivered=true`；`scripts/check_site.py .preview --preview` → 0 问题。HTML 抽查确认 `15-coupled-cluster`（`@contextmanager` + `def readahead`）、`16-properties`（`@f.defjvp` + `def f_jvp`）、`12-integrals`（几何字符串）、`01-environment`（TOML 两节）合并后整段落在同一个 `<div class="sourceCode">` 内。
-- 第六轮（把「公式图转 LaTeX 之后留下的文本层残片」扫干净）：用「中文行/非中文行里出现 `(12.x)` 编号但不在 `$$` 内」这一判据扫全库，命中 6 处全在第 12 章。按 PDF p495 原文修：删除 `= XP QRn + (t − 1)Rn, (12.28)`/`(12.29)`/`(12.30)` 三行残片，补回被残片吞掉的引导语「R 张量的起点与边界条件为：」；`(12.32)` 原先只剩残片 `= 0 if t < 0o r u< 0o r v < 0, (12.32)`，改为真展示块 `R_{tuv}^{n}=0\quad\text{if } t<0 …` 并保留 `[]{#eq-12-023}`；`(12.50)`、`(12.83)`、`(12.56)` 三处重复残片删除（公式本体已在上一块里）。另外把 `(12.27) 计算 R 张量的递推关系…` 里残留的编号引用去掉，改为「计算 R 张量所用的递推关系（RR）公式如下：」。
+- 第六轮（把「公式图转 LaTeX 之后留下的文本层残片」扫干净——**该说法已被独立审计推翻，实际只清掉带编号的那一类；不带公式编号的压平副本另有 12 处，见文末「公式压平副本的清理与 `formula_remnant` 门禁（2026-10-29）」**）：用「中文行/非中文行里出现 `(12.x)` 编号但不在 `$$` 内」这一判据扫全库，命中 6 处全在第 12 章。按 PDF p495 原文修：删除 `= XP QRn + (t − 1)Rn, (12.28)`/`(12.29)`/`(12.30)` 三行残片，补回被残片吞掉的引导语「R 张量的起点与边界条件为：」；`(12.32)` 原先只剩残片 `= 0 if t < 0o r u< 0o r v < 0, (12.32)`，改为真展示块 `R_{tuv}^{n}=0\quad\text{if } t<0 …` 并保留 `[]{#eq-12-023}`；`(12.50)`、`(12.83)`、`(12.56)` 三处重复残片删除（公式本体已在上一块里）。另外把 `(12.27) 计算 R 张量的递推关系…` 里残留的编号引用去掉，改为「计算 R 张量所用的递推关系（RR）公式如下：」。
 - 行内公式归一：`12-integrals.qmd:729` 的 `kx = ky = kz = 0` 改为 `$k_{x}=k_{y}=k_{z}=0$`；`16-properties.qmd:604`/`:613` 按 PDF p695 的 `x = x0 + x′` 改为 `$x=x_{0}+x'$`，并把「调整向量 b」写成 `$b$`。
 - 展示块计数与测试同步：补上 (12.32) 后 `$$` 块 219 → 220，`tests/test_quantum_notes.py` 的期望值随之改为 220（注释说明 222 张图 → 219 块 + 补 1 块、锚点始终 223）。
 - 第六轮核验：`uv run python -m unittest discover -s tests` → 112 项通过（2 跳过）；`scripts/validate.py --strict` → 0 问题；`scripts/audit_prose.py` → `bare_urls=0`/`suspect_code=0`/`english_residue=0`/`prose_in_fence=100`；`scripts/build.py --preview` → `delivered=true`；MathJax 核验 17 页 220 个展示块/19 个行内式、0 个错误标记——错误标记的判据在第七轮才定准，见下节。
@@ -214,3 +214,84 @@ uv run python scripts/check_site.py .preview --preview --report reports/preview-
 - 白名单是「命令名」级别的门禁：它能抓住 `\inom` 这类未定义残形，但抓不住「命令合法、参数写错」的问题（例如 `\frac` 少一个参数），后者仍需人眼或逐条公式核对。
 - 渲染核验依赖本机 Edge 与 MathJax CDN；缺 Edge 时脚本打印 `Not Run` 并退出 0，缺网络时公式不会被处理，脚本会把所有数学 span 记为 `unprocessed` 并失败——这是有意的：宁可失败也不假装通过。
 - 拉取式（render）核验只覆盖构建产物里存在的章节；`books/sample-*` 两本样例书的公式也纳入 `check_math.py` 的静态扫描（因此白名单含 `\lVert`/`\rVert`），但未做渲染核验。
+
+## 公式压平副本的清理与 `formula_remnant` 门禁（2026-10-29）
+
+### 问题与根因
+
+第六轮之后，读者在页面上仍能看到「正确的 LaTeX 展示块」和「同一公式被压平成正文的坏副本」并存。例如
+`books/python-for-quantum-chemistry-a-full-stack-programming-guide/chapters/13-mean-field.qmd` 里 (13.38) 排成 `$$` 块后，
+下一段正文却是「(ij|kl) = Tpij Tpkl.) 在实践中，RI 方法也称为密度拟合……」；09 章、12 章同理。
+
+根因与提取阶段一致：PDF 文本层把公式拆成字形串，`emit_equation()` 裁成图片时只裁走了图，公式的文本层副本仍留在正文里。
+第六轮的判据只吃「行里还带 `(12.x)` 编号」的残片，这 12 处没有编号，一条都没进清单——而 `docs/VERIFICATION.md` 当时写了「扫干净」，
+文档与产物矛盾。这也说明按「特征字符串」事后补扫不可靠，必须把这一类做成常驻门禁。
+
+### 修复（12 处，逐条对照 PDF 页面）
+
+- `chapters/09-performance.qmd:1059`（(9.12) 之后）：`S =.) 假设 S11 可以用系数矩阵 C11 正交化……` → 删掉压平副本，矩阵记号改行内公式
+  `假设 $\mathbf{S}_{11}$ 可以用系数矩阵 $\mathbf{C}_{11}$ 正交化，我们便可以变换整个重叠矩阵：`。
+- `chapters/09-performance.qmd:1096`（(9.15) 之后）：`S22 = S 22 − S 12C11C S12.) 将 schmidt_orth 函数应用于 S˜……` → 删副本，
+  `将 schmidt_orth 函数应用于 $\tilde{\mathbf{S}}$，得到系数矩阵的子块 $\mathbf{C}_{22}$。`
+- `chapters/12-integrals.qmd:2320-2328`（§12.2.2 求积公式清单）：原为 4 条被压平的「权函数为 1／e／e／√」，另有一个只含两个权重函数的 `$$` 块
+  和一条重复项「权函数为 1 − x」。按 PDF p546 恢复为 5 条带函数名的清单（`roots_legendre`/`roots_hermite`/`roots_laguerre`/`roots_chebyt`/`roots_chebyu`），
+  权函数与区间改为行内公式，删掉那个误裁的 `$$` 块（锚点 `[]{#eq-12-044}` 保留）与重复项。
+- `chapters/12-integrals.qmd:2437`：`Rys 多项式记为 pi(x) = ∑ cikx` → `Rys 多项式记为 $p_{i}(x)=\sum_{k}c_{ik}x^{k}$`（PDF p548）。
+- `chapters/12-integrals.qmd:2719`（(12.78) 之后）：`其中 F (k) G(k) 分别为函数 f (r) g(r) 的傅里叶变换。2 为库仑算符的傅里叶变换。`
+  → 按 PDF p556 `where F(k) and G(k) represent the Fourier transforms … 4π/k² is the Fourier transform of the Coulomb operator`
+  改为 `其中 $F(\mathbf{k})$ 和 $G(\mathbf{k})$ 分别为函数 $f(\mathbf{r})$ 与 $g(\mathbf{r})$ 的傅里叶变换；$\frac{4\pi}{k^{2}}$ 为库仑算符的傅里叶变换。`
+- `chapters/12-integrals.qmd:2769`（(12.80) 之后）：`e χi(r)χj(r)d r = Six jx (kx)……(kz).)` 整段删除（公式本体已在上一块）。
+- `chapters/13-mean-field.qmd:569`（(13.14) 之后）：删除副本，`ϵxc[ρ]` → `$\epsilon_{\mathrm{xc}}[\rho]$`，`Exc` → `$E_{\mathrm{xc}}$`。
+- `chapters/13-mean-field.qmd:614-615`（GGA 一段）：这一处不只是副本——原书 (13.20) 是展示公式，提取时**整个展示块丢失**，只剩压平的正文行。
+  已补回 `$$ \sigma_{\uparrow\uparrow}=\nabla\rho_{\uparrow}\cdot\nabla\rho_{\uparrow},\ \sigma_{\uparrow\downarrow}=…,\ \sigma_{\downarrow\downarrow}=… \qquad (13.20) $$`
+  （锚点 `[]{#eq-13-016}` 原本就在，指 (13.21)），并把「自旋向上轨道的 XC 矩阵元素可以计算为」独立成段。
+- `chapters/13-mean-field.qmd:636`（(13.22) 之后）：`(V ↑)μν = …,) 其中` → 只留「其中」。
+- `chapters/13-mean-field.qmd:654`（(13.24) 之后）：`τ = 1 ∇ χμ ·∇ χνγ) 我们可以对 XC 矩阵进行数值积分：` → 删副本。
+- `chapters/13-mean-field.qmd:720`（(13.30) 之后）：删副本，`s`/`↑` 改行内公式。
+- `chapters/13-mean-field.qmd:1314`（(13.38) 之后）：删副本，`φp` → `$\phi_{p}$`。
+- `chapters/13-mean-field.qmd:1323`（(13.39) 之后）：删副本，`(q|ij)` → `$(q|ij)$`、`M` → `$\mathbf{M}$`。
+- `chapters/16-properties.qmd:362-377`（§16.2.5，独立审计点名的「(16.25) 整式缺失」）：问题比副本更重——(16.24) 与 (16.25) 两个展示块在提取时**整块丢失**，只剩「一阶轨道的系数可以由 Hartree-Fock-Roothaan 方程的一阶展开导出：」后面的下一句，页面上看起来像两句引言连排。按 PDF p684 补回两块：
+  `$$ F^{1}C^{0}+F^{0}C^{1}=S^{1}C^{0}e^{0}+S^{0}C^{1}e^{0}+S^{0}C^{0}e^{1}. \qquad (16.24) $$`、
+  `$$ F_{ai}^{1}+e_{a}^{0}C_{ai}^{1}=S_{ai}^{1}e_{i}^{0}+C_{ai}^{1}e_{i}^{0}. \qquad (16.25) $$`，
+  并把被并成一段的「占据轨道-占据轨道块和虚轨道-虚轨道块则可由正交归一约束导出的一阶方程确定：」拆回独立段落（其后接 (16.26)）。
+- `chapters/16-properties.qmd:411-413`：计算流程的有序列表被空行切断，「2. 对积分张量与密度」与「矩阵在原子轨道基中执行张量收缩；」原本是两段，按 PDF p685 合回一条「2. 对积分张量与密度矩阵在原子轨道基中执行张量收缩；」，并去掉第 3 条前的空行，使三条重新成为同一列表。
+
+展示块变化：删掉 12 章那个误裁块（220 → 219），补回 (13.20)（219 → 220），再补回 (16.24)、(16.25)（220 → 222）；锚点仍为 223。
+
+### 门禁设计（`scripts/audit_prose.py::find_formula_remnant`）
+
+口径：只扫正文——非代码围栏、非 `$$` 块、非 `::: {.ref-list}` 参考文献区、行内不含 `$`、不含行内代码。命中任一即报：
+
+1. `formula_remnant:punctuation`：整行含 `. )` 或 `,)` 这类 LaTeX 句读（这是压平副本最稳的指纹）；
+2. `formula_remnant:weight_function`：出现「权函数为」且后面**不是**行内公式（清单里被压平的字形）；
+3. `formula_remnant:operators`：`∑∇√∫∂` 出现 ≥2 次且整行含 `=`（压平的公式定义）。
+
+白名单是「形状相同但本身合法」的行内记号，先按正则把它们从行里摘掉再判定：`(itemsize * (n+1),)`（步长元组）、`(0., 0., 0.)`（坐标）、
+`vrr(...)`／`({vrr(...)})`（f-string 示例）、`(slice(None),)*axis + (0,0)`（索引等价写法）、前言里明说「照原样保留」的 `P (x) = x exp(− ax).)` 样例。
+`formula_remnant` 已加入 `STRICT_DETECTORS`，`--check` 会因此失败，并接入 CI（`validate.yml` 的「Validate and build the public registry」步骤
+跑 `uv run python scripts/audit_prose.py --check --report reports/prose-audit.json`）。
+
+### `find_suspect_code` 的 CJK 跳行写成显式口径
+
+`suspect_code` 只看整行没有中文的行。带中文的行里夹代码片段时误报率过高（`C/C++` 会命中 `++` 运算符、正文里顺口提到的 `open()`／`plt.show()`
+会命中「函数调用行」），所以这一子集不在它的口径内；「中文 + 被压平的公式残片」由 `formula_remnant` 兜底。该口径写在
+`scripts/audit_prose.py` 的模块级常量 `SUSPECT_CODE_SKIPS_CJK = True`（带注释说明扩展前必须先切出中文骨架之外的 ASCII 片段），
+并由 `tests/test_audit_prose.py::FormulaRemnantTests::test_suspect_code_cjk_skip_is_explicit` 固定：`这里 mesh = np.zeros((3, 3)) 初始化。`
+两类探测器都不报，纯 ASCII 的 `mesh = [60, 60, 60]` 仍由 `suspect_code` 报出。
+
+### 本次核验
+
+- `uv run python scripts/audit_prose.py` → `bare_urls=0 suspect_code=0 english_residue=0 formula_remnant=0 prose_in_fence=100`，`--check` 退出 0。
+- 门禁有效性（用历史版本取证）：`git show c7960b6:…/chapters/{09-performance,12-integrals,13-mean-field}.qmd` 落到临时目录后跑
+  `find_formula_remnant()` → 命中 15 条，正是本轮修掉的这些行（13 章 6 条、09 章 2 条、12 章 7 条），说明判据不空转。
+- `uv run python -m unittest discover -s tests` → 133 项通过（2 跳过），其中新增 `FormulaRemnantTests` 7 项。
+- `uv run python scripts/validate.py --strict` → 0 问题；`uv run python scripts/check_math.py --check` → `allowed_commands=84 chapters=19 findings=0`；
+  `uv run python scripts/build.py --quarto .local/tools/bin/quarto.exe` → `delivered=true`；`uv run python scripts/check_site.py dist` → 0 问题。
+- `uv run python scripts/check_math_render.py --root dist --check` → `display 222 inline 47 errors 0 unprocessed 0`。
+
+### 已知限制
+
+- 判据是「指纹式」的：能覆盖本轮观察到的三类形态，但如果压平副本恰好既无 `. )`／`,)` 句读、又无数学符号，仍会漏（例如纯字母串被拆开的情况）；
+  这类只能靠人工通读或后续 OCR 逐条比对。
+- 白名单按「行内记号形状」写，属于对合法技术记号的显式豁免；新增章节里出现同形状的合法记号时要补白名单，否则会被误报（这是有意的摩擦）。
+- 本轮补回 (13.20)、(16.24)、(16.25) 三式后展示块由 220 增至 222（`tests/test_quantum_notes.py` 的期望值与注释同步更新），这三式在原书里没有对应公式图，因此没有 `eq-*` 锚点，锚点总数仍是 223。其余章节是否还有「整块公式在提取时丢失、只留压平正文」的情形，本轮只对审计点名的位置做了 PDF 逐页核对，未做全库逐式比对。

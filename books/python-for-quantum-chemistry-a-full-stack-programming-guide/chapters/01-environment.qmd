@@ -1283,7 +1283,9 @@ class HybridDFT(HartreeFock, KohnShamDFT):
 class HybridDFT(HartreeFock, KohnShamDFT):
     check_convergence = KohnShamDFT.check_convergence
 ```
-这里需要指出，在这个例子中，我们显式写出了父类的名称，而不是使用 Python 内置函数 super() 来确定父类。为什么这里不使用 super() 函数？这是因为 super() 依靠 MRO 在超类中查找方法。在当前例子中，我们希望不依赖 MRO 而直接调用特定父类的方法。使用 super() 反而会重新引入 MRO 并造成歧义。\n这引出了一个相关问题：在什么情况下使用 super() 有利？考虑一种情况，我们需要访问父类中的每个重载方法。在这种情况下，使用 super() 可以沿着 MRO 链自动查找并逐级执行可用的方法，如下面的示例所示：
+这里需要指出，在这个例子中，我们显式写出了父类的名称，而不是使用 Python 内置函数 super() 来确定父类。为什么这里不使用 super() 函数？这是因为 super() 依靠 MRO 在超类中查找方法。在当前例子中，我们希望不依赖 MRO 而直接调用特定父类的方法。使用 super() 反而会重新引入 MRO 并造成歧义。
+
+这引出了一个相关问题：在什么情况下使用 super() 有利？考虑一种情况，我们需要访问父类中的每个重载方法。在这种情况下，使用 super() 可以沿着 MRO 链自动查找并逐级执行可用的方法，如下面的示例所示：
 
 ```python
 class SelfConsistentField:

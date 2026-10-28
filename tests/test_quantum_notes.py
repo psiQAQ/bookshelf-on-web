@@ -95,8 +95,8 @@ class QuantumNotesTests(unittest.TestCase):
             blocks += len(re.findall(r"\$\$\n.*?\n\$\$", text, re.S))
             anchors.update(re.findall(r"\[\]\{#(eq-\d\d-\d+)\}", text))
         # 三处公式在转换时并块或排除：eq-02-007/008 合为一个块、eq-12-042/043 是同一条公式、
-        # eq-13-042 实为正文截图（只保留锚点），因此 222 张图对应 219 个展示块，锚点一个不少。
-        self.assertEqual(blocks, 219)
+        # eq-13-042 实为正文截图（只保留锚点），222 张图对应 219 个展示块；另有 (12.32) 原本只剩文本层残片、补成展示块后为 220 块，锚点始终是 223 个。
+        self.assertEqual(blocks, 220)
         self.assertEqual(len(anchors), 223)
 
     def test_fixed_math_scroll_style_and_disabled_execution(self):

@@ -28,3 +28,6 @@ _book/
 
 # Per-task git worktrees (AGENTS.md parallel workflow)
 /.worktrees/
+
+# 公式图已全部转为 $$ 数学块，不再需要这些 png（见 docs/VERIFICATION.md）
+/books/*/assets/math/

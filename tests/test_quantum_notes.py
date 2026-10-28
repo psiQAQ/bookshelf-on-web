@@ -74,10 +74,30 @@ class QuantumNotesTests(unittest.TestCase):
                     label = "图" if kind == "figures" else "表"
                     number = filename.removesuffix(".png").split("-", 1)[1].replace("-", ".")
                     self.assertRegex(text[match.end():], rf"^\s*\*\*{label} {re.escape(number)}\*\*\s*\S")
-        # 228 → 222: six equations that were really prose, code fragments or the
-        # Hankel matrix now live in the chapters as text / display math.
-        self.assertEqual(images, {"figures": 59, "tables": 18, "math": 222})
+        # 228 → 222 → 0: six equations that were really prose, code fragments or the
+        # Hankel matrix now live in the chapters as text / display math, and the
+        # remaining 222 equation images were converted to `$$` blocks on 2026-10-28.
+        self.assertEqual(images, {"figures": 59, "tables": 18})
         self.assertEqual(referenced, set(self.metadata["assets"]))
+        for chapter in self.metadata["chapters"][1:]:
+            text = (self.book / chapter).read_text(encoding="utf-8")
+            self.assertNotIn("assets/math/", text, chapter)
+        self.assertFalse([asset for asset in self.metadata["assets"] if "/math/" in asset])
+
+    def test_equations_are_display_math_with_anchors(self):
+        """222 张公式图现在都是 `$$` 块：锚点在，编号对，不再有 `\\eqno` 或图片。"""
+        anchors = set()
+        blocks = 0
+        for chapter in self.metadata["chapters"][1:]:
+            text = (self.book / chapter).read_text(encoding="utf-8")
+            self.assertNotIn("![公式", text, chapter)
+            self.assertNotIn("\\eqno", text, chapter)
+            blocks += len(re.findall(r"\$\$\n.*?\n\$\$", text, re.S))
+            anchors.update(re.findall(r"\[\]\{#(eq-\d\d-\d+)\}", text))
+        # 三处公式在转换时并块或排除：eq-02-007/008 合为一个块、eq-12-042/043 是同一条公式、
+        # eq-13-042 实为正文截图（只保留锚点），因此 222 张图对应 219 个展示块，锚点一个不少。
+        self.assertEqual(blocks, 219)
+        self.assertEqual(len(anchors), 223)
 
     def test_fixed_math_scroll_style_and_disabled_execution(self):
         config = book_config(self.metadata)

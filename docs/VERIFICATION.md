@@ -205,6 +205,8 @@ uv run python scripts/check_site.py .preview --preview --report reports/preview-
 - 门禁有效性（用历史版本取证）：`git show 1a2b6d9:…/14-fci.qmd` 落到临时目录后跑 `check_math.audit()` → 命中 `unknown_command \inom` 与 `control_char TAB` 两条，说明新门禁确实能抓住这次漏掉的东西。
 - `uv run python scripts/check_math.py --check` → `allowed_commands=84 chapters=19 findings=0`，退出 0；明细 `reports/math-commands.json`。
 - `uv run python scripts/check_math_render.py --check` → 17 页合计 `display 220 inline 19 errors 0 unprocessed 0`，退出 0；明细 `reports/math-render.json`。修复前同一脚本在读旧产物时报 `14-fci errors=1`、`16-properties errors=2`，即 `\inom` 与 `x\'` 都被抓到。
+- 静态门禁已接入 CI：`.github/workflows/validate.yml` 的「Validate and build the public registry」步骤新增 `uv run python scripts/check_math.py --check --report reports/math-commands.json`；渲染核验依赖本机 Edge，只在本地跑。
+- 发布产物同源核验：`uv run python scripts/check_math_render.py --root dist --check` → `display 220 inline 19 errors 0 unprocessed 0`，`scripts/build.py --quarto …` → `delivered=true`，`scripts/check_site.py dist` → 0 问题。
 - `uv run python -m unittest discover -s tests` → 126 项通过（2 跳过）；`scripts/validate.py --strict` → 0 问题；`scripts/audit_prose.py` → `bare_urls=0`/`suspect_code=0`/`english_residue=0`/`prose_in_fence=100`；`scripts/build.py --preview --quarto .local/tools/bin/quarto.exe` → `delivered=true`。
 
 ### 已知限制

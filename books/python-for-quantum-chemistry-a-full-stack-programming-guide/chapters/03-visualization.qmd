@@ -660,22 +660,45 @@ with open ('demo.cub', 'w') as f:
 
 ## 参考文献
 
+::: {.ref-list}
+
 [1] J. VanderPlas, Python Data Science Handbook: Essential Tools for Working with Data, O’Reilly Media, Inc, Sebastopol, CA, 2016.
-[2] J. Hunter, D. Dale, E. Firing, M. Droettboom, the Matplotlib development team, Matplotlib examples - list of named colors, https://matplotlib.org/stable/gallery/color/named_ colors.html, 2024. References 143
-[3] J. Hunter, D. Dale, E. Firing, M. Droettboom, the Matplotlib development team, Matplotlib users guide - specifying colors, https://matplotlib.org/stable/users/explain/colors/colors.html, 2024.
-[4] J. Hunter, D. Dale, E. Firing, M. Droettboom, the Matplotlib development team, Matplotlib examples - color demo, https://matplotlib.org/stable/gallery/color/color_demo. html, 2024.
-[5] M.L. Waskom, seaborn: statistical data visualization, The Journal of Open Source Software 6 (60) (2021) 3021, https://doi.org/10.21105/joss.03021.
-[6] P. Ramachandran, G. Varoquaux, Mayavi: 3d visualization of scientiﬁc data, Computing in Science & Engineering 13 (2) (2011) 40–51, https://doi.org/10.1109/MCSE.2011.35.
-[7] C.B. Sullivan, A. Kaszynski, PyVista: 3d plotting and mesh analysis through a streamlined interface for the visualization toolkit (VTK), The Journal of Open Source Software 4 (37) (2019) 1450, https://doi.org/10.21105/joss.01450.
-[8] Vispy developers, Vispy: interactive scientiﬁc visualization in Python, https://vispy.org/, 2024.
-[9] S. van der Walt, J.L. Schönberger, J. Nunez-Iglesias, F. Boulogne, J.D. Warner, N. Yager, E. Gouillart, T. Yu, the scikit-image contributors, scikit-image: image processing in Python, PeerJ 2 (2014) e453, https://doi.org/10.7717/peerj.453.
-[10] Enthought, Mayavi on Jupyter, https://github.com/enthought/mayavi/blob/master/examples/mayavi/mayavi_jupyter.ipynb, 2024.
-[11] Enthought, Mayavi documentation - objects populating the mayavi pipeline, https://docs. enthought.com/mayavi/mayavi/mayavi_objects.html, 2024.
-[12] Pallets, Jinja2 documentation - template designer documentation, https://jinja. palletsprojects.com/en/latest/templates/, 2024.
-[13] K.L. Schuchardt, B.T. Didier, T. Elsethagen, L. Sun, V. Gurumoorthi, J. Chase, J. Li, T.L. Windus, Basis set exchange: a community database for computational sciences, Journal of Chemical Information and Modeling 47 (3) (2007) 1045–1052, https://doi.org/10.1021/ci600510j, pMID: 17428029.
-[14] B.P. Pritchard, D. Altarawy, B. Didier, T.D. Gibson, T.L. Windus, New basis set exchange: an open, up-to-date resource for the molecular sciences community, Journal of Chemical Information and Modeling 59 (11) (2019) 4814–4820, https://doi.org/10.1021/acs.jcim.9b00725, pMID: 31600445.
-[15] P. Bourke, Gaussian cube ﬁles, https://paulbourke.net/dataformats/cube/, 2024.
-[16] B. Skinn, Gaussian cube ﬁle format, https://h5cube-spec.readthedocs.io/en/latest/cubeformat.html, 2024.
-[17] The PySCF Developers, Quantum chemistry with Python, https://pyscf.org/, 2024.
-[18] Q. Sun, X. Zhang, S. Banerjee, P. Bao, M. Barbry, N.S. Blunt, N.A. Bogdanov, G.H. Booth, J. Chen, Z.-H. Cui, J.J. Eriksen, Y. Gao, S. Guo, J. Hermann, M.R. Hermes, K. Koh, P. Koval, S. Lehtola, Z. Li, J. Liu, N. Mardirossian, J.D. McClain, M. Motta, B. Mussard, H.Q. Pham, A. Pulkin, W. Purwanto, P.J. Robinson, E. Ronca, E.R. Sayfutyarova, M. Scheurer, H.F. Schurkus, J.E.T. Smith, C. Sun, S.-N. Sun, S. Upadhyay, L.K. Wagner, X. Wang, A. White, J.D. Whitﬁeld, M.J. Williamson, S. Wouters, J. Yang, J.M. Yu, T. Zhu, T.C. Berkelbach, S. Sharma, A.Y. Sokolov, G.K.-L. Chan, Recent developments in the PySCF program package, Journal of Chemical Physics 153 (2) (2020) 024109, https://doi.org/10.1063/5.0006074, https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/5.0006074/16722275/024109_1_online.pdf.
-[19] C. Wilke, Fundamentals of data visualization, https://clauswilke.com/dataviz/, 2024.
+
+[2] J. Hunter, D. Dale, E. Firing, M. Droettboom, the Matplotlib development team, Matplotlib examples - list of named colors, [matplotlib.org](https://matplotlib.org/stable/gallery/color/named_colors.html), 2024.
+
+[3] J. Hunter, D. Dale, E. Firing, M. Droettboom, the Matplotlib development team, Matplotlib users guide - specifying colors, [matplotlib.org](https://matplotlib.org/stable/users/explain/colors/colors.html), 2024.
+
+[4] J. Hunter, D. Dale, E. Firing, M. Droettboom, the Matplotlib development team, Matplotlib examples - color demo, [matplotlib.org](https://matplotlib.org/stable/gallery/color/color_demo.html), 2024.
+
+[5] M.L. Waskom, seaborn: statistical data visualization, The Journal of Open Source Software 6 (60) (2021) 3021, [DOI](https://doi.org/10.21105/joss.03021).
+
+[6] P. Ramachandran, G. Varoquaux, Mayavi: 3d visualization of scientiﬁc data, Computing in Science & Engineering 13 (2) (2011) 40–51, [DOI](https://doi.org/10.1109/MCSE.2011.35).
+
+[7] C.B. Sullivan, A. Kaszynski, PyVista: 3d plotting and mesh analysis through a streamlined interface for the visualization toolkit (VTK), The Journal of Open Source Software 4 (37) (2019) 1450, [DOI](https://doi.org/10.21105/joss.01450).
+
+[8] Vispy developers, Vispy: interactive scientiﬁc visualization in Python, [vispy.org](https://vispy.org/), 2024.
+
+[9] S. van der Walt, J.L. Schönberger, J. Nunez-Iglesias, F. Boulogne, J.D. Warner, N. Yager, E. Gouillart, T. Yu, the scikit-image contributors, scikit-image: image processing in Python, PeerJ 2 (2014) e453, [DOI](https://doi.org/10.7717/peerj.453).
+
+[10] Enthought, Mayavi on Jupyter, [github.com](https://github.com/enthought/mayavi/blob/master/examples/mayavi/mayavi_jupyter.ipynb), 2024.
+
+[11] Enthought, Mayavi documentation - objects populating the mayavi pipeline, [enthought.com](https://docs.enthought.com/mayavi/mayavi/mayavi_objects.html), 2024.
+
+[12] Pallets, Jinja2 documentation - template designer documentation, [palletsprojects.com](https://jinja.palletsprojects.com/en/latest/templates/), 2024.
+
+[13] K.L. Schuchardt, B.T. Didier, T. Elsethagen, L. Sun, V. Gurumoorthi, J. Chase, J. Li, T.L. Windus, Basis set exchange: a community database for computational sciences, Journal of Chemical Information and Modeling 47 (3) (2007) 1045–1052, [DOI](https://doi.org/10.1021/ci600510j), pMID: 17428029.
+
+[14] B.P. Pritchard, D. Altarawy, B. Didier, T.D. Gibson, T.L. Windus, New basis set exchange: an open, up-to-date resource for the molecular sciences community, Journal of Chemical Information and Modeling 59 (11) (2019) 4814–4820, [DOI](https://doi.org/10.1021/acs.jcim.9b00725), pMID: 31600445.
+
+[15] P. Bourke, Gaussian cube ﬁles, [paulbourke.net](https://paulbourke.net/dataformats/cube/), 2024.
+
+[16] B. Skinn, Gaussian cube ﬁle format, [readthedocs.io](https://h5cube-spec.readthedocs.io/en/latest/cubeformat.html), 2024.
+
+[17] The PySCF Developers, Quantum chemistry with Python, [pyscf.org](https://pyscf.org/), 2024.
+
+[18] Q. Sun, X. Zhang, S. Banerjee, P. Bao, M. Barbry, N.S. Blunt, N.A. Bogdanov, G.H. Booth, J. Chen, Z.-H. Cui, J.J. Eriksen, Y. Gao, S. Guo, J. Hermann, M.R. Hermes, K. Koh, P. Koval, S. Lehtola, Z. Li, J. Liu, N. Mardirossian, J.D. McClain, M. Motta, B. Mussard, H.Q. Pham, A. Pulkin, W. Purwanto, P.J. Robinson, E. Ronca, E.R. Sayfutyarova, M. Scheurer, H.F. Schurkus, J.E.T. Smith, C. Sun, S.-N. Sun, S. Upadhyay, L.K. Wagner, X. Wang, A. White, J.D. Whitﬁeld, M.J. Williamson, S. Wouters, J. Yang, J.M. Yu, T. Zhu, T.C. Berkelbach, S. Sharma, A.Y. Sokolov, G.K.-L. Chan, Recent developments in the PySCF program package, Journal of Chemical Physics 153 (2) (2020) 024109, [DOI](https://doi.org/10.1063/5.0006074), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/5.0006074/16722275/024109_1_online.pdf).
+
+[19] C. Wilke, Fundamentals of data visualization, [clauswilke.com](https://clauswilke.com/dataviz/), 2024.
+
+:::
+

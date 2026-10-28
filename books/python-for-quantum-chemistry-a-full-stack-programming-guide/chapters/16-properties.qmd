@@ -1147,21 +1147,43 @@ VJP 自定义规则可直接用于反向传播，而 JVP 自定义则涉及线�
 
 ## 参考文献
 
-[1] The PySCF Developers, Quantum chemistry with Python, https://pyscf.org/, 2024.
-[2] Y. Yamaguchi, H.F. Schaefer III, Analytic Derivative Methods in Molecular Electronic Structure Theory: A New Dimension to Quantum Chemistry and Its Applications to Spectroscopy, John Wiley & Sons, Ltd, 2011, https://doi.org/10.1002/9780470749593. hrs006, https://onlinelibrary.wiley.com/doi/pdf/10.1002/9780470749593.hrs006, https://onlinelibrary.wiley.com/doi/abs/10.1002/9780470749593.hrs006.
-[3] J.A. Pople, R. Krishnan, H.B. Schlegel, J.S. Binkley, Derivative studies in Hartree–Fock and Møller–Plesset theories, in: Proceedings of the International Symposium on Atomic, Molecular, and Solid-State Theory, Collision Phenomena, and Quantum Statistics, and Computational Methods, International Journal of Quantum Chemistry 16 (S13) (1979) 225–241, https://doi.org/10.1002/qua.560160825.
-[4] G.H. Golub, C.F. Van Loan, Matrix Computations, 4th edition, Johns Hopkins University Press, Philadelphia, PA, 2013, https://doi.org/10.1137/1.9781421407944, https://epubs. siam.org/doi/pdf/10.1137/1.9781421407944, https://epubs.siam.org/doi/abs/10.1137/1. 9781421407944.
-[5] M.F. Kasim, S. Lehtola, S.M. Vinko, DQC: a Python program package for differentiable quantum chemistry, Journal of Chemical Physics 156 (8) (2022) 084801, https://doi. org/10.1063/5.0076202, https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/5.0076202/ 18277993/084801_1_5.0076202.pdf.
-[6] A.S. Abbott, B.Z. Abbott, J.M. Turney, H.F.I. Schaefer, Arbitrary-order derivatives of quantum chemical methods via automatic differentiation, Journal of Physical Chemistry Letters 12 (12) (2021) 3232–3239, pMID: 33764068, https://doi.org/10.1021/acs.jpclett. 1c00607.
-[7] G. Zhou, B. Nebgen, N. Lubbers, W. Malone, A.M.N. Niklasson, S. Tretiak, Graphics processing unit-accelerated semiempirical Born Oppenheimer Molecular Dynamics using PyTorch, Journal of Chemical Theory and Computation 16 (8) (2020) 4951–4962, pMID: 32609513, https://doi.org/10.1021/acs.jctc.0c00243.
-[8] X. Zhang, G.K.-L. Chan, Differentiable quantum chemistry with PySCF for molecules and materials at the mean-ﬁeld level and beyond, Journal of Chemical Physics 157 (20) (2022) 204801, https://doi.org/10.1063/5.0118200, https://pubs.aip.org/aip/jcp/articlepdf/doi/10.1063/5.0118200/18281172/204801_1_5.0118200.pdf.
-[9] J. Denero, SICP in Python, https://wizardforcel.gitbooks.io/sicp-in-python/content/, 2024.
-[1] The PySCF Developers, Quantum chemistry with Python, https://pyscf.org/, 2024.
-[2] Y. Yamaguchi, H.F. Schaefer III, Analytic Derivative Methods in Molecular Electronic Structure Theory: A New Dimension to Quantum Chemistry and Its Applications to Spectroscopy, John Wiley & Sons, Ltd, 2011, https://doi.org/10.1002/9780470749593. hrs006, https://onlinelibrary.wiley.com/doi/pdf/10.1002/9780470749593.hrs006, https://onlinelibrary.wiley.com/doi/abs/10.1002/9780470749593.hrs006.
-[3] J.A. Pople, R. Krishnan, H.B. Schlegel, J.S. Binkley, Derivative studies in Hartree–Fock and Møller–Plesset theories, in: Proceedings of the International Symposium on Atomic, Molecular, and Solid-State Theory, Collision Phenomena, and Quantum Statistics, and Computational Methods, International Journal of Quantum Chemistry 16 (S13) (1979) 225–241, https://doi.org/10.1002/qua.560160825.
-[4] G.H. Golub, C.F. Van Loan, Matrix Computations, 4th edition, Johns Hopkins University Press, Philadelphia, PA, 2013, https://doi.org/10.1137/1.9781421407944, https://epubs. siam.org/doi/pdf/10.1137/1.9781421407944, https://epubs.siam.org/doi/abs/10.1137/1. 9781421407944.
-[5] M.F. Kasim, S. Lehtola, S.M. Vinko, DQC: a Python program package for differentiable quantum chemistry, Journal of Chemical Physics 156 (8) (2022) 084801, https://doi. org/10.1063/5.0076202, https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/5.0076202/ 18277993/084801_1_5.0076202.pdf.
-[6] A.S. Abbott, B.Z. Abbott, J.M. Turney, H.F.I. Schaefer, Arbitrary-order derivatives of quantum chemical methods via automatic differentiation, Journal of Physical Chemistry Letters 12 (12) (2021) 3232–3239, pMID: 33764068, https://doi.org/10.1021/acs.jpclett. 1c00607.
-[7] G. Zhou, B. Nebgen, N. Lubbers, W. Malone, A.M.N. Niklasson, S. Tretiak, Graphics processing unit-accelerated semiempirical Born Oppenheimer Molecular Dynamics using PyTorch, Journal of Chemical Theory and Computation 16 (8) (2020) 4951–4962, pMID: 32609513, https://doi.org/10.1021/acs.jctc.0c00243.
-[8] X. Zhang, G.K.-L. Chan, Differentiable quantum chemistry with PySCF for molecules and materials at the mean-ﬁeld level and beyond, Journal of Chemical Physics 157 (20) (2022) 204801, https://doi.org/10.1063/5.0118200, https://pubs.aip.org/aip/jcp/articlepdf/doi/10.1063/5.0118200/18281172/204801_1_5.0118200.pdf.
-[9] J. Denero, SICP in Python, https://wizardforcel.gitbooks.io/sicp-in-python/content/, 2024.
+::: {.ref-list}
+
+[1] The PySCF Developers, Quantum chemistry with Python, [pyscf.org](https://pyscf.org/), 2024.
+
+[2] Y. Yamaguchi, H.F. Schaefer III, Analytic Derivative Methods in Molecular Electronic Structure Theory: A New Dimension to Quantum Chemistry and Its Applications to Spectroscopy, John Wiley & Sons, Ltd, 2011, [DOI](https://doi.org/10.1002/9780470749593.hrs006), [wiley.com](https://onlinelibrary.wiley.com/doi/pdf/10.1002/9780470749593.hrs006), [wiley.com](https://onlinelibrary.wiley.com/doi/abs/10.1002/9780470749593.hrs006).
+
+[3] J.A. Pople, R. Krishnan, H.B. Schlegel, J.S. Binkley, Derivative studies in Hartree–Fock and Møller–Plesset theories, in: Proceedings of the International Symposium on Atomic, Molecular, and Solid-State Theory, Collision Phenomena, and Quantum Statistics, and Computational Methods, International Journal of Quantum Chemistry 16 (S13) (1979) 225–241, [DOI](https://doi.org/10.1002/qua.560160825).
+
+[4] G.H. Golub, C.F. Van Loan, Matrix Computations, 4th edition, Johns Hopkins University Press, Philadelphia, PA, 2013, [DOI](https://doi.org/10.1137/1.9781421407944), [siam.org](https://epubs.siam.org/doi/pdf/10.1137/1.9781421407944), [siam.org](https://epubs.siam.org/doi/abs/10.1137/1.9781421407944).
+
+[5] M.F. Kasim, S. Lehtola, S.M. Vinko, DQC: a Python program package for differentiable quantum chemistry, Journal of Chemical Physics 156 (8) (2022) 084801, [DOI](https://doi.org/10.1063/5.0076202), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/5.0076202/18277993/084801_1_5.0076202.pdf).
+
+[6] A.S. Abbott, B.Z. Abbott, J.M. Turney, H.F.I. Schaefer, Arbitrary-order derivatives of quantum chemical methods via automatic differentiation, Journal of Physical Chemistry Letters 12 (12) (2021) 3232–3239, pMID: 33764068, [DOI](https://doi.org/10.1021/acs.jpclett.1c00607).
+
+[7] G. Zhou, B. Nebgen, N. Lubbers, W. Malone, A.M.N. Niklasson, S. Tretiak, Graphics processing unit-accelerated semiempirical Born Oppenheimer Molecular Dynamics using PyTorch, Journal of Chemical Theory and Computation 16 (8) (2020) 4951–4962, pMID: 32609513, [DOI](https://doi.org/10.1021/acs.jctc.0c00243).
+
+[8] X. Zhang, G.K.-L. Chan, Differentiable quantum chemistry with PySCF for molecules and materials at the mean-ﬁeld level and beyond, Journal of Chemical Physics 157 (20) (2022) 204801, [DOI](https://doi.org/10.1063/5.0118200), [aip.org](https://pubs.aip.org/aip/jcp/articlepdf/doi/10.1063/5.0118200/18281172/204801_1_5.0118200.pdf).
+
+[9] J. Denero, SICP in Python, [gitbooks.io](https://wizardforcel.gitbooks.io/sicp-in-python/content/), 2024.
+
+[10] The JAX authors, JAX documentation - jax.numpy.ndarray.at, [readthedocs.io](https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.ndarray.at.html), 2024.
+
+[11] The JAX authors, Custom derivative rules for JAX-transformable Python functions, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html), 2024.
+
+[12] The JAX authors, Use jax.custom_jvp to deﬁne forward-mode (and, indirectly, reverse-mode) rules, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_) for_Python_code.html#use-jax-custom-jvp-to-deﬁne-forward-mode-and-indirectlyreverse-mode-rules, 2024.
+
+[13] The JAX authors, jax.custom_jvp with nondiff_argnums, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html#jax-custom-jvp-withnondiff-argnums), 2024.
+
+[14] The JAX authors, Extending PyTrees, [readthedocs.io](https://jax.readthedocs.io/en/latest/pytrees.html#) extending-pytrees, 2024.
+
+[15] The JAX authors, Implicit function differentiation of iterative implementations, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html#implicit-function-differentiation-of-iterative-implementations), 2024.
+
+[16] The JAXopt authors, JAXopt documentation - implicit differentiation, [github.io](https://jaxopt.github.io/stable/implicit_diff.html), 2024.
+
+[17] P.G. Szalay, M. Nooijen, R.J. Bartlett, Alternative ansätze in single reference coupled-cluster theory. III. A critical analysis of different methods, Journal of Chemical Physics 103 (1) (1995) 281–298, [DOI](https://doi.org/10.1063/1.469641), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/103/1/281/19147216/281_1_online.pdf).
+
+[18] A. Radul, A. Paszke, R. Frostig, M.J. Johnson, D. Maclaurin, You only linearize once: tangents transpose to gradients, Proc. ACM Program. Lang., 7 (POPL), [DOI](https://doi.org/10.1145/3571236).
+
+:::
+

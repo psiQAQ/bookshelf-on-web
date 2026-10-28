@@ -604,15 +604,31 @@ FFT 计算效率，通常建议选择可以因式分解为
 
 ## 参考文献
 
-[1] The SciPy community, Scipy api - linear algebra, https://docs.scipy.org/doc/scipy/reference/linalg.html, 2024.
-[2] T.F. Chan, Rank revealing qr factorizations, Linear Algebra and Its Applications 88–89 (1987) 67–82, https://doi.org/10.1016/0024-3795(87)90103-0, https://www. sciencedirect.com/science/article/pii/0024379587901030.
-[3] The SciPy community, Scipy api sparse linear algebra (scipy.sparse.linalg), https://docs. scipy.org/doc/scipy/reference/sparse.linalg.html, 2024.
-[4] The SciPy community, Scipy user guide sparse eigenvalue problems with arpack, https://docs.scipy.org/doc/scipy/tutorial/arpack.html, 2024.
-[5] J.W. Cooley, J.W. Tukey, An algorithm for the machine calculation of complex Fourier series, Mathematics of Computation 19 (90) (1965) 297–301, http://www.jstor.org/stable/ 2003354.
-[6] C.M. Rader, Discrete Fourier transforms when the number of data samples is prime, Proceedings of the IEEE 56 (6) (1968) 1107–1108, https://doi.org/10.1109/PROC.1968. 6477.
-[7] L. Bluestein, A linear ﬁltering approach to the computation of discrete Fourier transform, IEEE Transactions on Audio and Electroacoustics 18 (4) (1970) 451–455, https://doi.org/ 10.1109/TAU.1970.1162132.
-[8] SciPy Development Team, Scipy api legacy discrete Fourier transforms (scipy.fftpack), https://docs.scipy.org/doc/scipy/reference/fftpack.html, 2024.
+::: {.ref-list}
+
+[1] The SciPy community, Scipy api - linear algebra, [scipy.org](https://docs.scipy.org/doc/scipy/reference/linalg.html), 2024.
+
+[2] T.F. Chan, Rank revealing qr factorizations, Linear Algebra and Its Applications 88–89 (1987) 67–82, [DOI](https://doi.org/10.1016/0024-3795(87)90103-0), [sciencedirect.com](https://www.sciencedirect.com/science/article/pii/0024379587901030).
+
+[3] The SciPy community, Scipy api sparse linear algebra (scipy.sparse.linalg), [scipy.org](https://docs.scipy.org/doc/scipy/reference/sparse.linalg.html), 2024.
+
+[4] The SciPy community, Scipy user guide sparse eigenvalue problems with arpack, [scipy.org](https://docs.scipy.org/doc/scipy/tutorial/arpack.html), 2024.
+
+[5] J.W. Cooley, J.W. Tukey, An algorithm for the machine calculation of complex Fourier series, Mathematics of Computation 19 (90) (1965) 297–301, [jstor.org](http://www.jstor.org/stable/2003354).
+
+[6] C.M. Rader, Discrete Fourier transforms when the number of data samples is prime, Proceedings of the IEEE 56 (6) (1968) 1107–1108, [DOI](https://doi.org/10.1109/PROC.1968.6477).
+
+[7] L. Bluestein, A linear ﬁltering approach to the computation of discrete Fourier transform, IEEE Transactions on Audio and Electroacoustics 18 (4) (1970) 451–455, [DOI](https://doi.org/10.1109/TAU.1970.1162132).
+
+[8] SciPy Development Team, Scipy api legacy discrete Fourier transforms (scipy.fftpack), [scipy.org](https://docs.scipy.org/doc/scipy/reference/fftpack.html), 2024.
+
 [9] H. Gomersall, pyfftw: Python wrapper around fftw, Astrophysics Source Code Library, record ascl:2109.009 (Sep. 2021).
-[10] M. Frigo, A fast Fourier transform compiler, SIGPLAN Notices 34 (5) (1999) 169–180, https://doi.org/10.1145/301631.301661.
-[11] FFTW Development Team, Fftw documentation - planner ﬂags, https://www.fftw.org/fftw3_doc/Planner-Flags.html, 2024.
-[12] NumPy Team, Numpy packages & accelerated linear algebra libraries, https://numpy. org/install/#numpy-packages--accelerated-linear-algebra-libraries, 2024.
+
+[10] M. Frigo, A fast Fourier transform compiler, SIGPLAN Notices 34 (5) (1999) 169–180, [DOI](https://doi.org/10.1145/301631.301661).
+
+[11] FFTW Development Team, Fftw documentation - planner ﬂags, [fftw.org](https://www.fftw.org/fftw3_doc/Planner-Flags.html), 2024.
+
+[12] NumPy Team, Numpy packages & accelerated linear algebra libraries, [numpy.org](https://numpy.org/install/#numpy-packages--accelerated-linear-algebra-libraries), 2024.
+
+:::
+

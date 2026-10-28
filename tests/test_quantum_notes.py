@@ -85,6 +85,8 @@ class QuantumNotesTests(unittest.TestCase):
         self.assertIn('mjx-container[display="true"]', header)
         self.assertIn("overflow-x: auto", header)
         self.assertIn("max-width: 100%", header)
+        self.assertIn(".ref-list p", header)
+        self.assertIn("text-indent", header)
 
 
 if __name__ == "__main__":

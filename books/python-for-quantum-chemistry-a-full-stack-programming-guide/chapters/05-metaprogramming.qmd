@@ -600,11 +600,23 @@ In [9]: coords = jnp.array(np.random.rand(2, 3))
 
 ## 参考文献
 
-[1] L. Ramalho, Fluent Python: Clear, Concise, and Effective Programming, O’Reilly Media, 2015, https://books.google.co.in/books?id=bIZHCgAAQBAJ.
-[2] Python Software Foundation, Python documentation - abstract syntax trees (ast), https://docs.python.org/3/library/ast.html#abstract-grammar, 2024.
-[3] A. Meurer, C.P. Smith, M. Paprocki, O. ˇCertík, S.B. Kirpichev, M. Rocklin, A. Kumar, S. Ivanov, J.K. Moore, S. Singh, T. Rathnayake, S. Vig, B.E. Granger, R.P. Muller, F. Bonazzi, H. Gupta, S. Vats, F. Johansson, F. Pedregosa, M.J. Curry, A.R. Terrel, Š. Rouˇcka, A. Saboo, I. Fernando, S. Kulal, R. Cimrman, A. Scopatz, Sympy: symbolic computing in python, PeerJ Computer Science 3 (2017) e103, https://doi.org/10.7717/peerj-cs.103.
-[4] J. Ansel, E. Yang, H. He, N. Gimelshein, A. Jain, M. V oznesensky, B. Bao, P. Bell, D. Berard, E. Burovski, G. Chauhan, A. Chourdia, W. Constable, A. Desmaison, Z. DeVito, E. Ellison, W. Feng, J. Gong, M. Gschwind, B. Hirsh, S. Huang, K. Kalambarkar, L. Kirsch, M. Lazos, M. Lezcano, Y. Liang, J. Liang, Y. Lu, C.K. Luk, B. Maher, Y. Pan, C. Puhrsch, M. Reso, M. Sarouﬁm, M.Y. Siraichi, H. Suk, S. Zhang, M. Suo, P. Tillet, X. Zhao, E. Wang, K. Zhou, R. Zou, X. Wang, A. Mathews, W. Wen, G. Chanan, P. Wu, S. Chintala, Pytorch 2: faster machine learning through dynamic python bytecode transformation and graph compilation, in: Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Vo lume 2, ASPLOS ’24, Association for Computing Machinery, New York, NY, USA, 2024, pp. 929–947, https://doi.org/10.1145/3620665.3640366.
-[5] J. Bradbury, R. Frostig, P. Hawkins, M.J. Johnson, C. Leary, D. Maclaurin, G. Necula, A. Paszke, J. VanderPlas, S. Wanderman-Milne, Q. Zhang, JAX: composable transformations of Python+NumPy programs, http://github.com/google/jax, 2018.
-[6] M. Abadi, A. Agarwal, P. Barham, E. Brevdo, Z. Chen, C. Citro, G.S. Corrado, A. Davis, J. Dean, M. Devin, S. Ghemawat, I. Goodfellow, A. Harp, G. Irving, M. Isard, Y. Jia, R. Jozefowicz, L. Kaiser, M. Kudlur, J. Levenberg, D. Mané, R. Monga, S. Moore, D. Murray, C. Olah, M. Schuster, J. Shlens, B. Steiner, I. Sutskever, K. Talwar, P. Tucker, V. Vanhoucke, V. Vasudevan, F. Viégas, O. Vinyals, P. Warden, M. Wattenberg, M. Wicke, Y. Yu, X. Zheng, TensorFlow: large-scale machine learning on heterogeneous systems, software available from https://www.tensorﬂow.org/, 2015.
-[7] The JAX authors, Installing jax, https://jax.readthedocs.io/en/latest/installation.html, 2024.
-[8] The JAX authors, Custom derivative rules for jax-transformable python functions, https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html, 2024.
+::: {.ref-list}
+
+[1] L. Ramalho, Fluent Python: Clear, Concise, and Effective Programming, O’Reilly Media, 2015, [google.co.in](https://books.google.co.in/books?id=bIZHCgAAQBAJ).
+
+[2] Python Software Foundation, Python documentation - abstract syntax trees (ast), [python.org](https://docs.python.org/3/library/ast.html#abstract-grammar), 2024.
+
+[3] A. Meurer, C.P. Smith, M. Paprocki, O. ˇCertík, S.B. Kirpichev, M. Rocklin, A. Kumar, S. Ivanov, J.K. Moore, S. Singh, T. Rathnayake, S. Vig, B.E. Granger, R.P. Muller, F. Bonazzi, H. Gupta, S. Vats, F. Johansson, F. Pedregosa, M.J. Curry, A.R. Terrel, Š. Rouˇcka, A. Saboo, I. Fernando, S. Kulal, R. Cimrman, A. Scopatz, Sympy: symbolic computing in python, PeerJ Computer Science 3 (2017) e103, [DOI](https://doi.org/10.7717/peerj-cs.103).
+
+[4] J. Ansel, E. Yang, H. He, N. Gimelshein, A. Jain, M. V oznesensky, B. Bao, P. Bell, D. Berard, E. Burovski, G. Chauhan, A. Chourdia, W. Constable, A. Desmaison, Z. DeVito, E. Ellison, W. Feng, J. Gong, M. Gschwind, B. Hirsh, S. Huang, K. Kalambarkar, L. Kirsch, M. Lazos, M. Lezcano, Y. Liang, J. Liang, Y. Lu, C.K. Luk, B. Maher, Y. Pan, C. Puhrsch, M. Reso, M. Sarouﬁm, M.Y. Siraichi, H. Suk, S. Zhang, M. Suo, P. Tillet, X. Zhao, E. Wang, K. Zhou, R. Zou, X. Wang, A. Mathews, W. Wen, G. Chanan, P. Wu, S. Chintala, Pytorch 2: faster machine learning through dynamic python bytecode transformation and graph compilation, in: Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Vo lume 2, ASPLOS ’24, Association for Computing Machinery, New York, NY, USA, 2024, pp. 929–947, [DOI](https://doi.org/10.1145/3620665.3640366).
+
+[5] J. Bradbury, R. Frostig, P. Hawkins, M.J. Johnson, C. Leary, D. Maclaurin, G. Necula, A. Paszke, J. VanderPlas, S. Wanderman-Milne, Q. Zhang, JAX: composable transformations of Python+NumPy programs, [github.com](http://github.com/google/jax), 2018.
+
+[6] M. Abadi, A. Agarwal, P. Barham, E. Brevdo, Z. Chen, C. Citro, G.S. Corrado, A. Davis, J. Dean, M. Devin, S. Ghemawat, I. Goodfellow, A. Harp, G. Irving, M. Isard, Y. Jia, R. Jozefowicz, L. Kaiser, M. Kudlur, J. Levenberg, D. Mané, R. Monga, S. Moore, D. Murray, C. Olah, M. Schuster, J. Shlens, B. Steiner, I. Sutskever, K. Talwar, P. Tucker, V. Vanhoucke, V. Vasudevan, F. Viégas, O. Vinyals, P. Warden, M. Wattenberg, M. Wicke, Y. Yu, X. Zheng, TensorFlow: large-scale machine learning on heterogeneous systems, software available from [tensorflow.org](https://www.tensorflow.org/), 2015.
+
+[7] The JAX authors, Installing jax, [readthedocs.io](https://jax.readthedocs.io/en/latest/installation.html), 2024.
+
+[8] The JAX authors, Custom derivative rules for jax-transformable python functions, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html), 2024.
+
+:::
+

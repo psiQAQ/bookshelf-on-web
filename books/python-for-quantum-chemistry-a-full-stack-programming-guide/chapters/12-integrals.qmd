@@ -2858,18 +2858,37 @@ return out
 
 ## 参考文献
 
-[1] B.P. Pritchard, D. Altarawy, B. Didier, T.D. Gibson, T.L. Windus, New basis set exchange: an open, up-to-date resource for the molecular sciences community, Journal of Chemical Information and Modeling 59 (11) (2019) 4814–4820, https://doi.org/10.1021/acs.jcim.9b00725, pMID: 31600445.
-[1] B.P. Pritchard, D. Altarawy, B. Didier, T.D. Gibson, T.L. Windus, New basis set exchange: an open, up-to-date resource for the molecular sciences community, Journal of Chemical Information and Modeling 59 (11) (2019) 4814–4820, https://doi.org/10.1021/acs.jcim.9b00725, pMID: 31600445.
-[2] H.B. Schlegel, M.J. Frisch, Transformation between Cartesian and pure spherical harmonic Gaussians, International Journal of Quantum Chemistry 54 (2) (1995) 83–87, https://doi.org/10.1002/qua.560540202, https://onlinelibrary.wiley.com/doi/pdf/10.1002/qua.560540202, https://onlinelibrary.wiley.com/doi/abs/10.1002/qua.560540202.
-[3] R. Flores-Moreno, R.J. Alvarez-Mendez, A. Vela, A.M. Köster, Half-numerical evaluation of pseudopotential integrals, Journal of Computational Chemistry 27 (9) (2006) 1009–1019, https://doi.org/10.1002/jcc.20410, https://onlinelibrary.wiley.com/doi/pdf/ 10.1002/jcc.20410, https://onlinelibrary.wiley.com/doi/abs/10.1002/jcc.20410.
-[4] T. Helgaker, P. Jørgensen, J. Olsen, Molecular Integral Evaluation, John Wiley & Sons, Ltd, 2000, Ch. 9, pp. 336–432, https://doi.org/10.1002/9781119019572.ch9, https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119019572.ch9, https://onlinelibrary.wiley.com/doi/abs/10.1002/9781119019572.ch9.
-[5] N. Flocke, V. Lotrich, Efﬁcient electronic integrals and their generalized derivatives for object oriented implementations of electronic structure calculations, Journal of Computational Chemistry 29 (16) (2008) 2722–2736, https://doi.org/10.1002/jcc. 21018, https://onlinelibrary.wiley.com/doi/pdf/10.1002/jcc.21018, https://onlinelibrary. wiley.com/doi/abs/10.1002/jcc.21018.
-[6] Numba Developers, Numba reference manual - supported NumPy features, https://numba.readthedocs.io/en/stable/reference/numpysupported.html, 2024.
-[7] S. Behnel, R. Bradshaw, D.S. Seljebotn, G. Ewing, W. Stein, G. Gellner, et al., Cython for NumPy users - efﬁcient indexing with memoryviews, https://cython.readthedocs.io/en/latest/src/userguide/numpy_tutorial.html#efﬁcient-indexing-with-memoryviews, 2024.
-[8] M. Head-Gordon, J.A. Pople, A method for two-electron Gaussian integral and integral derivative evaluation using recurrence relations, Journal of Chemical Physics 89 (9) (1988) 5777–5786, https://doi.org/10.1063/1.455553, https://pubs.aip.org/aip/jcp/articlepdf/89/9/5777/18972946/5777_1_online.pdf.
-[9] P.M. Gill, Molecular integrals over Gaussian basis functions, in: J.R. Sabin, M.C. Zerner (Eds.), Advances in Quantum Chemistry, in: Advances in Quantum Chemistry, vol. 25, Academic Press, 1994, pp. 141–205, https://doi.org/10.1016/S0065-3276(08)60019-2, https://www.sciencedirect.com/science/article/pii/S0065327608600192.
-[10] GNU Compiler Collection Team, GCC documentation - restricting pointer aliasing, https://gcc.gnu.org/onlinedocs/gcc/Restricted-Pointers.html, 2024.
-[11] GNU Compiler Collection Team, GCC documentation - loop-speciﬁc pragmas, https://gcc.gnu.org/onlinedocs/gcc/Loop-Speciﬁc-Pragmas.html, 2024.
-[12] Intel Corporation, Intel intrinsics guide, https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html, 2024.
-[13] G. Bill, Memory allocation strategies, https://www.gingerbill.org/series/memoryallocation-strategies/, 2024.
+::: {.ref-list}
+
+[1] B.P. Pritchard, D. Altarawy, B. Didier, T.D. Gibson, T.L. Windus, New basis set exchange: an open, up-to-date resource for the molecular sciences community, Journal of Chemical Information and Modeling 59 (11) (2019) 4814–4820, [DOI](https://doi.org/10.1021/acs.jcim.9b00725), pMID: 31600445.
+
+[2] H.B. Schlegel, M.J. Frisch, Transformation between Cartesian and pure spherical harmonic Gaussians, International Journal of Quantum Chemistry 54 (2) (1995) 83–87, [DOI](https://doi.org/10.1002/qua.560540202), [wiley.com](https://onlinelibrary.wiley.com/doi/pdf/10.1002/qua.560540202), [wiley.com](https://onlinelibrary.wiley.com/doi/abs/10.1002/qua.560540202).
+
+[3] R. Flores-Moreno, R.J. Alvarez-Mendez, A. Vela, A.M. Köster, Half-numerical evaluation of pseudopotential integrals, Journal of Computational Chemistry 27 (9) (2006) 1009–1019, [DOI](https://doi.org/10.1002/jcc.20410), [wiley.com](https://onlinelibrary.wiley.com/doi/pdf/10.1002/jcc.20410), [wiley.com](https://onlinelibrary.wiley.com/doi/abs/10.1002/jcc.20410).
+
+[4] T. Helgaker, P. Jørgensen, J. Olsen, Molecular Integral Evaluation, John Wiley & Sons, Ltd, 2000, Ch. 9, pp. 336–432, [DOI](https://doi.org/10.1002/9781119019572.ch9), [wiley.com](https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119019572.ch9), [wiley.com](https://onlinelibrary.wiley.com/doi/abs/10.1002/9781119019572.ch9).
+
+[5] N. Flocke, V. Lotrich, Efﬁcient electronic integrals and their generalized derivatives for object oriented implementations of electronic structure calculations, Journal of Computational Chemistry 29 (16) (2008) 2722–2736, [DOI](https://doi.org/10.1002/jcc.21018), [wiley.com](https://onlinelibrary.wiley.com/doi/pdf/10.1002/jcc.21018), [wiley.com](https://onlinelibrary.wiley.com/doi/abs/10.1002/jcc.21018).
+
+[6] Numba Developers, Numba reference manual - supported NumPy features, [readthedocs.io](https://numba.readthedocs.io/en/stable/reference/numpysupported.html), 2024.
+
+[7] S. Behnel, R. Bradshaw, D.S. Seljebotn, G. Ewing, W. Stein, G. Gellner, et al., Cython for NumPy users - efﬁcient indexing with memoryviews, [readthedocs.io](https://cython.readthedocs.io/en/latest/src/userguide/numpy_tutorial.html#efficient-indexing-with-memoryviews), 2024.
+
+[8] M. Head-Gordon, J.A. Pople, A method for two-electron Gaussian integral and integral derivative evaluation using recurrence relations, Journal of Chemical Physics 89 (9) (1988) 5777–5786, [DOI](https://doi.org/10.1063/1.455553), [aip.org](https://pubs.aip.org/aip/jcp/articlepdf/89/9/5777/18972946/5777_1_online.pdf).
+
+[9] P.M. Gill, Molecular integrals over Gaussian basis functions, in: J.R. Sabin, M.C. Zerner (Eds.), Advances in Quantum Chemistry, in: Advances in Quantum Chemistry, vol. 25, Academic Press, 1994, pp. 141–205, [DOI](https://doi.org/10.1016/S0065-3276(08)60019-2), [sciencedirect.com](https://www.sciencedirect.com/science/article/pii/S0065327608600192).
+
+[10] GNU Compiler Collection Team, GCC documentation - restricting pointer aliasing, [gnu.org](https://gcc.gnu.org/onlinedocs/gcc/Restricted-Pointers.html), 2024.
+
+[11] GNU Compiler Collection Team, GCC documentation - loop-speciﬁc pragmas, [gnu.org](https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html), 2024.
+
+[12] Intel Corporation, Intel intrinsics guide, [intel.com](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html), 2024.
+
+[13] G. Bill, Memory allocation strategies, [gingerbill.org](https://www.gingerbill.org/series/memoryallocation-strategies/), 2024.
+
 [14] W.H. Press, S.A. Teukolsky, W.T. Vetterling, B.P. Flannery, Numerical Recipes 3rd Edition: The Art of Scientiﬁc Computing, 3rd edition, Cambridge University Press, USA, 2007.
+
+[15] V. I. Lebedev, D.N. Laikov, A quadrature formula for the sphere of the 131st algebraic order of accuracy, Doklady. Mathematics 59 (1999) 477–481, [api.semanticscholar](https://api.semanticscholar). org/CorpusID:118893131.
+
+:::
+

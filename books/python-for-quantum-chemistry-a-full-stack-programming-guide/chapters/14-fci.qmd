@@ -835,8 +835,17 @@ FCI 程序不仅计算密集，内存效率也是关键因素。为了提高内�
 
 ## 参考文献
 
-[1] E.R. Davidson, The iterative calculation of a few of the lowest eigenvalues and corresponding eigenvectors of large real-symmetric matrices, Journal of Computational Physics 17 (1) (1975) 87–94, https://doi.org/10.1016/0021-9991(75)90065-0, https://www.sciencedirect.com/science/article/pii/0021999175900650.
-[2] Y. Saad, 8. Preconditioning Techniques, pp. 193–218, https://epubs.siam.org/doi/pdf/ 10.1137/1.9781611970739.ch8, https://doi.org/10.1137/1.9781611970739.ch8, https://epubs.siam.org/doi/abs/10.1137/1.9781611970739.ch8.
-[3] Y. Saad, 7. Filtering and Restarting Techniques, pp. 163–191, https://epubs.siam.org/doi/pdf/10.1137/1.9781611970739.ch7, https://doi.org/10.1137/1.9781611970739.ch7, https://epubs.siam.org/doi/abs/10.1137/1.9781611970739.ch7.
+::: {.ref-list}
+
+[1] E.R. Davidson, The iterative calculation of a few of the lowest eigenvalues and corresponding eigenvectors of large real-symmetric matrices, Journal of Computational Physics 17 (1) (1975) 87–94, [DOI](https://doi.org/10.1016/0021-9991(75)90065-0), [sciencedirect.com](https://www.sciencedirect.com/science/article/pii/0021999175900650).
+
+[2] Y. Saad, 8. Preconditioning Techniques, pp. 193–218, [siam.org](https://epubs.siam.org/doi/pdf/10.1137/1.9781611970739.ch8), [DOI](https://doi.org/10.1137/1.9781611970739.ch8), [siam.org](https://epubs.siam.org/doi/abs/10.1137/1.9781611970739.ch8).
+
+[3] Y. Saad, 7. Filtering and Restarting Techniques, pp. 163–191, [siam.org](https://epubs.siam.org/doi/pdf/10.1137/1.9781611970739.ch7), [DOI](https://doi.org/10.1137/1.9781611970739.ch7), [siam.org](https://epubs.siam.org/doi/abs/10.1137/1.9781611970739.ch7).
+
 [4] A. Szabo, N.S. Ostlund, Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory, 1st edition, Dover Publications, Inc., Mineola, 1996.
-[5] T. Helgaker, P. Jørgensen, J. Olsen, Conﬁguration-Interaction Theory, John Wiley & Sons, Ltd, 2000, Ch. 11, pp. 523–597, https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119019572.ch11, https://doi.org/10.1002/9781119019572.ch11, https://onlinelibrary.wiley.com/doi/abs/10.1002/9781119019572.ch11.
+
+[5] T. Helgaker, P. Jørgensen, J. Olsen, Conﬁguration-Interaction Theory, John Wiley & Sons, Ltd, 2000, Ch. 11, pp. 523–597, [wiley.com](https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119019572.ch11), [DOI](https://doi.org/10.1002/9781119019572.ch11), [wiley.com](https://onlinelibrary.wiley.com/doi/abs/10.1002/9781119019572.ch11).
+
+:::
+

@@ -1081,10 +1081,21 @@ F2 += -0.5 * einsum("klli,abjk->baji", h2_oooo, t2)
 
 ## 参考文献
 
+::: {.ref-list}
+
 [1] I. Shavitt, R.J. Bartlett, Many-Body Methods in Chemistry and Physics: MBPT and Coupled-Cluster Theory, Cambridge Molecular Science, Cambridge University Press, 2009.
-[2] T.D. Crawford, H.F. Schaefer III, An Introduction to Coupled Cluster Theory for Computational Chemists, John Wiley & Sons, Ltd, 2000, Ch. 2, pp. 33–136, https://onlinelibrary.wiley.com/doi/pdf/10.1002/9780470125915.ch2, https://doi.org/10.1002/9780470125915.ch2, https://onlinelibrary.wiley.com/doi/abs/10.1002/ 9780470125915.ch2.
-[3] The PySCF Developers, Quantum chemistry with python, https://pyscf.org/, 2024. References 673
-[4] I. Purvis, D. George, R.J. Bartlett, A full coupled-cluster singles and doubles model: the inclusion of disconnected triples, Journal of Chemical Physics 76 (4) (1982) 1910–1918, https://doi.org/10.1063/1.443164, https://pubs.aip.org/aip/jcp/article-pdf/76/ 4/1910/18935003/1910_1_online.pdf.
-[5] G.E. Scuseria, C.L. Janssen, Henry F. Schaefer III, An efﬁcient reformulation of the closed-shell coupled cluster single and double excitation (CCSD) equations, Journal of Chemical Physics 89 (12) (1988) 7382–7387, https://doi.org/10.1063/1.455269, https://pubs.aip.org/aip/jcp/article-pdf/89/12/7382/18973922/7382_1_online.pdf.
-[6] R.J. Bartlett, G.D. Purvis, Many-body perturbation theory, coupled-pair many-electron theory, and the importance of quadruple excitations for the correlation problem, International Journal of Quantum Chemistry 14 (5) (1978) 561–581, https://doi.org/10.1002/qua.560140504, https://onlinelibrary.wiley.com/doi/pdf/10.1002/qua.560140504, https://onlinelibrary.wiley.com/doi/abs/10.1002/qua.560140504.
-[7] G. Baumgartner, A. Auer, D. Bernholdt, A. Bibireata, V. Choppella, D. Cociorva, X. Gao, R. Harrison, S. Hirata, S. Krishnamoorthy, S. Krishnan, C. chung Lam, Q. Lu, M. Nooijen, R. Pitzer, J. Ramanujam, P. Sadayappan, A. Sibiryakov, Synthesis of high-performance parallel programs for a class of ab initio quantum chemistry models, Proceedings of the IEEE 93 (2) (2005) 276–292, https://doi.org/10.1109/JPROC.2004.840311.
+
+[2] T.D. Crawford, H.F. Schaefer III, An Introduction to Coupled Cluster Theory for Computational Chemists, John Wiley & Sons, Ltd, 2000, Ch. 2, pp. 33–136, [wiley.com](https://onlinelibrary.wiley.com/doi/pdf/10.1002/9780470125915.ch2), [DOI](https://doi.org/10.1002/9780470125915.ch2), [wiley.com](https://onlinelibrary.wiley.com/doi/abs/10.1002/9780470125915.ch2).
+
+[3] The PySCF Developers, Quantum chemistry with python, [pyscf.org](https://pyscf.org/), 2024.
+
+[4] I. Purvis, D. George, R.J. Bartlett, A full coupled-cluster singles and doubles model: the inclusion of disconnected triples, Journal of Chemical Physics 76 (4) (1982) 1910–1918, [DOI](https://doi.org/10.1063/1.443164), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/76/4/1910/18935003/1910_1_online.pdf).
+
+[5] G.E. Scuseria, C.L. Janssen, Henry F. Schaefer III, An efﬁcient reformulation of the closed-shell coupled cluster single and double excitation (CCSD) equations, Journal of Chemical Physics 89 (12) (1988) 7382–7387, [DOI](https://doi.org/10.1063/1.455269), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/89/12/7382/18973922/7382_1_online.pdf).
+
+[6] R.J. Bartlett, G.D. Purvis, Many-body perturbation theory, coupled-pair many-electron theory, and the importance of quadruple excitations for the correlation problem, International Journal of Quantum Chemistry 14 (5) (1978) 561–581, [DOI](https://doi.org/10.1002/qua.560140504), [wiley.com](https://onlinelibrary.wiley.com/doi/pdf/10.1002/qua.560140504), [wiley.com](https://onlinelibrary.wiley.com/doi/abs/10.1002/qua.560140504).
+
+[7] G. Baumgartner, A. Auer, D. Bernholdt, A. Bibireata, V. Choppella, D. Cociorva, X. Gao, R. Harrison, S. Hirata, S. Krishnamoorthy, S. Krishnan, C. chung Lam, Q. Lu, M. Nooijen, R. Pitzer, J. Ramanujam, P. Sadayappan, A. Sibiryakov, Synthesis of high-performance parallel programs for a class of ab initio quantum chemistry models, Proceedings of the IEEE 93 (2) (2005) 276–292, [DOI](https://doi.org/10.1109/JPROC.2004.840311).
+
+:::
+

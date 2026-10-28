@@ -631,36 +631,73 @@ kernel_v2
 
 ## 参考文献
 
-[1] NVIDIA Corporation, CUDA C programming guide - compute capabilities, https://docs. nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities, 2024.
-[2] NVIDIA Corporation, Your GPU compute capability, https://developer.nvidia.com/cudagpus#compute, 2024.
-[3] NVIDIA Corporation, CUDA compiler DRIVER nvcc the CUDA compilation trajectory, https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#thecuda-compilation-trajectory, 2024.
-[4] NVIDIA Corporation, NVIDIA CUDA installation guide for Linux, https://docs.nvidia. com/cuda/cuda-installation-guide-linux/#installation, 2024.
-[5] Amazon Web Services, Using the deep learning base AMI - c onﬁguring CUDA versions, https://docs.aws.amazon.com/dlami/latest/devguide/tutorial-base.html, 2024.
-[6] NVIDIA Corporation, Installing the NVIDIA container toolkit, https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html, 2024.
-[7] NVIDIA Corporation, CUDA binary utilities - cuobjdump, https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html#cuobjdump, 2024.
-[8] PyTorch developers, Get started with PyTorch start locally, https://pytorch.org/getstarted/locally/, 2024.
-[9] CuPy Developers, Installing CuPy, https://docs.cupy.dev/en/stable/install.html# installing-cupy, 2024.
-[10] The JAX Authors, Installing JAX, https://jax.readthedocs.io/en/latest/installation.html# pip-installation-gpu-cuda-installed-via-pip-easier, 2024.
-[11] CuPy Developers, CuPy API reference - comparison table, https://docs.cupy.dev/en/stable/reference/comparison.html, 2024.
-[12] CuPy Developers, CuPy user guide - differences between CuPy and NumPy, https://docs. cupy.dev/en/stable/user_guide/difference.html, 2024.
-[13] CuPy Developers, CuPy user guide memory management, https://docs.cupy.dev/en/latest/user_guide/memory.html, 2024.
-[14] CuPy Developers, CuPy user guide - performance best practices, https://docs.cupy.dev/en/stable/user_guide/performance.html#benchmarking, 2024.
-[15] NumPy Developers, NumPy 2.0.0 release notes - np.unique return_inverse shape for multi-dimensional inputs, https://numpy.org/devdocs/release/2.0.0-notes.html#npunique-return-inverse-shape-for-multi-dimensional-inputs, 2024.
-[16] PyTorch Contributors, CUDA semantics memory management, https://pytorch.org/docs/stable/notes/cuda.html#memory-management, 2024.
-[17] The JAX authors, How to think in JAX, https://jax.readthedocs.io/en/latest/notebooks/thinking_in_jax.html, 2024.
-[18] NVIDIA Corporation, CUDA C++ best practices guide - pinned memory, https://docs. nvidia.com/cuda/cuda-c-best-practices-guide/index.html#pinned-memory, 2024.
-[19] NVIDIA Corporation, CUDA toolkit documentation API synchronization behavior, https://docs.nvidia.com/cuda/cuda-runtime-api/api-sync-behavior.html#api-syncbehavior, 2024.
-[20] Numba Developers, Numba for CUDA GPUs, https://numba.pydata.org/numba-doc/dev/cuda/index.html, 2024.
-[21] CuPy Developers, CuPy user guide user - d eﬁned kernels, https://docs.cupy.dev/en/stable/user_guide/kernel.html, 2024.
-[22] A. Klöckner, PyCUDA documentation, https://documen.tician.de/pycuda/index.html, 2024.
-[23] A. Klöckner, N. Pinto, Y. Lee, B. Catanzaro, P. Ivanov, A. Fasih, PyCUDA and Py-OpenCL: a scripting-based approach to GPU run-time code generation, Parallel Computing 38 (3) (2012) 157–174, https://doi.org/10.1016/j.parco.2011.09.001, https://www. sciencedirect.com/science/article/pii/S0167819111001281.
-[24] NVIDIA Corporation, CUDA Python manual, https://nvidia.github.io/cuda-python/, 2024.
-[25] NVIDIA Corporation, CUDA C++ programming guide, https://docs.nvidia.com/cuda/cuda-c-programming-guide/, 2024.
-[26] NVIDIA Corporation, CUDA by example: an introduction to general-purpose gpu programming, https://developer.nvidia.com/cuda-example, 2024.
-[27] Numba Developers, Numba CUDA kernel API - dispatcher objects, https://numba. pydata.org/numba-doc/dev/cuda-reference/kernel.html#dispatcher-objects, 2024.
-[28] CuPy Developers, CuPy user guide kernel arguments, https://docs.cupy.dev/en/stable/user_guide/kernel.html#kernel-arguments, 2024.
-[29] NVIDIA Corporation, CUDA C++ best practices guide - zero copy, https://docs.nvidia. com/cuda/cuda-c-best-practices-guide/index.html#zero-copy, 2024.
-[30] A. Li, S.L. Song, J. Chen, J. Li, X. Liu, N.R. Tallent, K.J. Barker, Evaluating modern GPU interconnect: PCIe, NVLink, NV-SLI, NVSwitch and GPUDirect, IEEE Transactions on Parallel and Distributed Systems 31 (1) (2020) 94–110, https://doi.org/10.1109/TPDS. 2019.2928289.
-[31] S.W. Min, K. Wu, S. Huang, M. Hidayeto˘glu, J. Xiong, E. Ebrahimi, D. Chen, W.-m. Hwu, Large graph convolutional network training with GPU-oriented data communication architecture, Proceedings of the VLDB Endowment 14 (11) (2021) 2087–2100, https://doi.org/10.14778/3476249.3476264.
-[32] M. Harris, How to access global memory efﬁciently in CUDA C/C++ kernels, https://developer.nvidia.com/blog/how-access-global-memory-efﬁciently-cuda-c-kernels/, 2013.
-[33] NVIDIA Corporation, CUDA C++ programming guide device memory accesses, https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#device-memoryaccesses, 2024.
+::: {.ref-list}
+
+[1] NVIDIA Corporation, CUDA C programming guide - compute capabilities, [nvidia.com](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities), 2024.
+
+[2] NVIDIA Corporation, Your GPU compute capability, [nvidia.com](https://developer.nvidia.com/cudagpus#compute), 2024.
+
+[3] NVIDIA Corporation, CUDA compiler DRIVER nvcc the CUDA compilation trajectory, [nvidia.com](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#thecuda-compilation-trajectory), 2024.
+
+[4] NVIDIA Corporation, NVIDIA CUDA installation guide for Linux, [nvidia.com](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/#installation), 2024.
+
+[5] Amazon Web Services, Using the deep learning base AMI - c onﬁguring CUDA versions, [amazon.com](https://docs.aws.amazon.com/dlami/latest/devguide/tutorial-base.html), 2024.
+
+[6] NVIDIA Corporation, Installing the NVIDIA container toolkit, [nvidia.com](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html), 2024.
+
+[7] NVIDIA Corporation, CUDA binary utilities - cuobjdump, [nvidia.com](https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html#cuobjdump), 2024.
+
+[8] PyTorch developers, Get started with PyTorch start locally, [pytorch.org](https://pytorch.org/getstarted/locally/), 2024.
+
+[9] CuPy Developers, Installing CuPy, [cupy.dev](https://docs.cupy.dev/en/stable/install.html#) installing-cupy, 2024.
+
+[10] The JAX Authors, Installing JAX, [readthedocs.io](https://jax.readthedocs.io/en/latest/installation.html#) pip-installation-gpu-cuda-installed-via-pip-easier, 2024.
+
+[11] CuPy Developers, CuPy API reference - comparison table, [cupy.dev](https://docs.cupy.dev/en/stable/reference/comparison.html), 2024.
+
+[12] CuPy Developers, CuPy user guide - differences between CuPy and NumPy, [cupy.dev](https://docs.cupy.dev/en/stable/user_guide/difference.html), 2024.
+
+[13] CuPy Developers, CuPy user guide memory management, [cupy.dev](https://docs.cupy.dev/en/latest/user_guide/memory.html), 2024.
+
+[14] CuPy Developers, CuPy user guide - performance best practices, [cupy.dev](https://docs.cupy.dev/en/stable/user_guide/performance.html#benchmarking), 2024.
+
+[15] NumPy Developers, NumPy 2.0.0 release notes - np.unique return_inverse shape for multi-dimensional inputs, [numpy.org](https://numpy.org/devdocs/release/2.0.0-notes.html#npunique-return-inverse-shape-for-multi-dimensional-inputs), 2024.
+
+[16] PyTorch Contributors, CUDA semantics memory management, [pytorch.org](https://pytorch.org/docs/stable/notes/cuda.html#memory-management), 2024.
+
+[17] The JAX authors, How to think in JAX, [readthedocs.io](https://jax.readthedocs.io/en/latest/notebooks/thinking_in_jax.html), 2024.
+
+[18] NVIDIA Corporation, CUDA C++ best practices guide - pinned memory, [nvidia.com](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#pinned-memory), 2024.
+
+[19] NVIDIA Corporation, CUDA toolkit documentation API synchronization behavior, [nvidia.com](https://docs.nvidia.com/cuda/cuda-runtime-api/api-sync-behavior.html#api-syncbehavior), 2024.
+
+[20] Numba Developers, Numba for CUDA GPUs, [pydata.org](https://numba.pydata.org/numba-doc/dev/cuda/index.html), 2024.
+
+[21] CuPy Developers, CuPy user guide user - d eﬁned kernels, [cupy.dev](https://docs.cupy.dev/en/stable/user_guide/kernel.html), 2024.
+
+[22] A. Klöckner, PyCUDA documentation, [tician.de](https://documen.tician.de/pycuda/index.html), 2024.
+
+[23] A. Klöckner, N. Pinto, Y. Lee, B. Catanzaro, P. Ivanov, A. Fasih, PyCUDA and Py-OpenCL: a scripting-based approach to GPU run-time code generation, Parallel Computing 38 (3) (2012) 157–174, [DOI](https://doi.org/10.1016/j.parco.2011.09.001), [sciencedirect.com](https://www.sciencedirect.com/science/article/pii/S0167819111001281).
+
+[24] NVIDIA Corporation, CUDA Python manual, [github.io](https://nvidia.github.io/cuda-python/), 2024.
+
+[25] NVIDIA Corporation, CUDA C++ programming guide, [nvidia.com](https://docs.nvidia.com/cuda/cuda-c-programming-guide/), 2024.
+
+[26] NVIDIA Corporation, CUDA by example: an introduction to general-purpose gpu programming, [nvidia.com](https://developer.nvidia.com/cuda-example), 2024.
+
+[27] Numba Developers, Numba CUDA kernel API - dispatcher objects, [pydata.org](https://numba.pydata.org/numba-doc/dev/cuda-reference/kernel.html#dispatcher-objects), 2024.
+
+[28] CuPy Developers, CuPy user guide kernel arguments, [cupy.dev](https://docs.cupy.dev/en/stable/user_guide/kernel.html#kernel-arguments), 2024.
+
+[29] NVIDIA Corporation, CUDA C++ best practices guide - zero copy, [nvidia.com](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#zero-copy), 2024.
+
+[30] A. Li, S.L. Song, J. Chen, J. Li, X. Liu, N.R. Tallent, K.J. Barker, Evaluating modern GPU interconnect: PCIe, NVLink, NV-SLI, NVSwitch and GPUDirect, IEEE Transactions on Parallel and Distributed Systems 31 (1) (2020) 94–110, [DOI](https://doi.org/10.1109/TPDS.2019.2928289).
+
+[31] S.W. Min, K. Wu, S. Huang, M. Hidayeto˘glu, J. Xiong, E. Ebrahimi, D. Chen, W.-m. Hwu, Large graph convolutional network training with GPU-oriented data communication architecture, Proceedings of the VLDB Endowment 14 (11) (2021) 2087–2100, [DOI](https://doi.org/10.14778/3476249.3476264).
+
+[32] M. Harris, How to access global memory efﬁciently in CUDA C/C++ kernels, [nvidia.com](https://developer.nvidia.com/blog/how-access-global-memory-efficiently-cuda-c-kernels/), 2013.
+
+[33] NVIDIA Corporation, CUDA C++ programming guide device memory accesses, [nvidia.com](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#device-memoryaccesses), 2024.
+
+:::
+

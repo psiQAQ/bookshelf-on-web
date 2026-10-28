@@ -712,29 +712,59 @@ if __name__ == '__main__':
 
 ## 参考文献
 
-[1] Python Software Foundation, Python documentation what can be pickled and unpickled, https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled, 2024.
-[2] Python Software Foundation, Python documentation - generator expressions, https://docs.python.org/3/reference/expressions.html#generator-expressions, 2024.
-[3] Cloudpipe Development Team, Cloudpickle, https://github.com/cloudpipe/cloudpickle, 2024.
-[4] The Uncertainty Quantiﬁcation Foundation, dill: serialize all of Python, https://dill. readthedocs.io/en/latest/, 2024.
-[5] Python Software Foundation, Python documentation - pickling class instances, https://docs.python.org/3/library/pickle.html#pickling-class-instances, 2024.
-[6] YAML Language Development Team, Yaml ain’t markup language (yaml) version 1.2, https://yaml.org/spec/1.2.2/, 2024.
-[7] NumPy Developers, NumPy documentation - numpy.lib.format, https://numpy.org/doc/stable/reference/generated/numpy.lib.format.html, 2024.
-[8] T. Berners-Lee, R. Fielding, L. Masinter, Uniform resource identiﬁer (uri): generic syntax, https://datatracker.ietf.org/doc/html/rfc3986, 2005.
-[9] B. Pritchard, Basis set exchange api documentation rest api reference, https://molssibse.github.io/basis_set_exchange-apidoc/reference.html#, 2024.
-[10] A. Jain, S.P. Ong, G. Hautier, W. Chen, W.D. Richards, S. Dacek, S. Cholia, D. Gunter, D. Skinner, G. Ceder, K.A. Persson, Commentary: The Materials Project: a materials genome approach to accelerating materials innovation, APL Materials 1 (1) (2013) 011002, https://doi.org/10.1063/1.4812323, https://pubs.aip.org/aip/apm/article-pdf/doi/ 10.1063/1.4812323/13163869/011002_1_online.pdf.
-[11] L. Gupta, Rest api tutorial, https://restfulapi.net/, Dec. 2023.
-[12] Pallets, Flask documentation, https://ﬂask.palletsprojects.com/en/latest/, 2024.
-[13] S. Ramírez, FastAPI, https://github.com/tiangolo/fastapi.
-[14] JSON-RPC Working Group, Json-rpc speciﬁcation, https://www.jsonrpc.org/speciﬁcation, 2024.
-[15] The PySCF Developers, Quantum chemistry with Python, https://pyscf.org/, 2024.
-[16] Redis Inc, redis-py - Python client for redis, https://redis-py.readthedocs.io/en/stable/, 2024.
-[17] Pallets, Flask documentation - development server, https://ﬂask.palletsprojects.com/en/latest/server/, 2024.
-[18] Pallets, Flask document - deploying to production, https://ﬂask.palletsprojects.com/en/latest/deploying/, 2024.
-[19] Google LLC, Protocol buffers documentation, https://protobuf.dev/, 2024.
-[20] gRPC Authors, Basics tutorial - a basic tutorial introduction to grpc in Python, https://grpc.io/docs/languages/python/basics/, 2024.
-[21] N. Richardson, I. Cook, N. Crane, D. Dunnington, R. François, J. Keane, D. Moldovan-Grünfeld, J. Ooms, J. Wujciak-Jens, Apache Arrow, arrow: Integration to ‘Apache’ ‘Arrow’, https://arrow.apache.org/docs/r/, 2024.
-[22] W. McKinney, Introducing apache arrow ﬂight: a framework for fast data transport, https://arrow.apache.org/blog/2019/10/13/introducing-arrow-ﬂight/, 2019.
-[23] Apache Software Foundation, Apache arrow document memory and io interfaces, https://arrow.apache.org/docs/python/memory.html, 2024.
-[24] Apache Software Foundation, Apache arrow cookbook - arrow ﬂight, https://arrow. apache.org/cookbook/py/ﬂight.html, 2022.
-[25] Dask Development Team, Dask: library for dynamic task scheduling, http://dask.pydata. org, 2016.
-[26] P. Moritz, R. Nishihara, S. Wang, A. Tumanov, R. Liaw, E. Liang, M. Elibol, Z. Yang, W. Paul, M.I. Jordan, I. Stoica, Ray: a distributed framework for emerging AI applications, in: 13th USENIX Symposium on Operating Systems Design and Implementation (OSDI 18), USENIX Association, Carlsbad, CA, 2018, pp. 561–577, https://www.usenix.org/conference/osdi18/presentation/moritz.
+::: {.ref-list}
+
+[1] Python Software Foundation, Python documentation what can be pickled and unpickled, [python.org](https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled), 2024.
+
+[2] Python Software Foundation, Python documentation - generator expressions, [python.org](https://docs.python.org/3/reference/expressions.html#generator-expressions), 2024.
+
+[3] Cloudpipe Development Team, Cloudpickle, [github.com](https://github.com/cloudpipe/cloudpickle), 2024.
+
+[4] The Uncertainty Quantiﬁcation Foundation, dill: serialize all of Python, [readthedocs.io](https://dill.readthedocs.io/en/latest/), 2024.
+
+[5] Python Software Foundation, Python documentation - pickling class instances, [python.org](https://docs.python.org/3/library/pickle.html#pickling-class-instances), 2024.
+
+[6] YAML Language Development Team, Yaml ain’t markup language (yaml) version 1.2, [yaml.org](https://yaml.org/spec/1.2.2/), 2024.
+
+[7] NumPy Developers, NumPy documentation - numpy.lib.format, [numpy.org](https://numpy.org/doc/stable/reference/generated/numpy.lib.format.html), 2024.
+
+[8] T. Berners-Lee, R. Fielding, L. Masinter, Uniform resource identiﬁer (uri): generic syntax, [ietf.org](https://datatracker.ietf.org/doc/html/rfc3986), 2005.
+
+[9] B. Pritchard, Basis set exchange api documentation rest api reference, [github.io](https://molssibse.github.io/basis_set_exchange-apidoc/reference.html#), 2024.
+
+[10] A. Jain, S.P. Ong, G. Hautier, W. Chen, W.D. Richards, S. Dacek, S. Cholia, D. Gunter, D. Skinner, G. Ceder, K.A. Persson, Commentary: The Materials Project: a materials genome approach to accelerating materials innovation, APL Materials 1 (1) (2013) 011002, [DOI](https://doi.org/10.1063/1.4812323), [aip.org](https://pubs.aip.org/aip/apm/article-pdf/doi/10.1063/1.4812323/13163869/011002_1_online.pdf).
+
+[11] L. Gupta, Rest api tutorial, [restfulapi.net](https://restfulapi.net/), Dec. 2023.
+
+[12] Pallets, Flask documentation, [palletsprojects.com](https://flask.palletsprojects.com/en/latest/), 2024.
+
+[13] S. Ramírez, FastAPI, [github.com](https://github.com/tiangolo/fastapi).
+
+[14] JSON-RPC Working Group, Json-rpc speciﬁcation, [jsonrpc.org](https://www.jsonrpc.org/specification), 2024.
+
+[15] The PySCF Developers, Quantum chemistry with Python, [pyscf.org](https://pyscf.org/), 2024.
+
+[16] Redis Inc, redis-py - Python client for redis, [readthedocs.io](https://redis-py.readthedocs.io/en/stable/), 2024.
+
+[17] Pallets, Flask documentation - development server, [palletsprojects.com](https://flask.palletsprojects.com/en/latest/server/), 2024.
+
+[18] Pallets, Flask document - deploying to production, [palletsprojects.com](https://flask.palletsprojects.com/en/latest/deploying/), 2024.
+
+[19] Google LLC, Protocol buffers documentation, [protobuf.dev](https://protobuf.dev/), 2024.
+
+[20] gRPC Authors, Basics tutorial - a basic tutorial introduction to grpc in Python, [grpc.io](https://grpc.io/docs/languages/python/basics/), 2024.
+
+[21] N. Richardson, I. Cook, N. Crane, D. Dunnington, R. François, J. Keane, D. Moldovan-Grünfeld, J. Ooms, J. Wujciak-Jens, Apache Arrow, arrow: Integration to ‘Apache’ ‘Arrow’, [apache.org](https://arrow.apache.org/docs/r/), 2024.
+
+[22] W. McKinney, Introducing apache arrow ﬂight: a framework for fast data transport, [apache.org](https://arrow.apache.org/blog/2019/10/13/introducing-arrow-flight/), 2019.
+
+[23] Apache Software Foundation, Apache arrow document memory and io interfaces, [apache.org](https://arrow.apache.org/docs/python/memory.html), 2024.
+
+[24] Apache Software Foundation, Apache arrow cookbook - arrow ﬂight, [arrow](https://arrow). apache.org/cookbook/py/ﬂight.html, 2022.
+
+[25] Dask Development Team, Dask: library for dynamic task scheduling, [pydata.org](http://dask.pydata.org), 2016.
+
+[26] P. Moritz, R. Nishihara, S. Wang, A. Tumanov, R. Liaw, E. Liang, M. Elibol, Z. Yang, W. Paul, M.I. Jordan, I. Stoica, Ray: a distributed framework for emerging AI applications, in: 13th USENIX Symposium on Operating Systems Design and Implementation (OSDI 18), USENIX Association, Carlsbad, CA, 2018, pp. 561–577, [usenix.org](https://www.usenix.org/conference/osdi18/presentation/moritz).
+
+:::
+

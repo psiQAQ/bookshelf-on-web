@@ -1635,25 +1635,51 @@ scf_iter(model, model.wfn)
 
 ## 参考文献
 
+::: {.ref-list}
+
 [1] A. Szabo, N.S. Ostlund, Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory, 1st edition, Dover Publications, Inc., Mineola, 1996.
-[2] R.G. Parr, Y. Weitao, Density-Functional Theory of Atoms and Molecules, Oxford University Press, USA, 1994, http://www.amazon.com/Density-Functional-Molecules-International-Monographs-Chemistry/dp/0195092767/.
-[3] T. Saue, Relativistic Hamiltonians for chemistry: a primer, ChemPhysChem 12 (17) (2011) 3077–3094, https://doi.org/10.1002/cphc.201100682, https://chemistry-europe.onlinelibrary.wiley.com/doi/pdf/10.1002/cphc.201100682, https://chemistry-europe.onlinelibrary.wiley.com/doi/abs/10.1002/cphc.201100682.
-[4] Z. Li, Y. Xiao, W. Liu, On the spin separation of algebraic two-component relativistic Hamiltonians, Journal of Chemical Physics 137 (15) (2012) 154114, https://doi. org/10.1063/1.4758987, https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/1.4758987/ 13274957/154114_1_online.pdf.
-[5] W. Liu, D. Peng, Exact two-component Hamiltonians revisited, Journal of Chemical Physics 131 (3) (2009) 031104, https://doi.org/10.1063/1.3159445, https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/1.3159445/15671680/031104_1_online.pdf.
-[6] M. Reiher, Relativistic Douglas–Kroll–Hess theory, WIREs Computational Molecular Science 2 (1) (2012) 139–149, https://doi.org/10.1002/wcms.67, https://wires.onlinelibrary.wiley.com/doi/pdf/10.1002/wcms.67, https://wires.onlinelibrary. wiley.com/doi/abs/10.1002/wcms.67.
-[7] B.I. Dunlap, Robust and variational ﬁtting, Physical Chemistry Chemical Physics 2 (2000) 2113–2116, https://doi.org/10.1039/B000027M.
-[8] F. Weigend, A fully direct RI-HF algorithm: implementation, optimised auxiliary basis sets, demonstration of accuracy and efﬁciency, Physical Chemistry Chemical Physics 4 (2002) 4285–4291, https://doi.org/10.1039/B204199P.
-[9] F. Neese, F. Wennmohs, A. Hansen, U. Becker, Efﬁcient, approximate and parallel Hartree–Fock and hybrid DFT calculations. A ‘chain-of-spheres’ algorithm for the Hartree–Fock exchange, in: Moving Frontiers in Quantum Chemistry, Chemical Physics 356 (1) (2009) 98–109, https://doi.org/10.1016/j.chemphys.2008.10.036, https://www. sciencedirect.com/science/article/pii/S0301010408005089.
-[10] H. Lin, D.G. Truhlar, QM/MM: what have we learned, where are we, and where do we go from here?, Theoretical Chemistry Accounts 117 (2) (2007) 185–199, https://doi.org/ 10.1007/s00214-006-0143-z. References 611
-[1] A. Szabo, N.S. Ostlund, Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory, 1st edition, Dover Publications, Inc., Mineola, 1996.
-[2] R.G. Parr, Y. Weitao, Density-Functional Theory of Atoms and Molecules, Oxford University Press, USA, 1994, http://www.amazon.com/Density-Functional-Molecules-International-Monographs-Chemistry/dp/0195092767/.
-[3] T. Saue, Relativistic Hamiltonians for chemistry: a primer, ChemPhysChem 12 (17) (2011) 3077–3094, https://doi.org/10.1002/cphc.201100682, https://chemistry-europe.onlinelibrary.wiley.com/doi/pdf/10.1002/cphc.201100682, https://chemistry-europe.onlinelibrary.wiley.com/doi/abs/10.1002/cphc.201100682.
-[4] Z. Li, Y. Xiao, W. Liu, On the spin separation of algebraic two-component relativistic Hamiltonians, Journal of Chemical Physics 137 (15) (2012) 154114, https://doi. org/10.1063/1.4758987, https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/1.4758987/ 13274957/154114_1_online.pdf.
-[5] W. Liu, D. Peng, Exact two-component Hamiltonians revisited, Journal of Chemical Physics 131 (3) (2009) 031104, https://doi.org/10.1063/1.3159445, https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/1.3159445/15671680/031104_1_online.pdf.
-[6] M. Reiher, Relativistic Douglas–Kroll–Hess theory, WIREs Computational Molecular Science 2 (1) (2012) 139–149, https://doi.org/10.1002/wcms.67, https://wires.onlinelibrary.wiley.com/doi/pdf/10.1002/wcms.67, https://wires.onlinelibrary. wiley.com/doi/abs/10.1002/wcms.67.
-[7] B.I. Dunlap, Robust and variational ﬁtting, Physical Chemistry Chemical Physics 2 (2000) 2113–2116, https://doi.org/10.1039/B000027M.
-[8] F. Weigend, A fully direct RI-HF algorithm: implementation, optimised auxiliary basis sets, demonstration of accuracy and efﬁciency, Physical Chemistry Chemical Physics 4 (2002) 4285–4291, https://doi.org/10.1039/B204199P.
-[9] F. Neese, F. Wennmohs, A. Hansen, U. Becker, Efﬁcient, approximate and parallel Hartree–Fock and hybrid DFT calculations. A ‘chain-of-spheres’ algorithm for the Hartree–Fock exchange, in: Moving Frontiers in Quantum Chemistry, Chemical Physics 356 (1) (2009) 98–109, https://doi.org/10.1016/j.chemphys.2008.10.036, https://www. sciencedirect.com/science/article/pii/S0301010408005089.
-[10] H. Lin, D.G. Truhlar, QM/MM: what have we learned, where are we, and where do we go from here?, Theoretical Chemistry Accounts 117 (2) (2007) 185–199, https://doi.org/ 10.1007/s00214-006-0143-z. References 611
-[11] E. Brunk, U. Rothlisberger, Mixed quantum mechanical/molecular mechanical molecular dynamics simulations of biological systems in ground and electronically excited states, https://doi.org/10.1021/cr500628b, https://infoscience.epﬂ.ch/handle/20. 500.14299/113676, 2015.
-[12] C.A. White, M. Head-Gordon, AJ matrix engine for density functional theory calculations, Journal of Chemical Physics 104 (7) (1996) 2620–2629, https://doi.org/10.1063/ 1.470986, https://pubs.aip.org/aip/jcp/article-pdf/104/7/2620/19069983/2620_1_online. pdf.
+
+[2] R.G. Parr, Y. Weitao, Density-Functional Theory of Atoms and Molecules, Oxford University Press, USA, 1994, [amazon.com](http://www.amazon.com/Density-Functional-Molecules-International-Monographs-Chemistry/dp/0195092767/).
+
+[3] T. Saue, Relativistic Hamiltonians for chemistry: a primer, ChemPhysChem 12 (17) (2011) 3077–3094, [DOI](https://doi.org/10.1002/cphc.201100682), [wiley.com](https://chemistry-europe.onlinelibrary.wiley.com/doi/pdf/10.1002/cphc.201100682), [wiley.com](https://chemistry-europe.onlinelibrary.wiley.com/doi/abs/10.1002/cphc.201100682).
+
+[4] Z. Li, Y. Xiao, W. Liu, On the spin separation of algebraic two-component relativistic Hamiltonians, Journal of Chemical Physics 137 (15) (2012) 154114, [DOI](https://doi.org/10.1063/1.4758987), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/1.4758987/13274957/154114_1_online.pdf).
+
+[5] W. Liu, D. Peng, Exact two-component Hamiltonians revisited, Journal of Chemical Physics 131 (3) (2009) 031104, [DOI](https://doi.org/10.1063/1.3159445), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/1.3159445/15671680/031104_1_online.pdf).
+
+[6] M. Reiher, Relativistic Douglas–Kroll–Hess theory, WIREs Computational Molecular Science 2 (1) (2012) 139–149, [DOI](https://doi.org/10.1002/wcms.67), [wiley.com](https://wires.onlinelibrary.wiley.com/doi/pdf/10.1002/wcms.67), [wiley.com](https://wires.onlinelibrary.wiley.com/doi/abs/10.1002/wcms.67).
+
+[7] B.I. Dunlap, Robust and variational ﬁtting, Physical Chemistry Chemical Physics 2 (2000) 2113–2116, [DOI](https://doi.org/10.1039/B000027M).
+
+[8] F. Weigend, A fully direct RI-HF algorithm: implementation, optimised auxiliary basis sets, demonstration of accuracy and efﬁciency, Physical Chemistry Chemical Physics 4 (2002) 4285–4291, [DOI](https://doi.org/10.1039/B204199P).
+
+[9] F. Neese, F. Wennmohs, A. Hansen, U. Becker, Efﬁcient, approximate and parallel Hartree–Fock and hybrid DFT calculations. A ‘chain-of-spheres’ algorithm for the Hartree–Fock exchange, in: Moving Frontiers in Quantum Chemistry, Chemical Physics 356 (1) (2009) 98–109, [DOI](https://doi.org/10.1016/j.chemphys.2008.10.036), [sciencedirect.com](https://www.sciencedirect.com/science/article/pii/S0301010408005089).
+
+[10] H. Lin, D.G. Truhlar, QM/MM: what have we learned, where are we, and where do we go from here?, Theoretical Chemistry Accounts 117 (2) (2007) 185–199, [DOI](https://doi.org/10.1007/s00214-006-0143-z).
+
+[11] E. Brunk, U. Rothlisberger, Mixed quantum mechanical/molecular mechanical molecular dynamics simulations of biological systems in ground and electronically excited states, [DOI](https://doi.org/10.1021/cr500628b), [epfl.ch](https://infoscience.epfl.ch/handle/20.500.14299/113676), 2015.
+
+[12] C.A. White, M. Head-Gordon, AJ matrix engine for density functional theory calculations, Journal of Chemical Physics 104 (7) (1996) 2620–2629, [DOI](https://doi.org/10.1063/1.470986), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/104/7/2620/19069983/2620_1_online.pdf).
+
+[13] S. Lehtola, C. Steigemann, M.J. Oliveira, M.A. Marques, Recent developments in LIBXC — a comprehensive library of functionals for density functional theory, SoftwareX 7 (2018) 1–5, [DOI](https://doi.org/10.1016/j.softx.2017.11.002), [sciencedirect.com](https://www.sciencedirect.com/science/article/pii/S2352711017300602).
+
+[14] U. Ekström, L. Visscher, R. Bast, A.J. Thorvaldsen, K. Ruud, Arbitrary-order density functional response theory from automatic differentiation, Journal of Chemical Theory and Computation 6 (7) (2010) 1971–1980, [DOI](https://doi.org/10.1021/ct100117s), [acs.org](http://pubs.acs.org/doi/pdf/10.1021/ct100117s), [acs.org](http://pubs.acs.org/doi/abs/10.1021/ct100117s).
+
+[15] A.D. Becke, A multicenter numerical integration scheme for polyatomic molecules, Journal of Chemical Physics 88 (4) (1988) 2547–2553, [DOI](https://doi.org/10.1063/1.454033), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/88/4/2547/18968948/2547_1_online.pdf).
+
+[16] A.J. Silenko, General properties of the Foldy-Wouthuysen transformation and applicability of the corrected original Foldy-Wouthuysen method, Physical Review A 93 (2016) 022108, [DOI](https://doi.org/10.1103/PhysRevA.93.022108), [aps.org](https://link.aps.org/doi/10.1103/PhysRevA.93.022108).
+
+[17] P. Pulay, Improved SCF convergence acceleration, Journal of Computational Chemistry 3 (4) (1982) 556–560, [DOI](https://doi.org/10.1002/jcc.540030413), [wiley.com](https://onlinelibrary.wiley.com/doi/pdf/10.1002/jcc.540030413), [wiley.com](https://onlinelibrary.wiley.com/doi/abs/10.1002/jcc.540030413).
+
+[18] X. Hu, W. Yang, Accelerating self-consistent ﬁeld convergence with the augmented Roothaan–Hall energy function, Journal of Chemical Physics 132 (5) (2010) 054109, [DOI](https://doi.org/10.1063/1.3304922), [aip.org](http://scitation.aip.org/content/aip/journal/jcp/132/5/10.1063/1.3304922).
+
+[19] K.N. Kudin, G.E. Scuseria, E. Cancès, A black-box self-consistent ﬁeld convergence algorithm: one step closer, Journal of Chemical Physics 116 (19) (2002) 8255–8261, [DOI](https://doi.org/10.1063/1.1470195), [aip.org](http://scitation.aip.org/content/aip/journal/jcp/116/19/10.1063/1.1470195).
+
+[20] T.P. Hamilton, P. Pulay, Direct inversion in the iterative subspace (DIIS) optimization of open-shell, excited-state, and small multiconﬁguration SCF wave functions, Journal of Chemical Physics 84 (10) (1986) 5728–5734, [DOI](https://doi.org/10.1063/1.449880), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/84/10/5728/18959418/5728_1_online.pdf).
+
+[21] H. Sellers, The C2-DIIS convergence acceleration algorithm, International Journal of Quantum Chemistry 45 (1) (1993) 31–41, [DOI](https://doi.org/10.1002/qua.560450106), [wiley.com](https://onlinelibrary.wiley.com/doi/pdf/10.1002/qua.560450106), [wiley.com](https://onlinelibrary.wiley.com/doi/abs/10.1002/qua.560450106).
+
+[22] S. Lehtola, L. Visscher, E. Engel, Efﬁcient implementation of the superposition of atomic potentials initial guess for electronic structure calculations in Gaussian basis sets, Journal of Chemical Physics 152 (14) (2020) 144105, [DOI](https://doi.org/10.1063/5.0004046), [aip.org](https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/5.0004046/13478079/144105_1_online.pdf).
+
+:::
+

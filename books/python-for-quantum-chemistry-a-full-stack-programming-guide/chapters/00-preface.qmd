@@ -89,10 +89,21 @@ Python 属于解释型语言，执行底层基础操作需要额外开销，特�
 
 ## 参考文献
 
+::: {.ref-list}
+
 [1] J. Wei, X. Wang, D. Schuurmans, M. Bosma, B. Ichter, F. Xia, E.H. Chi, Q.V. Le, D. Zhou, Chain-of-thought prompting elicits reasoning in large language models, in: Proceedings of the 36th International Conference on Neural Information Processing Systems, NIPS ’22, Curran Associates Inc., Red Hook, NY, USA, 2024, pp. 24824–24837.
+
 [2] A. Szabo, N.S. Ostlund, Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory, 1st edition, Dover Publications, Inc., Mineola, 1996.
-[3] T. Helgaker, P. Jørgensen, J. Olsen, Molecular Electronic Structure Theory, John Wiley & Sons, LTD, Chichester, 2000, https://www.amazon.com/Molecular-Electronic-Structure-Theory-Trygve-Helgaker/dp/1118531477/.
-[4] R. McWeeny, B. Sutcliffe, Methods of Molecular Quantum Mechanics, Pure and Applied Mathematics, Academic Press, 1969, https://books.google.com/books?id=D_ Ph20OZu0YC.
-[5] L. Ramalho, Fluent Python: Clear, Concise, and Effective Programming, O’Reilly Media, 2015, https://books.google.co.in/books?id=bIZHCgAAQBAJ. References xxi
+
+[3] T. Helgaker, P. Jørgensen, J. Olsen, Molecular Electronic Structure Theory, John Wiley & Sons, LTD, Chichester, 2000, [amazon.com](https://www.amazon.com/Molecular-Electronic-Structure-Theory-Trygve-Helgaker/dp/1118531477/).
+
+[4] R. McWeeny, B. Sutcliffe, Methods of Molecular Quantum Mechanics, Pure and Applied Mathematics, Academic Press, 1969, [google.com](https://books.google.com/books?id=D_Ph20OZu0YC).
+
+[5] L. Ramalho, Fluent Python: Clear, Concise, and Effective Programming, O’Reilly Media, 2015, [google.co.in](https://books.google.co.in/books?id=bIZHCgAAQBAJ).
+
 [6] A. Downey, Think Python. How to Think Like a Computer Scientist, 2nd edition, Green Tea Press, Needham, Massachusetts, 2014.
-[7] The PySCF Developers, Quantum chemistry with Python, https://pyscf.org/, 2024.
+
+[7] The PySCF Developers, Quantum chemistry with Python, [pyscf.org](https://pyscf.org/), 2024.
+
+:::
+

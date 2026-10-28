@@ -2475,45 +2475,91 @@ parallel_compute 方法使用 ThreadPoolExecutor（详见第 10 章）启动任�
 
 ## 参考文献
 
-[1] M. Shannon, Implementation plan for speeding up CPython, https://github.com/markshannon/faster-cpython/blob/master/plan.md, 2024.
-[2] M. Ankerl, Comprehensive C++ hashmap benchmarks 2022, https://martin.ankerl.com/ 2022/08/27/hashmap-bench-01/, Aug. 2022.
+::: {.ref-list}
+
+[1] M. Shannon, Implementation plan for speeding up CPython, [github.com](https://github.com/markshannon/faster-cpython/blob/master/plan.md), 2024.
+
+[2] M. Ankerl, Comprehensive C++ hashmap benchmarks 2022, [ankerl.com](https://martin.ankerl.com/2022/08/27/hashmap-bench-01/), Aug. 2022.
+
 [3] R.E. Bryant, D.R. O’Hallaron, Computer Systems: A Programmer’s Perspective, 2nd edition, Addison-Wesley Publishing Company, USA, 2010.
-[4] U. Drepper, What every programmer should know about memory, https://people.freebsd. org/~lstewart/articles/cpumemory.pdf, Nov. 2007.
-[5] Wikipedia Contributors, Instruction pipelining, https://en.wikipedia.org/wiki/Instruction_pipelining, 2024.
-[6] Intel Corporation, Intel 64 and IA-32 architectures software developer manuals, https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html, 2024.
-[7] A. Asadchev, E.F. Valeev, High-performance evaluation of high angular momentum 4-center Gaussian integrals on modern accelerated processors, The Journal of Physical Chemistry A 127 (51) (2023) 10889–10895, https://doi.org/10.1021/acs.jpca.3c04574, pMID: 38090753.
-[8] Wikipedia Contributors, Instruction-level parallelism, https://en.wikipedia.org/wiki/Instruction-level_parallelism, 2024.
-[9] T. Downs, Gathering Intel on Intel A VX-512 transitions, https://travisdowns.github.io/blog/2020/01/17/avxfreq1.html, 2020.
-[10] B. Fred, py-spy: sampling proﬁler for Python programs, https://github.com/benfred/py-spy, 2024.
-[11] B. Gregg, perf examples, https://www.brendangregg.com/perf.html, 2024.
-[12] B. Gregg, Flame graphs, https://www.brendangregg.com/ﬂamegraphs.html, 2024.
-[13] S.K. Lam, A. Pitrou, S. Seibert, Numba: a LLVM-based Python JIT compiler, in: Proceedings of the Second Workshop on the LLVM Compiler Infrastructure in HPC, LLVM ’15, Association for Computing Machinery, New York, NY, USA, 2015, pp. 1–6, https://doi.org/10.1145/2833157.2833162.
-[14] J. Bradbury, R. Frostig, P. Hawkins, M.J. Johnson, C. Leary, D. Maclaurin, G. Necula, A. Paszke, J. VanderPlas, S. Wanderman-Milne, Q. Zhang, JAX: composable transformations of Python+NumPy programs, http://github.com/google/jax, 2018.
-[15] S. Behnel, R. Bradshaw, C. Citro, L. Dalcin, D.S. Seljebotn, K. Smith, Cython: the best of both worlds, Computing in Science & Engineering 13 (2) (2011) 31–39, https://doi. org/10.1109/MCSE.2010.118.
-[16] S. Guelton, P. Brunet, M. Amini, A. Merlini, X. Corbillon, A. Raynaud, Pythran: enabling static optimization of scientiﬁc Python programs, Computational Science and Discovery 8 (1) (2015) 014001, https://doi.org/10.1088/1749-4680/8/1/014001.
-[17] K. Hayen, Nuitka Contributors, Nuitka the Python compiler, https://nuitka.net/, 2024.
-[18] M. Dufour, the Shed Skin contributors, Shed skin documentation, https://shedskin. readthedocs.io/en/latest/documentation.html, 2024.
-[19] A. Shajii, G. Ramirez, H. Smajlovi´c, J. Ray, B. Berger, S. Amarasinghe, I. Numanagi´c, Codon: a compiler for high-performance Pythonic applications and DSLs, in: Proceedings of the 32nd ACM SIGPLAN International Conference on Compiler Construction, CC 2023, Association for Computing Machinery, New York, NY, USA, 2023, pp. 191–202, https://doi.org/10.1145/3578360.3580275.
-[20] Numba Developers, Numba architecture, https://numba.readthedocs.io/en/stable/developer/architecture.html, 2024.
-[1] M. Shannon, Implementation plan for speeding up CPython, https://github.com/markshannon/faster-cpython/blob/master/plan.md, 2024.
-[2] M. Ankerl, Comprehensive C++ hashmap benchmarks 2022, https://martin.ankerl.com/ 2022/08/27/hashmap-bench-01/, Aug. 2022.
-[3] R.E. Bryant, D.R. O’Hallaron, Computer Systems: A Programmer’s Perspective, 2nd edition, Addison-Wesley Publishing Company, USA, 2010.
-[4] U. Drepper, What every programmer should know about memory, https://people.freebsd. org/~lstewart/articles/cpumemory.pdf, Nov. 2007.
-[5] Wikipedia Contributors, Instruction pipelining, https://en.wikipedia.org/wiki/Instruction_pipelining, 2024.
-[6] Intel Corporation, Intel 64 and IA-32 architectures software developer manuals, https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html, 2024.
-[7] A. Asadchev, E.F. Valeev, High-performance evaluation of high angular momentum 4-center Gaussian integrals on modern accelerated processors, The Journal of Physical Chemistry A 127 (51) (2023) 10889–10895, https://doi.org/10.1021/acs.jpca.3c04574, pMID: 38090753.
-[8] Wikipedia Contributors, Instruction-level parallelism, https://en.wikipedia.org/wiki/Instruction-level_parallelism, 2024.
-[9] T. Downs, Gathering Intel on Intel A VX-512 transitions, https://travisdowns.github.io/blog/2020/01/17/avxfreq1.html, 2020.
-[10] B. Fred, py-spy: sampling proﬁler for Python programs, https://github.com/benfred/py-spy, 2024.
-[11] B. Gregg, perf examples, https://www.brendangregg.com/perf.html, 2024.
-[12] B. Gregg, Flame graphs, https://www.brendangregg.com/ﬂamegraphs.html, 2024.
-[13] S.K. Lam, A. Pitrou, S. Seibert, Numba: a LLVM-based Python JIT compiler, in: Proceedings of the Second Workshop on the LLVM Compiler Infrastructure in HPC, LLVM ’15, Association for Computing Machinery, New York, NY, USA, 2015, pp. 1–6, https://doi.org/10.1145/2833157.2833162.
-[14] J. Bradbury, R. Frostig, P. Hawkins, M.J. Johnson, C. Leary, D. Maclaurin, G. Necula, A. Paszke, J. VanderPlas, S. Wanderman-Milne, Q. Zhang, JAX: composable transformations of Python+NumPy programs, http://github.com/google/jax, 2018.
-[15] S. Behnel, R. Bradshaw, C. Citro, L. Dalcin, D.S. Seljebotn, K. Smith, Cython: the best of both worlds, Computing in Science & Engineering 13 (2) (2011) 31–39, https://doi. org/10.1109/MCSE.2010.118.
-[16] S. Guelton, P. Brunet, M. Amini, A. Merlini, X. Corbillon, A. Raynaud, Pythran: enabling static optimization of scientiﬁc Python programs, Computational Science and Discovery 8 (1) (2015) 014001, https://doi.org/10.1088/1749-4680/8/1/014001.
-[17] K. Hayen, Nuitka Contributors, Nuitka the Python compiler, https://nuitka.net/, 2024.
-[18] M. Dufour, the Shed Skin contributors, Shed skin documentation, https://shedskin. readthedocs.io/en/latest/documentation.html, 2024.
-[19] A. Shajii, G. Ramirez, H. Smajlovi´c, J. Ray, B. Berger, S. Amarasinghe, I. Numanagi´c, Codon: a compiler for high-performance Pythonic applications and DSLs, in: Proceedings of the 32nd ACM SIGPLAN International Conference on Compiler Construction, CC 2023, Association for Computing Machinery, New York, NY, USA, 2023, pp. 191–202, https://doi.org/10.1145/3578360.3580275.
-[20] Numba Developers, Numba architecture, https://numba.readthedocs.io/en/stable/developer/architecture.html, 2024.
-[21] Continuum Analytics, llvmlite: a lightweight LLVM-Python binding for writing JIT compilers, https://llvmlite.readthedocs.io/en/latest/index.html, 2024.
-[22] Numba Developers, Numba performance tips, https://numba.pydata.org/numba-doc/dev/user/performance-tips.html, 2024.
+
+[4] U. Drepper, What every programmer should know about memory, [freebsd.org](https://people.freebsd.org/~lstewart/articles/cpumemory.pdf), Nov. 2007.
+
+[5] Wikipedia Contributors, Instruction pipelining, [wikipedia.org](https://en.wikipedia.org/wiki/Instruction_pipelining), 2024.
+
+[6] Intel Corporation, Intel 64 and IA-32 architectures software developer manuals, [intel.com](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html), 2024.
+
+[7] A. Asadchev, E.F. Valeev, High-performance evaluation of high angular momentum 4-center Gaussian integrals on modern accelerated processors, The Journal of Physical Chemistry A 127 (51) (2023) 10889–10895, [DOI](https://doi.org/10.1021/acs.jpca.3c04574), pMID: 38090753.
+
+[8] Wikipedia Contributors, Instruction-level parallelism, [wikipedia.org](https://en.wikipedia.org/wiki/Instruction-level_parallelism), 2024.
+
+[9] T. Downs, Gathering Intel on Intel A VX-512 transitions, [github.io](https://travisdowns.github.io/blog/2020/01/17/avxfreq1.html), 2020.
+
+[10] B. Fred, py-spy: sampling proﬁler for Python programs, [github.com](https://github.com/benfred/py-spy), 2024.
+
+[11] B. Gregg, perf examples, [brendangregg.com](https://www.brendangregg.com/perf.html), 2024.
+
+[12] B. Gregg, Flame graphs, [brendangregg.com](https://www.brendangregg.com/flamegraphs.html), 2024.
+
+[13] S.K. Lam, A. Pitrou, S. Seibert, Numba: a LLVM-based Python JIT compiler, in: Proceedings of the Second Workshop on the LLVM Compiler Infrastructure in HPC, LLVM ’15, Association for Computing Machinery, New York, NY, USA, 2015, pp. 1–6, [DOI](https://doi.org/10.1145/2833157.2833162).
+
+[14] J. Bradbury, R. Frostig, P. Hawkins, M.J. Johnson, C. Leary, D. Maclaurin, G. Necula, A. Paszke, J. VanderPlas, S. Wanderman-Milne, Q. Zhang, JAX: composable transformations of Python+NumPy programs, [github.com](http://github.com/google/jax), 2018.
+
+[15] S. Behnel, R. Bradshaw, C. Citro, L. Dalcin, D.S. Seljebotn, K. Smith, Cython: the best of both worlds, Computing in Science & Engineering 13 (2) (2011) 31–39, [DOI](https://doi.org/10.1109/MCSE.2010.118).
+
+[16] S. Guelton, P. Brunet, M. Amini, A. Merlini, X. Corbillon, A. Raynaud, Pythran: enabling static optimization of scientiﬁc Python programs, Computational Science and Discovery 8 (1) (2015) 014001, [DOI](https://doi.org/10.1088/1749-4680/8/1/014001).
+
+[17] K. Hayen, Nuitka Contributors, Nuitka the Python compiler, [nuitka.net](https://nuitka.net/), 2024.
+
+[18] M. Dufour, the Shed Skin contributors, Shed skin documentation, [readthedocs.io](https://shedskin.readthedocs.io/en/latest/documentation.html), 2024.
+
+[19] A. Shajii, G. Ramirez, H. Smajlovi´c, J. Ray, B. Berger, S. Amarasinghe, I. Numanagi´c, Codon: a compiler for high-performance Pythonic applications and DSLs, in: Proceedings of the 32nd ACM SIGPLAN International Conference on Compiler Construction, CC 2023, Association for Computing Machinery, New York, NY, USA, 2023, pp. 191–202, [DOI](https://doi.org/10.1145/3578360.3580275).
+
+[20] Numba Developers, Numba architecture, [readthedocs.io](https://numba.readthedocs.io/en/stable/developer/architecture.html), 2024.
+
+[21] Continuum Analytics, llvmlite: a lightweight LLVM-Python binding for writing JIT compilers, [readthedocs.io](https://llvmlite.readthedocs.io/en/latest/index.html), 2024.
+
+[22] Numba Developers, Numba performance tips, [pydata.org](https://numba.pydata.org/numba-doc/dev/user/performance-tips.html), 2024.
+
+[23] Numba Developers, Numba developer manual - notes on inlining, [readthedocs.io](https://numba.readthedocs.io/en/stable/developer/inlining.html), 2024.
+
+[24] Numba Developers, Extending numba - implementing @overload for numpy functions, [readthedocs.io](https://numba.readthedocs.io/en/stable/extending/overloading-guide.html#) implementing-overload-for-numpy-functions, 2024.
+
+[25] Numba Developers, Numba user manual - compiling code ahead of time, [readthedocs.io](https://numba.readthedocs.io/en/stable/user/pycc.html), 2024.
+
+[26] Numba Developers, Numba faq: why is my loop not vectorized?, [readthedocs.io](https://numba.readthedocs.io/en/latest/user/faq.html#why-has-my-loop-not-vectorized), 2024.
+
+[27] S. Behnel, R. Bradshaw, D.S. Seljebotn, G. Ewing, W. Stein, G. Gellner, Cython documentation - typed memoryviews, [readthedocs.io](https://cython.readthedocs.io/en/latest/src/userguide/memoryviews.html?specifying-more-general-memory-layouts=), 2024.
+
+[28] S. Behnel, R. Bradshaw, D.S. Seljebotn, G. Ewing, W. Stein, G. Gellner, et al., Cython documentation - compiler directives, [readthedocs.io](https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#compiler-directives), 2024.
+
+[29] S. Behnel, R. Bradshaw, D.S. Seljebotn, G. Ewing, W. Stein, G. Gellner, Cython documentation using multiple threads, [readthedocs.io](https://cython.readthedocs.io/en/latest/src/userguide/numpy_tutorial.html#using-multiple-threads), 2024.
+
+[30] P. Brunet, S. Guelton, Pythran documentation - supported modules and functions, [readthedocs.io](https://pythran.readthedocs.io/en/latest/SUPPORT.html), 2024.
+
+[31] S. Behnel, R. Bradshaw, D.S. Seljebotn, G. Ewing, W. Stein, G. Gellner, et al., Cython documentation - pythran as a numpy backend, [readthedocs.io](https://cython.readthedocs.io/en/latest/src/userguide/numpy_pythran.html), 2024.
+
+[32] GNU Compiler Collection Team, Gcc documentation - declaring attributes of functions, [gnu.org](https://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html), 2024.
+
+[33] Intel Corporation, Intel intrinsics guide, [intel.com](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html), 2024.
+
+[34] S. Byrne, Beware of fast-math, [github.io](https://simonbyrne.github.io/notes/fastmath/), 2015.
+
+[35] Numba Developers, Numba reference manual - compilation options, [pydata.org](https://numba.pydata.org/numba-doc/dev/reference/envvars.html#compilation-options), 2024.
+
+[36] The HDF Group, HDF5 Filter Plugins, [hdfgroup.org](https://support.hdfgroup.org/documentation/hdf5/latest/_h5_p_l__u_g.html), 2024.
+
+[37] European Synchrotron Radiation Facility, hdf5plugin, [silx.org](http://www.silx.org/doc/hdf5plugin/latest/index.html), 2024.
+
+[38] PyTables maintainers, Pytables user’s guide - optimization tips, [pytables.org](https://www.pytables.org/usersguide/optimization.html), 2024.
+
+[39] T. Kemper, cachetools, [github.com](https://github.com/tkem/cachetools), 2024.
+
+[40] M. Kerrisk, limits.conf(5) — Linux manual page, [man7.org](https://www.man7.org/linux/manpages/man5/limits.conf.5.html), 2024.
+
+[41] Python Software Foundation, The Python standard library - concurrent execution, [python.org](https://docs.python.org/3/library/concurrency.html), 2024.
+
+[42] J. Denero, SICP in Python, [gitbooks.io](https://wizardforcel.gitbooks.io/sicp-in-python/content/), 2024.
+
+:::
+

@@ -1537,49 +1537,99 @@ $ ssh -fN -R 18888:localhost:8888 intermediate_server_ip
 
 ## 参考文献
 
-[1] The pip developers, Conﬁguration of pip, https://pip.pypa.io/en/stable/topics/conﬁguration/, 2024.
-[2] Python Packaging Authority, Hosting your own simple repository, https://packaging. python.org/en/latest/guides/hosting-your-own-index/, 2024.
-[3] Python Packaging Authority, Packaging namespace packages, https://packaging.python. org/en/latest/guides/packaging-namespace-packages/, 2024.
-[4] E.V. Smith, Pep 420 – implicit namespace packages, https://peps.python.org/pep-0420/, Apr. 2012.
-[5] A. Ronacher, Click documentation, https://click.palletsprojects.com/en/8.1.x/, 2024.
-[6] S. Ramírez, Typer, https://typer.tiangolo.com/, 2024.
-[7] Google, Python ﬁre, https://google.github.io/python-ﬁre/, 2024.
-[8] A. Ronacher, Click documentation shell completion, https://click.palletsprojects.com/en/8.1.x/shell-completion/, 2024.
-[9] Conda Development Team, Anaconda documentation, https://docs.anaconda.com/anaconda/index.html, 2024.
-[10] QuantStack & mamba contributors, Mamba documentation, https://mamba.readthedocs. io/en/latest/, 2024.
-[11] Conda Development Team, Manage environments - conda documentation, https://conda. io/projects/conda/en/latest/user-guide/tasks/manage-environments.html, 2023.
-[12] W. Felter, A. Ferreira, R. Rajamony, J. Rubio, An updated performance comparison of virtual machines and Linux containers, in: 2015 IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS), 2015, pp. 171–172, https://doi.org/10.1109/ISPASS.2015.7095802.
-[13] P. Saha, A. Beltre, P. Uminski, M. Govindaraju, Evaluation of docker containers for scientiﬁc workloads in the cloud, in: Proceedings of the Practice and Experience on Advanced Research Computing: Seamless Creativity, PEARC ’18, Association for Computing Machinery, New York, NY, USA, 2018, pp. 1–8, https://doi.org/10.1145/3219104.3229280.
-[14] Docker, Inc., Docker documentation, https://docs.docker.com/manuals/, 2024.
-[15] Docker, Inc., Run the docker daemon as a non-root user (rootless mode), https://docs. docker.com/engine/security/rootless/, 2024.
-[16] The PyPy Team, PyPy documentation, https://pypy.org/features.html, 2024.
-[17] M. Herman, Setting up a private PyPI server, https://testdriven.io/blog/private-pypi/, Jul. 2022. References 55
-[18] Docker, Inc., Dockerﬁle reference, https://docs.docker.com/reference/dockerﬁle/, 2024.
-[19] S. Chacon, B. Straub, Pro Git: Everything You Need to Know About Git, 2nd edition, Apress, 2014, https://git-scm.com/book/en/v2.
-[20] GitHub, Inc., Incorporating changes from a pull request, https://docs.github.com/en/pullrequests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request, 2024.
-[21] GitHub, Inc., Syncing a fork, https://docs.github.com/en/pull-requests/collaboratingwith-pull-requests/working-with-forks/syncing-a-fork, 2024.
+::: {.ref-list}
+
+[1] The pip developers, Conﬁguration of pip, [pypa.io](https://pip.pypa.io/en/stable/topics/configuration/), 2024.
+
+[2] Python Packaging Authority, Hosting your own simple repository, [python.org](https://packaging.python.org/en/latest/guides/hosting-your-own-index/), 2024.
+
+[3] Python Packaging Authority, Packaging namespace packages, [python.org](https://packaging.python.org/en/latest/guides/packaging-namespace-packages/), 2024.
+
+[4] E.V. Smith, Pep 420 – implicit namespace packages, [python.org](https://peps.python.org/pep-0420/), Apr. 2012.
+
+[5] A. Ronacher, Click documentation, [palletsprojects.com](https://click.palletsprojects.com/en/8.1.x/), 2024.
+
+[6] S. Ramírez, Typer, [tiangolo.com](https://typer.tiangolo.com/), 2024.
+
+[7] Google, Python ﬁre, [github.io](https://google.github.io/python-fire/), 2024.
+
+[8] A. Ronacher, Click documentation shell completion, [palletsprojects.com](https://click.palletsprojects.com/en/8.1.x/shell-completion/), 2024.
+
+[9] Conda Development Team, Anaconda documentation, [anaconda.com](https://docs.anaconda.com/anaconda/index.html), 2024.
+
+[10] QuantStack & mamba contributors, Mamba documentation, [readthedocs.io](https://mamba.readthedocs.io/en/latest/), 2024.
+
+[11] Conda Development Team, Manage environments - conda documentation, [conda.io](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html), 2023.
+
+[12] W. Felter, A. Ferreira, R. Rajamony, J. Rubio, An updated performance comparison of virtual machines and Linux containers, in: 2015 IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS), 2015, pp. 171–172, [DOI](https://doi.org/10.1109/ISPASS.2015.7095802).
+
+[13] P. Saha, A. Beltre, P. Uminski, M. Govindaraju, Evaluation of docker containers for scientiﬁc workloads in the cloud, in: Proceedings of the Practice and Experience on Advanced Research Computing: Seamless Creativity, PEARC ’18, Association for Computing Machinery, New York, NY, USA, 2018, pp. 1–8, [DOI](https://doi.org/10.1145/3219104.3229280).
+
+[14] Docker, Inc., Docker documentation, [docker.com](https://docs.docker.com/manuals/), 2024.
+
+[15] Docker, Inc., Run the docker daemon as a non-root user (rootless mode), [docker.com](https://docs.docker.com/engine/security/rootless/), 2024.
+
+[16] The PyPy Team, PyPy documentation, [pypy.org](https://pypy.org/features.html), 2024.
+
+[17] M. Herman, Setting up a private PyPI server, [testdriven.io](https://testdriven.io/blog/private-pypi/), Jul. 2022.
+
+[18] Docker, Inc., Dockerﬁle reference, [docker.com](https://docs.docker.com/reference/dockerfile/), 2024.
+
+[19] S. Chacon, B. Straub, Pro Git: Everything You Need to Know About Git, 2nd edition, Apress, 2014, [git-scm.com](https://git-scm.com/book/en/v2).
+
+[20] GitHub, Inc., Incorporating changes from a pull request, [github.com](https://docs.github.com/en/pullrequests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request), 2024.
+
+[21] GitHub, Inc., Syncing a fork, [github.com](https://docs.github.com/en/pull-requests/collaboratingwith-pull-requests/working-with-forks/syncing-a-fork), 2024.
+
 [22] C. Kaner, J. Bach, B. Pettichord, Lessons Learned in Software Testing, John Wiley & Sons, Inc., USA, 2001.
-[23] D. Hillard, Effective Python testing with pytest, https://realpython.com/pytest-pythontesting/, 2020.
-[24] Logilab and Pylint contributors, Pylint documentation, https://pylint.readthedocs.io/en/stable/, 2024.
-[25] Astral, Ruff documentation, https://docs.astral.sh/ruff/, 2024.
-[26] I. Cordasco, Flake8 documentation, https://ﬂake8.pycqa.org/en/latest/, 2024.
-[27] J. Lehtosalo, Mypy documentation, https://mypy.readthedocs.io/en/stable/, 2024.
-[28] G. van Rossum, B. Warsaw, N. Coghlan, Pep 8 – style guide for Python code, https://peps.python.org/pep-0008/, 2001.
-[29] Microsoft, Pylint extension for visual studio code, https://marketplace.visualstudio.com/items?itemName=ms-python.pylint, 2024.
-[30] G. McConnaughey, The big ol’ list of rules, https://www.ﬂake8rules.com/, 2024.
-[31] Astral, The Ruff Linter - error suppression, https://docs.astral.sh/ruff/linter/#errorsuppression, 2024.
-[32] Logilab and Pylint contributors, Pylint checkers’ options and switches, https://pylint. readthedocs.io/en/latest/user_guide/checkers/features.html, 2024.
-[33] Python Packaging Authority, Packaging Python projects, https://packaging.python.org/en/latest/tutorials/packaging-projects/, 2024.
-[34] Read the Docs, Inc & contributors, Getting started with sphinx, https://docs.readthedocs. io/en/stable/intro/getting-started-with-sphinx.html, 2024.
-[35] Python Packaging Authority, pyproject.toml speciﬁcation, https://packaging.python.org/en/latest/speciﬁcations/pyproject-toml/#pyproject-toml-spec, 2024.
-[36] D. Holth, Pep 427 – the wheel binary package format 1.0, https://peps.python.org/pep- 0427/#ﬁle-name-convention, Sep. 2012.
-[37] Python Packaging Authority, Controlling ﬁles in the distribution, https://setuptools.pypa. io/en/latest/userguide/miscellaneous.html, 2024.
-[38] Anaconda, Inc., Channels and packages, https://enterprise-docs.anaconda.com/en/latest/data-science-workﬂows/packages/channels.html#uploading-a-package-to-a-channel, 2024.
-[39] GitHub, Inc., Using secrets in GitHub actions, https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions, 2024.
-[40] NVIDIA Corporation, Installing the NVIDIA container toolkit, https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html, 2024.
-[41] L. Ramalho, Fluent Python: Clear, Concise, and Effective Programming, O’Reilly Media, 2015, https://books.google.co.in/books?id=bIZHCgAAQBAJ.
+
+[23] D. Hillard, Effective Python testing with pytest, [realpython.com](https://realpython.com/pytest-pythontesting/), 2020.
+
+[24] Logilab and Pylint contributors, Pylint documentation, [readthedocs.io](https://pylint.readthedocs.io/en/stable/), 2024.
+
+[25] Astral, Ruff documentation, [astral.sh](https://docs.astral.sh/ruff/), 2024.
+
+[26] I. Cordasco, Flake8 documentation, [pycqa.org](https://flake8.pycqa.org/en/latest/), 2024.
+
+[27] J. Lehtosalo, Mypy documentation, [readthedocs.io](https://mypy.readthedocs.io/en/stable/), 2024.
+
+[28] G. van Rossum, B. Warsaw, N. Coghlan, Pep 8 – style guide for Python code, [python.org](https://peps.python.org/pep-0008/), 2001.
+
+[29] Microsoft, Pylint extension for visual studio code, [visualstudio.com](https://marketplace.visualstudio.com/items?itemName=ms-python.pylint), 2024.
+
+[30] G. McConnaughey, The big ol’ list of rules, [flake8rules.com](https://www.flake8rules.com/), 2024.
+
+[31] Astral, The Ruff Linter - error suppression, [astral.sh](https://docs.astral.sh/ruff/linter/#errorsuppression), 2024.
+
+[32] Logilab and Pylint contributors, Pylint checkers’ options and switches, [readthedocs.io](https://pylint.readthedocs.io/en/latest/user_guide/checkers/features.html), 2024.
+
+[33] Python Packaging Authority, Packaging Python projects, [python.org](https://packaging.python.org/en/latest/tutorials/packaging-projects/), 2024.
+
+[34] Read the Docs, Inc & contributors, Getting started with sphinx, [readthedocs.io](https://docs.readthedocs.io/en/stable/intro/getting-started-with-sphinx.html), 2024.
+
+[35] Python Packaging Authority, pyproject.toml speciﬁcation, [python.org](https://packaging.python.org/en/latest/specifications/pyproject-toml/#pyproject-toml-spec), 2024.
+
+[36] D. Holth, Pep 427 – the wheel binary package format 1.0, [python.org](https://peps.python.org/pep-) 0427/#ﬁle-name-convention, Sep. 2012.
+
+[37] Python Packaging Authority, Controlling ﬁles in the distribution, [pypa.io](https://setuptools.pypa.io/en/latest/userguide/miscellaneous.html), 2024.
+
+[38] Anaconda, Inc., Channels and packages, [anaconda.com](https://enterprise-docs.anaconda.com/en/latest/data-science-workflows/packages/channels.html#uploading-a-package-to-a-channel), 2024.
+
+[39] GitHub, Inc., Using secrets in GitHub actions, [github.com](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions), 2024.
+
+[40] NVIDIA Corporation, Installing the NVIDIA container toolkit, [nvidia.com](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html), 2024.
+
+[41] L. Ramalho, Fluent Python: Clear, Concise, and Effective Programming, O’Reilly Media, 2015, [google.co.in](https://books.google.co.in/books?id=bIZHCgAAQBAJ).
+
 [42] A. Downey, Think Python. How to Think Like a Computer Scientist, 2nd edition, Green Tea Press, Needham, Massachusetts, 2014.
-[43] M. Simionato, The Python 2.3 method resolution order, https://www.python.org/download/releases/2.3/mro/, 2003.
-[44] Jupyter Team, The Jupyter Notebook, https://jupyter-notebook.readthedocs.io/en/latest/notebook.html, 2024.
-[45] Jupyter Project, Jupyterlab documentation, https://jupyterlab.readthedocs.io/en/latest/, 2024.
-[46] The IPython Development Team, IPython documentation - d e ﬁning custom magics, https://ipython.readthedocs.io/en/stable/conﬁg/custommagics.html#deﬁning-custommagics, 2024.
+
+[43] M. Simionato, The Python 2.3 method resolution order, [python.org](https://www.python.org/download/releases/2.3/mro/), 2003.
+
+[44] Jupyter Team, The Jupyter Notebook, [readthedocs.io](https://jupyter-notebook.readthedocs.io/en/latest/notebook.html), 2024.
+
+[45] Jupyter Project, Jupyterlab documentation, [readthedocs.io](https://jupyterlab.readthedocs.io/en/latest/), 2024.
+
+[46] The IPython Development Team, IPython documentation - d e ﬁning custom magics, [readthedocs.io](https://ipython.readthedocs.io/en/stable/config/custommagics.html#defining-custommagics), 2024.
+
+:::
+

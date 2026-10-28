@@ -1192,26 +1192,53 @@ Python/C API 是开发可导入模块接口的标准方法。尽管 Python/C API
 
 ## 参考文献
 
-[1] GNU Compiler Collection Team, Gcc documentation - half-precision ﬂoating point, https://gcc.gnu.org/onlinedocs/gcc/Half-Precision.html, 2024.
-[2] The Clang Team, Clang documentation - half-precision ﬂoating point, https://clang.llvm. org/docs/LanguageExtensions.html#half-precision-ﬂoating-point, 2024.
-[3] NumPy Developers, Numpy reference data types, https://numpy.org/doc/stable/reference/arrays.dtypes.html, 2024.
-[4] E.V. Smith, Pep 557 – data classes, https://peps.python.org/pep-0557/, Jun. 2017.
-[5] D. Bader, Python’s instance, class, and static methods demystiﬁed, https://realpython. com/instance-class-and-static-methods-demystiﬁed, 2024.
-[6] A. Rigo, M. Fijalkowski, Cfﬁ documentation, https://cfﬁ.readthedocs.io/en/latest/, 2024.
-[7] P. Goldsborough, Custom C++ and CUDA extensions, https://pytorch.org/tutorials/advanced/cpp_extension.html, 2024.
-[8] W. Jakob, pybind11 — seamless operability between C++11 and Python, https://pybind11.readthedocs.io/en/stable/index.html, 2024.
-[9] Intel Corporation, Intel oneapi math kernel library link line advisor, https://www.intel. com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html, 2024.
+::: {.ref-list}
+
+[1] GNU Compiler Collection Team, Gcc documentation - half-precision ﬂoating point, [gnu.org](https://gcc.gnu.org/onlinedocs/gcc/Half-Precision.html), 2024.
+
+[2] The Clang Team, Clang documentation - half-precision ﬂoating point, [clang.llvm](https://clang.llvm). org/docs/LanguageExtensions.html#half-precision-ﬂoating-point, 2024.
+
+[3] NumPy Developers, Numpy reference data types, [numpy.org](https://numpy.org/doc/stable/reference/arrays.dtypes.html), 2024.
+
+[4] E.V. Smith, Pep 557 – data classes, [python.org](https://peps.python.org/pep-0557/), Jun. 2017.
+
+[5] D. Bader, Python’s instance, class, and static methods demystiﬁed, [realpython](https://realpython). com/instance-class-and-static-methods-demystiﬁed, 2024.
+
+[6] A. Rigo, M. Fijalkowski, Cfﬁ documentation, [readthedocs.io](https://cffi.readthedocs.io/en/latest/), 2024.
+
+[7] P. Goldsborough, Custom C++ and CUDA extensions, [pytorch.org](https://pytorch.org/tutorials/advanced/cpp_extension.html), 2024.
+
+[8] W. Jakob, pybind11 — seamless operability between C++11 and Python, [readthedocs.io](https://pybind11.readthedocs.io/en/stable/index.html), 2024.
+
+[9] Intel Corporation, Intel oneapi math kernel library link line advisor, [intel.com](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html), 2024.
+
 [10] R.E. Bryant, D.R. O’Hallaron, Computer Systems: A Programmer’s Perspective, 2nd edition, Addison-Wesley Publishing Company, USA, 2010.
-[11] H. Arora, Linux nm command tutorial for beginners, https://www.howtoforge.com/linuxnm-command/, 2024.
-[12] Python Software Foundation, Python documentation - ctypes: specifying the required argument types, https://docs.python.org/3/library/ctypes.html#specifying-the-requiredargument-types-function-prototypes, 2024.
-[13] A. Rigo, M. Fijalkowski, Cfﬁ documentation using the fﬁ/lib objects, https://cfﬁ. readthedocs.io/en/latest/using.html, 2024.
-[14] M. Kerrisk, ld.so(8) — Linux manual page, https://man7.org/linux/man-pages/man8/ld. so.8.html, 2024.
+
+[11] H. Arora, Linux nm command tutorial for beginners, [howtoforge.com](https://www.howtoforge.com/linuxnm-command/), 2024.
+
+[12] Python Software Foundation, Python documentation - ctypes: specifying the required argument types, [python.org](https://docs.python.org/3/library/ctypes.html#specifying-the-requiredargument-types-function-prototypes), 2024.
+
+[13] A. Rigo, M. Fijalkowski, Cfﬁ documentation using the fﬁ/lib objects, [readthedocs.io](https://cffi.readthedocs.io/en/latest/using.html), 2024.
+
+[14] M. Kerrisk, ld.so(8) — Linux manual page, [man7.org](https://man7.org/linux/man-pages/man8/ld.so.8.html), 2024.
+
 [15] M. Kerrisk, The Linux Programming Interface: A Linux and UNIX System Programming Handbook, 1st edition, No Starch Press, USA, 2010.
-[16] PyTorch developers, Pytorch github issue avoid loading with rtld_global, https://github. com/pytorch/pytorch/issues/3059, 2024.
-[17] NumPy Developers, Numpy github issue how we want to link with mkl, and a missing symbol issue, https://github.com/numpy/numpy/issues/24824, 2024.
-[18] FortranWiki, Fortran wiki - C interoperability, https://fortranwiki.org/fortran/show/C+ interoperability, 2024.
-[19] GNU Compiler Collection Team, Gfortran documentation naming and argument-passing conventions, https://gcc.gnu.org/onlinedocs/gfortran/Naming-and-argument-passing-conventions.html, 2024.
-[20] GNU Compiler Collection Team, Gfortran documentation naming conventions, https://gcc.gnu.org/onlinedocs/gfortran/Naming-conventions.html, 2024.
-[21] GNU Compiler Collection Team, Gfortran documentation - argument passing conventions, https://gcc.gnu.org/onlinedocs/gfortran/Argument-passing-conventions. html, 2024.
-[22] P. Peterson, F2py: a tool for connecting Fortran and Python programs, International Journal of Computational Science and Engineering 4 (4) (2009) 296–305, https://www.inderscience.com/info/inarticle.php?artid=29165.
-[23] NumPy Developers, F2py and build systems using via numpy.distutils, https://numpy. org/doc/stable/f2py/buildtools/distutils.html, 2024.
+
+[16] PyTorch developers, Pytorch github issue avoid loading with rtld_global, [github.com](https://github.com/pytorch/pytorch/issues/3059), 2024.
+
+[17] NumPy Developers, Numpy github issue how we want to link with mkl, and a missing symbol issue, [github.com](https://github.com/numpy/numpy/issues/24824), 2024.
+
+[18] FortranWiki, Fortran wiki - C interoperability, [fortranwiki.org](https://fortranwiki.org/fortran/show/C+) interoperability, 2024.
+
+[19] GNU Compiler Collection Team, Gfortran documentation naming and argument-passing conventions, [gnu.org](https://gcc.gnu.org/onlinedocs/gfortran/Naming-and-argument-passing-conventions.html), 2024.
+
+[20] GNU Compiler Collection Team, Gfortran documentation naming conventions, [gnu.org](https://gcc.gnu.org/onlinedocs/gfortran/Naming-conventions.html), 2024.
+
+[21] GNU Compiler Collection Team, Gfortran documentation - argument passing conventions, [gnu.org](https://gcc.gnu.org/onlinedocs/gfortran/Argument-passing-conventions.html), 2024.
+
+[22] P. Peterson, F2py: a tool for connecting Fortran and Python programs, International Journal of Computational Science and Engineering 4 (4) (2009) 296–305, [inderscience.com](https://www.inderscience.com/info/inarticle.php?artid=29165).
+
+[23] NumPy Developers, F2py and build systems using via numpy.distutils, [numpy.org](https://numpy.org/doc/stable/f2py/buildtools/distutils.html), 2024.
+
+:::
+

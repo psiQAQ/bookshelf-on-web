@@ -1386,19 +1386,39 @@ Python 提供 threading 模块和 ThreadPoolExecutor 来实现多线程并行。
 
 ## 参考文献
 
-[1] Wikipedia Contributors, False sharing, https://en.wikipedia.org/wiki/False_sharing, 2024.
-[2] U. Drepper, What every programmer should know about memory, https://people.freebsd. org/~lstewart/articles/cpumemory.pdf, Nov. 2007.
-[3] Python Software Foundation, Python frequently asked questions what kinds of global value mutation are thread-safe?, https://docs.python.org/3/faq/library.html#what-kindsof-global-value-mutation-are-thread-safe, 2024.
-[4] Python Software Foundation, The Python standard library: asyncio - asynchronous I/O, https://docs.python.org/3/library/asyncio.html, 2024.
-[5] Python Software Foundation, multiprocessing - programming guidelines, https://docs. python.org/3/library/multiprocessing.html#programming-guidelines, 2024.
-[6] Python Software Foundation, multiprocessing - sharing state between processes, https://docs.python.org/3/library/multiprocessing.html#sharing-state-between-processes, 2024.
-[7] Wikipedia Contributors, Inter-process communication, https://en.wikipedia.org/wiki/Inter-process_communication, 2024.
-[8] M. Kerrisk, queue(7) — Linux manual page, https://man7.org/linux/man-pages/man7/queue.7.html, 2024.
-[9] OpenMP Architecture Review Board, OpenMP API speciﬁcation: environment variables, https://www.openmp.org/spec-html/5.0/openmpch6.html#openmpse50.html, 2020.
-[10] Joblib, threadpoolctl: thread-pool controls, https://github.com/joblib/threadpoolctl, 2024.
-[11] L. Dalcin, Y. - L. L. Fang, mpi4py: status update after 12 years of development, Computing in Science & Engineering 23 (4) (2021) 47–54, https://doi.org/10.1109/MCSE.2021. 3083216.
+::: {.ref-list}
+
+[1] Wikipedia Contributors, False sharing, [wikipedia.org](https://en.wikipedia.org/wiki/False_sharing), 2024.
+
+[2] U. Drepper, What every programmer should know about memory, [freebsd.org](https://people.freebsd.org/~lstewart/articles/cpumemory.pdf), Nov. 2007.
+
+[3] Python Software Foundation, Python frequently asked questions what kinds of global value mutation are thread-safe?, [python.org](https://docs.python.org/3/faq/library.html#what-kindsof-global-value-mutation-are-thread-safe), 2024.
+
+[4] Python Software Foundation, The Python standard library: asyncio - asynchronous I/O, [python.org](https://docs.python.org/3/library/asyncio.html), 2024.
+
+[5] Python Software Foundation, multiprocessing - programming guidelines, [python.org](https://docs.python.org/3/library/multiprocessing.html#programming-guidelines), 2024.
+
+[6] Python Software Foundation, multiprocessing - sharing state between processes, [python.org](https://docs.python.org/3/library/multiprocessing.html#sharing-state-between-processes), 2024.
+
+[7] Wikipedia Contributors, Inter-process communication, [wikipedia.org](https://en.wikipedia.org/wiki/Inter-process_communication), 2024.
+
+[8] M. Kerrisk, queue(7) — Linux manual page, [man7.org](https://man7.org/linux/man-pages/man7/queue.7.html), 2024.
+
+[9] OpenMP Architecture Review Board, OpenMP API speciﬁcation: environment variables, [openmp.org](https://www.openmp.org/spec-html/5.0/openmpch6.html#openmpse50.html), 2020.
+
+[10] Joblib, threadpoolctl: thread-pool controls, [github.com](https://github.com/joblib/threadpoolctl), 2024.
+
+[11] L. Dalcin, Y. - L. L. Fang, mpi4py: status update after 12 years of development, Computing in Science & Engineering 23 (4) (2021) 47–54, [DOI](https://doi.org/10.1109/MCSE.2021.3083216).
+
 [12] T. Rauber, G. Rnger, Parallel Programming: for Multicore and Cluster Systems, 1st edition, Springer Publishing Company, Incorporated, 2010.
-[13] L. Dalcin, MPI for Python tutorial, https://mpi4py.readthedocs.io/en/stable/tutorial.html, 2024.
-[14] A.M. Price-Whelan, D. Foreman-Mackey, schwimmbad: a uniform interface to parallel processing pools in Python, The Journal of Open Source Software 2 (17) (2017) 357, https://doi.org/10.21105/joss.00357.
-[15] L. Dalcin, MPI for Python - one-sided communications, https://mpi4py.readthedocs.io/en/stable/overview.html#one-sided-communications, 2024.
-[16] Open MPI Development Team Faq, Tuning the run-time characteristics of MPI shared memory communications, https://www.open-mpi.org/faq/?category=sm, 2024.
+
+[13] L. Dalcin, MPI for Python tutorial, [readthedocs.io](https://mpi4py.readthedocs.io/en/stable/tutorial.html), 2024.
+
+[14] A.M. Price-Whelan, D. Foreman-Mackey, schwimmbad: a uniform interface to parallel processing pools in Python, The Journal of Open Source Software 2 (17) (2017) 357, [DOI](https://doi.org/10.21105/joss.00357).
+
+[15] L. Dalcin, MPI for Python - one-sided communications, [readthedocs.io](https://mpi4py.readthedocs.io/en/stable/overview.html#one-sided-communications), 2024.
+
+[16] Open MPI Development Team Faq, Tuning the run-time characteristics of MPI shared memory communications, [open-mpi.org](https://www.open-mpi.org/faq/?category=sm), 2024.
+
+:::
+

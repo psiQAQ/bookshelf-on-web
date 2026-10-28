@@ -118,6 +118,10 @@ def book_header_style() -> str:
         " border: 1px solid rgba(128, 128, 128, 0.45); font-size: 0.9rem; text-decoration: none; }"
         " a.qs-home-link:hover { text-decoration: underline; }"
         " .nav-footer a.qs-home-link { margin-top: 0.5rem; }"
+        " .ref-list { margin: 0.4rem 0 1rem; }"
+        " .ref-list p { margin: 0 0 0.65rem; padding-left: 2.2em; text-indent: -2.2em; }"
+        " .ref-list a { text-decoration: none; border-bottom: 1px dotted; }"
+        " .ref-list a:hover { text-decoration: underline; }"
         "</style>"
         + HOME_LINK_SCRIPT
     )

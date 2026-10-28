@@ -1052,31 +1052,63 @@ $ ray down -y config.yaml
 
 ## 参考文献
 
-[1] Amazon Web Services, Amazon machine images (AMIs), https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html, 2024.
-[2] Amazon Web Services, Amazon EBS volumes, https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volumes.html, 2024.
-[3] Amazon Web Services, What is Amazon elastic container service?, https://docs.aws. amazon.com/AmazonECS/latest/developerguide/Welcome.html, 2024.
-[4] Amazon Web Services, What is Amazon VPC?, https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html, 2024.
-[5] Amazon Web Services, How Amazon VPC works, https://docs.aws.amazon.com/vpc/latest/userguide/how-it-works.html, 2024.
-[6] Amazon Web Services, Get started with Amazon S3, https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html, 2024.
-[7] Amazon Web Services, Moving an image through its lifecycle in Amazon ECR, https://docs.aws.amazon.com/AmazonECR/latest/userguide/getting-started-cli.html, 2024.
-[8] Amazon Web Services, Control trafﬁc to your AWS resources using security groups, https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html, 2024.
-[9] Amazon Web Services, Conﬁguration and credential ﬁle settings, https://docs.aws. amazon.com/cli/latest/userguide/cli-conﬁgure-ﬁles.html, 2024.
-[10] Amazon Web Services, IAM roles, https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html, 2024.
-[11] The PySCF Developers, Quantum chemistry with Python, https://pyscf.org/, 2024.
-[12] R. Li, Q. Sun, X. Zhang, G.K.-L. Chan, Introducing GPU-acceleration into the Python-based simulations of chemistry framework, arXiv:2407.09700, https://arxiv.org/abs/ 2407.09700, 2024.
-[13] X. Wu, Q. Sun, Z. Pu, T. Zheng, W. Ma, W. Yan, X. Yu, Z. Wu, M. Huo, X. Li, W. Ren, S. Gong, Y. Zhang, W. Gao, Enhancing GPU-acceleration in the Python-based simulations of chemistry framework, arXiv:2404.09452, https://arxiv.org/abs/2404.09452, 2024.
-[14] Amazon Web Services, Aws fargate for Amazon ECS, https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html, 2024. References 261
-[15] Amazon Web Services, What is Amazon EC2 Auto Scaling?, https://docs.aws.amazon. com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html, 2024.
-[16] Amazon Web Services, Amazon ECS task deﬁnitions for GPU workloads, https://docs. aws.amazon.com/AmazonECS/latest/developerguide/ecs-gpu.html, 2024.
-[17] Amazon Web Services, Amazon ECS task networking options for the EC2 launch type, https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-networking. html, 2024.
-[18] Amazon Web Services, Amazon ECS task metadata endpoint version 3, https://docs.aws. amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint-v3.html, 2024.
-[19] Amazon Web Services, Tutorial: create a REST API with a Lambda proxy integration, https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gatewaycreate-api-as-simple-proxy-for-lambda.html, 2024.
-[20] Amazon Web Services, Deﬁne Lambda function handler in Python, https://docs.aws. amazon.com/lambda/latest/dg/python-handler.html, 2024.
-[21] Amazon Web Services, Authenticating using an API gateway method, https://docs.aws.amazon.com/transfer/latest/userguide/authentication-api-gateway.html# authentication-custom-ip, 2024.
-[22] A. Solem, contributors, Celery - distributed task queue, https://docs.celeryq.dev/en/stable/, 2024.
-[23] Dask Development Team, Dask: library for dynamic task scheduling, http://dask.pydata. org, 2016.
-[24] P. Moritz, R. Nishihara, S. Wang, A. Tumanov, R. Liaw, E. Liang, M. Elibol, Z. Yang, W. Paul, M.I. Jordan, I. Stoica, Ray: a distributed framework for emerging AI applications, in: 13th USENIX Symposium on Operating Systems Design and Implementation (OSDI 18), USENIX Association, Carlsbad, CA, 2018, pp. 561–577, https://www.usenix.org/conference/osdi18/presentation/moritz.
-[25] A. Solem, contributors, Celery documentation - backends and brokers, https://docs. celeryq.dev/en/stable/getting-started/backends-and-brokers/index.html, 2024.
-[26] Amazon Web Services, Environment variables to conﬁgure the AWS CLI, https://docs. aws.amazon.com/cli/latest/userguide/cli-conﬁgure-envvars.html, 2024.
-[27] M. Movsisyan, Flower documentation, https://ﬂower.readthedocs.io/en/latest/, 2024.
-[28] The Ray Team, Ray documentation cluster yaml conﬁguration options, https://docs.ray. io/en/latest/cluster/vms/references/ray-cluster-conﬁguration.html#cluster-conﬁg, 2024.
+::: {.ref-list}
+
+[1] Amazon Web Services, Amazon machine images (AMIs), [amazon.com](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html), 2024.
+
+[2] Amazon Web Services, Amazon EBS volumes, [amazon.com](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volumes.html), 2024.
+
+[3] Amazon Web Services, What is Amazon elastic container service?, [amazon.com](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html), 2024.
+
+[4] Amazon Web Services, What is Amazon VPC?, [amazon.com](https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html), 2024.
+
+[5] Amazon Web Services, How Amazon VPC works, [amazon.com](https://docs.aws.amazon.com/vpc/latest/userguide/how-it-works.html), 2024.
+
+[6] Amazon Web Services, Get started with Amazon S3, [amazon.com](https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html), 2024.
+
+[7] Amazon Web Services, Moving an image through its lifecycle in Amazon ECR, [amazon.com](https://docs.aws.amazon.com/AmazonECR/latest/userguide/getting-started-cli.html), 2024.
+
+[8] Amazon Web Services, Control trafﬁc to your AWS resources using security groups, [amazon.com](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html), 2024.
+
+[9] Amazon Web Services, Conﬁguration and credential ﬁle settings, [docs.aws](https://docs.aws). amazon.com/cli/latest/userguide/cli-conﬁgure-ﬁles.html, 2024.
+
+[10] Amazon Web Services, IAM roles, [amazon.com](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html), 2024.
+
+[11] The PySCF Developers, Quantum chemistry with Python, [pyscf.org](https://pyscf.org/), 2024.
+
+[12] R. Li, Q. Sun, X. Zhang, G.K.-L. Chan, Introducing GPU-acceleration into the Python-based simulations of chemistry framework, arXiv:2407.09700, [arxiv.org](https://arxiv.org/abs/2407.09700), 2024.
+
+[13] X. Wu, Q. Sun, Z. Pu, T. Zheng, W. Ma, W. Yan, X. Yu, Z. Wu, M. Huo, X. Li, W. Ren, S. Gong, Y. Zhang, W. Gao, Enhancing GPU-acceleration in the Python-based simulations of chemistry framework, arXiv:2404.09452, [arxiv.org](https://arxiv.org/abs/2404.09452), 2024.
+
+[14] Amazon Web Services, Aws fargate for Amazon ECS, [amazon.com](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html), 2024.
+
+[15] Amazon Web Services, What is Amazon EC2 Auto Scaling?, [amazon.com](https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html), 2024.
+
+[16] Amazon Web Services, Amazon ECS task deﬁnitions for GPU workloads, [amazon.com](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-gpu.html), 2024.
+
+[17] Amazon Web Services, Amazon ECS task networking options for the EC2 launch type, [amazon.com](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-networking.html), 2024.
+
+[18] Amazon Web Services, Amazon ECS task metadata endpoint version 3, [amazon.com](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint-v3.html), 2024.
+
+[19] Amazon Web Services, Tutorial: create a REST API with a Lambda proxy integration, [amazon.com](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gatewaycreate-api-as-simple-proxy-for-lambda.html), 2024.
+
+[20] Amazon Web Services, Deﬁne Lambda function handler in Python, [amazon.com](https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html), 2024.
+
+[21] Amazon Web Services, Authenticating using an API gateway method, [amazon.com](https://docs.aws.amazon.com/transfer/latest/userguide/authentication-api-gateway.html#) authentication-custom-ip, 2024.
+
+[22] A. Solem, contributors, Celery - distributed task queue, [celeryq.dev](https://docs.celeryq.dev/en/stable/), 2024.
+
+[23] Dask Development Team, Dask: library for dynamic task scheduling, [pydata.org](http://dask.pydata.org), 2016.
+
+[24] P. Moritz, R. Nishihara, S. Wang, A. Tumanov, R. Liaw, E. Liang, M. Elibol, Z. Yang, W. Paul, M.I. Jordan, I. Stoica, Ray: a distributed framework for emerging AI applications, in: 13th USENIX Symposium on Operating Systems Design and Implementation (OSDI 18), USENIX Association, Carlsbad, CA, 2018, pp. 561–577, [usenix.org](https://www.usenix.org/conference/osdi18/presentation/moritz).
+
+[25] A. Solem, contributors, Celery documentation - backends and brokers, [celeryq.dev](https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/index.html), 2024.
+
+[26] Amazon Web Services, Environment variables to conﬁgure the AWS CLI, [docs](https://docs). aws.amazon.com/cli/latest/userguide/cli-conﬁgure-envvars.html, 2024.
+
+[27] M. Movsisyan, Flower documentation, [readthedocs.io](https://flower.readthedocs.io/en/latest/), 2024.
+
+[28] The Ray Team, Ray documentation cluster yaml conﬁguration options, [docs.ray](https://docs.ray). io/en/latest/cluster/vms/references/ray-cluster-conﬁguration.html#cluster-conﬁg, 2024.
+
+:::
+

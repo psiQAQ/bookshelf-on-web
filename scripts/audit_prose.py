@@ -187,6 +187,10 @@ def find_english_residue(path: Path):
     return found
 
 
+# 这三类一旦非空就是缺陷，`--check` 会因此失败；`prose_in_fence` 混有合法文档字符串与
+# 报错信息，只作为待人工甄别的清单，不参与 `--check`。
+STRICT_DETECTORS = ("bare_urls", "suspect_code", "english_residue")
+
 DETECTORS = (
     ("bare_urls", find_bare_urls),
     ("suspect_code", find_suspect_code),
@@ -226,7 +230,8 @@ def audit_book(book: Path = BOOK) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--report", type=Path, default=None, help="把 JSON 报告写到这个路径")
-    parser.add_argument("--check", action="store_true", help="有命中时退出 1")
+    parser.add_argument("--check", action="store_true", help="严格项（裸 URL、疑似代码行、英文残留）有命中时退出 1")
+    parser.add_argument("--check-all", action="store_true", help="任何探测器有命中时退出 1")
     args = parser.parse_args()
 
     report = audit_book()
@@ -236,7 +241,9 @@ def main() -> int:
         args.report.write_text(payload + "\n", encoding="utf-8", newline="\n")
         print(f"report: {args.report}")
     print(json.dumps({"chapters": report["chapters"], **report["totals"]}, ensure_ascii=False))
-    if args.check and any(report["totals"].values()):
+    if args.check and any(report["totals"][key] for key in STRICT_DETECTORS):
+        return 1
+    if args.check_all and any(report["totals"].values()):
         return 1
     return 0
 

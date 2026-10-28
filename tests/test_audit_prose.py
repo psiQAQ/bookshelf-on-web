@@ -6,16 +6,13 @@ from pathlib import Path
 
 from scripts.audit_prose import (
     DETECTORS,
+    STRICT_DETECTORS,
     audit_book,
     find_bare_urls,
     find_english_residue,
     find_prose_in_fence,
     find_suspect_code,
 )
-
-# 存量修复由 .worktrees/ 下的分支完成；清零后把 STRICT_STOCK 改成 True，
-# 让「零命中」成为硬约束，而不是一直跳过的软检查。
-STRICT_STOCK = False
 
 
 def write_qmd(directory: Path, text: str) -> Path:
@@ -138,9 +135,15 @@ class BookReportTests(unittest.TestCase):
     def test_report_is_json_serialisable(self):
         json.dumps(self.report, ensure_ascii=False)
 
-    @unittest.skipUnless(STRICT_STOCK, "存量清零由 worktree 分支完成，清零后把 STRICT_STOCK 置为 True")
-    def test_stock_is_cleared(self):
-        self.assertEqual(self.report["totals"], {key: 0 for key, _ in DETECTORS})
+    def test_strict_detectors_are_cleared(self):
+        # 存量已在 2026-10-28 清零：正文裸 URL 全部转成行内链接、公式拆行残片随
+        # `$$` 化消失、整句英文残留统一翻译。这三类再出现就是缺陷。
+        self.assertEqual({key: self.report["totals"][key] for key in STRICT_DETECTORS}, {key: 0 for key in STRICT_DETECTORS})
+
+    def test_prose_in_fence_does_not_grow(self):
+        # 围栏内的长英文句子混有合法文档字符串、报错信息与 shell 注释，只做待甄别清单。
+        # 2026-10-28 存量 100 条；这条断言只防增长，不做清零要求。
+        self.assertLessEqual(self.report["totals"]["prose_in_fence"], 100)
 
 
 if __name__ == "__main__":

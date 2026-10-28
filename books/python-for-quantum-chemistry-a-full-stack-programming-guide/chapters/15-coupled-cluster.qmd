@@ -1058,11 +1058,11 @@ F2 += -0.5 * einsum("klli,abjk->baji", h2_oooo, t2)
 
 []{#eq-15-028}
 
-这个符号程序就可以适用于无自旋CC理论（spin-free CC theory）。
+这个符号程序就可以适用于无自旋 CC 理论（spin-free CC theory）。
 
-- 实现一个on_MCSCF_reference函数，以支持多组态自洽场（Multi-Configuration Self-Consistent Field，MCSCF）波函数参考态，并相应地完善收缩规则，就可以将符号程序扩展到多参考态CC理论（multireference CC theory）。
+- 实现一个 on_MCSCF_reference 函数，以支持多组态自洽场（Multi-Configuration Self-Consistent Field，MCSCF）波函数参考态，并相应地完善收缩规则，就可以将符号程序扩展到多参考态 CC 理论（multireference CC theory）。
 - 哈密顿算符（Hamiltonian operator）可以作为微扰算符递归地作用于参考态，从而得到用于多体微扰方法（many-body perturbation methods）的符号程序。
-- 更新第15.5.1节中的excitation函数，以参数化T − ˆT
+- 更新第 15.5.1 节中的 excitation 函数，以参数化 T − ˆT
 
 有效哈密顿量（effective Hamiltonian）
 

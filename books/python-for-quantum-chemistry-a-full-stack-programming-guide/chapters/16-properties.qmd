@@ -538,15 +538,15 @@ Krylov 子空间迭代方法可能遇到收敛问题。在有限的迭代步数�
 
 第一种方法使自动微分能够应用于几乎所有参数。然而，它需要编写大量代码来建立基础
 16.4 使用自动微分框架计算核梯度。在实践中，新研究往往建立在现有代码库之上，而其中许多代码库并非使用自动微分（AD）库开发。为了有效利用自动微分，通常需要将硬编码的微分程序集成到自动微分工具包中。混合自动微分（hybrid AD）方法在量子化学应用中特别有用[5–8]。
-PyTorch、JAX和TensorFlow等常用自动微分库都提供自定义自动微分的功能。我们应该选择哪种工具来编写混合自动微分代码？
-与遵循Python面向对象编程风格的PyTorch不同，JAX采用函数式编程（functional programming，FP）方法。如果你不熟悉函数式编程的代码风格，起初可能会觉得使用JAX很有挑战。在这种情况下，函数式编程教材*SICP in Python*[9]可以帮助你学习Python中的函数式编程。
+PyTorch、JAX 和 TensorFlow 等常用自动微分库都提供自定义自动微分的功能。我们应该选择哪种工具来编写混合自动微分代码？
+与遵循 Python 面向对象编程风格的 PyTorch 不同，JAX 采用函数式编程（functional programming，FP）方法。如果你不熟悉函数式编程的代码风格，起初可能会觉得使用 JAX 很有挑战。在这种情况下，函数式编程教材*SICP in Python*[9]可以帮助你学习 Python 中的函数式编程。
 使用自动微分计算导数有两种模式：前向模式（forward-mode）和反向模式（reverse-mode）。给定一个向量作为输入，前向模式自动微分计算雅可比矩阵-向量积（Jacobian-vector product，JVP），而反向模式自动微分计算向量-雅可比矩阵积（vector-Jacobian product，VJP）。这两种自动微分模式采用不同的策略来自定义函数的导数。正如后文所示，前向模式自动微分的自定义规则通常更直接。与反向模式自动微分相比，使用前向模式自动微分编写的函数往往能保持更接近原始程序的结构。
-PyTorch只支持使用反向模式自定义自动微分。另一方面，JAX同时支持前向模式和反向模式自动微分。它能够自动将前向模式的导数规则转换为反向模式。这一功能为开发JAX自动微分程序提供了更灵活的方法。在接下来的示例中，我们将演示如何使用JAX库自定义导数规则。
+PyTorch 只支持使用反向模式自定义自动微分。另一方面，JAX 同时支持前向模式和反向模式自动微分。它能够自动将前向模式的导数规则转换为反向模式。这一功能为开发 JAX 自动微分程序提供了更灵活的方法。在接下来的示例中，我们将演示如何使用 JAX 库自定义导数规则。
 自定义 JAX 自动微分的一项重要任务，是将不能被 JAX 转换的函数改写为可被 JAX 转换的函数。「可被 JAX 转换」指 JAX 能够操作这些函数或运算，从而生成反向模式微分代码。一般来说，在 JAX 中编写自定义导数规则可以通过以下步骤完成：
 
-1. 清理并重构程序，确保其遵循JAX函数式编程风格。这
+1. 清理并重构程序，确保其遵循 JAX 函数式编程风格。这
 
-包括将所有NumPy和SciPy函数替换为对应的JAX函数。2. 确定需要自定义的变量和函数。
+包括将所有 NumPy 和 SciPy 函数替换为对应的 JAX 函数。2.确定需要自定义的变量和函数。
 
 3. 利用 custom_jvp 与 custom_vjp API 编写这些自定义导数
 
@@ -554,27 +554,27 @@ PyTorch只支持使用反向模式自定义自动微分。另一方面，JAX同�
 
 4. 优化反向传播过程。
 
-我们以第15章开发的CCD程序为例。CCD能量的核梯度取决于积分的导数和Hartree-Fock能量的梯度。考虑到量子化学积分的复杂性和计算成本，使用现有积分库计算积分及其导数，比从头使用JAX库开发积分程序更实际。虽然Hartree-Fock部分的核梯度可以使用自动微分生成，但为了演示自定义自动微分的功能，我们使用第16.2.1节开发的Hartree-Fock解析梯度程序计算Hartree-Fock部分的梯度。
+我们以第 15 章开发的 CCD 程序为例。CCD 能量的核梯度取决于积分的导数和 Hartree-Fock 能量的梯度。考虑到量子化学积分的复杂性和计算成本，使用现有积分库计算积分及其导数，比从头使用 JAX 库开发积分程序更实际。虽然 Hartree-Fock 部分的核梯度可以使用自动微分生成，但为了演示自定义自动微分的功能，我们使用第 16.2.1 节开发的 Hartree-Fock 解析梯度程序计算 Hartree-Fock 部分的梯度。
 
-#### 步骤1：按照JAX函数式编程风格重构程序
+#### 步骤 1：按照 JAX 函数式编程风格重构程序
 
 这一步涉及以下检查和修改：
 
-- 为每个函数创建明确的输入参数列表和明确定义的输出。JAX追踪输入和输出，以建立函数的导数规则。例如，第15章第15.2节中CCD程序的主函数CCD_solve最初定义如下：
+- 为每个函数创建明确的输入参数列表和明确定义的输出。JAX 追踪输入和输出，以建立函数的导数规则。例如，第 15 章第 15.2 节中 CCD 程序的主函数 CCD_solve 最初定义如下：
 
 ```python
 def CCD_solve(mf, conv_tol=1e-5, max_cycle=100):
     ...
     return e_ccd,t 2
 ```
-为了明确指定计算关于原子坐标的CCD总能量的函数，应将coords变量加入参数列表。因此，CCD_solve的函数签名更新为：
+为了明确指定计算关于原子坐标的 CCD 总能量的函数，应将 coords 变量加入参数列表。因此，CCD_solve 的函数签名更新为：
 
 ```python
 def CCD_solve(coords,m f, conv_tol=1e-5, max_cycle=100):
     ...
     return e_ccd
 ```
-第二个参数mf和其余关键字参数可以保留在函数的参数列表中。执行JAX雅可比矩阵计算时，这些参数不参与计算。同样，mo_integrals的函数签名也需要改写，以反映其对coords的依赖：
+第二个参数 mf 和其余关键字参数可以保留在函数的参数列表中。执行 JAX 雅可比矩阵计算时，这些参数不参与计算。同样，mo_integrals 的函数签名也需要改写，以反映其对 coords 的依赖：
 
 ```python
 def mo_integrals(coords, mf: pyscf.scf.hf.RHF):
@@ -582,8 +582,8 @@ def mo_integrals(coords, mf: pyscf.scf.hf.RHF):
     return H
 ```
 
-- 消除每个函数中的任何副作用（side-effects）。这意味着函数不应修改导数计算所依赖的输入参数或全局变量。理想情况下，为了采用函数式编程风格，最好还要消除任何副作用，包括对不可微输入参数的修改。在当前的CCD程序中，这些函数已经没有副作用，无需进一步操作。
-- 避免任何原位修改（in-place modifications）。虽然对局部变量的原位修改不被视为函数的副作用，但它们可能干扰JAX追踪中间变量状态的能力。在update_CCD_amplitudes函数中，有几条语句涉及原位操作。应将它们改写，以确保与JAX的追踪功能兼容。例如，以下语句涉及对局部变量的原位修改：
+- 消除每个函数中的任何副作用（side-effects）。这意味着函数不应修改导数计算所依赖的输入参数或全局变量。理想情况下，为了采用函数式编程风格，最好还要消除任何副作用，包括对不可微输入参数的修改。在当前的 CCD 程序中，这些函数已经没有副作用，无需进一步操作。
+- 避免任何原位修改（in-place modifications）。虽然对局部变量的原位修改不被视为函数的副作用，但它们可能干扰 JAX 追踪中间变量状态的能力。在 update_CCD_amplitudes 函数中，有几条语句涉及原位操作。应将它们改写，以确保与 JAX 的追踪功能兼容。例如，以下语句涉及对局部变量的原位修改：
 
 ```text
 Fvv[np.diag_indices(nvir)] -= e_v
@@ -596,9 +596,9 @@ Fvv = Fvv - jnp.diag(e_v)
 t2out = t2out + .5 * einsum('ijkl,abkl->abij', oooo, t2)
 ```
 
-- 将NumPy和SciPy函数替换为对应的JAX函数。为了确保与JAX自动微分兼容，必须将所有NumPy和SciPy函数替换为对应的JAX函数。例如，所有np.einsum都应替换为jax.numpy.einsum。
+- 将 NumPy 和 SciPy 函数替换为对应的 JAX 函数。为了确保与 JAX 自动微分兼容，必须将所有 NumPy 和 SciPy 函数替换为对应的 JAX 函数。例如，所有 np.einsum 都应替换为 jax.numpy.einsum。
 
-完成这些修改后，我们得到一个适应JAX函数式编程风格的重构CCD程序。
+完成这些修改后，我们得到一个适应 JAX 函数式编程风格的重构 CCD 程序。
 
 ```python
 einsum = jnp.einsum
@@ -680,24 +680,24 @@ i2 = jnp.eye(2) # (2)
     H['e_hf'] = mf.e_tot
     return H
 ```
-第(1)行中的参数coords没有被mo_integrals函数显式使用。你可能会问：我们能否像处理普通Python函数那样删除这个参数？答案是否定的。如果删除coords参数，JAX就无法检测到mo_integrals对coords的依赖，并会在自动微分（automatic differentiation，AD）过程中错误地排除对mo_integrals的微分。mo_integrals函数隐式依赖于原子核坐标。由于我们需要mf对象提供积分计算，coords必须与mf中存储的分子结构一致。
+第(1)行中的参数 coords 没有被 mo_integrals 函数显式使用。你可能会问：我们能否像处理普通 Python 函数那样删除这个参数？答案是否定的。如果删除 coords 参数，JAX 就无法检测到 mo_integrals 对 coords 的依赖，并会在自动微分（automatic differentiation，AD）过程中错误地排除对 mo_integrals 的微分。mo_integrals 函数隐式依赖于原子核坐标。由于我们需要 mf 对象提供积分计算，coords 必须与 mf 中存储的分子结构一致。
 在第 15 章介绍的 mo_integrals 中，我们使用切片表示法 ::2 和 1::2 为 α 和 β 轨道赋值分子轨道（molecular orbital，MO）积分。这些赋值在第 (2) 行中被使用 2 × 2 矩阵 i2 的 einsum 操作取代。如果希望使用花式索引（fancy indexing）编写赋值代码，可以使用 JAX 的 .at 和 .set 方法，如以下代码所示。
 
 ```text
 output = output.at[::2,::2,::2,::2].set(eri)
 ```
-请注意，这段代码会创建output数组的新副本，而不是原地更新它。使用.at方法时应当谨慎。建议查阅JAX的.at方法文档[10]，了解更多细节。
-为简单起见，我们从CCD迭代函数中移除了DIIS加速。从数学上讲，这只会降低CCD程序的运行速度，而不影响结果。
+请注意，这段代码会创建 output 数组的新副本，而不是原地更新它。使用.at 方法时应当谨慎。建议查阅 JAX 的.at 方法文档[10]，了解更多细节。
+为简单起见，我们从 CCD 迭代函数中移除了 DIIS 加速。从数学上讲，这只会降低 CCD 程序的运行速度，而不影响结果。
 DIIS 模块是面向对象编程（object-oriented programming，OOP）范式的典型例子。它跟踪各种中间状态并隐式修改它们。理论上，这个 OOP 函数也可改写为函数式编程（functional programming，FP）风格。为此，可以在 CCD_solve 函数中暴露 DIIS 中间状态，并将它们与其他参数一起传递给 DIIS 外推函数。这样，DIIS 方法的前向和反向传播就可由 JAX 的 AD 跟踪和管理。然而，正如第 16.4.2 节将要介绍的，我们无须重构 DIIS 实现。现有的 DIIS 模块可直接用于加速可由 JAX 变换的 CCD 程序，而不会产生任何冲突。
 
-#### 步骤2：确定需要自定义的变量和函数
+#### 步骤 2：确定需要自定义的变量和函数
 
-如果函数中的所有量都由可经JAX变换的操作产生，包括简单的算术操作和JAX内置函数，JAX就能够自动处理该函数的导数。这使我们能够轻松地
-确定哪些函数与JAX变换兼容。在CCD程序中，update_CCD_amplitudes和get_CCD_corr_energy都是这类函数的例子。
-如果一个函数依赖于JAX软件包未提供的函数，我们就需要进一步分析它的依赖关系。如果一个函数递归地依赖于其他可经JAX变换的函数，那么它也可经JAX变换。例如，函数mp2可经JAX变换，因为它唯一的依赖项get_CCD_corr_energy也可经JAX变换。相比之下，原始函数（primal function）mo_integrals无法由JAX变换，因为它使用了PySCF软件包中的几个积分求值函数，而这些函数无法由JAX变换。这里，原始函数一词指函数原本未经变换的形式。为了使mo_integrals可经JAX变换，需要为这个函数增补自定义导数规则。
-如果CCD_solve这样的函数依赖于已增补自定义规则的函数，例如mo_integrals，那么假设CCD_solve函数中的其余语句已经可经JAX变换，就不需要为CCD_solve增补额外的自定义规则。增补mo_integrals之后，CCD_solve会自动变得可经JAX变换。
+如果函数中的所有量都由可经 JAX 变换的操作产生，包括简单的算术操作和 JAX 内置函数，JAX 就能够自动处理该函数的导数。这使我们能够轻松地
+确定哪些函数与 JAX 变换兼容。在 CCD 程序中，update_CCD_amplitudes 和 get_CCD_corr_energy 都是这类函数的例子。
+如果一个函数依赖于 JAX 软件包未提供的函数，我们就需要进一步分析它的依赖关系。如果一个函数递归地依赖于其他可经 JAX 变换的函数，那么它也可经 JAX 变换。例如，函数 mp2 可经 JAX 变换，因为它唯一的依赖项 get_CCD_corr_energy 也可经 JAX 变换。相比之下，原始函数（primal function）mo_integrals 无法由 JAX 变换，因为它使用了 PySCF 软件包中的几个积分求值函数，而这些函数无法由 JAX 变换。这里，原始函数一词指函数原本未经变换的形式。为了使 mo_integrals 可经 JAX 变换，需要为这个函数增补自定义导数规则。
+如果 CCD_solve 这样的函数依赖于已增补自定义规则的函数，例如 mo_integrals，那么假设 CCD_solve 函数中的其余语句已经可经 JAX 变换，就不需要为 CCD_solve 增补额外的自定义规则。增补 mo_integrals 之后，CCD_solve 会自动变得可经 JAX 变换。
 
-#### 步骤3：为前向模式（或反向模式）AD实现自定义规则
+#### 步骤 3：为前向模式（或反向模式）AD 实现自定义规则
 
 普通计算（通过原始函数）沿前向执行。只需对原始函数的代码稍作修改，就可以支持雅可比矩阵-向量积（Jacobian-vector product，JVP）导数规则[11]。计算梯度时，JAX 可以自动将 JVP 规则转换为向量-雅可比矩阵积（vector-Jacobian product，VJP）规则，但反过来不行。因此，如果 AD 的性能不是主要考虑因素，通常最好自定义 JVP 函数。
 要自定义 JVP 导数规则，可以使用 jax.custom_jvp 函数。对于 CCD 程序中的 mo_integrals 函数，JVP 规则可以如下编写：
@@ -773,7 +773,7 @@ eri = einsum( 'pqrs,pi,qj,rk,sl->ijkl', eri, mo1, mo0, mo0, mo0)
     eri = eri + eri.transpose(2,3,0,1)
     return eri
 ```
-custom_jvp函数用于装饰原始函数mo_integrals。第(1)行所示的.defjvp方法添加了一个表示自定义JVP规则的函数。在后续讨论中，我们将这个被添加的函数称为JVP增补函数。增补函数必须遵循特定的输入和输出格式[12]。
+custom_jvp 函数用于装饰原始函数 mo_integrals。第(1)行所示的.defjvp 方法添加了一个表示自定义 JVP 规则的函数。在后续讨论中，我们将这个被添加的函数称为 JVP 增补函数。增补函数必须遵循特定的输入和输出格式[12]。
 
 ```python
 @custom_jvp
@@ -784,8 +784,8 @@ def f_jvp(primals, tangents):
     ...
     return primals_out, jvp_product
 ```
-默认情况下，原始函数中的所有参数都被视为可以求导的变量。可微变量通过输入参数primals传递给JVP增补函数。另一个参数tangents表示与primals对应的切向量。JVP增补函数的返回值由两个元素组成。第一个元素是原始函数的输出，在代码示例中记为primals_out。它通过使用参数primals调用原始函数来计算。第二个元素jvp_product表示雅可比矩阵-向量积的结果。
-原始函数中的某些参数可能不可微。它们由custom_jvp中的nondiff_argnums参数指定。处理不可微参数时，例如mo_integrals函数中的mf对象，无论这些参数在原始函数中有多少个以及定义在什么位置，它们都放在增补函数签名的开头[13]。custom_jvp函数的代码签名如下：
+默认情况下，原始函数中的所有参数都被视为可以求导的变量。可微变量通过输入参数 primals 传递给 JVP 增补函数。另一个参数 tangents 表示与 primals 对应的切向量。JVP 增补函数的返回值由两个元素组成。第一个元素是原始函数的输出，在代码示例中记为 primals_out。它通过使用参数 primals 调用原始函数来计算。第二个元素 jvp_product 表示雅可比矩阵-向量积的结果。
+原始函数中的某些参数可能不可微。它们由 custom_jvp 中的 nondiff_argnums 参数指定。处理不可微参数时，例如 mo_integrals 函数中的 mf 对象，无论这些参数在原始函数中有多少个以及定义在什么位置，它们都放在增补函数签名的开头[13]。custom_jvp 函数的代码签名如下：
 
 ```python
 @partial(custom_jvp, nondiff_argnums=(0,2))

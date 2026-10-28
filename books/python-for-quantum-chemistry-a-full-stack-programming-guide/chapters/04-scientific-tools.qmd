@@ -92,7 +92,7 @@ row_indices = np.arange(4)
 col_indices = np.arange(4)
 scipy.sparse.csr_array(np.ones(4), (row_indices, col_indices))
 ```
-另一种方法是直接指定CSR的indices和indptr以及data数组，从而直接创建CSR稀疏数组：
+另一种方法是直接指定 CSR 的 indices 和 indptr 以及 data 数组，从而直接创建 CSR 稀疏数组：
 
 ```python
 data = np.ones(4)
@@ -100,7 +100,7 @@ indices = np.array([0,1,2,3])
 indptr = np.array([0,1,2,3,4])
 scipy.sparse.csr_array((data, indices, indptr), shape=(4, 4))
 ```
-不同存储格式之间的转换可以通过两种方法完成。一种是使用每个稀疏矩阵类的.to{format}()方法。另一种是使用前面讨论过的类实例化函数{format}_array或{format}_matrix。例如，下面的代码片段展示了从COO格式到其他格式的转换。
+不同存储格式之间的转换可以通过两种方法完成。一种是使用每个稀疏矩阵类的.to{format}()方法。另一种是使用前面讨论过的类实例化函数{format}_array 或{format}_matrix。例如，下面的代码片段展示了从 COO 格式到其他格式的转换。
 
 ```text
 a_coo = scipy.sparse.coo_array(np.eye(4))
@@ -124,7 +124,7 @@ a = scipy.sparse.coo_array(np.eye(3))
 for row, col, value in zip (a.row, a.col, a.data):
     print(f'({row}, {col}): {value}' )
 ```
-CSR的非零元素可以通过.indptr、.indices和.data属性访问：
+CSR 的非零元素可以通过.indptr、.indices 和.data 属性访问：
 
 ```python
 for row in range (csr_matrix.shape[0]):
@@ -133,7 +133,7 @@ for row in range (csr_matrix.shape[0]):
         value = csr_matrix.data[ptr]
         print(f'({row}, {col}): {value}' )
 ```
-对于CSC，可以使用类似的代码：
+对于 CSC，可以使用类似的代码：
 
 ```python
 for col in range (csc_matrix.shape[1]):
@@ -142,14 +142,14 @@ for col in range (csc_matrix.shape[1]):
         value = csc_matrix.data[ptr]
         print(f'({row}, {col}): {value}' )
 ```
-LIL的非零元素由.rows和.data属性管理，可以这样访问：
+LIL 的非零元素由.rows 和.data 属性管理，可以这样访问：
 
 ```python
 for row in range (lil_matrix.shape[0]):
     for col, value in zip (lil_matrix.rows[row], lil_matrix.data[row]):
         print(f'({row}, {col}): {value}' )
 ```
-对于DOK，遍历非零元素类似于遍历字典：
+对于 DOK，遍历非零元素类似于遍历字典：
 
 ```python
 for (row, col), value in dok_matrix.items():
@@ -160,10 +160,10 @@ for (row, col), value in dok_matrix.items():
 
 稀疏矩阵的一个主要用途，是对大型矩阵执行线性代数运算，使用稠密矩阵表示这些矩阵既不切实际也缺乏效率。线性代数模块 scipy.linalg 专为稠密矩阵设计，因而并不适用于稀疏矩阵。此时可以使用 scipy.sparse.linalg 模块中的线性代数函数。不过，scipy.sparse.linalg 提供的接口不如 scipy.linalg 丰富，在其中我们可以找到基础的线性代数函数，包括：
 
-- 方程求解器，例如spsolve和gmres（广义最小残差，Generalized Minimal RESidual）函数。
-- 函数，例如用于一般特征值问题的eigs和eigsh，以及用于奇异值分解（SVD）的svds。
-- 分解函数splu，用于计算稀疏方阵的LU分解。
-- 一些基本矩阵运算，包括用于矩阵指数运算的expm、用于矩阵求逆的inv和用于计算矩阵范数的norm。
+- 方程求解器，例如 spsolve 和 gmres（广义最小残差，Generalized Minimal RESidual）函数。
+- 函数，例如用于一般特征值问题的 eigs 和 eigsh，以及用于奇异值分解（SVD）的 svds。
+- 分解函数 splu，用于计算稀疏方阵的 LU 分解。
+- 一些基本矩阵运算，包括用于矩阵指数运算的 expm、用于矩阵求逆的 inv 和用于计算矩阵范数的 norm。
 
 scipy.sparse.linalg 函数的基本用法非常直观。此处不再展开罗列具体参数，SciPy 官方文档已提供了详尽的参考说明 [3,4]。
 使用 scipy.sparse.linalg 函数时，不能像对待稠密矩阵那样简单地将其视作黑盒。充分理解各函数背后的算法原理与局限性，对于解决涉及稀疏矩阵的线性代数问题大有裨益。
@@ -185,13 +185,13 @@ scipy.sparse.linalg 函数的基本用法非常直观。此处不再展开罗列
 
 H =− 1 k x,)
 2m dx 2
-其中m表示粒子质量，k是力常数。为了求解含时无关薛定谔方程
+其中 m 表示粒子质量，k 是力常数。为了求解含时无关薛定谔方程
 
 ![公式图](../assets/math/eq-04-004.png){width=40%}
 
 []{#eq-04-004}
 
-我们将哈密顿量和波函数都离散化到间距为a的一维网格上。动能项可以使用有限差分公式计算
+我们将哈密顿量和波函数都离散化到间距为 a 的一维网格上。动能项可以使用有限差分公式计算
 （采用开放边界条件）：
 
 ![公式图](../assets/math/eq-04-005.png){width=56%}
@@ -235,7 +235,7 @@ if __name__ == '__main__':
 ∑
 cov (Xi,Xj) = 1 (Xik − ¯Xi)(Xjk − ¯Xj),)
 n − 1
-我们可以使用for循环实现程序：
+我们可以使用 for 循环实现程序：
 
 ```python
 def cov(x):
@@ -254,41 +254,41 @@ def cov(x):
     dx = x - x.mean(axis=1)[:,None]
     return np.einsum('ik,jk->ij',d x,d x )/( n-1 )
 ```
-在这个例子中，我们使用NumPy的np.einsum函数执行张量缩并。在np.einsum中，输入操作数和输出张量的索引用字母标记。缩并模式由这些字母组成的字符串描述。在这个描述字符串中，输入和输出由符号’->’分隔。出现在输入中但不出现在输出中的重复字母表示按照爱因斯坦求和约定对这些索引求和。当有多个输入操作数时，它们的索引用逗号分隔。
-为什么我们更喜欢在科学计算问题中使用张量缩并？除了代码可读性方面的优势，张量缩并还提供更好的性能，因为它可以利用专门针对张量缩并运算优化的库。协方差矩阵计算就是一个例子。einsum版本比使用for循环的版本快一个数量级。
-请注意，np.einsum的默认实现并非性能最优。例如，执行矩阵乘法
+在这个例子中，我们使用 NumPy 的 np.einsum 函数执行张量缩并。在 np.einsum 中，输入操作数和输出张量的索引用字母标记。缩并模式由这些字母组成的字符串描述。在这个描述字符串中，输入和输出由符号’->’分隔。出现在输入中但不出现在输出中的重复字母表示按照爱因斯坦求和约定对这些索引求和。当有多个输入操作数时，它们的索引用逗号分隔。
+为什么我们更喜欢在科学计算问题中使用张量缩并？除了代码可读性方面的优势，张量缩并还提供更好的性能，因为它可以利用专门针对张量缩并运算优化的库。协方差矩阵计算就是一个例子。einsum 版本比使用 for 循环的版本快一个数量级。
+请注意，np.einsum 的默认实现并非性能最优。例如，执行矩阵乘法
 
 ```python
 c = np.einsum('ij,jk->ik', a, b)
 ```
-时，np.einsum明显慢于np.dot函数。后者利用底层BLAS库提供的矩阵乘法例程实现更快的性能。
-可以通过指定关键字参数optimize=True来改善np.einsum的性能。使用这个选项时，einsum利用tensordot函数将einsum模式转换为矩阵乘法。此外，当缩并涉及多个张量时，这个选项会启用对最高效缩并路径的搜索。例如，考虑下面的张量缩并，其中数组a和数组b的形状均为(n,n)，数组c的形状为(n, n)。
+时，np.einsum 明显慢于 np.dot 函数。后者利用底层 BLAS 库提供的矩阵乘法例程实现更快的性能。
+可以通过指定关键字参数 optimize=True 来改善 np.einsum 的性能。使用这个选项时，einsum 利用 tensordot 函数将 einsum 模式转换为矩阵乘法。此外，当缩并涉及多个张量时，这个选项会启用对最高效缩并路径的搜索。例如，考虑下面的张量缩并，其中数组 a 和数组 b 的形状均为(n,n)，数组 c 的形状为(n, n)。
 
 ```python
 d = np.einsum( 'ij,jk,kl->il',a ,b ,c )
 ```
-np.einsum默认在单次运算中执行三个张量的缩并，其复杂度为O(n)。这无疑是不利的。如果我们将缩并过程分解为
+np.einsum 默认在单次运算中执行三个张量的缩并，其复杂度为 O(n)。这无疑是不利的。如果我们将缩并过程分解为
 
 ```python
 d = np.einsum( 'ik,kl->il', np.einsum('ij,jk->ik',a , b), c)
 ```
-这两步张量缩并需要2n n次浮点运算。如果将缩并顺序改为
+这两步张量缩并需要 2n n 次浮点运算。如果将缩并顺序改为
 
 ```python
 d = np.einsum( 'ij,jl->il',a , np.einsum('jk,kl->jl',b , c))
 ```
-浮点运算总次数变为n n。显然，交换后的缩并顺序更高效。启用optimize=True选项时，缩并顺序由np.einsum_path函数优化。np.einsum_path可以分析张量缩并中的浮点运算，并建议使浮点运算次数最少的最优缩并路径。
-使用np.einsum时，是否建议始终启用optimize选项？
-启用optimize选项通常可以使einsum更快。然而，在某些情况下，使用optimize可能没有好处，甚至可能降低性能。对于这个问题，我们可以考虑三个因素：
+浮点运算总次数变为 n n。显然，交换后的缩并顺序更高效。启用 optimize=True 选项时，缩并顺序由 np.einsum_path 函数优化。np.einsum_path 可以分析张量缩并中的浮点运算，并建议使浮点运算次数最少的最优缩并路径。
+使用 np.einsum 时，是否建议始终启用 optimize 选项？
+启用 optimize 选项通常可以使 einsum 更快。然而，在某些情况下，使用 optimize 可能没有好处，甚至可能降低性能。对于这个问题，我们可以考虑三个因素：
 
-- einsum模式能否转换为矩阵乘法形式。
+- einsum 模式能否转换为矩阵乘法形式。
 
-当einsum模式可以映射为
-矩阵乘法时，optimize选项是有益的。只有当任何重复索引都恰好出现
-两次时，转换才有可能。如果无法转换为矩阵乘法，为np.einsum设置
-optimize=True只会调用标准的np.einsum实
+当 einsum 模式可以映射为
+矩阵乘法时，optimize 选项是有益的。只有当任何重复索引都恰好出现
+两次时，转换才有可能。如果无法转换为矩阵乘法，为 np.einsum 设置
+optimize=True 只会调用标准的 np.einsum 实
 现，因此性能不会提高。值得注意的是，在这些情况
-下，简单的NumPy广播有时可以比np.einsum表现得更好。
+下，简单的 NumPy 广播有时可以比 np.einsum 表现得更好。
 例如：
 
 ```python
@@ -343,7 +343,7 @@ Wall time: 1.08 s
 ∑ − 2iπ nk
 yk = xn exp.)
 N
-逆DFT由下式给出
+逆 DFT 由下式给出
 
 ![公式图](../assets/math/eq-04-008.png){width=48%}
 
@@ -356,14 +356,14 @@ N N
 
 ### 4.4.1 FFT
 
-scipy.fft模块提供多种FFT函数，用于计算DFT及其逆变换，包括：
+scipy.fft 模块提供多种 FFT 函数，用于计算 DFT 及其逆变换，包括：
 
-- 一般一维FFT及其逆变换函数fft和ifft。
-- 二维和多维FFT函数fft2、fftn及其逆变换ifft2、ifftn。
-- rfft函数。该函数专用于实数输入数据，计算成本大约可以降低一半。irfft函数计算rfft的逆变换并返回实数数组。
-- fftfreq和rfftfreq函数。这些函数可用于生成DFT采样频率。
+- 一般一维 FFT 及其逆变换函数 fft 和 ifft。
+- 二维和多维 FFT 函数 fft2、fftn 及其逆变换 ifft2、ifftn。
+- rfft 函数。该函数专用于实数输入数据，计算成本大约可以降低一半。irfft 函数计算 rfft 的逆变换并返回实数数组。
+- fftfreq 和 rfftfreq 函数。这些函数可用于生成 DFT 采样频率。
 
-例如，给定一个采样数据向量，我们可以执行以下DFT和逆DFT运算，
+例如，给定一个采样数据向量，我们可以执行以下 DFT 和逆 DFT 运算，
 
 ```python
 In [1]: x = np.random.rand(10)
@@ -385,26 +385,26 @@ In [3]: print(scipy.fft.rfftfreq(10))
 Out[3]:
 [0. 0.1 0.2 0.3 0.4 0.5]
 ```
-请注意，fft函数输出复数数组，其形状与输入数组相同。相比之下，rfft函数可以利用正负频率之间的对称性，只计算正频率的DFT。因此，rfft函数的输出大小实际上是标准FFT的一半。
-scipy.fft模块的一个重要特性是能够使用多线程并行地对多个向量执行FFT。通过设置参数workers，我们可以分配多个线程执行SciPy FFT函数。
+请注意，fft 函数输出复数数组，其形状与输入数组相同。相比之下，rfft 函数可以利用正负频率之间的对称性，只计算正频率的 DFT。因此，rfft 函数的输出大小实际上是标准 FFT 的一半。
+scipy.fft 模块的一个重要特性是能够使用多线程并行地对多个向量执行 FFT。通过设置参数 workers，我们可以分配多个线程执行 SciPy FFT 函数。
 
 ```python
 x = np.random.rand(2000, 10)
 y = scipy.fft.fft(x, workers=4) # using 4 threads
 y = scipy.fft.fft(x, workers=-1) # using all available CPU cores
 ```
-由于并行化是在向量之间而不是在FFT维度内执行的，如果没有足够多的向量需要变换，使用多个worker就不会带来好处。
-你可能已经注意到，NumPy库也在numpy.fft模块中提供了FFT实现。scipy.fft和numpy.fft的功能几乎相同。然而，总体而言，scipy.fft模块比numpy.fft更有优势，原因如下：
+由于并行化是在向量之间而不是在 FFT 维度内执行的，如果没有足够多的向量需要变换，使用多个 worker 就不会带来好处。
+你可能已经注意到，NumPy 库也在 numpy.fft 模块中提供了 FFT 实现。scipy.fft 和 numpy.fft 的功能几乎相同。然而，总体而言，scipy.fft 模块比 numpy.fft 更有优势，原因如下：
 
-- 使用FFT PACK库[8]，该库比NumPy内置的FFT库具有更全面的优化和更高的效率。
-- 允许我们覆盖输入数据（使用关键字参数overwrite_x），这可以减少内存使用量和数据传输开销。
+- 使用 FFT PACK 库[8]，该库比 NumPy 内置的 FFT 库具有更全面的优化和更高的效率。
+- 允许我们覆盖输入数据（使用关键字参数 overwrite_x），这可以减少内存使用量和数据传输开销。
 
-相比之下，numpy.fft总是为其输出创建新数组。
+相比之下，numpy.fft 总是为其输出创建新数组。
 
-- 可以利用多核CPU的并行能力，而numpy.fft不提供多线程执行。
-- 不仅rfft，scipy.fft.fft函数也可以识别实数输入数据，并利用变换中的对称性提高性能。
+- 可以利用多核 CPU 的并行能力，而 numpy.fft 不提供多线程执行。
+- 不仅 rfft，scipy.fft.fft 函数也可以识别实数输入数据，并利用变换中的对称性提高性能。
 
-除了NumPy和SciPy提供的FFT模块，FFTW和Intel FFT等其他流行的FFT库也提供Python接口。
+除了 NumPy 和 SciPy 提供的 FFT 模块，FFTW 和 Intel FFT 等其他流行的 FFT 库也提供 Python 接口。
 
 ### 4.4.2 FFT
 
@@ -414,7 +414,7 @@ Intel FFT 是 Intel Math Kernel Library（MKL）的一个组件。在 Python 程
 ```bash
 $ pip install mkl_fft mkl mkl -service
 ```
-Intel FFT库使用起来很直接。它不像FFTW那样需要复杂配置，例如创建或缓存计划（参见第 4.4.3 节）。此外，内存对齐并非强制要求，尽管对齐内存可以提高性能。mkl_fft.interfaces.scipy_fft模块遵循scipy.fft和numpy.fft的API。下面的代码示例说明如何使用兼容接口从SciPy和NumPy无缝过渡到mkl_fft。
+Intel FFT 库使用起来很直接。它不像 FFTW 那样需要复杂配置，例如创建或缓存计划（参见第 4.4.3 节）。此外，内存对齐并非强制要求，尽管对齐内存可以提高性能。mkl_fft.interfaces.scipy_fft 模块遵循 scipy.fft 和 numpy.fft 的 API。下面的代码示例说明如何使用兼容接口从 SciPy 和 NumPy 无缝过渡到 mkl_fft。
 
 ```text
 y = scipy.fft.rfft(x, workers=4)
@@ -422,13 +422,13 @@ y = mkl_fft.interfaces.scipy_fft.rfft(x, workers=4)
 y = numpy.fft.rfft(x)
 y = mkl_fft.interfaces.numpy_fft.rfft(x)
 ```
-我们可以使用mkl_fft库直接替代scipy.fft。例如，可以将mkl_fft配置为scipy.fft的后端。
+我们可以使用 mkl_fft 库直接替代 scipy.fft。例如，可以将 mkl_fft 配置为 scipy.fft 的后端。
 
 ```text
 In [4]: with scipy.fft.set_backend(mkl_fft.interfaces.scipy_fft):
             y = scipy.fft.fft(x, workers=8)
 ```
-在这个上下文中，调用scipy.fft模块中的函数时，实际上执行的是mkl_fft库中的FFT函数。
+在这个上下文中，调用 scipy.fft 模块中的函数时，实际上执行的是 mkl_fft 库中的 FFT 函数。
 
 ### 4.4.3 PyFFTW
 
@@ -441,8 +441,8 @@ PyFFTW 包提供了两套主接口以方便 Python 调用：一套是与 scipy.f
 In [5]: with scipy.fft.set_backend(pyfftw.interfaces.scipy_fft):
          y = scipy.fft.fft(x, workers=8)
 ```
-然而，正如我们将在下一节的性能基准测试中看到的那样，通过标准接口不太可能获得性能优势。如果打算在应用中使用PyFFTW，建议使用PyFFTW的高级接口，以充分发挥FFTW的性能潜力。
-高级接口为FFTW运算提供更详细的定制，包括：
+然而，正如我们将在下一节的性能基准测试中看到的那样，通过标准接口不太可能获得性能优势。如果打算在应用中使用 PyFFTW，建议使用 PyFFTW 的高级接口，以充分发挥 FFTW 的性能潜力。
+高级接口为 FFTW 运算提供更详细的定制，包括：
 
 - 对齐。PyFFTW 在调用底层 FFTW 函数之前必须确保内存对齐。若输入数组不满足内存对齐要求（该设置与具体系统架构相关），PyFFTW 会分配适当对齐的新内存，并将输入数组完整复制到这块新内存中，从而引入额外开销。为解决这个问题，建议在可行时为 FFT 数据存储预先分配内存对齐的 NumPy 数组。PyFFTW 提供了 empty_aligned 函数，用于创建具有所需对齐格式的空 NumPy 数组。
 
@@ -463,7 +463,7 @@ x = pyfftw.byte_align(x)
 ```text
    pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
 ```
-或设置FFT函数的关键字参数planner_effort：
+或设置 FFT 函数的关键字参数 planner_effort：
 
 ```text
    pyfftw.interfaces.scipy_fft.fft(x, planner_effort= 'FFTW_MEASURE')
@@ -474,7 +474,7 @@ x = pyfftw.byte_align(x)
 ```text
    pyfftw.interfaces.cache.enable()
 ```
-通过高级接口配置FFTW时，建议使用辅助函数pyfftw.builders.fft创建pyfftw.FFTW类的实例。这个实例包含计算所需的全部FFTW参数。我们可以调用这个实例来执行实际变换。
+通过高级接口配置 FFTW 时，建议使用辅助函数 pyfftw.builders.fft 创建 pyfftw.FFTW 类的实例。这个实例包含计算所需的全部 FFTW 参数。我们可以调用这个实例来执行实际变换。
 
 ```text
 In [6]: fft_obj = pyfftw.builders.fft(x, threads=nproc)
@@ -525,7 +525,7 @@ fftw_obj = pyfftw.builders.fft(x, threads=nproc)
 fftw_obj()
 return fftw_obj
 ```
-由NumPy的OpenBLAS后端提供[12]。下面展示fft、rfft和fft2的朴素DFT实现。
+由 NumPy 的 OpenBLAS 后端提供[12]。下面展示 fft、rfft 和 fft2 的朴素 DFT 实现。
 
 ```python
 def naive_fft(x):
@@ -545,10 +545,10 @@ def naive_fft2(x):
     y = m2.T.dot(x1.reshape(-1,n1).T)
     return y.reshape(n1,n 2, -1).transpose(2,0,1)
 ```
-在基准测试中，朴素DFT的计算时间随FFT长度N严格按N变化。这作为衡量其他FFT库性能的基准。性能基准测试结果总结于图 4.1和图 4.2。多线程并行效率显示于图 4.3。
-我们可以观察到，相对于朴素DFT的加速比在这些FFT库之间有很大差异。某些FFT长度的性能明显差于相邻数据点。这些FFT长度主要对应素数。FFT库通常没有针对这些中等大小素数的特殊优化。在这些数据点上，FFT库甚至比朴素DFT更慢。
-对于不是素数的FFT长度，numpy.fft和scipy.fft相对于朴素DFT都表现出显著的性能提升。值得注意的是，numpy.fft在多项测试中优于scipy.fft，尤其是在r2c-FFT情况下。启用多线程时，由于具有更好的内置并行实现，scipy.fft在c2c-fft、r2c-rfft和c2c-fft2任务中比numpy.fft更快。
-numpy.fft的性能优势主要归因于数据类型转换和数据移动相关开销的减少。NumPy FFT代码在执行类型转换和数据复制时比SciPy FFT函数略高效，因此在某些测试中性能优于SciPy。默认情况下，NumPy和SciPy提供的FFT函数不会修改输入数据。这些FFT库中额外的数据复制步骤因此导致显著开销。如果启用overwrite_x关键字
+在基准测试中，朴素 DFT 的计算时间随 FFT 长度 N 严格按 N 变化。这作为衡量其他 FFT 库性能的基准。性能基准测试结果总结于图 4.1 和图 4.2。多线程并行效率显示于图 4.3。
+我们可以观察到，相对于朴素 DFT 的加速比在这些 FFT 库之间有很大差异。某些 FFT 长度的性能明显差于相邻数据点。这些 FFT 长度主要对应素数。FFT 库通常没有针对这些中等大小素数的特殊优化。在这些数据点上，FFT 库甚至比朴素 DFT 更慢。
+对于不是素数的 FFT 长度，numpy.fft 和 scipy.fft 相对于朴素 DFT 都表现出显著的性能提升。值得注意的是，numpy.fft 在多项测试中优于 scipy.fft，尤其是在 r2c-FFT 情况下。启用多线程时，由于具有更好的内置并行实现，scipy.fft 在 c2c-fft、r2c-rfft 和 c2c-fft2 任务中比 numpy.fft 更快。
+numpy.fft 的性能优势主要归因于数据类型转换和数据移动相关开销的减少。NumPy FFT 代码在执行类型转换和数据复制时比 SciPy FFT 函数略高效，因此在某些测试中性能优于 SciPy。默认情况下，NumPy 和 SciPy 提供的 FFT 函数不会修改输入数据。这些 FFT 库中额外的数据复制步骤因此导致显著开销。如果启用 overwrite_x 关键字
 
 ![](../assets/figures/fig-4-1.png)
 
@@ -579,12 +579,12 @@ PyFFTW 在这些测试中表现最差。使用默认的 FFTW_ESTIMATE 规划器�
 
 **表 4.3** 各 FFT 库的优势及不利场景。
 
-### 4.4.5 选择FFT库？
+### 4.4.5 选择 FFT 库？
 
 在实际程序中应用 DFT 时，应当如何选用 FFT 库？若 DFT 并非关键瓶颈，scipy.fft 和 numpy.fft 均足够好用。但若要在高频调用的密集计算中最大化 FFT 性能，就必须全面评估各项因素，以便挑选最适合的方案：
 
-- FFT。mkl_fft是一维FFT的首选。对于多维FFT，可以考虑scipy.fft或PyFFTW。
-- 长度。mkl_fft适合短FFT长度。当FFT长度足够大时，选择取决于FFT长度的特征。如果FFT长度是随机数，很可能涉及大素数，PyFFTW可能更高效。否则，在大多数场景中mkl_fft和scipy.fft更合适。处理相对较小的素数（例如小于50的素数）时，可以使用朴素DFT。对于中等大小的素数，一维FFT可以选择mkl_fft，多维FFT可以选择scipy.fft。
+- FFT。mkl_fft 是一维 FFT 的首选。对于多维 FFT，可以考虑 scipy.fft 或 PyFFTW。
+- 长度。mkl_fft 适合短 FFT 长度。当 FFT 长度足够大时，选择取决于 FFT 长度的特征。如果 FFT 长度是随机数，很可能涉及大素数，PyFFTW 可能更高效。否则，在大多数场景中 mkl_fft 和 scipy.fft 更合适。处理相对较小的素数（例如小于 50 的素数）时，可以使用朴素 DFT。对于中等大小的素数，一维 FFT 可以选择 mkl_fft，多维 FFT 可以选择 scipy.fft。
 
 如果应用场景允许自由选择采样数据规模，为了最大化
 FFT 计算效率，通常建议选择可以因式分解为

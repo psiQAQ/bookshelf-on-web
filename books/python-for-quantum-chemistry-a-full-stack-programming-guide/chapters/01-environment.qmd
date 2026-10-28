@@ -1522,9 +1522,9 @@ $ ssh -fN -R 18888:localhost:8888 intermediate_server_ip
 - Python 包管理系统。
 - 如何创建和管理隔离的 Python 运行时环境。
 - 如何管理 Python 项目。
-- 发布Python软件包。
-- 面向对象的Python项目的设计原则。
-- IPython和Jupyter Notebook的配置。
+- 发布 Python 软件包。
+- 面向对象的 Python 项目的设计原则。
+- IPython 和 Jupyter Notebook 的配置。
 
 这些主题在学习 Python 编程的过程中经常被忽视。然而在工程实践中，它们是开发者经常面对的常见问题。花时间理解这些技术细节大有裨益。Git、Docker 以及持续集成与持续交付（CI/CD）工作流等技术虽然并非 Python 所独有，但在 Python 应用程序开发中极其常用。熟练掌握这些技术，可以大大提高程序开发和科研工作的整体效率。
 

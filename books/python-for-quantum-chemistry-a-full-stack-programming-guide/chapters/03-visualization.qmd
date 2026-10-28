@@ -292,20 +292,22 @@ plot_mole(mole)
 
 接下来展示分子静电势等值线的绘制。精确计算静电势需要第 16 章编写的程序；为简明起见，我们在此采用简化物理模型来表示三维静电势。该模型将原子的有效电荷近似为高斯分布，且该分布随距原子中心的距离 s 发生衰减：
 
-![公式图](../assets/math/eq-03-001.png){width=45%}
+$$
+\rho(s)=QN(\zeta)e^{-(s/\zeta)^{2}}.
+\qquad (3.1)
+$$
 
 []{#eq-03-001}
 
-ρ (s) = QN (ζ)e.) Q 是有效电荷，N(ζ) 是高斯分布 e 的归一化因子。参数 ζ 控制高斯分布的展宽，我们用共价半径来表征它。我们可以推导出静电势
-通过计算积分得到高斯分布电荷的 $V (r)$：
+Q 是有效电荷，N(ζ) 是高斯分布 $e^{-(s/\zeta)^{2}}$ 的归一化因子。参数 ζ 控制高斯分布的展宽，我们用共价半径来表征它。我们可以通过计算积分推导出高斯分布电荷的静电势 $V(r)$：
 
-![公式图](../assets/math/eq-03-002.png){width=54%}
+$$
+V(r)=\int\frac{\rho(s)}{|\mathbf{s}-\mathbf{r}|}d s^{2}\sin(\phi)d\phi d\theta=\frac{Q}{r}\operatorname{erf}\left(\frac{r}{\zeta}\right).
+\qquad (3.2)
+$$
 
 []{#eq-03-002}
 
-$ρ (s)$
-$V (r) = ds (φ)dφ dθ = Q erf(r).)$
-$|s − r | r ζ$
 将分子中所有原子的贡献相加，我们可以得到一个 Python 函数，用于计算指定网格上的电势。
 
 ```python
@@ -351,15 +353,12 @@ Mayavi 还支持在三维曲面上对电势分布进行着色渲染，这一任�
 我们使用 np.mgrid 为球体的极角和方位角生成均匀网格。随后将这些网格转换为笛卡尔坐标。这些网格上的电势值及其坐标被输入 mlab.mesh 函数。
 
 ```python
-def view_sph_surface(mole,f n, contours=5):
+def view_sph_surface(mole,fn, contours=5):
     mlab.figure(1, bgcolor=W, fgcolor=K, size=(500, 500))
     mlab.clf() # Clear figure
     plot_mole(mole)
     xyz = mole.loc[:,'x':'z'].to_numpy()
     xyz_center = xyz.mean(axis=0)
-```
-
-```python
     # Create a sphere surface
     radii = covalent_radius[mole.symbol].to_numpy()
     r = (np.linalg.norm(xyz - xyz_center, axis=1) + radii). max()
@@ -480,10 +479,10 @@ Out[4]:
 ### 3.4.2 格式
 
 Molden 是存储量子化学数据通用的标准文件规范，能完整记录分子构型、原子基组和轨道系数等信息。该格式极常用于呈现分子轨道，且在灵活配置后，还可直接用来可视化任意形式的自定义轨道。
-Molden 格式的结构有完善的文档记录，可以参考在线文档 https://www.theochem.ru.nl/molden/molden_format.html。下面，我们将使用 Jinja 模板展示 Molden 格式的结构。
+Molden 格式的结构有完善的文档记录，可以参考[在线文档](https://www.theochem.ru.nl/molden/molden_format.html)。下面，我们将使用 Jinja 模板展示 Molden 格式的结构。
 Molden 格式由一系列用方括号表示的区段组成，例如 [Molden Format]、[Atoms]、[GTO] 等。这些区段将 Molden 文件组织为不同的部分。
 
-```text
+```python
 molden_tpl = jinja2.Template( '''\
 [Molden Format]
 Comment lines
@@ -491,9 +490,6 @@ Comment lines
 {%- for element, atom_number,x ,y , z in atoms %}
 {{ element }} {{ loop.index }} {{ atom_number }} {{ x }} {{ y }} {{ z }}
 {%- endfor %}
-```
-
-```text
 [GTO]
 {%- for gto_shells in gtos %}
 {{ loop.index }} 0
@@ -536,12 +532,7 @@ def gto_session(basis_name, element):
                       for shell in basis['electron_shells']])
 ```
 [GTO] 区段之后的 [5d] 和 [7f] 区段是可选的。这些区段指定原子基函数使用球面 D 和 F 函数。
-接下来，可以在 [MO] 区段中包含电子轨道。如下面的 mo_tpl 模板所示，对于每个轨道，MO 区段允许指定各种属性，包括对称性、轨道能量和占据数等，随后是一列轨道系数。处理轨道系数时，请注意 D、F 和 G 函数的顺序。例如，球面 D 函数
-
-```text
-arrangedasD0, D+1, D-1, D+2, D-2.Forsimplicity,we haveomittedthereordering
-```
-过程。
+接下来，可以在 [MO] 区段中包含电子轨道。如下面的 mo_tpl 模板所示，对于每个轨道，MO 区段允许指定各种属性，包括对称性、轨道能量和占据数等，随后是一列轨道系数。处理轨道系数时，请注意 D、F 和 G 函数的顺序。例如，球面 D 函数按 D0、D+1、D−1、D+2、D−2 的顺序排列。为简洁起见，我们省略了这些轨道的重排过程。
 
 ```python
 mo_tpl = jinja2.Template( '''\
@@ -586,7 +577,7 @@ Cube 格式源自 Gaussian 计算化学软件。它已成为存储体积量子�
 Gaussian 官方手册简述了 Cube 格式规范，更多细节亦见于各类技术文档 [15,16]。尽管 Cube 文件本质上是纯文本，但其排版格式极其严格。文件头必须依序包含体区域原点、体素步长、体系原子坐标以及网格场数值。写入原子与体素元数据时，整型数据须固定为 5d 格式，浮点数采用 12.6f 格式；而在存储三维场数据时，数值必须遵循 13.5E 格式，且规定每行输出六个数值。
 以下 Jinja 模板展示了 Cube 格式的结构。
 
-```text
+```python
 cube_tpl = jinja2.Template( '''\
 Comment line 1
 Comment line 2
@@ -599,14 +590,11 @@ Comment line 2
     '%12.6f' % vx[2] }}
 {{ '%5d' % n_voxels[1] }} {{ '%12.6f' % vy[0] }} {{ '%12.6f' % vy[1] }} {{
     '%12.6f' % vy[2] }}
-```
-
-```python
 {{ '%5d' % n_voxels[2] }} {{ '%12.6f' % vz[0] }} {{ '%12.6f' % vz[1] }} {{
     '%12.6f' % vz[2] }}
 {%- set charge = 0 %}
 {% for atom_number,x ,y , z in atoms -%}
-{{ '%5d' % atom_number }} {{ '%12.6f' % charge }} {{ '%12.6f '%x} }{ {
+{{ '%5d' % atom_number }} {{ '%12.6f' % charge }} {{ '%12.6f' % x }} {{
     '%12.6f' % y }} {{ '%12.6f' % z }}
 {% endfor -%}
 {% for data in volumetric_data -%}

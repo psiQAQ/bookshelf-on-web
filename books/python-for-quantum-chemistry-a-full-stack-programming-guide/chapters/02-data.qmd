@@ -40,11 +40,11 @@ import numpy as np
 
 ### 2.1.1 NumPy 基础
 
-如果你是 NumPy 初学者，可以利用众多资源快速学习其基础知识。除了 https://numpy.org/doc/ stable/user/absolute beginners.html 上的 NumPy 官方教程外，还有几份有用的资料可供参考。
+如果你是 NumPy 初学者，可以利用众多资源快速学习其基础知识。除了 [NumPy 绝对入门教程](https://numpy.org/doc/stable/user/absolute_beginners.html)这一官方教程外，还有几份有用的资料可供参考。
 
-- Justin Johnson 的 Numpy Tutorial（使用 Jupyter 和 Colab），可通过 https://cs231n.github.io/python-numpy-tutorial/ 访问。这是一份交互式教程，可以让你在 Jupyter Notebook 中使用 NumPy 代码示例。
-- Scientific Python Lectures 全面介绍了 NumPy 的基础和高级功能，并配有许多说明性图示。此书可通过 https://lectures.scientific-python.org/ 获取。
-- https://numpy.org/learn/ 上的学习文档。该网站收集了适合不同水平的 NumPy（和 SciPy）用户的各种学习材料。
+- Justin Johnson 的 Numpy Tutorial（使用 Jupyter 和 Colab），可通过 [Numpy Tutorial 页面](https://cs231n.github.io/python-numpy-tutorial/)访问。这是一份交互式教程，可以让你在 Jupyter Notebook 中使用 NumPy 代码示例。
+- Scientific Python Lectures 全面介绍了 NumPy 的基础和高级功能，并配有许多说明性图示。此书可通过 [Scientific Python Lectures 网站](https://lectures.scientific-python.org/)获取。
+- [NumPy 学习文档](https://numpy.org/learn/)。该网站收集了适合不同水平的 NumPy（和 SciPy）用户的各种学习材料。
 
 我们不打算重复现有的优秀 NumPy 学习资源中的内容。下面，我们简要分类 NumPy 的基本功能，并列出每个类别中最常用的一些函数：
 
@@ -127,18 +127,22 @@ Ufunc 让我们仅凭单条命令即可操作整块数组，省去了缓慢的 P
 
 下面通过具体算例展示利用 out 关键字复用输出存储的优势。设有一特定分布函数，要在正 x 轴上求满足方程 P (x) = ϵ 的解：
 
-![公式图](../assets/math/eq-02-001.png){width=44%}
+$$
+P(x)=x\exp(-ax^{2}).
+\qquad (2.1)
+$$
 
 []{#eq-02-001}
 
-P (x) = x exp(− ax).) 这个问题可以用不动点迭代求解：
+这个问题可以用不动点迭代求解：
 
-![公式图](../assets/math/eq-02-002.png){width=44%}
+$$
+x_{i+1}=\sqrt{\frac{1}{a}\log\left(\frac{x_{i}}{\epsilon}\right)}.
+\qquad (2.2)
+$$
 
 []{#eq-02-002}
 
-xi+1 = log(xi).)
-a ϵ
 我们可以使用 ufunc 实现这一迭代：
 
 ```python
@@ -511,10 +515,11 @@ NumPy 核心库使用 strides 属性计算数组中各个元素的内存地址�
 $$
 H=\begin{pmatrix}
 a_{0} & a_{1} & a_{2} & \cdots & a_{n-1}\\
-a_{1} & a_{2} & a_{3} & \cdots & a_{n}\\
-a_{2} & a_{3} & \cdots & \ddots & a_{2n-3}\\
+a_{1} & a_{2} & a_{3} & & a_{n}\\
+a_{2} & a_{3} & & \iddots & \vdots\\
+\vdots & & \iddots & & a_{2n-3}\\
 a_{n-1} & a_{n} & \cdots & a_{2n-3} & a_{2n-2}
-\end{pmatrix}
+\end{pmatrix}.
 \qquad (2.3)
 $$
 
@@ -1016,25 +1021,33 @@ array([mpf('0.0'), mpf( '1.0'), mpf( '1.414213562373095048801688713')], dtype
     =object)
 ```
 结合 mpf 数组和 np.vectorize 生成的 ufunc，我们可以使用更复杂的 NumPy 功能。例如，NumPy 有一个用于执行离散傅里叶变换（discrete Fourier transform，DFT）操作的模块 np.fft。其核心函数包括
-np.fft.fft，用于 DFT 公式
+np.fft.fft 和 np.fft.ifft，分别用于 DFT 及其逆变换公式：
 
-![公式图](../assets/math/eq-02-005.png){width=45%}
+$$
+f_{m}=\sum_{n=0}^{N-1}x_{n}e^{-i2\pi k_{m}n},
+\qquad (2.4)
+$$
 
 []{#eq-02-005}
 
-![公式图](../assets/math/eq-02-006.png){width=45%}
+$$
+x_{n}=\frac{1}{N}\sum_{m=0}^{N-1}f_{m}e^{i2\pi k_{m}n},
+\qquad (2.5)
+$$
 
 []{#eq-02-006}
 
 其中，由 np.fft.fftfreq 函数生成的采样频率 km 在一个周期内居中。
 
-![公式图](../assets/math/eq-02-007.png){width=30%}
+$$
+\begin{aligned}
+k_m &\in [0, \frac{1}{n}, \ldots, \frac{n/2-1}{n}, -\frac{1}{2}, \ldots, -1], \quad n \text{ is even}, \qquad (2.6)\\
+k_m &\in [0, \frac{1}{n}, \ldots, \frac{n-1}{2n}, -\frac{n-1}{2n}, \ldots, -1], \quad n \text{ is odd}. \qquad (2.7)
+\end{aligned}
+$$
 
 []{#eq-02-007}
-
-![公式 (2.7)](../assets/math/eq-02-008.png){width=57%}
-
-**公式 (2.7)**[]{#eq-02-008}
+[]{#eq-02-008}
 
 任意精度的 DFT 及其逆变换可以实现如下：
 

@@ -31,9 +31,11 @@ scipy.linalg 的功能增强主要体现在以下几类：
 用于 Hessenberg 分解的 hessenberg() 和用于 Schur 分解的 schur()。某些分解函数可以利用矩阵的特殊性质，例如用于带状矩阵 Cholesky 分解的 cholesky_banded()、用于带状矩阵特征值分解的 eig_banded()，以及用于实对称三对角矩阵特征值问题的 eigh_tridiagonal()。
 
 - 矩阵的数学函数，例如 expm()、logm()、sqrtm()、cosm()、sinm()、tanm()。
-- 特殊矩阵及更多数组构造器，例如用于创建分块对角矩阵的 block_diag()、用于创建伴随矩阵的 companion()、用于创建离散傅里叶变换（discrete Fourier transform，DFT）矩阵的 dft()，其定义为 Amn =
+- 特殊矩阵及更多数组构造器，例如用于创建分块对角矩阵的 block_diag()、用于创建伴随矩阵的 companion()、用于创建离散傅里叶变换（discrete Fourier transform，DFT）矩阵的 dft()，其定义为
 
-![公式图](../assets/math/eq-04-001.png){width=30%}
+$$
+A_{mn}=\exp\left(-\frac{2i\pi mn}{N}\right).
+$$
 
 []{#eq-04-001}
 
@@ -48,7 +50,13 @@ scipy.linalg 的功能增强主要体现在以下几类：
 - SciPy 的 cholesky 函数默认执行上三角 Cholesky 分解。为了与 NumPy 中的行为一致，应指定关键字参数 lower=False。
 - SciPy 中的 eigh 函数可以求解广义特征值问题，包括
 
-![公式图](../assets/math/eq-04-002.png){width=30%}
+$$
+\begin{aligned}
+Av &= \lambda Bv,\\
+ABv &= \lambda v, \quad \text{or}\\
+BAv &= \lambda v.
+\end{aligned}
+$$
 
 []{#eq-04-002}
 
@@ -179,27 +187,32 @@ scipy.sparse.linalg 函数的基本用法非常直观。此处不再展开罗列
 我们可以使用 scipy.sparse.linalg.LinearOperator 类表示通过矩阵向量积定义的稀疏矩阵。实际上，scipy.sparse.linalg 模块中的所有迭代算法都依赖 LinearOperator 类提供的 matvec 接口，无论底层矩阵是稠密矩阵、稀疏矩阵还是纯函数算符。
 为展示 LinearOperator 类的用法，我们考虑一个简单例子：一维谐振子的哈密顿量：
 
-![公式图](../assets/math/eq-04-003.png){width=45%}
+$$
+\hat H=-\frac{1}{2m}\frac{d^{2}}{dx^{2}}+\frac{k}{2}x^{2},
+\qquad (4.1)
+$$
 
 []{#eq-04-003}
 
-H =− 1 k x,)
-2m dx 2
 其中 m 表示粒子质量，k 是力常数。为了求解含时无关薛定谔方程
 
-![公式图](../assets/math/eq-04-004.png){width=40%}
+$$
+\hat H\psi=E\psi,
+\qquad (4.2)
+$$
 
 []{#eq-04-004}
 
 我们将哈密顿量和波函数都离散化到间距为 a 的一维网格上。动能项可以使用有限差分公式计算
 （采用开放边界条件）：
 
-![公式图](../assets/math/eq-04-005.png){width=56%}
+$$
+\frac{d^{2}}{dx^{2}}\psi(x_n)\approx\frac{1}{a^{2}}\bigl(\psi(x_{n-1})-2\psi(x_n)+\psi(x_{n+1})\bigr).
+\qquad (4.3)
+$$
 
 []{#eq-04-005}
 
-≈ 1 − 1) − 2 ψ(xn) + ψ(xn +1)).)
-dx a
 依据该公式，可以直接写出计算作用结果 H ψ 的 matvec 函数。借助 LinearOperator 类将 matvec 函数封装包装后，即可得到能与 scipy.sparse.linalg 无缝对接的算符对象，随后调用迭代特征值求解器便能求出量子体系的基态能量及本征态。
 
 ```python
@@ -228,13 +241,13 @@ if __name__ == '__main__':
 
 许多科学计算任务涉及对多个张量乘积的特定指标求和，这类运算通常可以直接表述为张量缩并。例如，在计算一组向量的协方差矩阵时：
 
-![公式图](../assets/math/eq-04-006.png){width=55%}
+$$
+\operatorname{cov}(X_i,X_j)=\frac{1}{n-1}\sum_{k=1}^{n}(X_{ik}-\bar X_i)(X_{jk}-\bar X_j),
+\qquad (4.4)
+$$
 
 []{#eq-04-006}
 
-∑
-cov (Xi,Xj) = 1 (Xik − ¯Xi)(Xjk − ¯Xj),)
-n − 1
 我们可以使用 for 循环实现程序：
 
 ```python
@@ -336,22 +349,22 @@ Wall time: 1.08 s
 傅里叶变换广泛应用于科学计算的诸多领域。在量子化学应用中，它可用于计算库仑相互作用、积分计算、求解微分方程及其他数值处理。在
 实际计算程序中，离散傅里叶变换（DFT）常用于对空间中均匀分布的采样数据 xn 进行傅里叶变换（FT），该过程会输出一系列在均匀分布频率 k 上表示的数据点 yk。
 
-![公式图](../assets/math/eq-04-007.png){width=48%}
+$$
+y_k=\sum_{n=0}^{N-1}x_n\exp\left(\frac{-2i\pi nk}{N}\right).
+\qquad (4.5)
+$$
 
 []{#eq-04-007}
 
-∑ − 2iπ nk
-yk = xn exp.)
-N
 逆 DFT 由下式给出
 
-![公式图](../assets/math/eq-04-008.png){width=48%}
+$$
+x_n=\frac{1}{N}\sum_{k=0}^{N-1}y_k\exp\left(\frac{2i\pi nk}{N}\right).
+\qquad (4.6)
+$$
 
 []{#eq-04-008}
 
-∑ 2iπ nk
-xn = 1 yk exp.)
-N N
 利用快速傅里叶变换（Fast Fourier Transform，FFT）算法可以极高效地完成 DFT 计算。尽管朴素 DFT 复杂度看似为 O(n)，但经典的 Cooley-Tukey 算法 [5] 能将复杂度大幅降低至 O(n log (n))。当变换长度可分解为小素数因子乘积（如 2、3、5）时，Cooley-Tukey 算法极为高效。面对大素数长度，其他算法 [6,7] 虽也能保证任意长度下的 O(n log n) 复杂度，但在计算性能上通常远逊于可因式分解的场景。
 
 ### 4.4.1 FFT

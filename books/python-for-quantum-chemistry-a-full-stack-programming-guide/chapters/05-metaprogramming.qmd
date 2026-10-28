@@ -23,7 +23,7 @@
 Python 内置函数 eval 和 exec 能够解析并求值字符串中的代码。借助这一特性，我们可以动态拼装代码字符串并在运行时直接执行。
 eval 和 exec 的函数签名相似：
 
-```text
+```python
 eval(expr, globals=None, locals=None)
 exec(code, globals=None, locals=None)
 ```
@@ -67,12 +67,12 @@ class Foo(metaclass=Meta):
 只要指定 metaclass 关键字，创建 Foo 类时便会调用类工厂 Meta。Meta 类能够直接访问并修改 Foo 类的所有属性与方法，不论公有私有。不过 metaclass 在日常开发中相对少见，想深入了解元类的读者可参阅 Fluent Python: Clear, Concise, and Effective Programming 一书。接下来我们探讨另一种更为常见的方法：利用 type 函数动态生成类。
 Python 中 type 函数的主要功能是确定对象的数据类型。其效果与访问对象的 __class__ 属性相同：object.__class__。type 的第二个功能是动态创建类：
 
-```text
+```python
 new_cls = type(cls_name, (bases,), cls_attrs)
 ```
 这里，cls_name 是表示类名的字符串，类似于在普通类中访问 cls.__name__。bases 是由作为父类的类组成的元组，在普通类中可以通过 cls.__bases__ 找到。cls_attrs 是记录类中属性和方法映射的字典，在普通类中可以通过 cls.__dict__ 访问。例如，
 
-```yaml
+```python
 dyn_cls = type( 'DynamicClass', (BaseClass, ClassMixin), {'a':4 2, '__repr__': lambda self: f 'DynamicClass({self.a})', 'inc': lambda self, n=1: self.a + n})
 ```
 这条语句等价于使用以下代码创建一个新类：
@@ -105,23 +105,12 @@ Python 标准模块 ast 提供了一套用于检查和修改 Python 程序 AST �
 分析或修改 AST 离不开对语法树的遍历操作。简单直接的做法是调用 ast.walk 函数，它能够遍历给定节点下的全部子节点。不过当任务只涉及 AST 树中的特定节点或语法元素时，更推荐继承 ast.NodeVisitor 类遍历树，并继承 ast.NodeTransformer 类就地修改。为这两个类定义 visit_X 方法后，遇到类型为 X 的节点时就会自动调用自定义方法（X 代表 AST 中的节点类型，如 Assign、Call、Expr、Constant 等）。下面我们通过一个更贴近实际的例子，探索如何使用 NodeVisitor 和 NodeTransformer 类。
 假设我们想开发一个通过删除不可到达代码来优化 Python 程序的函数，可以使用以下算法实现该任务：
 
-1. 函数的 AST，以识别变量之间的所有依赖关系。
+1. 分析函数的 AST，以识别变量之间的所有依赖关系。我们可以假设这些依赖关系是通过赋值语句引入的。
+2. 依赖关系映射构成一棵依赖树，其根是函数的返回值。可到达变量是与根节点相连的叶节点。
+3. 识别映射中所有未连接的元素。这些是未使用的变量。
+4. 遍历 AST 并删除涉及未使用变量的所有语句。
+5. 使用 ast.unparse 和 exec 函数将所得 AST 编译成 Python 代码。
 
-我们可以假设这些依赖关系是通过赋值语
-句引入的。
-
-2. 依赖关系映射构成一棵依赖树，其根是函数的返回
-
-值。可到达变量是与
-根节点相连的叶节点。
-
-3. 映射中所有未连接的元素。这些是未使用的变
-
-量。
-
-4. AST 并删除涉及未使用变量的所有语句。5. 使用 ast.unparse 和 exec 函
-
-数将所得 AST 转换为 Python 代码。
 首先，我们使用 ast.NodeVisitor 类搜索与赋值语句相关的依赖关系映射。为此，我们创建 ast.NodeVisitor 的子类，并使用 visit_Assign 方法检查 Assign 节点。为了收集每个 Assign 节点中的所有变量，我们调用通用树遍历函数 ast.walk() 并筛选 ast.Name 节点，因为变量名由 ast.Name 节点表示。依赖关系是从一个字符串到多个字符串的映射，存储在字典中。
 
 ```python
@@ -328,11 +317,14 @@ sympy.integrate(expr, (variable, lower_limit, upper_limit))
 - 方程。通用函数 sympy.solve 可用于求解多种方程，包括多项式方程、超越方程和线性方程。SymPy 还为每种类型的方程提供专用求解器。sympy.solveset 函数旨在求出不等式或方程的有限集合或区间。对于线性方程，sympy.linsolve 是以矩阵形式求解的专用函数。对于非线性方程，可以使用 sympy.nonlinsolve 以矩阵形式求解。此外，sympy.nsolve 可用于数值求解非线性方程。
 - 微分方程（ODE）。求解 ODE 时，sympy.dsolve 函数与 sympy.Eq 和 sympy.Function 类结合使用。例如，微分方程
 
-![公式图](../assets/math/eq-05-001.png){width=41%}
+$$
+xf'(x)=\cos(x)
+\qquad (5.1)
+$$
 
 []{#eq-05-001}
 
-xf (x) = cos (x)) 可以转换为 SymPy 代码
+可以转换为 SymPy 代码
 
 ```text
 f = sympy.Function( 'f')
@@ -402,13 +394,13 @@ AD 技术是机器学习和神经网络发展的基石。神经网络领域的�
 
 的学习门槛较低，因为它的运作方式与标准 Python 面向对象编程风格非常相似。让我们考虑一个计算库仑能的简单问题，以展示 PyTorch 的自动微分（AD）能力。给定一组坐标为 r、电荷为 Z 的点，库仑能可以计算为
 
-![公式图](../assets/math/eq-05-002.png){width=70%}
+$$
+E=\sum_{i>j}\frac{Z_iZ_j}{|\mathbf{r}_i-\mathbf{r}_j|}.
+\qquad (5.2)
+$$
 
 []{#eq-05-002}
 
-∑ ZiZj
-E =.)
-|ri − r j |
 这个函数可以使用 NumPy 广播规则实现。
 
 ```python
@@ -470,13 +462,15 @@ Out[6]: tensor(3.)
 ```
 如果需要自定义某些函数的梯度，我们可以继承 torch.autograd.Function 类来修改求导规则。在子类中，提供 forward 和 backward 方法来定义前向和反向过程。例如，假设我们打算对库仑能函数实现以下求导，
 
-![公式 (5.4)](../assets/math/eq-05-003.png){width=47%}
+$$
+\begin{aligned}
+\frac{\partial E}{\partial x_k} &= \sum_{j\ne k}-\frac{Z_kZ_j(\mathbf{r}_k-\mathbf{r}_j)}{|\mathbf{r}_k-\mathbf{r}_j|^{3}} \qquad (5.3)\\
+\frac{\partial E}{\partial Z_k} &= \sum_{j\ne k}\frac{Z_j}{|\mathbf{r}_k-\mathbf{r}_j|}, \qquad (5.4)
+\end{aligned}
+$$
 
-**公式 (5.4)**[]{#eq-05-003}
+[]{#eq-05-003}
 
-= − Zk) ∂xk |rk − r j |
-∂E ∑ Zj
-=, (5.4) ∂Zk |rk − r j |
 我们可以如下实现该子类。
 
 ```python

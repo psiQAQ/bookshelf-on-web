@@ -21,45 +21,71 @@
 
 在平均场方法中，波函数由单个 Slater 行列式（Slater determinant）表示。利用一组单粒子轨道 φi，既能直接构建 Slater 行列式，也能推导出平均场方法的总能量表达式：
 
-![公式图](../assets/math/eq-13-001.png){width=30%}
+$$
+E_{\mathrm{HF}}=\sum_{i\in\mathrm{occ}}\langle\phi_i|h_{\mathrm{core}}|\phi_i\rangle+E_{\mathrm{coul}}+E_{\mathrm{x}}+E_{\mathrm{nn}},
+\qquad (13.1)
+$$
 
 []{#eq-13-001}
 
-![公式图](../assets/math/eq-13-002.png){width=30%}
+$$
+E_{\mathrm{KS}}=\sum_{i\in\mathrm{occ}}\langle\phi_i|h_{\mathrm{core}}|\phi_i\rangle+E_{\mathrm{coul}}+E_{\mathrm{xc}}+E_{\mathrm{nn}}.
+\qquad (13.2)
+$$
 
 []{#eq-13-002}
 
-![公式图](../assets/math/eq-13-003.png){width=30%}
+$$
+h_{\mathrm{core}}=\sum_i-\frac{1}{2}\nabla_i^2\sum_{iA}\frac{-Z_A}{|\mathbf{r}_i-\mathbf{R}_A|}.
+\qquad (13.3)
+$$
 
 []{#eq-13-003}
 
 Ecoul、Ex 和 Exc 分别对应与双电子相互作用相关的库仑能、精确交换能和交换相关（exchange-correlation，XC）能。Enn 表示核排斥能。
 将变分原理应用于总能量，可以得到轨道的本征值方程
 
-![公式图](../assets/math/eq-13-004.png){width=40%}
+$$
+\mathbf{FC}=\mathbf{SCE},
+\qquad (13.4)
+$$
 
 []{#eq-13-004}
 
 其中，F 是 Fock 矩阵，S 是重叠矩阵，C 是轨道系数，E 是轨道能量。Fock 矩阵由两项组成：一般来说，Veff 可以表示为若干分量的组合：
 
-![公式图](../assets/math/eq-13-005.png){width=45%}
+$$
+\mathbf{V}_{\mathrm{eff}}=\mathbf{J}-a\mathbf{K}+b\mathbf{V}_{\mathrm{xc}}.
+\qquad (13.6)
+$$
 
 []{#eq-13-005}
 
 J 矩阵源于库仑能 Ecoul，而 K 和 Vxc 分别由精确交换能 Ex 和交换相关能 Exc 导出。Veff 是区分不同平均场模型的关键量，例如闭壳层方法、开壳层方法和广义自旋轨道方法中的 Hartree-Fock（HF）和 Kohn-Sham（KS）模型。例如，在闭壳层 HF 方法中，Veff
 对应于 a = 1、b = 0。
 
-![公式图](../assets/math/eq-13-006.png){width=30%}
+$$
+\mathbf{V}_{\mathrm{eff}}=\mathbf{J}-\frac{1}{2}\mathbf{K}
+\qquad (13.7)
+$$
 
 []{#eq-13-006}
 
 其中
 
-![公式 (13.8)(13.9)](../assets/math/eq-13-007.png){width=45%}
+$$
+\begin{aligned}
+J_{\mu\nu}&=\sum_{\kappa\lambda}(\mu\nu|\kappa\lambda)\gamma_{\lambda\kappa},\qquad (13.8)\\
+K_{\mu\nu}&=\sum_{\kappa\lambda}(\mu\lambda|\kappa\nu)\gamma_{\lambda\kappa},\qquad (13.9)
+\end{aligned}
+$$
 
-**公式 (13.8)(13.9)**[]{#eq-13-007}
+[]{#eq-13-007}
 
-![公式图](../assets/math/eq-13-008.png){width=44%}
+$$
+\gamma_{\mu\nu}=\sum_{i\in\mathrm{occ}}2C_{\mu i}C_{\nu i}^{*}.
+\qquad (13.10)
+$$
 
 []{#eq-13-008}
 
@@ -373,7 +399,10 @@ def contract_k_s8(kmat, gto_params,d m, shell_idx):
 细心的读者会发现，ERI 的数值跨度往往极大。在中等大小的分子中，绝大多数 ERI 的值非常接近零，它们对 J/K 矩阵的贡献完全可以忽略。同样，若密度矩阵元素的值极小，就可以省略相关 ERI 与张量缩并计算。根据 ERI 和密度矩阵元素的大小，引入筛选机制即可排除对最终结果贡献微弱的计算。
 为了估算 ERI 的数值大小，可使用 Schwarz 不等式求得 ERI 的严格上界：
 
-![公式图](../assets/math/eq-13-009.png){width=70%}
+$$
+(ij|kl)\leq\sqrt{(ij|ij)}\sqrt{(kl|kl)}.
+\qquad (13.13)
+$$
 
 []{#eq-13-009}
 
@@ -548,106 +577,171 @@ def reduced_cart_iter(n):
 Kohn-Sham 密度泛函理论（KS-DFT）方法需要在 get_veff 函数中计算交换关联（exchange-correlation，XC）势 Vxc。这涉及两项计算任务：计算 XC 泛函 ϵxc 的导数，以及进行数值积分以获得 XC 矩阵 Vxc。
 在一些文献中，XC 泛函定义为每个粒子的 XC 能量 exc[ρ]，由此得到 XC 能量的以下积分：
 
-![公式图](../assets/math/eq-13-010.png){width=47%}
+$$
+E_{\mathrm{xc}}[\rho]=\int e_{\mathrm{xc}}[\rho]\rho(r)d^3\mathbf{r}.
+\qquad (13.14)
+$$
 
 []{#eq-13-010}
 
 Exc[ρ]= exc[ρ]ρ (r)d r.) 然而，为简单起见，本节将 XC 泛函 ϵxc[ρ] 定义为 Exc 的被积函数：
 
-![公式图](../assets/math/eq-13-011.png){width=45%}
+$$
+E_{\mathrm{xc}}[\rho]=\int\epsilon_{\mathrm{xc}}[\rho]d^3\mathbf{r},
+\qquad (13.15)
+$$
 
 []{#eq-13-011}
 
 的积分，其中
 
-![公式图](../assets/math/eq-13-012.png){width=40%}
+$$
+\epsilon_{\mathrm{xc}}=e_{\mathrm{xc}}\rho.
+\qquad (13.16)
+$$
 
 []{#eq-13-012}
 
 LibXC [13] 和 XCFun [14] 等常用 XC 泛函库采用这一约定。该积分中的电子密度使用密度矩阵 γ 和原子轨道（AO）函数 χ (r) 计算。例如，自旋向上电子的密度可以表示为
 
-![公式图](../assets/math/eq-13-013.png){width=46%}
+$$
+\rho_{\uparrow}=\sum_{\mu\nu}\gamma_{\nu\mu}^{\uparrow}\chi_{\mu}(\mathbf{r})\chi_{\nu}^{*}(\mathbf{r}).
+\qquad (13.17)
+$$
 
 []{#eq-13-013}
 
 对于局域密度近似（Local Density Approximation，LDA）泛函 ϵxc[ρ↑,ρ ↓]，自旋向上轨道的 XC 矩阵可以表示为
 
-![公式图](../assets/math/eq-13-014.png){width=50%}
+$$
+(V_{\mathrm{xc}}^{\uparrow})_{\mu\nu}=\frac{\partial E_{\mathrm{xc}}}{\partial\gamma_{\nu\mu}^{\uparrow}}=\int\chi_{\mu}\chi_{\nu}\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}}d^3\mathbf{r}.
+\qquad (13.18)
+$$
 
 []{#eq-13-014}
 
 采用一组合适的积分网格 rn 和权重 ωn，可以通过数值方法计算 LDA 矩阵元素。
 
-![公式图](../assets/math/eq-13-015.png){width=50%}
+$$
+(V_{\mathrm{xc}}^{\uparrow})_{\mu\nu}=\sum_n\omega_n\chi_{\mu}(\mathbf{r}_n)\chi_{\nu}(\mathbf{r}_n)\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}}.
+\qquad (13.19)
+$$
 
 []{#eq-13-015}
 
 对于广义梯度近似（Generalized Gradient Approximation，GGA）泛函 ϵxc[ρ,σ]，它还依赖于收缩后的密度梯度
 σ↑↑ =∇ ρ ↑ ·∇ ρ↑, σ ↑↓ =∇ ρ ↑ ·∇ ρ↓, σ ↓↓ =∇ ρ ↓ ·∇ ρ↓.) 自旋向上轨道的 XC 矩阵元素可以计算为
 
-![公式 (13.21)](../assets/math/eq-13-016.png){width=66%}
+$$
+\begin{aligned}
+(V_{\mathrm{xc}}^{\uparrow})_{\mu\nu}&=\int\chi_{\mu}\chi_{\nu}\left(\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}}+\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\uparrow}}\frac{\partial\sigma_{\uparrow\uparrow}}{\partial\gamma_{\nu\mu}^{\uparrow}}+\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\downarrow}}\frac{\partial\sigma_{\uparrow\downarrow}}{\partial\gamma_{\nu\mu}^{\uparrow}}\right)d^3\mathbf{r}\\
+&=\int\chi_{\mu}\chi_{\nu}\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}}+\nabla(\chi_{\mu}\chi_{\nu})\cdot\left(2\nabla\rho_{\uparrow}\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\uparrow}}+\nabla\rho_{\downarrow}\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\downarrow}}\right)d^3\mathbf{r}.
+\end{aligned}
+\qquad (13.21)
+$$
 
-**公式 (13.21)**[]{#eq-13-016}
+[]{#eq-13-016}
 
 这一积分可以转换为如下数值积分程序：
 
-![公式图](../assets/math/eq-13-017.png){width=65%}
+$$
+(V_{\mathrm{xc}}^{\uparrow})_{\mu\nu}=\sum_n\omega_n\Big(\chi_{\mu}(\mathbf{r}_n)\chi_{\nu}(\mathbf{r}_n)v_{\rho\uparrow}+\nabla(\chi_{\mu}(\mathbf{r}_n)\chi_{\nu}(\mathbf{r}_n))\cdot v_{\nabla\rho\uparrow}\Big),
+\qquad (13.22)
+$$
 
 []{#eq-13-017}
 
 (V ↑)μν = ωn χμ(rn)χν (rn)vρ ↑ +∇ (χμ(rn)χν (rn)) · v ∇ ρ↑,) 其中
 
-![公式图](../assets/math/eq-13-018.png){width=49%}
+$$
+v_{\nabla\rho\uparrow}=2\nabla\rho_{\uparrow}\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\uparrow}}+\nabla\rho_{\downarrow}\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\downarrow}}.
+\qquad (13.23)
+$$
 
 []{#eq-13-018}
 
 对于 meta-GGA 泛函 ϵxc[ρ,σ,τ]，动能密度 τ 定义为
 
-![公式图](../assets/math/eq-13-019.png){width=70%}
+$$
+\tau=\frac{1}{2}\sum_{\mu\nu}\nabla\chi_{\mu}\cdot\nabla\chi_{\nu}\gamma_{\nu\mu}^{\uparrow}.
+\qquad (13.24)
+$$
 
 []{#eq-13-019}
 
 τ = 1 ∇ χμ ·∇ χνγ) 我们可以对 XC 矩阵进行数值积分：
 
-![公式 (13.25)](../assets/math/eq-13-020.png){width=62%}
+$$
+\begin{aligned}
+(V_{\mathrm{xc}}^{\uparrow})_{\mu\nu}=\sum_n\omega_n\Big(&\chi_{\mu}(\mathbf{r}_n)\chi_{\nu}(\mathbf{r}_n)\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}}+\nabla(\chi_{\mu}(\mathbf{r}_n)\chi_{\nu}(\mathbf{r}_n))\cdot v_{\nabla\rho\uparrow}\\
+&+\frac{1}{2}\nabla\chi_{\mu}(\mathbf{r}_n)\cdot\nabla\chi_{\nu}(\mathbf{r}_n)\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\tau_{\uparrow}}\Big).
+\end{aligned}
+\qquad (13.25)
+$$
 
-**公式 (13.25)**[]{#eq-13-020}
+[]{#eq-13-020}
 
 在稳定性分析与含时密度泛函理论等平均场应用中，可能需要 XC 泛函的高阶导数。这些高阶 XC 导数的积分计算更为繁复。我们以 GGA 泛函的二阶导数为例展开讨论，f ↑↑xc 的积分可写为：
 
-![公式 (13.26)](../assets/math/eq-13-021.png){width=50%}
+$$
+(f_{\mathrm{xc}}^{\uparrow\uparrow})_{\mu\nu,\kappa\lambda}=\frac{\partial(V_{\mathrm{xc}})_{\mu\nu}}{\partial\gamma_{\kappa\lambda}^{\uparrow}}=\int qd^3\mathbf{r},
+\qquad (13.26)
+$$
 
-**公式 (13.26)**[]{#eq-13-021}
+[]{#eq-13-021}
 
 其中被积函数 q 表示为：
 
-![公式 (13.27)](../assets/math/eq-13-022.png){width=63%}
+$$
+\begin{aligned}
+q&=\chi_{\mu}\chi_{\nu}\chi_{\kappa}\chi_{\lambda}\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}\partial\rho_{\uparrow}}\\
+&+\chi_{\mu}\chi_{\nu}\nabla(\chi_{\kappa}\chi_{\lambda})\cdot\left(2\nabla\rho_{\uparrow}\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}\partial\sigma_{\uparrow\uparrow}}+\nabla\rho_{\downarrow}\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}\partial\sigma_{\uparrow\downarrow}}\right)\\
+&+\chi_{\kappa}\chi_{\lambda}\nabla(\chi_{\mu}\chi_{\nu})\cdot\left(2\nabla\rho_{\uparrow}\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}\partial\sigma_{\uparrow\uparrow}}+\nabla\rho_{\downarrow}\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}\partial\sigma_{\uparrow\downarrow}}\right)\\
+&+2\nabla(\chi_{\mu}\chi_{\nu})\cdot\left(2\nabla\rho_{\uparrow}\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\uparrow}\partial\sigma_{\uparrow\uparrow}}+\nabla\rho_{\downarrow}\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\uparrow}\partial\sigma_{\uparrow\downarrow}}\right)\nabla(\chi_{\kappa}\chi_{\lambda})\cdot\nabla\rho_{\uparrow}\\
+&+\nabla(\chi_{\mu}\chi_{\nu})\cdot\left(2\nabla\rho_{\uparrow}\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\uparrow}\partial\sigma_{\uparrow\downarrow}}+\nabla\rho_{\downarrow}\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\downarrow}\partial\sigma_{\uparrow\downarrow}}\right)\nabla(\chi_{\kappa}\chi_{\lambda})\cdot\nabla\rho_{\downarrow}\\
+&+2\nabla(\chi_{\mu}\chi_{\nu})\cdot\nabla(\chi_{\kappa}\chi_{\lambda})\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\uparrow}}.
+\end{aligned}
+\qquad (13.27)
+$$
 
-**公式 (13.27)**[]{#eq-13-022}
+[]{#eq-13-022}
 
 若直接依据此式计算积分，就需要生成各种中间量。这会显著增加数值积分程序的实现复杂性，使其更容易出错。实际上，可以将该公式转换为张量收缩过程，从而简化 XC 泛函的数值积分。
 我们把密度变量（ρ、∇ ρ 和 τ）统一视作一般变量 x
 
-![公式图](../assets/math/eq-13-023.png){width=32%}
+$$
+x=(\rho_{\uparrow},\nabla_x\rho_{\uparrow},\nabla_y\rho_{\uparrow},\ldots,\tau_{\uparrow},\rho_{\downarrow},\ldots).
+$$
 
 []{#eq-13-023}
 
 ϵxc 对这些变量的偏导数可以写成 n 维张量 v
 
-![公式 (13.28)(13.29)](../assets/math/eq-13-024.png){width=41%}
+$$
+\begin{aligned}
+v^i&=\frac{\partial\epsilon_{\mathrm{xc}}}{\partial x^i},\qquad (13.28)\\
+v^{ij}&=\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial x^i\partial x^j}.\qquad (13.29)
+\end{aligned}
+$$
 
-**公式 (13.28)(13.29)**[]{#eq-13-024}
+[]{#eq-13-024}
 
 利用这些导数张量，交换关联（exchange-correlation，XC）矩阵的计算可以简化为张量收缩（tensor contraction）：
 
-![公式图](../assets/math/eq-13-025.png){width=51%}
+$$
+(V_{\mathrm{xc}}^{\uparrow})_{\mu\nu}=\sum_n\sum_{s\;\mathrm{has}\;\uparrow}\omega_n x_{\mu\nu}^s[\mathbf{r}_n]v^s[\mathbf{r}_n].
+\qquad (13.30)
+$$
 
 []{#eq-13-025}
 
 (V ↑)μν = ωnxs [rn]v [rn].) 这里，对 s 的求和仅限于与 ↑ 相关的变量
 类似地，fxc 积分可以通过张量收缩计算
 
-![公式图](../assets/math/eq-13-026.png){width=58%}
+$$
+(f_{\mathrm{xc}}^{\uparrow\uparrow})_{\mu\nu,\kappa\lambda}=\sum_n\sum_{s\;\mathrm{has}\;\uparrow}\sum_{t\;\mathrm{has}\;\uparrow}\omega_n x_{\mu\nu}^s[\mathbf{r}_n]v^{st}[\mathbf{r}_n]x_{\kappa\lambda}^t[\mathbf{r}_n].
+\qquad (13.31)
+$$
 
 []{#eq-13-026}
 
@@ -677,7 +771,10 @@ xc_tensor = xc_deriv_tensor1(density, xc_code) # (3)
 第 (1) 行的 ao 张量存储高斯型轨道（Gaussian-type orbital，GTO）函数及其导数在网格上的值。第 (2) 行的 xc_code 是 XC 泛函的缩写，例如 ’PBE’ 或 ’B3LYP’。XC 导数张量由第 (3) 行的 xc_deriv_tensor1 函数生成，我们将在后面讨论该函数。
 ao 张量的第一维有四个分量，分别对应 GTO 值及其一阶导数的 x、y 和 z 分量。由于 GTO 函数形式简单，计算 ao 张量很直接。例如，笛卡尔 GTO 的导数可以按如下方式计算：
 
-![公式图](../assets/math/eq-13-027.png){width=66%}
+$$
+\nabla_x G_{ijk}(\mathbf{r},\alpha,\mathbf{R}_A)=2\alpha G_i(x)G_j(y)G_k(z)+iG_{i-1}(x)G_j(y)G_k(z).
+\qquad (13.32)
+$$
 
 []{#eq-13-027}
 
@@ -712,19 +809,25 @@ def eval_gtos(gtos, grids):
 在上述张量收缩方案中，主要挑战是计算 XC 导数张量 v 和 v。通常，诸如
 LibXC 或 XCFun 的 XC 库只提供关于 ρ、σ 和 τ 的偏导数，例如
 
-![公式图](../assets/math/eq-13-028.png){width=30%}
+$$
+\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\rho_{\uparrow}\partial\sigma_{\uparrow\downarrow}},\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\uparrow}\partial\sigma_{\uparrow\downarrow}}.
+$$
 
 []{#eq-13-028}
 
 此外，由于偏导数的对称性，这些库省略了某些导数
 
-![公式图](../assets/math/eq-13-029.png){width=30%}
+$$
+\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial x\partial y}=\frac{\partial^2\epsilon_{\mathrm{xc}}}{\partial y\partial x},
+$$
 
 []{#eq-13-029}
 
 以及 σ↑↓ 和 σ↓↑ 之间的对称性
 
-![公式图](../assets/math/eq-13-030.png){width=30%}
+$$
+\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\uparrow\downarrow}}=\frac{\partial\epsilon_{\mathrm{xc}}}{\partial\sigma_{\downarrow\uparrow}}.
+$$
 
 []{#eq-13-030}
 
@@ -732,7 +835,13 @@ LibXC 或 XCFun 的 XC 库只提供关于 ρ、σ 和 τ 的偏导数，例如
 
 - I 型转换恢复二阶偏导数的对称性
 
-![公式图](../assets/math/eq-13-031.png){width=52%}
+$$
+\left(\frac{\partial^2\epsilon}{\partial x\partial x},\frac{\partial^2\epsilon}{\partial x\partial y},\frac{\partial^2\epsilon}{\partial y\partial y}\right)\rightarrow\begin{pmatrix}
+\frac{\partial^2\epsilon}{\partial x\partial x}&\frac{\partial^2\epsilon}{\partial x\partial y}\\
+\frac{\partial^2\epsilon}{\partial x\partial y}&\frac{\partial^2\epsilon}{\partial y\partial y}
+\end{pmatrix}.
+\qquad (13.33)
+$$
 
 []{#eq-13-031}
 
@@ -745,7 +854,13 @@ LibXC 或 XCFun 的 XC 库只提供关于 ρ、σ 和 τ 的偏导数，例如
 
 - II 型转换处理 σ 的不同自旋分量
 
-![公式图](../assets/math/eq-13-032.png){width=52%}
+$$
+\left(\frac{\partial\epsilon}{\partial\sigma_{\uparrow\uparrow}},\frac{\partial\epsilon}{\partial\sigma_{\uparrow\downarrow}},\frac{\partial\epsilon}{\partial\sigma_{\downarrow\downarrow}}\right)\rightarrow\begin{pmatrix}
+2\frac{\partial\epsilon}{\partial\sigma_{\uparrow\uparrow}}&\frac{\partial\epsilon}{\partial\sigma_{\uparrow\downarrow}}\\
+\frac{\partial\epsilon}{\partial\sigma_{\downarrow\uparrow}}&2\frac{\partial\epsilon}{\partial\sigma_{\downarrow\downarrow}}
+\end{pmatrix}.
+\qquad (13.34)
+$$
 
 []{#eq-13-032}
 
@@ -877,17 +992,36 @@ def xc_family(xc_code):
 DIIS（Direct Inversion in the Iterative Subspace，迭代子空间直接反演）外推法最初由 Peter Pulay 提出，用于加速并稳定 Hartree-Fock 自洽场（self-consistent field，SCF）计算的收敛。DIIS 外推常用于加速不动点迭代（fixed-point iteration）。其基本思路是利用迭代过程中
 生成的一组试探向量来近似求解。给定一组试探向量 t 及其对应的误差向量 e，解向量可用带系数 c 的试探向量线性组合来近似表示：
 
-![公式图](../assets/math/eq-13-033.png){width=30%}
+$$
+x=\sum_i c_i\mathbf{t}_i.
+\qquad (13.35)
+$$
 
 []{#eq-13-033}
 
-![公式图](../assets/math/eq-13-034.png){width=30%}
+$$
+L=\left|\sum_i c_i\mathbf{e}_i\right|^2+2\lambda\left(\sum_i c_i-1\right),
+\qquad (13.36)
+$$
 
 []{#eq-13-034}
 
-![公式 (13.37)](../assets/math/eq-13-035.png){width=54%}
+$$
+\begin{pmatrix}
+B_{11}&B_{12}&\cdots&B_{1n}&1\\
+B_{21}&B_{22}&\cdots&B_{2n}&1\\
+\vdots&\vdots&\ddots&\vdots&1\\
+B_{n1}&B_{n2}&\cdots&B_{nn}&1\\
+1&1&\cdots&1&0
+\end{pmatrix}\begin{pmatrix}
+c_1\\c_2\\\vdots\\c_n\\\lambda
+\end{pmatrix}=\begin{pmatrix}
+0\\0\\\vdots\\0\\1
+\end{pmatrix},
+\qquad (13.37)
+$$
 
-**公式 (13.37)**[]{#eq-13-035}
+[]{#eq-13-035}
 
 将这些方程转换为 Python 程序并不困难。给定误差向量和试探向量的列表作为输入，下面的 extrapolate 函数生成一个解向量。
 
@@ -1206,19 +1340,28 @@ compose 函数以对象列表为模板，使用 type 函数动态创建新类。
 除了优化积分算法，还可以采用 Cholesky 分解（Cholesky decomposition，CD）或恒等分辨（resolution of identity，RI）方法加速 ERI 运算。这些方法将 ERI 计算转换为张量收缩问题，通常计算效率更高。
 Cholesky 分解使我们能够把四阶 ERI 张量分解为两个三阶张量的缩并乘积：
 
-![公式图](../assets/math/eq-13-038.png){width=45%}
+$$
+(ij|kl)=\sum_p T_{pij}T_{pkl}.
+\qquad (13.38)
+$$
 
 []{#eq-13-038}
 
 (ij|kl) = Tpij Tpkl.) 在实践中，RI 方法也称为密度拟合（density fitting，DF）近似，经常用于分解 ERI 张量。在这种近似中，引入一组辅助基函数（auxiliary basis functions，ABF）φp 来展开张量：
 
-![公式图](../assets/math/eq-13-039.png){width=46%}
+$$
+T_{pij}\approx\sum_q(\mathbf{M}^{-1})_{pq}(q|ij),
+\qquad (13.39)
+$$
 
 []{#eq-13-039}
 
 Tpij ≈ (M)pq(q|ij),) 其中，(q|ij) 表示三中心双电子（3c2e）排斥积分，矩阵 M 是双中心双电子（2c2e）积分张量的 CD：
 
-![公式图](../assets/math/eq-13-040.png){width=44%}
+$$
+(p|q)=\sum_r M_{pr}M_{qr}.
+\qquad (13.40)
+$$
 
 []{#eq-13-040}
 
@@ -1514,17 +1657,21 @@ class CDIIS(DIIS):
 
 工程上常用原子密度叠加形成的分块对角矩阵作为 SCF 初猜。这些原子密度既能从使用同种基组的原子单点计算获得，也可直接查阅现成的原子数据库。例如，ANO-RCC 基组库就是一种选择，其中收录了原子自由态计算给出的自然轨道。通过指定 ANO-RCC 基函数的基态原子占据数，便能近似构建原子密度矩阵 γA,γB,...。随后算出目标基组（T）与参考基组（A）之间的重叠矩阵 STA，即可对分块对角密度矩阵实施变换。
 
-![公式 (13.41)](../assets/math/eq-13-041.png){width=52%}
+$$
+S_T^{-1}S_{TA}\begin{pmatrix}
+\gamma_A&\mathbf{0}&\cdots&\mathbf{0}\\
+\mathbf{0}&\gamma_B&\cdots&\mathbf{0}\\
+\mathbf{0}&\mathbf{0}&\ddots&{}\\
+\vdots&\vdots&{}&\ddots
+\end{pmatrix}S_{AT}S_T^{-1}
+\qquad (13.41)
+$$
 
-**公式 (13.41)**[]{#eq-13-041}
+[]{#eq-13-041}
 
-经验模型，例如 Hückel 模型和 SAP（
-
-![公式图](../assets/math/eq-13-042.png){width=30%}
+经验模型，例如 Hückel 模型和 SAP（superposition of atomic potentials，原子势叠加）模型 [22]，也可以通过叠加原子数据来生成初始猜测。
 
 []{#eq-13-042}
-
-原子势叠加）模型 []，也可以通过叠加原子数据来生成初始猜测。
 
 #### 根据类似计算得到初始猜测
 

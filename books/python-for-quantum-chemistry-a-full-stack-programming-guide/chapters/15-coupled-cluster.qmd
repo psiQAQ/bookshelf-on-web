@@ -9,27 +9,47 @@
 
 耦合簇理论采用指数试探形式（exponential ansatz）描述波函数。这种试探形式提供了一套系统方法，用于描述超越平均场近似的电子相关效应，并逐步逼近完全组态相互作用（Full Configuration Interaction）波函数，其表达式为
 
-![公式图](../assets/math/eq-15-001.png){width=41%}
+$$
+\Psi_{\mathrm{CC}}=e^{\hat{T}}\Psi_{0},
+\qquad (15.1)
+$$
 
 []{#eq-15-001}
 
-![公式图](../assets/math/eq-15-002.png){width=46%}
+$$
+\hat{T}=\hat{T}_{1}+\hat{T}_{2}+\hat{T}_{3}+\cdots.
+\qquad (15.2)
+$$
 
 []{#eq-15-002}
 
-![公式 (15.3)(15.4)(15.5)](../assets/math/eq-15-003.png){width=48%}
+$$
+\begin{aligned}
+\hat{T}_{1}&=\sum_{ai}t_{i}^{a}\hat{a}_{a}^{\dagger}\hat{a}_{i}, \qquad (15.3)\\
+\hat{T}_{2}&=\sum_{a>b,i>j}t_{ij}^{ab}\hat{a}_{a}^{\dagger}\hat{a}_{b}^{\dagger}\hat{a}_{j}\hat{a}_{i}, \qquad (15.4)\\
+\hat{T}_{3}&=\sum_{\substack{a>b>c\\ i>j>k}}t_{ijk}^{abc}\hat{a}_{a}^{\dagger}\hat{a}_{b}^{\dagger}\hat{a}_{c}^{\dagger}\hat{a}_{k}\hat{a}_{j}\hat{a}_{i}. \qquad (15.5)
+\end{aligned}
+$$
 
-**公式 (15.3)(15.4)(15.5)**[]{#eq-15-003}
+[]{#eq-15-003}
 
 利用簇算符指数对哈密顿量作相似变换，便能直接求出有效哈密顿量：
 
-![公式图](../assets/math/eq-15-004.png){width=42%}
+$$
+\hat{H}_{\mathrm{eff}}=e^{-\hat{T}}\hat{H}e^{\hat{T}}.
+\qquad (15.6)
+$$
 
 []{#eq-15-004}
 
-![公式 (15.7)(15.8)](../assets/math/eq-15-005.png){width=45%}
+$$
+\begin{aligned}
+E_{\mathrm{CC}}&=\langle\Psi_{0}|\hat{H}_{\mathrm{eff}}|\Psi_{0}\rangle, \qquad (15.7)\\
+0&=\langle\mu|\hat{H}_{\mathrm{eff}}|\Psi_{0}\rangle. \qquad (15.8)
+\end{aligned}
+$$
 
-**公式 (15.7)(15.8)**[]{#eq-15-005}
+[]{#eq-15-005}
 
 若从 CCSD 中排除单激发振幅 Tˆ，便得到 CCD（双激发耦合簇）方法。虽然 CCD 的计算开销与 CCSD 相近，但因缺少 Tˆ 振幅，其精度略低。
 因此，CCD 方法在实际化学应用中并不像其他方法那样广泛使用。不过从编程角度看，CCD 方法足以说明 CC 程序中遇到的技术挑战。为简化问题并展示计算优化技术，下面我们将重点讨论 CCD 方法。
@@ -38,33 +58,59 @@
 
 文献 [4–6] [1,2] 对 CCD 和 CCSD 方程已有广泛深入的讨论。鉴于现有资料十分丰富，我们省略推导过程，直接列出下面的相关方程。CCD 相关能由下式给出：
 
-![公式图](../assets/math/eq-15-006.png){width=30%}
+$$
+E_{\mathrm{corr}}=\sum_{i>j,a>b}\langle ij||ab\rangle t_{ij}^{ab}.
+\qquad (15.9)
+$$
 
 []{#eq-15-006}
 
-![公式 (15.10)](../assets/math/eq-15-007.png){width=67%}
+$$
+\begin{aligned}
+0&=\langle ab||ij\rangle+\sum_{k>l}(\langle ij||kl\rangle+\sum_{c>d}\langle kl||cd\rangle t_{ij}^{cd})t_{kl}^{ab}+\sum_{c>d}\langle ab||cd\rangle t_{ij}^{cd}\\
+&\quad+P(ab)\sum_{c}(f_{bc}-\sum_{k>l,d}\langle kl||cd\rangle t_{kl}^{bd})t_{ij}^{ac}\\
+&\quad-P(ij)\sum_{k}(f_{kj}+\sum_{l,c>d}\langle kl||cd\rangle t_{jl}^{cd})t_{ik}^{ab}\\
+&\quad-P(ij)P(ab)\sum_{ck}\langle bk||cj\rangle t_{ik}^{ac}+2P(ij)P(ab)\sum_{k>l,c>d}\langle kl||cd\rangle t_{ik}^{ac}t_{jl}^{bd}.
+\end{aligned}
+\qquad (15.10)
+$$
 
-**公式 (15.10)**[]{#eq-15-007}
+[]{#eq-15-007}
 
-![公式图](../assets/math/eq-15-008.png){width=48%}
+$$
+\langle pq||rs\rangle=(pr|qs)-(ps|qr).
+\qquad (15.11)
+$$
 
 []{#eq-15-008}
 
-![公式图](../assets/math/eq-15-009.png){width=46%}
+$$
+f_{pq}=h_{pq}+\sum_{i}\langle pi||qi\rangle.
+\qquad (15.12)
+$$
 
 []{#eq-15-009}
 
-![公式图](../assets/math/eq-15-010.png){width=50%}
+$$
+P(pq)f(p,q)=f(p,q)-f(q,p).
+\qquad (15.13)
+$$
 
 []{#eq-15-010}
 
 T2 方程是一个非线性方程，可以通过不动点迭代（fixed-point iteration）求解：
 
-![公式图](../assets/math/eq-15-011.png){width=60%}
+$$
+(t_{ij}^{ab})_{n+1}=\frac{\sigma((t_{ij}^{ab})_{n})+\Delta_{ab}^{ij}(t_{ij}^{ab})_{n}}{\Delta_{ab}^{ij}},
+\qquad (15.14)
+$$
 
 []{#eq-15-011}
 
-![公式图](../assets/math/eq-15-012.png){width=49%}
+$$
+\Delta_{ab}^{ij}=f_{ii}+f_{jj}-f_{aa}-f_{bb}+v,
+\qquad (15.15)
+$$
 
 []{#eq-15-012}
 
@@ -103,7 +149,10 @@ def update_CCD_amplitudes(H: h5py.Group,t 2, level_shift=0):
 ```
 CCD 方程包含大量指标求和，适合借助张量收缩程序高效求解。本节直接调用 einsum 函数完成这些张量收缩。为提升示例程序的可读性，我们借助 T2 振幅的反对称性，略去各张量不同指标间的偏序约束（如 i >j 与 a >b），从而将有约束求和改写为无约束求和，例如：
 
-![公式图](../assets/math/eq-15-013.png){width=50%}
+$$
+\sum_{i>j,a>b}\langle ij||ab\rangle t_{ij}^{ab}\rightarrow\frac{1}{4}\sum_{ijab}\langle ij||ab\rangle t_{ij}^{ab}.
+\qquad (15.16)
+$$
 
 []{#eq-15-013}
 
@@ -141,13 +190,17 @@ def mo_integrals(mol: pyscf.gto.Mole, orbitals, Hfile=None):
 为简化分子轨道（MO）积分的生成过程，我们借助 PySCF 软件包计算整个 MO 积分张量，随后切片提取所需子块。充分利用原子轨道（AO）积分的置换对称性，并使 I/O 操作与数值计算重叠，能显著提高积分计算效率。第 12 章已详细讲解过这些技术细节，这里不再赘述。
 PySCF 中的 ao2mo 模块只生成空间轨道下的 MO 积分，采用化学记号 (pr|qs)。上面给出的 mo_integrals 函数把 MO 积分从 PySCF 约定转换为自旋轨道基组中的物理学记号：
 
-![公式图](../assets/math/eq-15-014.png){width=37%}
+$$
+(pr|qs)-(qr|ps)\rightarrow(pr||qs)\rightarrow\langle pq||rs\rangle.
+$$
 
 []{#eq-15-014}
 
 在这一转换中，每个空间轨道映射到两个自旋轨道（spin-orbitals）
 
-![公式图](../assets/math/eq-15-015.png){width=32%}
+$$
+\psi_{1},\psi_{2},\cdots\rightarrow\psi_{1\alpha},\psi_{1\beta},\psi_{2\alpha},\psi_{2\beta},\cdots.
+$$
 
 []{#eq-15-015}
 
@@ -548,13 +601,22 @@ class Tensor:
 
 二次量子化算符遵守以下对易关系（commutation relations）：
 
-![公式 (15.17)(15.18)(15.19)](../assets/math/eq-15-016.png){width=47%}
+$$
+\begin{aligned}
+[\hat{a}_{p}^{\dagger},\hat{a}_{q}^{\dagger}]_{+}&=0, \qquad (15.17)\\
+[\hat{a}_{p},\hat{a}_{q}]_{+}&=0, \qquad (15.18)\\
+[\hat{a}_{p}^{\dagger},\hat{a}_{q}]_{+}&=[\hat{a}_{p},\hat{a}_{q}^{\dagger}]_{+}=\delta_{pq}. \qquad (15.19)
+\end{aligned}
+$$
 
-**公式 (15.17)(15.18)(15.19)**[]{#eq-15-016}
+[]{#eq-15-016}
 
 这些关系为收缩（contraction）运算提供了基础，收缩运算将时间排序的算符转换为其正规排序表示：
 
-![公式图](../assets/math/eq-15-017.png){width=46%}
+$$
+\hat{f}_{1}\hat{f}_{2}=C(\hat{f}_{1},\hat{f}_{2})+\hat{f}_{2}\hat{f}_{1}.
+\qquad (15.20)
+$$
 
 []{#eq-15-017}
 
@@ -605,7 +667,10 @@ __slots__ = [ 'operators', 'factor', 'deltas', 'remaining'] # (1)
 我们来看看第 (1) 行中的属性。operators、deltas 和 factor 属性的含义很明确。它们分别表示一组 FieldOperator、由收缩生成的一组克罗内克 δ，以及与整个字符串关联的系数。那么，remaining 属性有什么用途呢？
 remaining 属性用于存储收缩之后任何尚未处理的算符。考虑一个 FieldOperator fˆ 与一列算符之间的收缩：
 
-![公式图](../assets/math/eq-15-018.png){width=52%}
+$$
+\hat{f}_{1}\hat{f}_{2}\hat{f}_{3}\ldots=C(\hat{f}_{1},\hat{f}_{2})\hat{f}_{3}\ldots+\hat{f}_{2}\hat{f}_{1}\hat{f}_{3}\ldots
+\qquad (15.21)
+$$
 
 []{#eq-15-018}
 
@@ -660,18 +725,27 @@ def contract(string1, string2):
 ```
 到目前为止，我们已经完成了 FieldOperator 和 String 类所需的代数运算。接下来，我们将使用这些基础元素定义 CCD 理论中的哈密顿算符（Hamiltonian operator）和 Tˆ 算符。二次量子化的哈密顿量表示如下：
 
-![公式图](../assets/math/eq-15-019.png){width=30%}
+$$
+H=\sum_{pq}h_{pq}q_{p}^{\dagger}\hat{a}_{q}+\frac{1}{4}\sum_{pqrs}\langle pq||rs\rangle\hat{a}_{p}^{\dagger}\hat{a}_{q}^{\dagger}\hat{a}_{s}\hat{a}_{r}.
+\qquad (15.23)
+$$
 
 []{#eq-15-019}
 
 请注意，我们采用的是反对称化形式的双电子积分张量（two-electron integral tensor）。使用反对称张量的原因将在后续讨论中变得更加清楚。利用 String 类和 Tensor 类，可以轻松构造哈密顿量的符号表示。
 类似的方法可用于构造 Tˆ
 
-![公式图](../assets/math/eq-15-020.png){width=45%}
+$$
+\hat{T}_{2}=\frac{1}{4}\sum_{abij}t_{ij}^{ab}\hat{a}_{a}^{\dagger}\hat{a}_{b}^{\dagger}\hat{a}_{j}\hat{a}_{i}.
+\qquad (15.24)
+$$
 
 []{#eq-15-020}
 
-![公式图](../assets/math/eq-15-021.png){width=45%}
+$$
+\langle\Phi_{ij}^{ab}|=\langle\Phi_{0}|\hat{a}_{i}^{\dagger}\hat{a}_{j}^{\dagger}\hat{a}_{b}\hat{a}_{a}.
+\qquad (15.25)
+$$
 
 []{#eq-15-021}
 
@@ -700,7 +774,10 @@ def bra_projector(n):
 在这些算符中，我们对张量指标和算符串使用同一组 FieldOperator 对象。为了建立 FieldOperator 与张量指标之间的对应关系，每个 FieldOperator 都需要一个唯一标识符。随后用这些标识符来识别张量指标。由于 Python 本身会为每个不同的 FieldOperator 对象生成唯一 ID，为简单起见，我们使用 FieldOperator 对象本身作为张量指标的标识符。这种方法意味着每个 FieldOperator 对象都是唯一的，不能被克隆，因为任何 copy() 方法都会产生一个具有不同 ID 的新 FieldOperator 对象。
 得到哈密顿量和 Tˆ 算符的符号表示后，我们现在可以计算 Hˆ。这个有效哈密顿量（effective Hamiltonian）可以通过 Baker-Campbell-Hausdorff 展开求得：
 
-![公式图](../assets/math/eq-15-022.png){width=57%}
+$$
+\hat{H}_{\mathrm{eff}}=e^{-\hat{T}}\hat{H}e^{\hat{T}}=\hat{H}+[\hat{H},\hat{T}]+\frac{1}{2!}[[\hat{H},\hat{T}],\hat{T}]+\cdots
+\qquad (15.26)
+$$
 
 []{#eq-15-022}
 
@@ -794,7 +871,9 @@ for delta in deltas: # (1)
 
 - string 可能包含源自哈密顿算符的 Creation(’*’) 和 Annihilation(’*’) 算符。这些算符只能出现在收缩后串的最右端。作用于 HF 参考态时，它们会产生对积分中占据指标的求和。如果串中包含四个标记为 ’*’ 的 FieldOperator 对象，它们一定都源自哈密顿量的双电子部分。这一项对应 HF 行列式的双电子能量，由下式给出：
 
-![公式图](../assets/math/eq-15-023.png){width=30%}
+$$
+\frac{1}{2}\sum_{ij}\langle ij||ij\rangle.
+$$
 
 []{#eq-15-023}
 
@@ -923,11 +1002,13 @@ def _contract_fgroup_fop(fgroup: FOpGroup, fop: FieldOperator) -> List[
 ```
 _contract_fgroup_fgroup 函数更为复杂。由于两个 FOpGroup 中各有多个 FieldOperator 对象，直接展开可能产生多种收缩串。然而，我们可以通过直接考虑收缩输出的最终状态来简化实现。依托 FOpGroup 内部固有的置换对称性，收缩输出最多可以包含 t 个不同的收缩串，其中 t 是不超过输入 FOpGroup 对象尺寸的最大整数。这 t 个不同的收缩串可以通过 Delta 对象的数量加以区分，数量从 1 个到 t 个不等。对于每个收缩串，我们可以使用最简的收缩模式构造它，然后赋予适当的乘数以计入简并度（degeneracy）。简并度等于形成 Delta 对象的不同可能组合的数量。例如，包含 k 个 Delta 对象的收缩串可以涉及
 
-![公式图](../assets/math/eq-15-024.png){width=30%}
+$$
+\binom{m}{k}
+$$
 
 []{#eq-15-024}
 
-种从第一个 FOpGroup 中选择算符的方式，以及从第二个 FOpGroup 中选择算符的方式，每次选择各有 k! 种组合。这得到的简并度为 C(n, k)·C(m, k)·k!。
+种从第一个 FOpGroup 中选择算符的方式，以及 $\binom{n}{k}$ 种从第二个 FOpGroup 中选择算符的方式，每次选择各有 k! 种组合。这得到的简并度为 C(n, k)·C(m, k)·k!。
 
 ```python
 def _contract_fgroup_fgroup(fgroup1: FOpGroup, fgroup2: FOpGroup) -> List[
@@ -974,7 +1055,10 @@ def _contract_fop_string(fop: Union[FieldOperator, FOpGroup], string:
 ```
 接下来构造哈密顿量（Hamiltonian）、Tˆ 算符和左矢投影算符时，我们也需要利用 FOpGroup 类纳入有关置换对称性的信息。需要注意的是，CCD 方程中的投影算符 μ 具有反对称的置换对称性。它也可以表示为反对称形式。
 
-![公式图](../assets/math/eq-15-025.png){width=50%}
+$$
+|\Phi_{ij}^{ab}\rangle=|\Phi_{ji}^{ba}\rangle=-|\Phi_{ji}^{ab}\rangle=-|\Phi_{ij}^{ba}\rangle.
+\qquad (15.27)
+$$
 
 []{#eq-15-025}
 
@@ -1044,17 +1128,28 @@ F2 += -0.5 * einsum("klli,abjk->baji", h2_oooo, t2)
 
 - 使用自旋求迹激发算符（spin-traced excitation operators）定义哈密顿量
 
-![公式 (15.28)](../assets/math/eq-15-026.png){width=48%}
+$$
+\hat{H}=\sum_{pq}h_{pq}\hat{E}_{q}^{p}+\sum_{pqrs}(pq|rs)\hat{e}_{qs}^{pr},
+\qquad (15.28)
+$$
 
-**公式 (15.28)**[]{#eq-15-026}
+[]{#eq-15-026}
 
-![公式 (15.29)(15.30)](../assets/math/eq-15-027.png){width=49%}
+$$
+\begin{aligned}
+\hat{E}_{q}^{p}&=\hat{a}_{p\alpha}^{\dagger}\hat{a}_{q\alpha}+\hat{a}_{p\beta}^{\dagger}\hat{a}_{q\beta}, \qquad (15.29)\\
+\hat{e}_{qs}^{pr}&=\hat{E}_{q}^{p}\hat{E}_{s}^{r}-\delta_{rq}\hat{E}_{s}^{p}, \qquad (15.30)
+\end{aligned}
+$$
 
-**公式 (15.29)(15.30)**[]{#eq-15-027}
+[]{#eq-15-027}
 
 并添加自旋求迹激发算符的对易子规则
 
-![公式图](../assets/math/eq-15-028.png){width=46%}
+$$
+[\hat{E}_{q}^{p},\hat{E}_{s}^{r}]_{+}=\delta_{rq}\hat{E}_{s}^{p}-\delta_{ps}\hat{E}_{q}^{r},
+\qquad (15.31)
+$$
 
 []{#eq-15-028}
 
@@ -1066,7 +1161,10 @@ F2 += -0.5 * einsum("klli,abjk->baji", h2_oooo, t2)
 
 有效哈密顿量（effective Hamiltonian）
 
-![公式图](../assets/math/eq-15-029.png){width=45%}
+$$
+\hat{H}_{\mathrm{eff}}=e^{-(\hat{T}-\hat{T}^{\dagger})}\hat{H}e^{(\hat{T}-\hat{T}^{\dagger})},
+\qquad (15.32)
+$$
 
 []{#eq-15-029}
 

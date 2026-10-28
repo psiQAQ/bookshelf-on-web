@@ -22,32 +22,49 @@
 
 以位置 RA 为中心、由高斯指数 α 表征的原始 GTO 具有以下形式：
 
-![公式 (12.1)(12.2)](../assets/math/eq-12-001.png){width=51%}
+$$
+\begin{aligned}
+G_{lm}(\mathbf{r},\alpha,\mathbf{R}_{A}) &= N(\alpha,l)Y_{lm}(\mathbf{r}_{A})e^{-\alpha r_{A}^{2}}, \qquad (12.1)\\
+\mathbf{r}_{A} &= \mathbf{r}-\mathbf{R}_{A}. \qquad (12.2)
+\end{aligned}
+$$
 
-**公式 (12.1)(12.2)**[]{#eq-12-001}
+[]{#eq-12-001}
 
 rA = r − R A. (12.2) N(α,l) 是径向部分 r e 的归一化因子。这里，l 称为 GTO 函数的角动量。Ylm(r) 是实值固体谐函数（solid harmonics）。高斯基函数和积分的其他记号约定，以及本章 Python 代码中使用的变量，汇总于表 12.1。
 式 (12.1) 中的归一化因子 N(α,l) 可以计算为：
 
-![公式图](../assets/math/eq-12-002.png){width=51%}
+$$
+N(\alpha,l)=\Big(\int_{0}^{\infty}(r^{l}e^{-\alpha r^{2}})^{2}r^{2}d r\Big)^{-1/2}.
+\qquad (12.3)
+$$
 
 []{#eq-12-002}
 
 与 scipy.special.gamma 函数相比，
 
-![公式图](../assets/math/eq-12-003.png){width=45%}
+$$
+\Gamma(z)=\int_{0}^{\infty}t^{z-1}e^{-t}d t,
+\qquad (12.4)
+$$
 
 []{#eq-12-003}
 
 我们得到归一化因子的值
 
-![公式图](../assets/math/eq-12-004.png){width=52%}
+$$
+N(\alpha,l)=\biggl(\frac{1}{2(2\alpha)^{l+3/2}}\Gamma(l+3/2)\biggr)^{-1/2}.
+\qquad (12.5)
+$$
 
 []{#eq-12-004}
 
 原始 GTO 的径向部分可以与收缩系数（contraction coefficients）Cn 组合，定义收缩 GTO 基函数：
 
-![公式图](../assets/math/eq-12-005.png){width=48%}
+$$
+\chi(\mathbf{r})=\sum_{n}C_{n}G_{lm}(\mathbf{r},\alpha_{n},\mathbf{R}_{A}).
+\qquad (12.6)
+$$
 
 []{#eq-12-005}
 
@@ -177,15 +194,23 @@ def norm_coefficients(self): # (1)
 如第 (1) 行的属性 norm_coefficients 所示，归一化因子随后与收缩系数（contraction coefficients）结合，形成复合系数，用于缩放原始高斯型轨道（primitive GTO）积分。
 式 (12.1) 中的球面高斯型轨道（spherical GTO）可以用笛卡尔高斯型轨道（Cartesian GTO）函数表示：
 
-![公式图](../assets/math/eq-12-006.png){width=53%}
+$$
+G_{lm}^{\mathrm{sph}}(\mathbf{r},\alpha,\mathbf{R}_{A})=\sum_{tuv}T_{lm,tuv}G_{tuv}^{\mathrm{cart}}(\mathbf{r},\alpha,\mathbf{R}_{A}).
+\qquad (12.7)
+$$
 
 []{#eq-12-006}
 
 一个笛卡尔高斯型轨道可以分解为三个笛卡尔分量的乘积
 
-![公式 (12.8)(12.9)](../assets/math/eq-12-007.png){width=58%}
+$$
+\begin{aligned}
+G_{tuv}(\mathbf{r},\alpha,\mathbf{R}_{A}) &= x_{A}^{t}y_{A}^{u}z_{A}^{v}e^{-\alpha r_{A}^{2}}=G_{t}(x)G_{u}(y)G_{v}(z), \qquad (12.8)\\
+G_{t}(x) &= x_{A}^{t}e^{-\alpha x_{A}^{2}}. \qquad (12.9)
+\end{aligned}
+$$
 
-**公式 (12.8)(12.9)**[]{#eq-12-007}
+[]{#eq-12-007}
 
 与球谐高斯型轨道（spherical-harmonic GTO）相比，这种分解显著简化了笛卡尔高斯型轨道积分的计算。通常先计算笛卡尔高斯型轨道上的积分，然后将其转换为球谐高斯型轨道上的积分。变换系数 Tlm,tuv 记载于各种文献中 [2,3]，可以预先计算并缓存。作为线性变换，式 (12.7) 在积分计算程序中不是一个重大挑战。在后续讨论中，我们将省略这一变换，转而关注笛卡尔高斯型轨道的积分。
 式 (12.8) 中的指标 t、u、v 表示笛卡尔高斯型轨道函数的角动量 l：
@@ -260,43 +285,67 @@ class Molecule:
 
 - 重叠积分（overlap integrals）
 
-![公式图](../assets/math/eq-12-008.png){width=46%}
+$$
+\langle\chi_{i}|\chi_{j}\rangle=\int\chi_{i}(\mathbf{r})\chi_{j}(\mathbf{r})d^{3}\mathbf{r}.
+\qquad (12.11)
+$$
 
 []{#eq-12-008}
 
 - 库仑排斥积分（Coulomb repulsion integrals，ERI）
 
-![公式图](../assets/math/eq-12-009.png){width=60%}
+$$
+(\chi_{i}\chi_{j}|\chi_{k}\chi_{l})=\int\chi_{i}(\mathbf{r}_{1})\chi_{j}(\mathbf{r}_{1})\frac{1}{r_{12}}\chi_{k}(\mathbf{r}_{2})\chi_{l}(\mathbf{r}_{2})d^{3}\mathbf{r}_{1}d^{3}\mathbf{r}_{2}.
+\qquad (12.12)
+$$
 
 []{#eq-12-009}
 
 例如，动能算符的积分可以从重叠积分推导得到
 
-![公式图](../assets/math/eq-12-010.png){width=64%}
+$$
+T_{ij}=-\frac{1}{2}\langle\chi_{i}|\nabla^{2}|\chi_{j}\rangle=\frac{1}{2}\sum_{t\in x,y,z}\langle\nabla_{t}\chi_{i}|\nabla_{t}\chi_{j}\rangle=T_{ij}^{x}+T_{ij}^{y}+T_{ij}^{z}.
+\qquad (12.13)
+$$
 
 []{#eq-12-010}
 
 一个原始笛卡尔高斯型轨道的导数产生两个原始高斯型轨道
 
-![公式图](../assets/math/eq-12-011.png){width=63%}
+$$
+\frac{\partial}{\partial x}G_{i_{x},i_{y},i_{z}}(\mathbf{r},\alpha)=-2\alpha G_{i_{x}+1,i_{y},i_{z}}(\mathbf{r},\alpha)+i G_{i_{x}-1,i_{y},i_{z}}(\mathbf{r},\alpha).
+\qquad (12.14)
+$$
 
 []{#eq-12-011}
 
 因此，式 (12.13) 中的每一项得到
 
-![公式 (12.15)](../assets/math/eq-12-012.png){width=66%}
+$$
+\begin{aligned}
+T_{ij}^{x} &= 2\alpha_{i}\alpha_{j}\langle G_{i_{x}+1,i_{y},i_{z}}|G_{j_{x}+1,j_{y},j_{z}}\rangle-i_{x}\alpha_{j}\langle G_{i_{x}-1,i_{y},i_{z}}|G_{j_{x}+1,j_{y},j_{z}}\rangle\\
+&\quad-j_{x}\alpha_{i}\langle G_{i_{x}+1,i_{y},i_{z}}|G_{j_{x}-1,j_{y},j_{z}}\rangle+\frac{i_{x}j_{x}}{2}\langle G_{i_{x}-1,i_{y},i_{z}}|G_{j_{x}-1,j_{y},j_{z}}\rangle.
+\end{aligned}
+\qquad (12.15)
+$$
 
-**公式 (12.15)**[]{#eq-12-012}
+[]{#eq-12-012}
 
 另一个例子是核吸引算符的积分，其定义为
 
-![公式图](../assets/math/eq-12-013.png){width=70%}
+$$
+V_{\mathrm{Nuc}}=\sum_{A}\frac{-Z_{A}}{|\mathbf{r}-\mathbf{R}_{A}|}
+\qquad (12.16)
+$$
 
 []{#eq-12-013}
 
 其中 ZA 表示原子 A 的核电荷。通过引入两个非常紧凑的 s 型高斯型轨道 Gs，我们可以利用电子排斥积分公式 (12.12) 模拟两个高斯型轨道与位于 RA 的单位点电荷之间的相互作用。该方法将核吸引积分转换为
 
-![公式图](../assets/math/eq-12-014.png){width=53%}
+$$
+V_{\mathrm{Nuc},ij}=\sum_{A}-Z_{A}(\chi_{i}\chi_{j}|G_{s}(\mathbf{R}_{A})G_{s}(\mathbf{R}_{A})).
+\qquad (12.17)
+$$
 
 []{#eq-12-014}
 
@@ -319,37 +368,55 @@ class Molecule:
 单个笛卡尔分量的递推关系公式为
 当 jx = 0 时，可以使用另一种递推关系
 
-![公式图](../assets/math/eq-12-015.png){width=50%}
+$$
+S_{i_{x},0}=X_{PA}S_{i_{x}-1,0}+\frac{i_{x}-1}{2\alpha_{ij}}S_{i_{x}-2,0}.
+\qquad (12.20)
+$$
 
 []{#eq-12-015}
 
 递推关系的起点和边界条件为
 
-![公式 (12.21)](../assets/math/eq-12-016.png){width=48%}
+$$
+S_{00}=\sqrt{\frac{\pi}{\alpha_{ij}}}e^{-\theta_{ij}X_{AB}^{2}},
+\qquad (12.21)
+$$
 
-**公式 (12.21)**[]{#eq-12-016}
+[]{#eq-12-016}
 
 在这些公式中，RA 和 RB 分别是左矢和右矢高斯型轨道的中心。电荷中心坐标 RP 计算如下
 
-![公式图](../assets/math/eq-12-017.png){width=44%}
+$$
+\mathbf{R}_{P}=\frac{\alpha_{i}\mathbf{R}_{A}+\alpha_{j}\mathbf{R}_{B}}{\alpha_{ij}}.
+\qquad (12.23)
+$$
 
 []{#eq-12-017}
 
 两个中心之间的位移向量计算如下
 
-![公式图](../assets/math/eq-12-018.png){width=43%}
+$$
+\mathbf{R}_{AB}=\mathbf{R}_{A}-\mathbf{R}_{B}.
+\qquad (12.24)
+$$
 
 []{#eq-12-018}
 
 XAB 和 XPA 分别表示位移向量 RAB 和 RPA 的一个笛卡尔方向。参数 αij 和 θij 计算如下
 
-![公式 (12.25)](../assets/math/eq-12-019.png){width=41%}
+$$
+\alpha_{ij}=\alpha_{i}+\alpha_{j},
+\qquad (12.25)
+$$
 
-**公式 (12.25)**[]{#eq-12-019}
+[]{#eq-12-019}
 
-![公式 (12.26)](../assets/math/eq-12-020.png){width=41%}
+$$
+\theta_{ij}=\frac{\alpha_{i}\alpha_{j}}{\alpha_{ij}}.
+\qquad (12.26)
+$$
 
-**公式 (12.26)**[]{#eq-12-020}
+[]{#eq-12-020}
 
 我们可以采用自顶向下的动态规划策略，直接将递推关系公式转换为重叠积分代码。首先创建一个接受两个参数的递归函数 get_S，准确对应于递推关系公式 (12.21)。
 
@@ -422,34 +489,56 @@ return overlap
 
 使用 McMurchie-Davidson（MD）算法，可以通过张量收缩（tensor contraction）求解四指标电子排斥积分（ERI）张量。
 
-![公式 (12.27)](../assets/math/eq-12-021.png){width=54%}
+$$
+(\chi_{i}\chi_{j}|\chi_{k}\chi_{l})=\frac{2\pi^{5/2}}{\alpha_{ij}\alpha_{kl}\sqrt{\alpha_{ij}+\alpha_{kl}}}\sum_{tuv}E_{tuv}^{ij}\sum_{efg}(-1)^{e+f+g}E_{efg}^{kl}R_{t+e,u+f,v+g}^{0}.
+\qquad (12.27)
+$$
 
-**公式 (12.27)**[]{#eq-12-021}
+[]{#eq-12-021}
 
 (12.27) 计算 R 张量的递推关系（RR）公式如下：
 
-![公式 (12.28)(12.29)(12.30)](../assets/math/eq-12-022.png){width=52%}
+$$
+\begin{aligned}
+R_{tuv}^{n} &= X_{PQ}R_{t-1,u,v}^{n+1}+(t-1)R_{t-2,u,v}^{n+1}, \qquad (12.28)\\
+R_{tuv}^{n} &= Y_{PQ}R_{t,u-1,v}^{n+1}+(u-1)R_{t,u-2,v}^{n+1}, \qquad (12.29)\\
+R_{tuv}^{n} &= Z_{PQ}R_{t,u,v-1}^{n+1}+(v-1)R_{t,u,v-2}^{n+1}. \qquad (12.30)
+\end{aligned}
+$$
 
-**公式 (12.28)(12.29)(12.30)**[]{#eq-12-022}
+[]{#eq-12-022}
 
 = XP QRn + (t − 1)Rn, (12.28)
 = YP QRn + (u − 1)Rn, (12.29)
 = ZP QRn (v − 1)Rn. (12.30) The starting point and boundary conditions are
 
-![公式 (12.31)](../assets/math/eq-12-023.png){width=51%}
+$$
+R_{000}^{n}=(-2\theta)^{n}F_{n}(\theta R_{PQ}^{2}),
+\qquad (12.31)
+$$
 
-**公式 (12.31)**[]{#eq-12-023}
+[]{#eq-12-023}
 
 = 0 if t < 0o r u< 0o r v < 0, (12.32)
 其中 XPQ、YPQ 和 ZPQ 表示矢量 RPQ 的三个笛卡尔方向，该矢量是两个电荷中心坐标之间的间隔。
 
-![公式 (12.33)(12.34)(12.35)(12.31)](../assets/math/eq-12-024.png){width=70%}
+$$
+\begin{aligned}
+\mathbf{R}_{PQ} &= \mathbf{R}_{P}-\mathbf{R}_{Q}, \qquad (12.33)\\
+\mathbf{R}_{P} &= \frac{\alpha_{i}\mathbf{R}_{A}+\alpha_{j}\mathbf{R}_{B}}{\alpha_{ij}}, \qquad (12.34)\\
+\mathbf{R}_{Q} &= \frac{\alpha_{k}\mathbf{R}_{C}+\alpha_{l}\mathbf{R}_{D}}{\alpha_{kl}}. \qquad (12.35)\\
+\theta &= \frac{\alpha_{ij}\alpha_{kl}}{\alpha_{ij}+\alpha_{kl}}. \qquad (12.36)
+\end{aligned}
+$$
 
-**公式 (12.33)(12.34)(12.35)(12.31)**[]{#eq-12-024}
+[]{#eq-12-024}
 
 式 (12.31) 中的 θ 定义为：在式 (12.31) 中，Fn 表示 n 阶函数：
 
-![公式图](../assets/math/eq-12-025.png){width=45%}
+$$
+F_{n}(x)=\int_{0}^{1}t^{2n}e^{-x t^{2}}d t.
+\qquad (12.37)
+$$
 
 []{#eq-12-025}
 
@@ -486,9 +575,17 @@ return Rt
 式 (12.27) 中的 E 张量是三个笛卡尔分量的乘积。
 为推导每个笛卡尔分量，可以使用以下递推关系：
 
-![公式 (12.40)(12.41)(12.42)](../assets/math/eq-12-026.png){width=56%}
+$$
+\begin{aligned}
+E_{t}^{ij} &= \frac{1}{2\alpha_{ij}t}(iE_{t-1}^{i-1,j}+jE_{t-1}^{i,j-1}), \qquad (12.39)\\
+E_{0}^{ij} &= X_{PB}E_{0}^{i,j-1}+E_{1}^{i,j-1}, \qquad (12.40)\\
+E_{0}^{ij} &= X_{PA}E_{0}^{i-1,j}+E_{1}^{i-1,j}, \qquad (12.41)\\
+E_{0}^{00} &= \sqrt{\frac{\pi}{\alpha_{ij}}}e^{-\theta_{ij}X_{AB}^{2}}, \qquad (12.42)\\
+E_{t}^{ij} &= 0\quad\text{if }i<0\text{ or }j<0\text{ or }t<0\text{ or }t>l_{i}+l_{j}. \qquad (12.43)
+\end{aligned}
+$$
 
-**公式 (12.40)(12.41)(12.42)**[]{#eq-12-026}
+[]{#eq-12-026}
 
 − θij X
 这些递推关系可以转换为递归动态规划函数。
@@ -567,13 +664,23 @@ def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
 OS 算法从 Boys 函数起步，依次历经三个递推步骤：垂直递推关系（VRR）、电子转移递推关系（TRR）和水平递推关系（HRR）。顺次执行完这些步骤后，便得到十二维张量，进而可将其转换为四指标电子排斥积分张量。
 第一步是垂直递推关系，它增加第一中心的角动量 (ix, iy, iz)。增加幂次 ix 的方程为：
 
-![公式 (12.45)](../assets/math/eq-12-027.png){width=65%}
+$$
+\begin{aligned}
+&g_{i_{x},i_{y},i_{z};000;000;000}^{n}\\
+&\quad=X_{PA}g_{i_{x}-1,i_{y},i_{z};000;000;000}^{n}-\frac{\theta}{\alpha_{ij}}X_{PQ}g_{i_{x}-1,i_{y},i_{z};000;000;000}^{n+1}\\
+&\quad+\frac{i_{x}-1}{2\alpha_{ij}}\left(g_{i_{x}-2,i_{y},i_{z};000;000;000}^{n}-\frac{\theta}{\alpha_{ij}}g_{i_{x}-2,i_{y},i_{z};000;000;000}^{n+1}\right).
+\end{aligned}
+\qquad (12.45)
+$$
 
-**公式 (12.45)**[]{#eq-12-027}
+[]{#eq-12-027}
 
 可以推导出类似的垂直递推方程来增加 iy 和 iz。垂直递推的起点是 Boys 函数：
 
-![公式图](../assets/math/eq-12-028.png){width=58%}
+$$
+g_{000;000;000;000}^{n}=\exp(-\theta_{ij}R_{AB}^{2}-\theta_{kl}R_{CD}^{2})F_{n}(\theta R_{PQ}^{2}).
+\qquad (12.46)
+$$
 
 []{#eq-12-028}
 
@@ -626,9 +733,17 @@ def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
 ```
 第二步使用电子转移递推关系，将笛卡尔幂次从第一个电子（第一中心）转移到第二个电子（第三中心）。沿 x 方向的电子转移递推方程为：
 
-![公式 (12.47)](../assets/math/eq-12-029.png){width=64%}
+$$
+\begin{aligned}
+&g_{i_{x},i_{y},i_{z};000;k_{x},k_{y},k_{z};000}\\
+&\quad=\frac{i_{x}}{2\alpha_{kl}}g_{i_{x}-1,i_{y},i_{z};000;k_{x}-1,k_{y},k_{z};000}+\frac{k_{x}-1}{2\alpha_{kl}}g_{i_{x},i_{y},i_{z};000;k_{x}-2,k_{y},k_{z};000}\\
+&\quad-\frac{\alpha_{ij}}{\alpha_{kl}}g_{i_{x}+1,i_{y},i_{z};000;k_{x}-1,k_{y},k_{z};000}\\
+&\quad-\frac{\alpha_{j}X_{AB}+\alpha_{l}X_{CD}}{\alpha_{kl}}g_{i_{x},i_{y},i_{z};000;k_{x}-1,k_{y},k_{z};000}.
+\end{aligned}
+\qquad (12.47)
+$$
 
-**公式 (12.47)**[]{#eq-12-029}
+[]{#eq-12-029}
 
 y 和 z 方向也有结构类似的电子转移递推方程。当笛卡尔幂次到达 kx = ky = kz = 0 的边界时，就到达了电子转移递推的起点，它对应于式 (12.45) 中垂直递推公式的结果。电子转移递推方程的递归动态规划函数为：
 
@@ -671,9 +786,17 @@ def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
 ```
 注意，当该因子较大时，TRR 公式 (12.47) 可能出现数值稳定性问题。该因子可能放大某些中间变量并导致大数相减，从而产生舍入误差。为缓解数值稳定性隐患，可以使用另一种 TRR 方程：
 
-![公式 (12.48)](../assets/math/eq-12-030.png){width=65%}
+$$
+\begin{aligned}
+&g_{i_{x},i_{y},i_{z};000;k_{x},k_{y},k_{z};000}^{n}\\
+&\quad=X_{QC}g_{i_{x},i_{y},i_{z};000;k_{x}-1,k_{y},k_{z};000}^{n}+\frac{\theta X_{PQ}}{\alpha_{kl}}g_{i_{x},i_{y},i_{z};000;k_{x}-1,k_{y},k_{z};000}^{n+1}\\
+&\quad+\frac{k_{x}-1}{2\alpha_{kl}}\left(g_{i_{x},i_{y},i_{z};000;k_{x}-2,k_{y},k_{z};000}^{n}-\frac{\theta}{\alpha_{kl}}g_{i_{x},i_{y},i_{z};000;k_{x}-2,k_{y},k_{z};000}^{n+1}\right)\\
+&\quad+\frac{i_{x}}{2(\alpha_{ij}+\alpha_{kl})}g_{i_{x}-1,i_{y},i_{z};000;k_{x}-1,k_{y},k_{z};000}^{n+1}.
+\end{aligned}
+\qquad (12.48)
+$$
 
-**公式 (12.48)**[]{#eq-12-030}
+[]{#eq-12-030}
 
 为简单起见，接下来的几节暂时使用式 (12.47)，因为它不影响我们演示如何实现和优化积分程序。不过在第 12.1.8 节实现的最终版本中，我们将换用更精确的公式 (12.48)。
 在 TRR 之后，我们可以继续应用水平递推关系（HRR），在同一电子的两个中心之间转移笛卡尔幂次。下面是针对第一个电子沿 x 方向转移幂次的 HRR 方程
@@ -735,31 +858,55 @@ def primitive_ERI(li,l j,l k,l l,a i,a j,a k,a l,R a,R b,R c, Rd):
 
 可以使用求积法（quadrature method）计算 ERI：
 
-![公式 (12.50)](../assets/math/eq-12-031.png){width=65%}
+$$
+\begin{aligned}
+(\chi_{i}\chi_{j}|\chi_{k}\chi_{l}) &= \frac{2\pi^{5/2}}{\alpha_{ij}\alpha_{kl}\sqrt{\alpha_{ij}+\alpha_{kl}}}\exp(-\theta_{ij}R_{AB}^{2}-\theta_{kl}R_{CD}^{2})\\
+&\quad\sum_{n}^{N_{rys}}w_{n}I_{i_{x},j_{x},k_{x},l_{x}}^{x}(u_{n})I_{i_{y},j_{y},k_{y},l_{y}}^{y}(u_{n})I_{i_{z},j_{z},k_{z},l_{z}}^{z}(u_{n}).
+\end{aligned}
+\qquad (12.50)
+$$
 
-**公式 (12.50)**[]{#eq-12-031}
+[]{#eq-12-031}
 
 wnIx (un)Iy (un)Iz (un). (12.50)
 这里，un 和 wn 分别表示由 NRys 阶多项式导出的求积根和权重。式 (12.50) 的求和范围等于求积根的数量
 
-![公式图](../assets/math/eq-12-032.png){width=48%}
+$$
+N_{\mathrm{Rys}}=\left\lfloor\frac{l_{i}+l_{j}+l_{k}+l_{l}}{2}+1\right\rfloor.
+\qquad (12.51)
+$$
 
 []{#eq-12-032}
 
 计算求积根和权重的程序将在第 12.2.2 节讨论。
 为计算 I 张量，我们可以应用以下 RR 方程
 
-![公式 (12.52)](../assets/math/eq-12-033.png){width=62%}
+$$
+I_{0000}^{x}=1.
+\qquad (12.52)
+$$
 
-**公式 (12.52)**[]{#eq-12-033}
+[]{#eq-12-033}
 
-![公式 (12.53)(12.54)](../assets/math/eq-12-034.png){width=62%}
+$$
+\begin{aligned}
+I_{i,0,k,0}^{x} &= \left(X_{PA}-\frac{\theta u_{n}X_{PQ}}{\alpha_{ij}}\right)I_{i-1,0,k,0}^{x}+\frac{i-1}{2\alpha_{ij}}\left(1-\frac{\theta u_{n}}{\alpha_{ij}}\right)I_{i-2,0,k,0}^{x}\\
+&\quad+\frac{ku_{n}}{2(\alpha_{ij}+\alpha_{kl})}I_{i-1,0,k-1,0}^{x}, \qquad (12.53)\\
+I_{i,0,k,0}^{x} &= \left(X_{QC}+\frac{\theta u_{n}X_{PQ}}{\alpha_{kl}}\right)I_{i,0,k-1,0}^{x}+\frac{k-1}{2\alpha_{kl}}\left(1-\frac{\theta u_{n}}{\alpha_{kl}}\right)I_{i,0,k-2,0}^{x}\\
+&\quad+\frac{iu_{n}}{2(\alpha_{ij}+\alpha_{kl})}I_{i-1,0,k-1,0}^{x}, \qquad (12.54)
+\end{aligned}
+$$
 
-**公式 (12.53)(12.54)**[]{#eq-12-034}
+[]{#eq-12-034}
 
-![公式 (12.56)](../assets/math/eq-12-035.png){width=62%}
+$$
+\begin{aligned}
+I_{i,j,k,l}^{x} &= I_{i+1,j-1,k,l}^{x}+X_{AB}I_{i,j-1,k,l}^{x}, \qquad (12.55)\\
+I_{i,j,k,l}^{x} &= I_{i,j,k+1,l-1}^{x}+X_{CD}I_{i,j,k,l-1}^{x}. \qquad (12.56)
+\end{aligned}
+$$
 
-**公式 (12.56)**[]{#eq-12-035}
+[]{#eq-12-035}
 
 Ix = Ix XC DIx, (12.56)。张量 Iy 和 Iz 也可以用类似的 RR 方程计算。将这些方程转换为计算程序，得到以下 DP 函数：
 
@@ -1286,7 +1433,9 @@ def primitive_overlap(li,l j,a i,a j,R a, Rb):
 接下来，我们来考察 MD 和 OS 电子排斥积分（ERI）算法中不必要的中间状态。
 在 MD 方案中，五指标张量 E 具有很高的稀疏性。Eituv 的下标 t、u、v 与乘积χi(r)χj(r)的笛卡尔幂次有关。它们受约束 t + u + v ≤ li + lj，其中 li 和 lj 是两个高斯型轨道（GTO）的角动量。复合指标 tuv 的大小等于
 
-![公式图](../assets/math/eq-12-036.png){width=30%}
+$$
+\frac{(l_{i}+l_{j}+1)(l_{i}+l_{j}+2)(l_{i}+l_{j}+3)}{6}.
+$$
 
 []{#eq-12-036}
 
@@ -1372,16 +1521,24 @@ def get_R_tensor(l, theta, Rpq):
 ```
 优化后的迭代总共生成
 
-![公式图](../assets/math/eq-12-037.png){width=30%}
+$$
+\frac{(l+1)(l+2)(l+3)(l+4)}{24}.
+$$
 
 []{#eq-12-037}
 
 个动态规划（DP）状态。相比之下，朴素的 for 循环迭代生成 3l(l + 1)个状态。这项优化将计算成本降低了约 72 倍。
 在 OS 算法的垂直递推关系（VRR）实现中也可以观察到类似的互斥模式。对于 TRR 张量 trr[ix,iy,iz,kx,ky,kz]，角动量存在多个约束
 
-![公式 (12.57)(12.58)(12.59)](../assets/math/eq-12-038.png){width=51%}
+$$
+\begin{aligned}
+i_{x}+i_{y}+i_{z} &\leq l_{ij}, \qquad (12.57)\\
+k_{x}+k_{y}+k_{z} &\leq l_{kl}, \qquad (12.58)\\
+i_{x}+i_{y}+i_{z}+k_{x}+k_{y}+k_{z} &\leq l_{ij}+l_{kl}. \qquad (12.59)
+\end{aligned}
+$$
 
-**公式 (12.57)(12.58)(12.59)**[]{#eq-12-038}
+[]{#eq-12-038}
 
 对于第 12.1.4.2 节中的代码实现，TRR 张量的迭代范围可以优化为：
 
@@ -2039,7 +2196,10 @@ def gto_norm(l, expnt):
 
 积分筛选（integral screening）可以有效减少需要计算的积分数量。筛选积分的一种常用方法是估计电子排斥积分（ERI）的上界，该方法基于施瓦茨不等式（Schwartz inequality）：
 
-![公式图](../assets/math/eq-12-040.png){width=62%}
+$$
+|(\chi_{i}\chi_{j}|\chi_{k}\chi_{l})|\leq\sqrt{|(\chi_{i}\chi_{j}|\chi_{i}\chi_{j})||(\chi_{k}\chi_{l}|\chi_{k}\chi_{l})|}\leq Q_{ij}Q_{kl}.
+\qquad (12.60)
+$$
 
 []{#eq-12-040}
 
@@ -2190,7 +2350,10 @@ for j in range (1, lj+1):
 
 数值积分（numerical integration）是量子化学程序中计算积分的常用技术。给定积分网格 rn 及其对应的权重（体积）wn，三维空间中的积分可计算为：
 
-![公式图](../assets/math/eq-12-041.png){width=46%}
+$$
+\int f(x)d x=\sum_{n}f(\mathbf{r}_{n})w_{n}.
+\qquad (12.61)
+$$
 
 []{#eq-12-041}
 
@@ -2201,13 +2364,12 @@ for j in range (1, lj+1):
 通过选择适当的权重和节点，数值积分可以对某一类被积函数精确成立。这些被积函数通常可以写成多项式与一个已有的权函数（weight function）W (x) 的乘积。
 例如，可以使用高斯-埃尔米特求积（Gauss-Hermite quadrature）有效地计算重叠积分。方法是在高斯-埃尔米特求积的根处计算高斯轨道乘积的多项式部分：
 
-![公式图](../assets/math/eq-12-042.png){width=38%}
-
+$$
+\int(x_{P}+X_{PA})^{i_{x}}(x_{P}+X_{PB})^{j_{x}}e^{-\alpha_{ij}x_{P}^{2}}d x=\sum_{n}w_{n}(x_{n}+X_{PA})^{i_{x}}(x_{n}+X_{PB})^{j_{x}}.
+\qquad (12.62)
+$$
 []{#eq-12-042}
-
-![公式 (12.62)](../assets/math/eq-12-043.png){width=58%}
-
-**公式 (12.62)**[]{#eq-12-043}
+[]{#eq-12-043}
 
 (12.62) 为了与高斯-埃尔米特求积中的权函数 e 对应，权重和
 节点按 1/ j 缩放，如下面代码片段的第 (1) 行和第 (2) 行所示。按照求积公式，积分计算的实现如下：
@@ -2246,7 +2408,12 @@ scipy.special 模块提供了一系列常用求积公式：
 - 权函数为 e，区间为 [0, ∞ )。
 - 权函数为 √，区间为 [− 1, 1]。
 
-![公式图](../assets/math/eq-12-044.png){width=30%}
+$$
+\begin{aligned}
+&\frac{1}{\sqrt{1-x^{2}}}\\
+&\sqrt{1-x^{2}}
+\end{aligned}
+$$
 
 []{#eq-12-044}
 
@@ -2258,38 +2425,58 @@ scipy.special 模块提供了一系列常用求积公式：
 
 构造积分求积公式的第一步是计算权函数的矩（moment）
 
-![公式图](../assets/math/eq-12-045.png){width=42%}
+$$
+\int_{a}^{b}x^{n}W(x)d x,
+\qquad (12.63)
+$$
 
 []{#eq-12-045}
 
 其中 n 是非负整数，W (x) 是权函数。在 Rys 求积中，权函数是 e，积分区间为 [0, 1]，
 
-![公式图](../assets/math/eq-12-046.png){width=50%}
+$$
+\int_{0}^{1}e^{-t x^{2}}f(x^{2})d x=\sum_{n}w_{n}f(x_{n}^{2}).
+\qquad (12.64)
+$$
 
 []{#eq-12-046}
 
 ∑
 该权函数的矩由 Boys 函数给出。
 
-![公式图](../assets/math/eq-12-047.png){width=46%}
+$$
+F_{n}(t)=\int_{0}^{1}x^{2n}e^{-t x^{2}}d x.
+\qquad (12.65)
+$$
 
 []{#eq-12-047}
 
 Boys 函数可以使用向上递推（upward recursion）公式计算
 
-![公式 (12.66)(12.67)](../assets/math/eq-12-048.png){width=49%}
+$$
+\begin{aligned}
+F_{n}(t) &= \frac{-e^{-t}}{2t}+\frac{2n-1}{2t}F_{n-1}(t), \qquad (12.66)\\
+F_{0}(t) &= \frac{1}{2}\sqrt{\frac{\pi}{t}}\mathrm{erf}(\sqrt{t}). \qquad (12.67)
+\end{aligned}
+$$
 
-**公式 (12.66)(12.67)**[]{#eq-12-048}
+[]{#eq-12-048}
 
 然而，重复应用该公式 N 次会将 F0 中的数值误差放大一个因子。如果 t 值很小，那么用这个向上递推公式从 F0 计算高阶 Boys 函数并不合适。相反，我们应当重新整理递推公式，改用向下递推（downward recursion）方法：
 
-![公式图](../assets/math/eq-12-049.png){width=50%}
+$$
+F_{n-1}(t)=\frac{e^{-t}}{2n-1}+\frac{2t}{2n-1}F_{n}(t).
+\qquad (12.68)
+$$
 
 []{#eq-12-049}
 
 该递推的起点是
 
-![公式图](../assets/math/eq-12-050.png){width=50%}
+$$
+F_{n}(t)=\sum_{m=n}^{\infty}\frac{(2n-1)!!(2t)^{m-n}e^{-t}}{(2m+1)!!}.
+\qquad (12.69)
+$$
 
 []{#eq-12-050}
 
@@ -2339,14 +2526,20 @@ def downward(n,t , prec=1e-15):
 
 Rys 多项式记为 pi(x) = ∑ cikx，它们关于该权函数构成正交集：
 
-![公式图](../assets/math/eq-12-051.png){width=52%}
+$$
+\langle p_{i},p_{j}\rangle=\int_{0}^{1}p_{i}(x)p_{j}(x)e^{-t x^{2}}d x=\delta_{ij}.
+\qquad (12.70)
+$$
 
 []{#eq-12-051}
 
 这一正交性可以转化为关于 Boys 函数的系数 c 的线性代数问题：为求 N 阶 Rys 多项式的根，可以使用 numpy.roots 函数求解系数矩阵 c 的第 (N + 1) 列中的系数。
 两个 Rys 多项式 pi 和 pj 之间的积分，可以使用 N 阶 Rys 多项式的根 xn 和权重 wn 计算：这个线性方程的解是求积权重 wn，其表达式为：
 
-![公式图](../assets/math/eq-12-052.png){width=44%}
+$$
+w_{n}=\frac{1}{\sum_{ik}(c_{ik}x_{n}^{k})^{2}}.
+\qquad (12.73)
+$$
 
 []{#eq-12-052}
 
@@ -2444,14 +2637,20 @@ def rys_roots_weights(nroots, t):
 使用 mpmath 库计算求积公式非常耗时。用这种方法即时在线计算求积公式并不实际。更可行的方法是使用 mpmath 库计算精确的根和权重，然后用多项式近似求积公式。在实际应用中，我们可以通过计算近似多项式，高效地求出求积公式。
 首先，考虑 t 趋近于 0 或∞时的特殊情况。在 t → 0 的区域，Rys 求积公式的权重函数近似等于 1。我们可以使用勒让德求积公式（Legendre quadrature）来近似 Rys 求积公式：
 
-![公式图](../assets/math/eq-12-053.png){width=56%}
+$$
+\int_{0}^{1}f(x)e^{-t x^{2}}d x\approx\sum w_{n}^{\mathrm{L}}(1-t(x_{n}^{\mathrm{L}})^{2})f((x_{n}^{\mathrm{L}})^{2}).
+\qquad (12.74)
+$$
 
 []{#eq-12-053}
 
 ∑
 当 t 足够大时，我们可以按如下方式近似该积分：
 
-![公式图](../assets/math/eq-12-054.png){width=66%}
+$$
+\int_{0}^{1}f(x)e^{-t x^{2}}d x\approx\int_{0}^{\infty}f(x)e^{-t x^{2}}d x=1/\sqrt{t}\int_{0}^{\infty}f\left(\frac{x'}{\sqrt{t}}\right)e^{-{x'}^{2}}d x'.
+\qquad (12.75)
+$$
 
 []{#eq-12-054}
 
@@ -2517,13 +2716,19 @@ def polynomial_approx(nroots, t):
 
 切比雪夫多项式（Chebyshev polynomials）[14] 能够有效地近似区间 [− 1, 1] 内的光滑函数。为了确定能产生最精确拟合函数的最优拟合系数，采用以下公式选取次数不超过 N 的多项式的切比雪夫节点：
 
-![公式图](../assets/math/eq-12-055.png){width=50%}
+$$
+\cos\left(\frac{\pi(k-\frac{1}{2})}{N}\right),\quad k=1,\ldots,N.
+\qquad (12.76)
+$$
 
 []{#eq-12-055}
 
 对于范围在 (10, 50) 内的 Rys 求积公式输入参数，我们可以使用下式进行分段拟合，将区间 [a,b] 映射到区间
 
-![公式图](../assets/math/eq-12-056.png){width=70%}
+$$
+\frac{x-(b+a)/2}{(b-a)/2}.
+\qquad (12.77)
+$$
 
 []{#eq-12-056}
 
@@ -2608,20 +2813,31 @@ def chebval(x, c):
 
 双电子库仑型相互作用（Coulomb-type interactions）的积分可以在倒易空间（reciprocal space）中计算，并可表示为对单粒子算符的积分：
 
-![公式图](../assets/math/eq-12-057.png){width=63%}
+$$
+\int f(\mathbf{r}_{1})\frac{1}{r_{12}}g(\mathbf{r}_{2})d^{3}\mathbf{r}_{1}d^{3}\mathbf{r}_{2}=\left(\frac{1}{2\pi}\right)^{3}\int\frac{4\pi}{k^{2}}F(\mathbf{k})G(-\mathbf{k})d^{3}\mathbf{k}
+\qquad (12.78)
+$$
 
 []{#eq-12-057}
 
 其中 F (k) G(k) 分别为函数 f (r) g(r) 的傅里叶变换。2 为库仑算符的傅里叶变换。一些库仑型双电子算符及其傅里叶变换列于表 12.3。式 (12.78) 使我们能够在倒易空间中数值计算库仑型积分。它可用作参考，以验证解析积分程序的正确性。
 对于倒易空间中的三维积分，我们可以使用球坐标和适当的求积方案（quadrature scheme）来生成积分网格：
 
-![公式图](../assets/math/eq-12-058.png){width=45%}
+$$
+\begin{aligned}
+\int f(\mathbf{r})d^{3}\mathbf{r} &= \int_{0}^{\infty}r^{2}d r\int_{0}^{\pi}\sin\varphi\,d\varphi\int_{0}^{2\pi}d\theta\,f(r,\theta,\varphi)\\
+&= \int_{0}^{\infty}r^{2}d r\int_{-1}^{1}d t\int_{0}^{2\pi}d\theta\,f(r,\theta,\arccos(t)).
+\end{aligned}
+\qquad (12.79)
+$$
 
 []{#eq-12-058}
 
 勒让德求积（Legendre quadrature）适合用于生成径向网格。可以应用对数变换，将其区间 [-1, 1] 映射到定义域 (0, ∞ )。角度分量的积分是二维的。角度网格的一种选择是球面上的勒贝德夫网格（Lebedev grids）[15]。这里我们展示另一种选择，即使用勒让德求积在球面上生成二维网格点。式 (12.79) 中 t 的网格位于区间 [-1, 1]，可以直接使用勒让德求积获得。为了生成 θ 的网格，可以应用线性映射
 
-![公式图](../assets/math/eq-12-059.png){width=30%}
+$$
+\theta=\pi x+\pi
+$$
 
 []{#eq-12-059}
 
@@ -2647,19 +2863,30 @@ kv[:,:,:,2] = einsum( 'i,j->ij',r , np.cos(phi))[:,:,np.newaxis] #z
 ```
 在倒易空间中，每个积分网格 k 对应一个平面波函数（plane-wave function）。我们可以计算每个网格上轨道乘积的傅里叶变换：
 
-![公式图](../assets/math/eq-12-060.png){width=30%}
+$$
+\int e^{-i\mathbf{k}\cdot\mathbf{r}}\chi_{i}(\mathbf{r})\chi_{j}(\mathbf{r})d^{3}\mathbf{r}=S_{i_{x}j_{x}}(k_{x})S_{i_{y}j_{y}}(k_{y})S_{i_{z}j_{z}}(k_{z}).
+\qquad (12.80)
+$$
 
 []{#eq-12-060}
 
 e χi(r)χj(r)d r = Six jx (kx)Siyjy (ky)Sizjz (kz).) 各个笛卡尔分量的递推关系（RR）公式与我们在第 12.1.3.1 节中介绍的重叠积分公式类似：
 
-![公式 (12.81)(12.82)](../assets/math/eq-12-061.png){width=63%}
+$$
+\begin{aligned}
+S_{i_{x},j_{x}}(k_{x}) &= X_{AB}S_{i_{x},j_{x}-1}(k_{x})+S_{i_{x}+1,j_{x}-1}(k_{x}), \qquad (12.81)\\
+S_{i_{x},0}(k_{x}) &= \left(X_{PA}-\frac{ik_{x}}{2\alpha_{ij}}\right)S_{i_{x}-1,j_{x}}(k_{x})+\frac{i_{x}-1}{2\alpha_{ij}}S_{i_{x}-2,0}(k_{x}), \qquad (12.82)
+\end{aligned}
+$$
 
-**公式 (12.81)(12.82)**[]{#eq-12-061}
+[]{#eq-12-061}
 
-![公式 (12.83)](../assets/math/eq-12-062.png){width=61%}
+$$
+S_{00}(k_{x})=\sqrt{\frac{\pi}{\alpha_{ij}}}e^{-\theta_{ij}X_{AB}^{2}-\frac{k_{x}^{2}}{4\alpha_{ij}}-ik_{x}X_{P}}.
+\qquad (12.83)
+$$
 
-**公式 (12.83)**[]{#eq-12-062}
+[]{#eq-12-062}
 
 S00 (kx) = e. (12.83)
 傅里叶变换程序可以按如下方式开发：

@@ -202,11 +202,11 @@ jax.config.update('jax_enable_x64', True)
 
 固定内存（pinned memory），也称为页锁定内存（page-locked memory），是一种操作系统不能将其分页换出到磁盘的内存。在数据传输时使用固定内存可以显著提升传输带宽。
 通常，程序使用的内存是可分页的。然而，GPU 不能直接访问可分页主机内存中的数据。当数据从可分页主机内存传输到设备内存时，数据移动分两个阶段完成。首先，将数据从可分页内存复制到页锁定缓冲区，随后从缓冲区传输到设备。CPU 参与这一两步数据传输过程，具体负责在可分页内存和页锁定内存之间移动数据的步骤。如果主机上的数据一开始就创建在固定内存中，便可以跳过这一步。这消除了与 CPU 内存管理相关的延迟和开销 [18]。
-在 cupy.cuda.pinned_memory 模块中提供了几个操作固定内存的函数。为了与 NumPy 更无缝地集成，CuPy 还在 cupyx 软件包中提供高级 API，用于创建由固定内存支持的 NumPy 数组。cupyx 中一些常用的 API 包括
--
--
--
--
+在 cupy.cuda.pinned_memory 模块中提供了几个操作固定内存的函数。为了与 NumPy 更无缝地集成，CuPy 还在 cupyx 软件包中提供高级 API，用于创建由固定内存支持的 NumPy 数组。cupyx 中一些常用的 API 包括：
+  - `cupyx.empty_pinned`
+  - `cupyx.empty_like_pinned`
+  - `cupyx.zeros_pinned`
+  - `cupyx.zeros_like_pinned`
 请注意，这些函数输出的是 NumPy 数组，而不是 GPU 上的 CuPy 数组。我们可以使用这些函数在固定内存中创建 NumPy 数组缓冲区，并通过 out 关键字参数将它们传给 NumPy 函数。随后 NumPy 函数直接将数据写入固定内存。
 例如，传给 get_j 函数的 eri 张量可以在固定内存上初始化。
 
@@ -456,7 +456,7 @@ def get_j_v3(eri, dm):
 
 CuPy、PyCUDA 和 CUDA-Python 都是允许我们在 Python 程序中嵌入原始 CUDA 内核的工具。
 在这三者中，Nvidia 提供的 CUDA-Python 不太常用。CUDA-Python 提供了一整套 CUDA API，其命名约定和 API 结构与 CUDA C++ API 几乎完全相同。理论上，它可以完成 CUDA C++ 能完成的几乎所有工作。然而，CUDA-Python 只是将 CUDA API 函数导出到 Python，并未适配 Python 语言的惯例。使用 CUDA-Python 时，需要注意数据类型、错误代码以及通常与 C++ 编程有关的其他细节。编译配置也要求深入理解 CUDA 二进制文件和运行时框架。与完全使用 C++ 编写后再通过 ctypes 或 CFFI 导出到 Python 相比，单独使用 CUDA-Python 并不能精简开发流程。
-和 PyCUDA 都在 CUDA 编程与 Python 集成之间提供了更好的平衡。使用 CuPy 和 PyCUDA 时，只需专注于 CUDA 内核代码。这些工具会自动处理其余任务，包括编译配置和 Python 接口。它们提供访问大多数基本 CUDA 特性的 API，尽管不如 CUDA-Python 全面。这些 API 分别位于 CuPy 的 cupy.cuda.runtime 模块和 PyCUDA 的 pycuda.driver 模块中。例如，第 11.4.4 节将要使用的零拷贝（zero-copy）内存访问技术，需要直接调用 cupy.cuda.runtime 模块的 API。
+CuPy 和 PyCUDA 都在 CUDA 编程与 Python 集成之间提供了更好的平衡。使用 CuPy 和 PyCUDA 时，只需专注于 CUDA 内核代码。这些工具会自动处理其余任务，包括编译配置和 Python 接口。它们提供访问大多数基本 CUDA 特性的 API，尽管不如 CUDA-Python 全面。这些 API 分别位于 CuPy 的 cupy.cuda.runtime 模块和 PyCUDA 的 pycuda.driver 模块中。例如，第 11.4.4 节将要使用的零拷贝（zero-copy）内存访问技术，需要直接调用 cupy.cuda.runtime 模块的 API。
 我们以 CuPy RawKernel 为例，探讨如何将原始 CUDA 内核集成到 Python 程序中。虽然 PyCUDA 的 API 命名和包结构与 CuPy 不同，但它们的用法非常相似。基于 CuPy 示例，使用 PyCUDA 达到相同目的并不困难。
 使用第 11.4.1 节开发的原始 CUDA 内核源代码，我们可以按如下方式初始化一个 RawKernel 实例：
 
@@ -615,12 +615,6 @@ if __name__ == '__main__':
 ![](../assets/tables/table-11-1.png)
 
 **表 11.1** 各种 get_j CUDA kernel 的性能。
-
-```text
-                              kernel_v1
-kernel_v2
-                                kernel_v3
-```
 
 ## 小结
 

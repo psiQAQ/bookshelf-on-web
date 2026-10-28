@@ -288,24 +288,20 @@ Out[2]:
 对坐标轴应用仿射变换后，多项式也随之变换。需要注意，待替换符号（如 x、y 和 z）同时也出现在替换表达式的目标项中。默认替换机制会按顺序依次执行各条规则，导致先生成的符号在后续步骤中被二次替换。为规避这一问题，使用 simultaneous=True 选项可确保所有符号替换同步生效。
 在符号变量和表达式的基础上，SymPy 为符号数学提供了一套全面的功能。虽然逐项详细讨论这些功能超出了本书的范围，但我们将概述 SymPy 的主要功能。建议读者查阅 SymPy 文档，了解具体功能的更多详细信息。
 
-- 和展开表达式。通用函数 sympy.simplify 提供这一功能。对于多项式，其他功能包括： -
+- 化简与展开表达式。通用函数 sympy.simplify 提供这一功能。对于多项式，其他功能包括：
+  - `sympy.factor`
+  - `sympy.expand`
+  - `sympy.collect`（收集表达式中某一项的相同幂次）。
 
--
+此外，SymPy 还提供对三角运算、指数和对数以及某些特殊函数的简化和展开功能，包括：
+  - `trigsimp`
+  - `besselsimp`
+  - `gammasimp`
+  - `hypersimp`
 
-- （收集表达式中某一项的相同幂次）。
+- 表达式求导。通常可以使用 sympy.diff 函数和 sympy.Derivative 类进行微分。对于以矩阵表示的符号表达式，SymPy 还可以计算雅可比矩阵。这一功能只适用于 Matrix 对象，由 Matrix.jacobian 方法提供。
 
-此外，SymPy 还提供对
-三角运算、指数和对数以及某些特殊函
-数的简化和展开功能，包括： -
--
--
--
-
-- 表达式的。通常可以使用 sympy.diff 函数和 sympy.Derivative 类进行微分。对于以矩阵表示的符号表达式，SymPy 还可以计算雅可比矩阵。
-
-这一功能只适用于 Matrix 对象，由
-
-- 和不定积分。积分可通过 sympy.Integral 类或 sympy.integrate 函数进行。不定积分使用以下方式计算：
+- 定积分和不定积分。积分可通过 sympy.Integral 类或 sympy.integrate 函数进行。不定积分使用以下方式计算：
 
 ```text
    sympy.integrate(expr, variables)
@@ -315,15 +311,17 @@ Out[2]:
 ```text
 sympy.integrate(expr, (variable, lower_limit, upper_limit))
 ```
-指定积分限时，SymPy 中的变量 sympy.oo 表示 ∞。对于多变量积分，可以向 sympy.integrate 函数传递多个积分限。SymPy 还提供常见的积分变换。这些功能可在 sympy.integrals 模块中找到，包括： -
--
--
--
-以及它们对应的逆变换
--
--
--
--
+指定积分限时，SymPy 中的变量 sympy.oo 表示 ∞。对于多变量积分，可以向 sympy.integrate 函数传递多个积分限。SymPy 还提供常见的积分变换。这些功能可在 sympy.integrals 模块中找到，包括：
+  - `fourier_transform`
+  - `hankel_transform`
+  - `laplace_transform`
+  - `mellin_transform`
+
+  以及它们对应的逆变换：
+  - `inverse_fourier_transform`
+  - `inverse_hankel_transform`
+  - `inverse_laplace_transform`
+  - `inverse_mellin_transform`
 
 - 表达式或序列的极限。这些功能与 sympy.limit 和 sympy.limit_seq 函数相关。
 - 函数在展开点附近的展开。sympy.series 函数提供这一功能。
@@ -348,47 +346,43 @@ sympy.dsolve(eq, f(x)))
 模块中的函数，例如 classify_pde、pde_separate、pde_separate_add、pde_separate_mul，为 PDE 求解过程提供提示。
 
 - 针对特定数学领域。SymPy 包含专为各种数学学科设计的模块，例如范畴论、密码学、微分几何、几何学、完整函数、李代数、多项式操作和统计学。SymPy 在线文档为这些领域的功能设有专门章节。
-- 广泛的特殊函数和多项式。特殊函数例如
+- 广泛的特殊函数和多项式。特殊函数例如：
+  - `sympy.erf`
+  - `sympy.hyper`
+  - `sympy.bessel`
+  - `sympy.gamma`
+  - `sympy.functions.special.spherical_harmonics`
 
--
--
--
--
--
-以及许多其他函数可在 sympy.functions 和 sympy.functions.special 模块中找到。特殊多项式，例如
--
--
--
-由 sympy.polys 模块提供。
+  以及许多其他函数可在 sympy.functions 和 sympy.functions.special 模块中找到。特殊多项式，例如：
+  - `hermite_poly`
+  - `legendre_poly`
+  - `chebyshevt_poly`
+
+  由 sympy.polys 模块提供。
 
 - 绘图。函数绘图由 sympy.plot 函数和 sympy.plotting 模块提供。sympy.plot 函数基于 Matplotlib 构建，提供与使用 Matplotlib 库相当的用户体验。
-- 生成。sympy.printing 模块提供生成各种编程代码的函数，例如 ccode()、fcode()、pycode() 和 julia_code()。此外，SymPy 可以使用 sympy.latex() 将表达式转换为 LaTeX 公式。
+- 代码生成。sympy.printing 模块提供生成各种编程代码的函数，例如 ccode()、fcode()、pycode() 和 julia_code()。此外，SymPy 可以使用 sympy.latex() 将表达式转换为 LaTeX 公式。
 
 除了数学功能，我们还可以在 SymPy 中找到量子物理的各种符号功能：
 
-- 针对常规量子系统，例如
-- 用于谐
+- 针对常规量子系统，例如：
+  - 谐振子：sympy.physics.sho 和 sympy.physics.qho_1d 模块。
+  - 氢原子：sympy.physics.hydrogen 模块。
 
-振子的 sympy.physics.sho 和 sympy.physics.qho_1d 模块。
-
-- 用于氢原子的 sympy.physics.hydrogen 模块。
-- Wigner 系数。sympy.physics.wigner 模块收集了 clebsch_gordan、racah、wigner_3j、wigner_6j、wigner_9j 和 wigner_d 等函数。
+- Clebsch-Gordan 与 Wigner 系数。sympy.physics.wigner 模块收集了 clebsch_gordan、racah、wigner_3j、wigner_6j、wigner_9j 和 wigner_d 等函数。
 - 用于角动量耦合和操作的 sympy.physics.quantum.spin 模块。可用功能包括：
-- 用于旋转矩阵的 WignerD 类。
-- 用于 J 的 J2 类
-- 用于沿 x、y 和 z 轴角动量的 Jx、Jy 和 Jz 类。- 用于 Jˆ Jˆ 的 Jplus 和 Jminus 类
+  - 用于旋转矩阵的 WignerD 类。
+  - 用于 J^2 算符的 J2 类。
+  - 用于沿 x、y 和 z 轴角动量的 Jx、Jy 和 Jz 类。
+  - 用于 J+ 和 J− 算符的 Jplus 和 Jminus 类。
+
 - 用于二次量子化的 sympy.physics.secondquant 模块。该模块中可以找到常见的二次量子化算符和操作：
-- 分别用于玻色子和费米子
+  - 分别用于玻色子和费米子算符的 BosonicOperator 和 FermionicOperator 类。
+  - 用于湮灭和产生算符的 Annihilator 和 Creator 类。
+  - 用于以正规序表示的多体操作的 NO 类。
+  - 用于推导表达式正规序表示的 wicks 函数。
 
-算符的 BosonicOperator 和 FermionicOperator 类。
-
-- 用于湮灭和产生算符的 Annihilator 和 Creator 类。
-- 用于以正规序表示的多体操作的 NO 类。
-- 用于推导表达
-
-式正规序表示的 wicks 函数。
-
-- 通过 sympy.Quaternion 类进行代数运算。
+- 四元数代数，通过 sympy.Quaternion 类实现。
 
 SymPy 软件包可以处理大多数需要推导符号公式的场景。为了更精确地操作特定领域问题的符号表达式，有时我们可能希望从头开发具有自定义规则的符号程序。例如，在第 15 章，我们将展示如何为耦合簇理论定制符号程序。
 
@@ -397,10 +391,10 @@ SymPy 软件包可以处理大多数需要推导符号公式的场景。为了�
 自动微分（automatic differentiation，AD）初看颇显神奇，其实底层原理相当清晰。对函数施加 AD 时，输入数据先被封装包装，其参与的每一步计算操作均被重载。当函数完成求值，重载的操作便同步构建出一张记录输入变换历程的计算图。随后只需对图中各节点套用求导法则并遍历整张图，就能精确求出导数。这一处理机制与惰性求值紧密相关，第 9 章第 9.8 节将展开详细讨论。
 AD 技术是机器学习和神经网络发展的基石。神经网络领域的某些术语已成为 AD 中的常见概念，包括：
 
-- 传播。这个过程按照函数操作的定义顺序，从输入到输出执行这些操作。
-这是计算函数对其输入的导数的过程。从函数输出开始，递归应用链式法则，计算每个中间操作对其输入的导数。
-- 微分。这种模式定义了输出对输入扰动的响应。
-- 微分。这种方法用于反向传播。它以逆序遍历计算图，计算每个中间节点的导数。
+- 前向传播（forward propagation）。这个过程按照函数操作的定义顺序，从输入到输出执行这些操作。
+- 反向传播（backpropagation）。这是计算函数对其输入的导数的过程。从函数输出开始，递归应用链式法则，计算每个中间操作对其输入的导数。
+- 前向模式微分（forward-mode differentiation）。这种模式定义了输出对输入扰动的响应。
+- 反向模式微分（reverse-mode differentiation）。这种方法用于反向传播。它以逆序遍历计算图，计算每个中间节点的导数。
 
 有多种神经网络工具可用于执行自动微分，包括 PyTorch [4]、JAX [5]、TensorFlow [6] 和 autograd 等。尤其是 PyTorch 和 JAX，被广泛用于 AD 应用。
 

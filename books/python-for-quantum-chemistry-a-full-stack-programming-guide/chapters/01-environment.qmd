@@ -1288,7 +1288,7 @@ Out[3]:
 (<class 'HybridDFT'>,< class 'HartreeFock'>,< class 'KohnShamDFT'>,< class
     'SelfConsistentField'>,< class 'object'>)
 ```
-在这种情况下，Python 找到第一个可用的 check_convergence 方法的位置是
+在这种情况下，Python 找到的第一个可用的 check_convergence 方法位于 KohnShamDFT 类中。
 Python 使用一种称为 C3 线性化（C3 linearization）的特定算法 [43] 来构建 MRO，从而唯一确定 MRO。该算法旨在为多重继承的类建立一致且可重
 现的 MRO。虽然它保证 MRO 是确定性的，但这并不意味着多重继承类中的歧义减少了。例如，上面展示的 HybridDFT 类的两个 MRO 之间的差异，是由第二个父类 KohnShamDFT 中一个微小的层次结构差异造成的，在处理子类 HybridDFT 时可能很容易忽略这一点。
 为了减少面向对象程序中的歧义和混淆，建议尽可能限制多重继承的使用。如果无法避免多重继承，建议在子类中显式定义任何存在歧义的方法，以确保清晰。这可以通过直接调用所需父类中的实现来完成。例如，可以在 HybridDFT.check_convergence 方法中显式调用 KohnShamDFT.check_convergence 方法：
@@ -1368,8 +1368,7 @@ class KohnShamDFT(SelfConsistentField, KohnShamDFTMixin, DFTOptimizationMixin):
 class HybridDFT(SelfConsistentField, HartreeFockMixin, KohnShamDFTMixin, DFTOptimizationMixin):
     pass
 ```
-check_convergence 方法被放在专门用于波函数优化的类中。类似地，每个理论模型的其他功能被分组并在各自的混入（Mixin）中实现。在开发新模型（例如 HybridDFT 类）时，通过组合相关理论模型的混入来派生新类。这个类层次结构消除了 HybridDFT 类中 check_convergence 方法的歧义，因为唯一可用的候选方法由
-应当注意，混入不会自动解决多重继承中的歧义。需要仔细设计和实现，才能确保每个父类，包括基类和混入，都提供一组不同的方法。混入方法本质上是多重继承的一种更复杂的形式。使用混入可能使多重继承的情况进一步复杂化，并在子类中导致各种意外的名称冲突。
+check_convergence 方法被放在专门用于波函数优化的类中。类似地，每个理论模型的其他功能被分组并在各自的混入（Mixin）中实现。在开发新模型（例如 HybridDFT 类）时，通过组合相关理论模型的混入来派生新类。这个类层次结构消除了 HybridDFT 类中 check_convergence 方法的歧义，因为唯一可用的候选方法由 DFTOptimizationMixin 类提供。应当注意，混入不会自动解决多重继承中的歧义。需要仔细设计和实现，才能确保每个父类，包括基类和混入，都提供一组不同的方法。混入方法本质上是多重继承的一种更复杂的形式。使用混入可能使多重继承的情况进一步复杂化，并在子类中导致各种意外的名称冲突。
 例如，假设我们基于 HybridDFT 开发了一个新模型 ConstrainedHybridDFT，其中采用一种新的优化算法，支持对电子密度的局域性施加约束。如果新类按如下方式实现，check_convergence 方法就会出现歧义。这是由于 OptimizationMixin 系列中的菱形继承结构（图 1.8）造成的。
 
 ```python

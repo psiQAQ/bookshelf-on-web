@@ -72,21 +72,6 @@ C/C++中相应的操作通常只消耗几个CPU周期。对于这些操作，原
 
 **表 9.1** Python 操作的开销估算。
 
-```text
-Singlearithmeticexpr. *, /, &, ==, abs(), ... - 100
-```
-
-```text
-Listcomprehension for x in ...] -5 0
-Dictcomprehension ... for x in ...}
-```
-
-```text
-Enumerate i, _ in enumerate(...)
-zip x, y in zip(xs, ys)
-Branching ... else ... -2 0
-```
-
 #### 字典查找
 
 Python 中的字典查找比普通原子指令稍慢，大约需要 100 个或更多 CPU 周期，具体开销取决于
@@ -171,8 +156,8 @@ Wall time: 581 ms
 
 延迟（latency）和吞吐量（throughput）是影响代码性能的两个关键指标：
 
-- 指计算机完成一项操作所需的时间。
-- （对于某些设备也称带宽）衡量特定时间内可以完成的操作数量。
+- 延迟指计算机完成一项操作所需的时间。
+- 吞吐量（对于某些设备也称带宽）衡量特定时间内可以完成的操作数量。
 
 在最简单的同步模型中，计算设备依次串行处理请求。处理单次请求越快，系统整体吞吐量便越高；换言之，单次任务的耗时（延迟）与系统吞吐量呈严格的反比关系。
 然而受制于物理规律与体系结构，进一步压低延迟往往极其困难，这反过来制约了同步串行模式下的吞吐上限。现代硬件通常支持并发流水工作，无需等待前序任务结束即可启动新任务。并发机制成功解耦了延迟与吞吐量：即使单项任务本身的耗时依然偏高，系统依然能凭借高并发达成可观的吞吐水平。
@@ -649,11 +634,7 @@ Line # Hits Time Per Hit % Time Line Contents
 
 ```python
 dot_kj = np.dot(cs[:,k], s[:,j])
-```
-和
-
-```text
-cs[:,j]-= dot_kj * cs[:,k]
+cs[:,j] -= dot_kj * cs[:,k]
 ```
 合计消耗了总执行时间的 85%。Per Hit 时间表明，这两个 NumPy 语句的平均执行时间分别为 2600 和 2900 纳秒。考虑到此例的问题规模为 500，每个元素的成本约为 5.5 纳秒，接近 16 个 CPU 周期。这比 NumPy ufunc 语句的成本估计（3–5 个 CPU 周期）慢得多。造成这一差异的原因可能有：
 
@@ -1577,11 +1558,6 @@ def schmidt_orth(s):
 
 **表 9.4** 各种 Python 编译技术的比较。
 
-```text
-[compiler]
-cflags=-std=c++11 -O3 -march=native -ffast-math
-```
-
 ### 9.4.4 Cython、Pythran 和 Numba
 
 表 9.4 总结了 Numba、Cython 和 Pythran 的技术方面。下面详细比较这三种技术。
@@ -1592,11 +1568,11 @@ cflags=-std=c++11 -O3 -march=native -ffast-math
 
 #### 对 Python 特性的支持
 
-和 Cython 支持大多数 Python 语言特性，尽管使用这些特性可能导致性能下降。可以向使用 Numba 和 Cython 编译的程序导入 Python 模块。然而，Pythran 不支持将其他 Python 模块或函数导入 Pythran 编译的代码。这一限制缩小了 Pythran 能够有效应用的范围。
+Numba 和 Cython 支持大多数 Python 语言特性，尽管使用这些特性可能导致性能下降。可以向使用 Numba 和 Cython 编译的程序导入 Python 模块。然而，Pythran 不支持将其他 Python 模块或函数导入 Pythran 编译的代码。这一限制缩小了 Pythran 能够有效应用的范围。
 
 #### 优化提示
 
-和 Numba 都提供以 HTML 标注代码的功能。这些注释有助于分析编译后代码中每条 Python 语句的复杂度和效率。Cython 的注释更进一步，突出显示可能未得到最佳优化的代码。Pythran 生成的 C++ 代码包含注释行，用于将 C++ 代码映射回原始 Python 语句。然而，Pythran 大量使用 C++ 模板，使代码分析更具挑战性。
+Cython 和 Numba 都提供以 HTML 标注代码的功能。这些注释有助于分析编译后代码中每条 Python 语句的复杂度和效率。Cython 的注释更进一步，突出显示可能未得到最佳优化的代码。Pythran 生成的 C++ 代码包含注释行，用于将 C++ 代码映射回原始 Python 语句。然而，Pythran 大量使用 C++ 模板，使代码分析更具挑战性。
 
 #### 性能分析
 
@@ -1604,7 +1580,7 @@ cflags=-std=c++11 -O3 -march=native -ffast-math
 
 #### NumPy 专门优化
 
-和 Pythran 对 NumPy 功能做专门优化。代码中所有 NumPy 语句，例如数组对象和函数调用，都会被各自的定制实现替换。这样，NumPy 操作的性能便得到自动优化，调用 NumPy 的开销也降至最低。在 Cython 中，NumPy 操作要么被视为普通 Python 对象，要么链接到 NumPy 提供的共享库。除非显式展开 NumPy ufunc 和广播代码，否则 Cython 中 NumPy 操作的性能与纯 Python 中几乎相同。Cython 只通过内存视图对数组索引代码做专门优化，使单个元素的访问效率可与 C 语言级别相媲美。
+Cython 和 Pythran 对 NumPy 功能做专门优化。代码中所有 NumPy 语句，例如数组对象和函数调用，都会被各自的定制实现替换。这样，NumPy 操作的性能便得到自动优化，调用 NumPy 的开销也降至最低。在 Cython 中，NumPy 操作要么被视为普通 Python 对象，要么链接到 NumPy 提供的共享库。除非显式展开 NumPy ufunc 和广播代码，否则 Cython 中 NumPy 操作的性能与纯 Python 中几乎相同。Cython 只通过内存视图对数组索引代码做专门优化，使单个元素的访问效率可与 C 语言级别相媲美。
 
 #### SIMD 矢量化
 
@@ -2172,13 +2148,13 @@ cs = cs + [vec / fac **.5] # (4)
 - 给定子问题的解，如何在问题规模增加一个单位后推导出解？
 
 一旦清楚地回答了这些问题，我们就可以将答案转换为程序代码，让计算机搜索解。
-例如，考虑推导完全组态相互作用（full configuration interaction，FCI）方法中 Slater 行列式基的问题。该问题表述为：给定 n 个轨道和 m，行列式基由所有可能的组合构成
+例如，考虑推导完全组态相互作用（full configuration interaction，FCI）方法中 Slater 行列式基的问题。该问题表述为：给定 n 个轨道和 m 个电子，行列式基由所有可能的组合构成
 从 n 个中选取 m 个轨道。显然，可能的
 行列式数量等于二项式系数。
 
-- 和输出：问题的输入 (n, m) 是轨道数 n 和电子数 m。输出是一个行列式列表。每个行列式由一个占据轨道列表表示。
+- 输入和输出：问题的输入 (n, m) 是轨道数 n 和电子数 m。输出是一个行列式列表。每个行列式由一个占据轨道列表表示。
 - 边界位于 (t, 0) 和 (t, t)。在 (t, 0) 处的值是空列表，而在 (t, t) 处的值是一个包含全部 t 个轨道的列表。
-- (n, m) 的解可以由子问题 (n1, m-1) 和 (n-1, m) 推导出来。具体方法是在 (n-1, m-1) 的结果中的每个行列式里加入轨道 n，并保留 (n-1, m) 的全部行列式。
+- 递推：大小为 (n, m) 的解可以由子问题 (n-1, m-1) 和 (n-1, m) 推导出来。具体方法是在 (n-1, m-1) 的结果中的每个行列式里加入轨道 n，并保留 (n-1, m) 的全部行列式。
 
 ![](../assets/figures/fig-9-6.png)
 

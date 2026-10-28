@@ -90,7 +90,7 @@ Python 的 float 是双精度（64 位）浮点类型，与 C 中的 double 类�
 
 **图 8.1** IEEE 浮点数（float16）与 Brain 浮点数（bfloat16）的比较
 
-C语言标准。不同的C和C++编译器对半精度类型的支持可能并不普遍，也可能不一致。在GCC [1] 和Clang [2] 中使用float16类型需要额外的编译标志。bfloat16类型仅在某些硬件平台上可用。在Python的C/C++扩展中使用半精度浮点数时必须谨慎，因为这可能涉及依赖平台和编译器的问题。
+C 语言标准。不同的 C 和 C++ 编译器对半精度类型的支持可能并不普遍，也可能不一致。在 GCC [1] 和 Clang [2] 中使用 float16 类型需要额外的编译标志。bfloat16 类型仅在某些硬件平台上可用。在 Python 的 C/C++ 扩展中使用半精度浮点数时必须谨慎，因为这可能涉及依赖平台和编译器的问题。
 
 #### 8.2.1.3 字符串
 
@@ -101,7 +101,7 @@ a_str = 'py-str'
 b_obj = a_str.encode() # converts string to bytes
 a_str = b_obj.decode() # converts bytes to string
 ```
-对于NumPy数组中的字符串，我们可以使用.astype()方法将数组中的所有字符串转换为bytes，或进行反向转换 [3]。
+对于 NumPy 数组中的字符串，我们可以使用.astype()方法将数组中的所有字符串转换为 bytes，或进行反向转换 [3]。
 
 ```python
 str_arr = np.array([ 'py-str', 'xyz'])
@@ -109,8 +109,8 @@ b_arr = str_arr.astype(bytes) # converts all strings in the array to bytes
 str_arr = b_arr.astype( str) # converts all bytes to string objects
 ```
 转换操作 .astype(bytes) 会得到由 bytes 对象组成的数组。这个数组 b_arr 的步幅（stride）等于 str_arr 数组中最长字符串的大小。较短的字符串会在末尾补 0，以匹配最长字符串的长度。因此，b_arr 中的每个元素大小相同，对应于 b_arr.itemsize。需要留意的是，数组中的字符串元素没有结尾的 NUL 字符。strcpy 和 strcmp 等 C 字符串函数不适用于单个元素。在 C 函数中处理 b_arr 时，我们可以按 b_arr.itemsize 的步幅遍历底层数据，以访问每个元素。b_arr 的 .dtype 属性
-显示诸如|S6的记法。它表示数组元素是bytes对象，每个对象的长度为6字节。
-Python字符串与C或C++字符串之间的转换可以通过Python/C API或C++的std::string构造函数实现：
+显示诸如|S6 的记法。它表示数组元素是 bytes 对象，每个对象的长度为 6 字节。
+Python 字符串与 C 或 C++ 字符串之间的转换可以通过 Python/C API 或 C++ 的 std::string 构造函数实现：
 
 ```python
 #include <Python.h>
@@ -123,13 +123,13 @@ char* strData = PyUnicode_AsUTF8(strObject);
 // constructed
 std::string cpp_str(strData);
 ```
-虽然可以手动转换，但在构建接口模块时，这种方法既繁琐又容易出错。可以使用Cython和pybind11等工具自动完成这些转换。
+虽然可以手动转换，但在构建接口模块时，这种方法既繁琐又容易出错。可以使用 Cython 和 pybind11 等工具自动完成这些转换。
 
 #### 8.2.1.4 类和结构体
 
 站在 C/C++ 代码的角度看，Python 类的实例本质上是一个 PyObject。由于 PyObject 结构复杂，它无法直接映射到 C/C++ 代码中的普通结构体或类。我们必须使用 Python/C API 在 C/C++ 中访问其内部属性。
 为了简化 Python 和 C 之间的数据转换，一种高效方案是将 Python 对象序列化（serialize）为与 C/C++ 数据结构兼容的二进制格式。例如，在把 Python 类的实例传递给 C/C++ 函数前，我们可以调用 Python 的 struct.pack 函数将其序列化。随后只需借助简单的类型转换，就能把序列化后的二进制数据按 C 结构体或 C++ 类对象来解析。反之，对于 C/C++ 函数输出的数据，我们也可以使用 Python 的 struct.unpack 函数或 ctypes.Structure 类进行反序列化（deserialize）。
-假设C++中实现了一个Atom类，用于保存分子中一个原子的元素符号和坐标。
+假设 C++ 中实现了一个 Atom 类，用于保存分子中一个原子的元素符号和坐标。
 
 ```python
 class Atom {
@@ -139,7 +139,7 @@ class Atom {
     float z;
 };
 ```
-我们可以相应地使用struct.pack和struct.unpack函数定义一个序列化协议。可以为该协议实现序列化方法dumps和反序列化方法loads：
+我们可以相应地使用 struct.pack 和 struct.unpack 函数定义一个序列化协议。可以为该协议实现序列化方法 dumps 和反序列化方法 loads：
 
 ```python
 from dataclasses import dataclass
@@ -159,8 +159,8 @@ class Atom:
         symbol,x ,y , z = struct.unpack(PROTOCOL, buffer)
         return cls(symbol.decode(), x,y ,z )
 ```
-Python标准模块dataclasses [4] 中的dataclass装饰器（decorator）可以自动添加双下划线方法，例如__init__和__repr__。classmethod是一种用于类中方法的特殊装饰器，它使方法能够操作类本身，而不是类的实例。由classmethod装饰的方法通常用于创建新实例，作为标准类初始化方法的替代方案 [5]。
-使用ctypes.Structure是表示C结构体数据的另一种方法。例如，我们可以使用ctypes.Structure实现以下序列化和反序列化方法：
+Python 标准模块 dataclasses [4] 中的 dataclass 装饰器（decorator）可以自动添加双下划线方法，例如__init__和__repr__。classmethod 是一种用于类中方法的特殊装饰器，它使方法能够操作类本身，而不是类的实例。由 classmethod 装饰的方法通常用于创建新实例，作为标准类初始化方法的替代方案 [5]。
+使用 ctypes.Structure 是表示 C 结构体数据的另一种方法。例如，我们可以使用 ctypes.Structure 实现以下序列化和反序列化方法：
 
 ```python
 class Atom(ctypes.Structure):
@@ -180,8 +180,8 @@ class Atom(ctypes.Structure):
         else:
             return cls.from_buffer_copy(buffer)
 ```
-有关ctypes.Structure的更多细节将在第8.3.1.4节中讨论。
-另一种选择是使用cffi库 [6] 包装数据：
+有关 ctypes.Structure 的更多细节将在第 8.3.1.4 节中讨论。
+另一种选择是使用 cffi 库 [6] 包装数据：
 
 ```python
 from cffi import FFI
@@ -214,8 +214,8 @@ class Atom:
         c_atom = ffi.cast( 'Atom *', ffi.from_buffer( buffer))[0]
         return cls(c_atom.symbol.decode(), c_atom.x, c_atom.y, c_atom.z)
 ```
-有关cffi的更多细节将在第8.3.2节中讨论。
-如果目的是操作一组C结构体数据，NumPy结构化数组（structured array）（参见第2章第2.2.5节）是打包或解包复杂数据的高效选择。
+有关 cffi 的更多细节将在第 8.3.2 节中讨论。
+如果目的是操作一组 C 结构体数据，NumPy 结构化数组（structured array）（参见第 2 章第 2.2.5 节）是打包或解包复杂数据的高效选择。
 
 ```python
 atom_type = np.dtype([
@@ -235,7 +235,7 @@ class Atom:
     def loads(cls, buffer: Union[bytes, bytearray]) -> Atom:
         return cls(*np.frombuffer(buffer, dtype=atom_type))
 ```
-请注意创建结构化数组的dtype时设置的align=True。该设置确保每个字段在内存地址上的对齐（alignment）。C结构体中的填充（padding）由C编译器自动处理。默认情况下，NumPy结构化数组不会在字段之间添加填充。启用align选项后，结构化数组的dtype就与使用ctypes.Structure定义的类型等价。然后，我们可以使用以下方式初始化结构化数组的dtype：
+请注意创建结构化数组的 dtype 时设置的 align=True。该设置确保每个字段在内存地址上的对齐（alignment）。C 结构体中的填充（padding）由 C 编译器自动处理。默认情况下，NumPy 结构化数组不会在字段之间添加填充。启用 align 选项后，结构化数组的 dtype 就与使用 ctypes.Structure 定义的类型等价。然后，我们可以使用以下方式初始化结构化数组的 dtype：
 
 ```python
 class Atom(ctypes.Structure):
@@ -243,7 +243,7 @@ class Atom(ctypes.Structure):
         ('symbol', ctypes.c_char *2), ('x', ctypes.c_float), ('y', ctypes.c_float), ('z', ctypes.c_float), ]
 atom_type = np.dtype(Atom)
 ```
-使用NumPy结构化数组，可以方便地初始化或修改结构体的元素。
+使用 NumPy 结构化数组，可以方便地初始化或修改结构体的元素。
 
 ```python
 arr = np.empty(shape, dtype=atom_type)
@@ -268,7 +268,7 @@ a = np.require(a, requirements=[ 'C'])
 #### 8.2.1.6 函数指针和回调
 
 与 C/C++ 不同，Python 没有为回调函数（callback function）提供函数指针这类特殊类型。在 Python 中，函数是一等对象（first-class object），可以像任何其他 Python 对象一样传递。要从 C/C++ 调用 Python 回调函数，一种方法是用 Python/C API 解析并执行作为回调的 Python 对象；另一种方法是创建指向 C 包装函数的函数指针，再由包装函数调用 Python 回调函数。这可以通过 ctypes.CFUNCTYPE 或 cffi 模块提供的回调包装器实现。有关 ctypes 回调的更多细节将在第 8.3.1 节深入讨论。
-如果回调函数向C返回任何Python对象，在C/C++函数中调用回调可能会意外干扰Python对象的生命周期管理。回调中创建的对象可能会被垃圾回收器释放
+如果回调函数向 C 返回任何 Python 对象，在 C/C++ 函数中调用回调可能会意外干扰 Python 对象的生命周期管理。回调中创建的对象可能会被垃圾回收器释放
 一旦程序控制权返回 C/C++ 程序，访问这些 Python 对象的内存块就可能导致非法内存操作。
 
 ### 8.2.2 Cython
@@ -445,7 +445,7 @@ Linux 上的大多数共享库遵循 lib{name}.so 的命名约定。在配置 Ex
 ```text
 libraries=[':libblas.so.3']
 ```
-这一设置会生成命令行选项 -l:libblas.so.3，使链接器能够找到 /usr/lib/libblas.so.3，而不是使用标准名称的
+这一设置会生成命令行选项 -l:libblas.so.3，使链接器能够找到 /usr/lib/libblas.so.3，而不是使用标准名称 libblas.so 的那一个。
 如果 Python 项目调用 C/C++ 扩展，就需要正确配置动态库的路径，这与运行标准 C/C++ 应用程序类似。在 Linux 上，一种方法是设置 LD_LIBRARY_PATH 环境变量。另一种方法是使用链接器选项 -Wl,-rpath，将 rpath 信息直接嵌入扩展中。这个选项可以通过 extra_link_args 参数添加。例如，下面的设置可以将 Python 项目的目录添加到动态库搜索路径中：
 
 ```yaml

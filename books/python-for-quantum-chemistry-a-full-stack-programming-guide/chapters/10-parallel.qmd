@@ -14,7 +14,7 @@
 - threading 模块，用于管理并发线程。
 - multiprocessing 模块，用于跨进程并行。
 - 传递接口（MPI），用于跨处理器和计算机节点并行。
-- 和异步模块，例如 asyncio，用于并发执行。
+- 协程和异步模块，例如 asyncio，用于并发执行。
 - 计算框架，例如 dask、Celery 和 Ray。
 - 工具，例如 pyCUDA、cupy、pytorch 等。
 

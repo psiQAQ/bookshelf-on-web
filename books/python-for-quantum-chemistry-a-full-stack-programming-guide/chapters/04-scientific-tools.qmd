@@ -30,8 +30,8 @@ scipy.linalg 的功能增强主要体现在以下几类：
 
 用于 Hessenberg 分解的 hessenberg() 和用于 Schur 分解的 schur()。某些分解函数可以利用矩阵的特殊性质，例如用于带状矩阵 Cholesky 分解的 cholesky_banded()、用于带状矩阵特征值分解的 eig_banded()，以及用于实对称三对角矩阵特征值问题的 eigh_tridiagonal()。
 
-- 矩阵函数，例如 expm()、logm()、sqrtm()、cosm()、
-- 矩阵和更多数组构造器，例如用于创建分块对角矩阵的 block_diag()、用于创建伴随矩阵的 companion()、用于创建离散傅里叶变换（discrete Fourier transform，DFT）矩阵的 dft()，其定义为 Amn =
+- 矩阵的数学函数，例如 expm()、logm()、sqrtm()、cosm()、sinm()、tanm()。
+- 特殊矩阵及更多数组构造器，例如用于创建分块对角矩阵的 block_diag()、用于创建伴随矩阵的 companion()、用于创建离散傅里叶变换（discrete Fourier transform，DFT）矩阵的 dft()，其定义为 Amn =
 
 ![公式图](../assets/math/eq-04-001.png){width=30%}
 
@@ -73,7 +73,7 @@ SciPy 支持多种稀疏矩阵存储格式，各格式对应适用的场景。CS
 - 坐标（Coordinate，COO）格式将每个非零元素的行索引、列索引和值分别存储在列表中。这种格式不支持使用数组索引语法（如 a[i,j]）直接访问矩阵元素。在 scipy.sparse 中，这种格式通常用作稀疏存储格式之间转换的中间格式。
 - 键字典（Dictionary of Keys，DOK）格式将非零元素存储在字典中，使用（行、列）元组作为键。这种格式与 COO 格式类似，但支持访问单个矩阵元素。如果需要逐步构造稀疏矩阵，这种格式是合适的选择。
 - 列表的列表（List of Lists，LIL）格式为每行分别在列表中存储数据和列索引。这种格式与 CSR 格式密切相关。LIL 和 CSR 格式之间的转换很高效。LIL 格式支持访问单个元素。向稀疏矩阵插入新元素时，只需要更新相关行的数据和索引列表。
-- （对角线，Diagonal）格式存储对角线元素及其相对于主对角线的偏移量。它不支持访问或修改单个元素。该格式不适合表示一般稀疏矩阵，主要用于特殊场景，例如存储带状矩阵。
+- DIA（对角线，Diagonal）格式存储对角线元素及其相对于主对角线的偏移量。它不支持访问或修改单个元素。该格式不适合表示一般稀疏矩阵，主要用于特殊场景，例如存储带状矩阵。
 
 scipy.sparse 为每种存储格式都提供了专用类，它们均继承自 scipy.sparse.spmatrix 类。各格式都可以通过对应的类来实例化，调用 scipy.sparse.{format}_array 或 scipy.sparse.{format}_matrix，其中占位符 {format} 替换为前述格式即可。例如，若需实例化 CSR 矩阵，可以直接由稠密矩阵构建，
 

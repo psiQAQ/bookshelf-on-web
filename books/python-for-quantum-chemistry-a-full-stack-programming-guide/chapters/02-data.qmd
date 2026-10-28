@@ -43,83 +43,78 @@ import numpy as np
 如果你是 NumPy 初学者，可以利用众多资源快速学习其基础知识。除了 https://numpy.org/doc/ stable/user/absolute beginners.html 上的 NumPy 官方教程外，还有几份有用的资料可供参考。
 
 - Justin Johnson 的 Numpy Tutorial（使用 Jupyter 和 Colab），可通过 https://cs231n.github.io/python-numpy-tutorial/ 访问。这是一份交互式教程，可以让你在 Jupyter Notebook 中使用 NumPy 代码示例。
-- fic Python Lectures 全面介绍了 NumPy 的基础和高级功能，并配有许多说明性图示。此书可通过 https://lectures.scientific-python.org/ 获取。
+- Scientific Python Lectures 全面介绍了 NumPy 的基础和高级功能，并配有许多说明性图示。此书可通过 https://lectures.scientific-python.org/ 获取。
 - https://numpy.org/learn/ 上的学习文档。该网站收集了适合不同水平的 NumPy（和 SciPy）用户的各种学习材料。
 
 我们不打算重复现有的优秀 NumPy 学习资源中的内容。下面，我们简要分类 NumPy 的基本功能，并列出每个类别中最常用的一些函数：
 
-- 创建数组以存储数据。创建数组最直接的方法是使用 np.array 函数，它可以将 Python 列表或元组转换为 NumPy 数组。此外，还有各种创建数组的函数，例如 -
+- 创建数组以存储数据。创建数组最直接的方法是使用 np.array 函数，它可以将 Python 列表或元组转换为 NumPy 数组。此外，还有各种创建数组的函数，例如：
+  - `np.zeros`
+  - `np.zeros_like`
+  - `np.empty`
+  - `np.empty_like`
+  - `np.ones`
+  - `np.full`
+  - `np.identity`
+  - `np.eye`
+  - `np.random.rand`
+  - `np.arange`
 
--
--
--
--
--
--
--
--
--
+- 重组数组。常用函数包括：
+  - `np.reshape`
+  - `np.split`
+  - `np.roll`
+  - `np.transpose`
+  - `np.concatenate`
+  - `np.stack`
+  - `np.hstack`
+  - `np.vstack`
+  - `np.append`
+  - `np.ravel`
+  - `np.flatten`
+  - `np.swapaxes`
+  - `np.rollaxis`
+  - `np.sort`
+  - `np.partition`
 
-- 重组数组。常用函数包括 -
+- 访问数组的某些元素，例如：
+  - `np.diag`
+  - `np.tril`
+  - `np.triu`
 
--
--
--
--
--
--
--
--
--
--
--
--
--
--
+- 数组中某些元素的索引，例如：
+  - `np.where`
+  - `np.argwhere`
+  - `np.argmax`
+  - `np.argmin`
+  - `np.argpartition`
+  - `np.argsort`
+  - `np.diag_indices`
+  - `np.tril_indices`
+  - `np.triu_indices`
+  - `np.unique`
 
-- 访问数组的某些元素，例如
+- 逐元素算术操作，例如：
+  - `np.exp`
+  - `np.sum`
+  - `np.cumsum`
+  - `np.any`
+  - `np.min`
 
--
--
--
+- 线性代数操作，例如：
+  - `np.dot`
+  - `np.roots`
+  - `np.linalg.norm`
+  - `np.linalg.eigh`
+  - `np.linalg.solve`
 
-- 数组中某些元素的索引，例如 -
-
--
--
--
--
--
--
--
--
--
-
-- 逐元素算术操作，例如
-
--
--
--
--
--
-
-- 线性代数操作，例如
-
--
--
--
--
--
-
-- 提供额外功能的子模块
-- linalg 模块提供线性代数函数。
-- polynomial 模块提供特殊多项式。
-- random 模块用于生成随机数。
-- ma 模块用于掩码数组，它支持对含有
-
-缺失值或无效值的数组进行操作。
-
-- ctypeslib 模块包含用于 Python ctypes 模块的实用函数。- fft 模块用于离散傅里叶变换。
+- 提供额外功能的子模块：
+  - `linalg` 模块提供线性代数函数。
+  - `polynomial` 模块提供特殊多项式。
+  - `random` 模块用于生成随机数。
+  - `ma` 模块用于掩码数组，它支持对含有缺失值或无效值的数组进行操作。
+  - `ctypeslib` 模块包含用于 Python ctypes 模块的实用函数。
+  - `fft` 模块用于离散傅里叶变换。
 
 ### 2.1.2 通用函数（ufunc）
 
@@ -511,7 +506,7 @@ NumPy 核心库使用 strides 属性计算数组中各个元素的内存地址�
 #### 2.1.7.1 用于灵活数组结构的 strides 属性
 
 在上述例子中，strides 属性的值由数组的其他属性推导而来。乍看之下，strides 属性似乎是多余的。实际上，这是 NumPy 的一种精妙设计，为表示多维数组提供了灵活而高效的方式。strides 属性允许我们复用内存并在不同数组之间共享数据，从而有效减少内存消耗和数组间复制数据的成本。
-为了说明这一优势，我们来考虑 Hankel 矩阵（Hankel matrix）
+为了说明这一优势，我们来考虑 Hankel 矩阵（Hankel matrix）：
 
 ![公式图](../assets/math/eq-02-003.png){width=32%}
 
@@ -553,9 +548,6 @@ def hankel_matrix(a):
 
 ```python
     out = np.empty((n, n), dtype=a.dtype)
-```
-
-```python
     for i in range (n):
         out[i] = a[i:n]
     return out
@@ -578,7 +570,7 @@ a.ctypes.data + a.itemsize * i + a.itemsize * j
 ```text
 a.ctypes.data + a.itemsize * (i + j)
 ```
-这正是 a[i+j] 的地址。新数组复用了向量 a 的内存缓冲区，因此对于 n 只占用 2n 的内存
+这正是 a[i+j] 的地址。新数组复用了向量 a 的内存缓冲区，因此对于 n² 个元素只占用 2n 个字的内存
 
 #### 2.1.7.2 C 连续和 F 连续存储
 
@@ -748,12 +740,12 @@ NumPy 以及衍生生态库（如 Pandas、CuPy、JAX 和 PyTorch）均遵循特
 
 NumPy 提供多种数据类型，涵盖整数、浮点数、复数、字符串、日期时间、字节和匿名 Python 对象类型。NumPy 内置数据类型的完整列表可在字典 np.sctypeDict 中找到。从 Python 列表（或元组）创建 NumPy 数组对象时，Python 内置类型会映射到相应的 NumPy 类型：
 
-- (bool)：映射到 np.bool_，它与单字节整数类型 np.int8 兼容。请注意，在 NumPy 2.* 中，np.bool_ 被 np.bool 取代。
-- (int)：映射到 np.int_，它是 np.int64 类型的别名。然而，任何 NumPy 整数类型都不支持 Python 长整数（大于 263 的整数），它们会被转换为 np.object_ 类型。
-- 数值 (float)：映射到 np.float64。
-- 数值 (complex)：映射到 np.complex128。
-- (str)：映射到 np.str_ 类型。
-- (object)：如果数组包含不属于上述类别的 Python 对象，或者包含涉及字符串的混合对象，则数据类型映射为 np.object_。处理通用类型 (np.object_) 时，NumPy 相比标准 Python 列表没有明显的性能优势。
+- 布尔值 (bool)：映射到 np.bool_，它与单字节整数类型 np.int8 兼容。请注意，在 NumPy 2.* 中，np.bool_ 被 np.bool 取代。
+- 整数 (int)：映射到 np.int_，它是 np.int64 类型的别名。然而，任何 NumPy 整数类型都不支持 Python 长整数（大于 263 的整数），它们会被转换为 np.object_ 类型。
+- 浮点数 (float)：映射到 np.float64。
+- 复数 (complex)：映射到 np.complex128。
+- 字符串 (str)：映射到 np.str_ 类型。
+- 对象 (object)：如果数组包含不属于上述类别的 Python 对象，或者包含涉及字符串的混合对象，则数据类型映射为 np.object_。处理通用类型 (np.object_) 时，NumPy 相比标准 Python 列表没有明显的性能优势。
 
 当在两个 NumPy 数组之间、或在数组与原生 Python 对象之间执行算术运算时，系统往往会隐式触发类型转换（type casting）。如果运算涉及不同数据类型的数组，NumPy 会自动执行向上类型转换（type upcasting），以保证输出类型具备更高的数值精度或容纳更多位宽。最终生成的结果类型可通过 np.result_type 函数加以判定：
 
@@ -1084,27 +1076,6 @@ return a.dot(fac) / n
 ![](../assets/tables/table-2-1.png)
 
 **表 2.1** mpmath 与 NumPy/SciPy 的线性代数函数比较。
-
-```python
-scipy.linalg np.linalg mpmath comments
-```
-
-```text
-                       qr_solve
-                       cholesky_solve
-```
-
-```text
-norm norm norm norm.
-```
-
-```text
-cosm cosm cosine.
-```
-
-```text
-sinm sinm sine.
-```
 
 ```python
 class mparray(np.ndarray):
@@ -1670,9 +1641,9 @@ In [34]: R = np.array([-1., -1., -1.])
 
 有几种涉及改变 DataFrame 对象结构的典型场景，例如：
 
-- 轴标签；
-- 或删除行或列；
-- 行或列。
+- 更改轴标签；
+- 添加或删除行或列；
+- 重排行或列。
 
 #### 2.3.5.1 更改轴标签
 

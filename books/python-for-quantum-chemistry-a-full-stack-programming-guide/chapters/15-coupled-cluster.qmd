@@ -927,9 +927,7 @@ _contract_fgroup_fgroup 函数更为复杂。由于两个 FOpGroup 中各有多�
 
 []{#eq-15-024}
 
-种从第一个 FOpGroup 中选择算符的方式，以及从第二个 FOpGroup 中选择算符的方式，每次选择各有 k! 种组合。这得到的简并度为
-n
-乘以 k!。
+种从第一个 FOpGroup 中选择算符的方式，以及从第二个 FOpGroup 中选择算符的方式，每次选择各有 k! 种组合。这得到的简并度为 C(n, k)·C(m, k)·k!。
 
 ```python
 def _contract_fgroup_fgroup(fgroup1: FOpGroup, fgroup2: FOpGroup) -> List[

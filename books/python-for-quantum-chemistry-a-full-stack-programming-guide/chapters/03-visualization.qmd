@@ -125,7 +125,7 @@ ax.legend(loc='upper left')
 include'upper center','upper right','center left','center right',etc.
 ```
 
-- 和注释。ax.text 方法可以在图中插入说明文字。命令
+- 文本和注释。ax.text 方法可以在图中插入说明文字。命令
 
 ```text
 ax.text(x, y, 'message')

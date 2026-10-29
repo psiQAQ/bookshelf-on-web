@@ -536,3 +536,39 @@ rm -rf .local/playwright-browsers
 - 清理后 `.preview/`、`dist/`、`reports/` 均不存在；需要时用 `scripts/build.py --preview` 重建，`reports/` 由各门禁脚本自动重建。
 - `scripts/verify_notes_browser.py` 现在跑不起来，直到按上面的命令临时安装浏览器；缺浏览器时按 `Not Run` 记录，不得算通过。
 - 浏览器验收的判据（3 视口溢出、4 条交互）仍只能用真浏览器覆盖；`check_math_render.py`（Edge，零依赖）只覆盖公式渲染，不覆盖布局与交互。
+
+## 窄屏横向溢出与浏览器验收判据修正（2026-10-31）
+
+### 问题
+
+改成按需安装 headless shell 后首次跑 `scripts/verify_notes_browser.py`，390 px 视口在 `chapters/05-metaprogramming.html` 报 `pageWidth 451 > 390`：页面横向溢出 61 px，窄屏读者会左右抖动。当年 51 页的验收记录里没有这一项，说明是后续内容修订引入的回归。
+
+### 根因
+
+用 Chrome DevTools 逐个元素比对 `getBoundingClientRect()` 并排除可滚动祖先，唯一越界元素是行内代码 `sympy.functions.special.spherical_harmonics`（`left 94 / right 451 / width 358`）：
+
+- Quarto 给 `code` 设了 `white-space: pre`，长标识符里没有任何可断行位置；
+- `book_header_style()` 当时只在 `p / li / td` 上加了 `overflow-wrap: anywhere`；`white-space: pre` 优先于换行，父元素的 `overflow-wrap` 传不到它身上。
+
+### 修复
+
+- `scripts/publishing.py:book_header_style()` 增加
+  `#quarto-document-content :not(pre) > code { white-space: pre-wrap; overflow-wrap: anywhere; }`——只作用于行内代码，代码块（`pre > code`、`code-overflow: scroll`）保持不折行、可横向滚动。
+- 三本书的 `_quarto.yml` 由 `book_config()` 重新生成（`sample-linear-algebra`、`sample-waves`、本书），保证与配置唯一来源一致。
+- 浏览器脚本两处失效判据一并修正：复制按钮检查改为与页面**首个 `pre.sourceCode` 的真实文本**比对（原来硬编码 `"import numpy"`，该字符串已不在 13 章页面里；比较时统一 CRLF→LF），页数期望改为 `3 × (章节数 + 1)`（原来写死 51，实际 17 章 + 索引 = 54）。
+
+### 本次核验（headless shell Chromium 156.0.8078.4 / Playwright，2026-10-31）
+
+- `scripts/build.py --preview` → `delivered=True`；`.preview` 上 18 个页面 × 3 视口 = **54 页**全部 HTTP 200，`ok: true`。
+- 页面宽度：最大值等于视口宽度（`index.html` 390 → 390），无横向溢出；所有 `pre` 与 `mjx-container[display]` 都在可横向滚动的容器内（`scrollable: true`）。
+- 公式：`.math` 828 个 / `mjx-container` 828 个，`mjx-merror`、`data-mjx-error` 均 0。
+- 交互：390 / 768 / 1440 三档都通过站内搜索（「费米」1 条，均指向本书）、明暗主题切换（`quarto-dark` → `quarto-light`）、代码复制（剪贴板内容与首个代码块一致）、前后章导航（13 → 14 → 13）。
+- `failed_requests` 0、`console_errors` 0；报告 `reports/notes-browser.json`，截图 `reports/notes-browser/{390,768,1440}-{index,13-mean-field,16-properties}.png`。
+- 其余门禁：`unittest` 156 通过（2 跳过）、`validate.py --strict` 0 issue、`audit_prose.py --check` 七个严格项全 0、`check_math.py --check` findings=0、`format_references.py --check` `ligatures=0`/`header_residue=0`、`check_math_render.py --root .preview --check` → `display 222 inline 54 errors 0 unprocessed 0`、`check_site.py .preview --preview` 0 issue。
+
+### 已知限制
+
+- 这轮用的是 `--only-shell` 的 headless shell（156.0.8078.4），与当年完整 chromium 141 的记录不是同一构建；它支持布局度量与剪贴板，但不等价于完整浏览器的全部行为（例如 PDF 导出、字体回退细节）。
+- 站内搜索命中数从当年 5 条降到 1 条，是搜索索引随正文重写而变化，不是失败；脚本只断言结果都指向本书。
+- 页面仍依赖 MathJax CDN 与远端字体；离线时会出现 `net::ERR_ABORTED`，按 `Not Run`/环境问题记录，不算排版通过。
+- `.local/playwright-browsers`（282 MB）本轮保留以便复用；`reports/` 与 `.preview/` 仍是可重建产物。

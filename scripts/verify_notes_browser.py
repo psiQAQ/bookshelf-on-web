@@ -45,6 +45,8 @@ def main():
     origin = f"http://127.0.0.1:{server.server_port}"
     book = "/books/python-for-quantum-chemistry-a-full-stack-programming-guide/"
     chapters = sorted((artifact / book.lstrip("/") / "chapters").glob("*.html"))
+    # 每个视口检查 index + 全部章节；页数由构建产物决定，不在脚本里写死。
+    expected_pages = 3 * (len(chapters) + 1)
     report = {"ok": False, "browser": "", "pages": [], "interactions": [], "failed_requests": [], "console_errors": []}
     try:
         with sync_playwright() as playwright:
@@ -126,9 +128,12 @@ def main():
                     if collapse.get_attribute("aria-expanded") == "true":
                         collapse.click()
                 page.goto(origin + book + "chapters/13-mean-field.html", wait_until="networkidle")
+                # 复制按钮的判据用页面真实内容：写成硬编码字串会随章节内容变动而失效。
+                first_block = page.locator("pre.sourceCode").first
+                expected_copy = first_block.inner_text().replace("\r\n", "\n").strip()
                 page.locator("button.code-copy-button").first.click()
-                copied = page.evaluate("navigator.clipboard.readText()")
-                assert "import numpy" in copied
+                copied = page.evaluate("navigator.clipboard.readText()").replace("\r\n", "\n").strip()
+                assert copied == expected_copy, (copied[:60], expected_copy[:60])
                 page.locator(".nav-page-next a").click()
                 page.wait_for_url("**/14-fci.html")
                 page.wait_for_load_state("networkidle")
@@ -141,7 +146,7 @@ def main():
                                                "theme_after": after, "copy": True, "next_previous": True})
                 context.close()
             browser.close()
-        report["ok"] = len(report["pages"]) == 51 and len(report["interactions"]) == 3 and not report["console_errors"] and not report["failed_requests"]
+        report["ok"] = len(report["pages"]) == expected_pages and len(report["interactions"]) == 3 and not report["console_errors"] and not report["failed_requests"]
     except Exception as error:
         report["error"] = str(error)
     finally:

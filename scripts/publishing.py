@@ -113,6 +113,9 @@ def book_header_style() -> str:
         " .page-columns, #quarto-document-content, main.content { min-width: 0; }"
         " #quarto-document-content p, #quarto-document-content li, #quarto-document-content td"
         " { overflow-wrap: anywhere; }"
+        # 行内代码默认 white-space: pre，长标识符（带 . 与 _）无法折行，会把 390px 页面撑宽
+        " #quarto-document-content :not(pre) > code"
+        " { white-space: pre-wrap; overflow-wrap: anywhere; }"
         " .qs-home { margin: 0.25rem 0 0.5rem; }"
         " a.qs-home-link { display: inline-block; padding: 0.15em 0.6em; border-radius: 4px;"
         " border: 1px solid rgba(128, 128, 128, 0.45); font-size: 0.9rem; text-decoration: none; }"

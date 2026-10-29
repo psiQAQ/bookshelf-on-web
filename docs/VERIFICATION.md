@@ -572,3 +572,10 @@ rm -rf .local/playwright-browsers
 - 站内搜索命中数从当年 5 条降到 1 条，是搜索索引随正文重写而变化，不是失败；脚本只断言结果都指向本书。
 - 页面仍依赖 MathJax CDN 与远端字体；离线时会出现 `net::ERR_ABORTED`，按 `Not Run`/环境问题记录，不算排版通过。
 - `.local/playwright-browsers`（282 MB）本轮保留以便复用；`reports/` 与 `.preview/` 仍是可重建产物。
+
+### 线上复验（ce0cb30 部署后，2026-10-31）
+
+- `git push origin main` → `81ea247..ce0cb30`；`gh workflow run deploy.yml --ref main` → run `40869275865`，`build: success` / `deploy: success`。
+- 线上 `chapters/05-metaprogramming.html` 已含新规则 `:not(pre) > code`，`<pre class="text">` 计数 0。
+- 用 headless shell（Chromium 156）直接打开线上页面：390 px 下 `chapters/05-metaprogramming.html` 的 `document.documentElement.scrollWidth = 390`（修复前是 451），越界行内代码 0；1440 px 同为 1440。`chapters/13-mean-field.html`（48/48 公式）、`chapters/14-fci.html`（29/29）、`index.html` 在 390 px 下页宽都等于视口，`mjx-merror`/`data-mjx-error` 均为 0，`pageerror` 与 `requestfailed` 为 0，每页 2 个 `a.qs-home-link`。
+- 复验期间站点响应偏慢（curl 首页 8.4 s、05 章 12.4 s），首轮 `Page.goto` 有两次超时、重试后成功；这是网络侧问题，不记作验收失败。

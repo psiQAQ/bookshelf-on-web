@@ -17,6 +17,7 @@ from scripts.audit_prose import (
     find_mislabelled_fence,
     find_prose_in_fence,
     find_suspect_code,
+    resolve_book,
 )
 
 
@@ -314,6 +315,33 @@ class FenceLanguageTests(unittest.TestCase):
         self.assertEqual(self.scan("```default\n20823872\n```\n"), [])
         self.assertEqual(self.scan("```default\nIn [1]: np.zeros(3)\n```\n"), [])
         self.assertEqual(self.scan("```python\nx = 1\n```\n"), [])
+
+
+class BookResolverTests(unittest.TestCase):
+    """`--book` 让审计能指向别的书：新增书籍时不必改脚本里的常量。"""
+
+    def test_default_is_the_translated_book(self):
+        self.assertEqual(resolve_book(None).name, "python-for-quantum-chemistry-a-full-stack-programming-guide")
+
+    def test_slug_is_resolved_under_books(self):
+        self.assertEqual(resolve_book("sample-waves").name, "sample-waves")
+        self.assertTrue(resolve_book("sample-waves").is_dir())
+
+    def test_absolute_directory_is_accepted(self):
+        target = resolve_book("sample-linear-algebra")
+        self.assertEqual(resolve_book(str(target)), target.resolve())
+
+    def test_unknown_slug_is_rejected(self):
+        with self.assertRaises(SystemExit):
+            resolve_book("no-such-book")
+
+    def test_other_book_is_audited_with_the_same_detectors(self):
+        # 用另一本真书（sample-waves，1 章）跑完整审计，证明 `--book` 真的换了扫描目标，
+        # 而不是仍然扫本书然后报出 17 章。
+        other = audit_book(resolve_book("sample-waves"))
+        self.assertEqual(other["book"], "sample-waves")
+        self.assertEqual(other["chapters"], 1)
+        self.assertEqual(sorted(other["totals"]), sorted(key for key, _ in DETECTORS))
 
 
 class BookReportTests(unittest.TestCase):

@@ -447,6 +447,19 @@ DETECTORS = (
 )
 
 
+def resolve_book(value: str | None) -> Path:
+    """把 CLI 的 `--book` 参数解析成书目目录；缺省回落到本书。"""
+    if not value:
+        return BOOK
+    given = Path(value)
+    if given.is_dir():
+        return given.resolve()
+    candidate = ROOT / "books" / value
+    if candidate.is_dir():
+        return candidate
+    raise SystemExit(f"找不到书目：{value}（既不是目录，也不是 books/ 下的 slug）")
+
+
 def audit_chapter(path: Path) -> dict:
     result = {}
     for key, detector in DETECTORS:
@@ -484,9 +497,15 @@ def main() -> int:
         help="严格项（裸 URL、疑似代码行、英文残留、公式残片、断链、正文整行代码、围栏语言标错）有命中时退出 1",
     )
     parser.add_argument("--check-all", action="store_true", help="任何探测器有命中时退出 1")
+    parser.add_argument(
+        "--book",
+        default=None,
+        metavar="PATH_OR_SLUG",
+        help="要扫描的书目：目录路径或 books/ 下的 slug（默认本书）",
+    )
     args = parser.parse_args()
 
-    report = audit_book()
+    report = audit_book(resolve_book(args.book))
     payload = json.dumps(report, ensure_ascii=False, indent=1)
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)

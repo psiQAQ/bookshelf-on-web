@@ -373,3 +373,55 @@ uv run python scripts/check_site.py .preview --preview --report reports/preview-
 
 - 断链判据仍是指纹式的：目标以普通字母收尾、续写又不是域名形状的折断（`https://host/direc` + 换行 + `tory/file.html`）识别不到；本轮用 `](…)` 之后「空白 + 含 `#`/`_`/`/` 或数字开头的 ASCII 片段」的宽扫描对全书复核过一遍，命中 0，但这不是证明。
 - 链接可用性是**核对时**的结论：站点改版会挪动锚点，仓库里没有周期性外链检查；若后续有 CI 预算，可把 `check_links.py` 式的定时任务接上。
+
+## 正文整行代码与围栏语言标错的门禁（2026-10-30）
+
+### 问题与根因
+
+`chapters/02-data.qmd` 的 §2.1.8「视图」里，引导句停在「例如考察下面这段代码，它用于修改形状为」，紧跟一个 ```` ```text ```` 围栏，围栏第一行其实是句子里的形状 `(2,n,2,n,2,n,2,n):`，后面才是四层嵌套循环，围栏之后又接「的八维数组。」。原书 p90 是一句话 + 一段完整代码，这里既断句又把代码降级成纯文本。
+
+成批出现的原因是提取阶段的两个判据：`is_math_line()` 的兜底 `len(text.split()) <= 6` 会把短语行判成公式行并被 `emit_equation()` 裁成 PNG，句子因此被切断；`build_lines()` 的 `abs(dy) <= 2.6` 归并行会把围栏切分点放在句子中间。围栏语言则是另一类系统性错误：原书用 `In [1]:` 展示交互会话，转写成 `.qmd` 时一律标成 `python`，而真正的源码/配置反而标成 `text`。
+
+机械普查（`.local/classify_text_fences.py`、`.local/sweep_lines.py`，产物 `.local/text-fence-plan.json`、`.local/line-sweep.json`）给出的存量（以 `de935e0` 为基线）：
+
+- 191 个 ```` ```text ```` 围栏里，49 个是真正的输出、3 个是目录树、1 个是文件名，其余是源码或配置；
+- 638 个 ```` ```python ```` 围栏里 106 个其实是 `In [n]:` 会话记录；
+- 围栏之外「整行没有中文、也不是公式」的候选行 76 条，其中 74 条是「只有一个行内代码的项目符号」，剩下 2 条是 `perf stat` 的事件名（合法）。
+
+### 修复
+
+逐处内容修复（都对着 PDF 原文核过）：
+
+- `chapters/02-data.qmd` §2.1.8：引导句改为「…它用于修改形状为 $(2,n,2,n,2,n,2,n)$ 的八维数组：」，形状回到句子里，后面是 ```` ```python ```` 围栏（`for s in range(2)` / `enumerate(idx1)` / `enumerate(idx2)` / `a[s, i, s, j, s, j, s, i] += b[ip, jp]`），「的八维数组。」并入引导句。
+- `chapters/03-visualization.qmd` 三处（PDF p136–p137）：六个形状标记压平成「 -’表示圆形标记，…」→ 恢复成 `` `'o'` ``/`` `'s'` ``/`` `'v'` ``/`` `'^'` ``/`` `'+'` ``/`` `'X'` `` 六条子列表并补「表示圆形标记」等说明；`.plot` 线型只剩 `- linels='-'` → 恢复 `ls='-'`/`'--'`/`':'`/`'-.'` 四条并补简写表示法段落；颜色条目被截断在 `color='darkgreen' and color='tab:purple'.Furthermore,Matplotlibsupports` → 并回中文正文（含 `` `'#RRGGBB'` `` 与 `` `(r, g, b)` `` 两种写法）。
+- `chapters/12-integrals.qmd`：`generatetheirCartesianpowers (ix, iy, iz)and (jx, jy, jz).` 是被吞的正文，按 p494 改为「我们使用 iter_cart_xyz 函数来生成它们的笛卡尔幂 (ix, iy, iz) 和 (jx, jy, jz)。」；两处 `for i, (ix,i y, iz) in enumerate (iter_cart_xyz(li)):` 的压平标识符复原。
+- `chapters/09-performance.qmd`：`cdef double,orcdef class.` 是被裁的正文，按 p364 改为「例如 cdef int、cdef double 或 cdef class。」；`chapters/02-data.qmd` 的 `b-> (at.T)[…]`、`mole.loc[[0,2 ],[ 'x','z']]`、`x. sum(axis=0)` 逐条修回。
+
+围栏语言修正（只改信息串，不动内容，每处先校验围栏首行）：
+
+- `text` → 源码/配置 62 处：`python` 38、`toml` 7、`c` 7、`yaml` 6、`ini` 2、`fortran` 2（含 `01-environment.qmd` 的 docker-compose 块，缩进同时从 7/9 空格修回 2/4）；另有 4 个 `text` 围栏因内容本就是正文而整块删除。
+- `python` → `text` 106 处：REPL 会话（`In [n]:`/`Out[n]:`/`>>>`）不是源码，标 `python` 只会让高亮与 `ast.parse` 双双出错。
+
+### 门禁
+
+`scripts/audit_prose.py` 新增两个严格探测器，都进 `STRICT_DETECTORS`，由 CI 的 `audit_prose.py --check` 覆盖：
+
+- `find_code_outside_fence`（`code_outside_fence`）：围栏之外、没有中文字符、没有 `$` 公式、不是标题/图片/表格行/文献条目/纯行内代码项目符号的整行，若能被 `ast.parse` 且解析出真实语句（赋值、调用、`def`、`for`、`with`…）就算命中。用语法树而不是正则，是为了区分「整行是代码」与「正文里提到 `open()`」。
+- `find_mislabelled_fence`（`fence_language`）：`text` 围栏内容能 `ast.parse` 且含真实语句 → `fence_language:python`；`text` 围栏是纯 TOML 段头式（`[tool.setuptools]` + `key = value`）→ `fence_language:toml`；`python` 围栏里出现 `In [n]:`/`Out[n]:`/`>>>` → `fence_language:text`。裸记号（`schmidt_orth_small_size`）、纯数字、REPL 记录都不报，这条写进了测试。
+
+`CODE_OUTSIDE_FENCE_WHITELIST` 只放一条合法形状：`perf stat` 的事件名列表项（`- -loads,`、`- -stores,`）。
+
+`tests/test_quantum_notes.py::test_book_examples_are_static_without_execution` 同时收紧：围栏语言限定在 `STATIC_LANGUAGES = {python, text, bash, yaml, toml, ini, c, fortran}`，出现 ```` ```{python} ```` 这类可执行围栏会被围栏数量比对抓住。
+
+### 本次核验
+
+- 判据取证：`git show de935e0:…/chapters/*.qmd` 落到 `.local/baseline-check/` 后跑两个新探测器 → `fence_language` 命中 113 条（`01:9`、`02:60`、`03:3`、`04:5`、`05:6`、`06:9`、`07:3`、`08:6`、`09:8`、`10:1`、`12:1`、`16:2`），当前仓库 `fence_language=0`；`code_outside_fence` 在基线与当前都是 0——存量里没有这一类，它是防回归的，不是本轮修复量。
+- `uv run python -m unittest discover -s tests` → 150 项通过（2 跳过）；`tests/test_audit_prose.py` 41 项，其中 `CodeOutsideFenceTests` 5 项、`FenceLanguageTests` 4 项专门证明两条判据不空转（含反例：中文行、行内公式、围栏内代码、结构行、perf 事件名、裸记号、REPL 记录）。
+- `uv run python scripts/audit_prose.py` → `bare_urls=0 suspect_code=0 english_residue=0 formula_remnant=0 broken_links=0 code_outside_fence=0 fence_language=0 prose_in_fence=100`，`--check` 退出 0。
+- `uv run python scripts/validate.py --strict` → 0 问题；`check_math.py --check` → `allowed_commands=84 chapters=19 findings=0`。
+
+### 已知限制
+
+- `code_outside_fence` 用的是 `ast.parse`，所以「被压平到无法 parse 的代码」逃得掉（例如 `l s u m=l x+l y+l z`）。这类行现在由 `prose_in_fence`（围栏内）与人工扫描兜底。
+- 22 个 `text` 围栏仍含「像源码但 parse 不了」的内容：`09-performance.qmd:1483/1493` 的 `x=0 .`/`x+ =a [ i ]`、`14-fci.qmd:651` 的缩进残段等。它们要么是压平后无法自动判定的源码，要么是伪代码（`Extension( ...`），本轮不强行 retag，保留在 `text` 里。
+- 570 个 `python` 围栏里仍有约 240 个不可 `ast.parse`，主因是 PDF 文本层丢缩进、标识符内被插空格；这条限制与「代码块断裂」一节记录的是同一件事，缩进保真需要回到 PDF 重新提取，不在当前轮次范围内。

@@ -442,5 +442,58 @@ In [4]: with scipy.fft.set_backend(mkl_fft.interfaces.scipy_fft):
 ### 已知限制
 
 - `code_outside_fence` 用的是 `ast.parse`，所以「被压平到无法 parse 的代码」逃得掉（例如 `l s u m=l x+l y+l z`）。这类行现在由 `prose_in_fence`（围栏内）与人工扫描兜底。
-- 22 个 `text` 围栏仍含「像源码但 parse 不了」的内容：`09-performance.qmd:1483/1493` 的 `x=0 .`/`x+ =a [ i ]`、`14-fci.qmd:651` 的缩进残段等。它们要么是压平后无法自动判定的源码，要么是伪代码（`Extension( ...`），本轮不强行 retag，保留在 `text` 里。
+- 早期还留着 22 个「像源码但 parse 不了」的 `text` 围栏（`09-performance.qmd:1483/1493` 的 `x=0 .`/`x+ =a [ i ]`、`14-fci.qmd:651` 的缩进残段等）。2026-10-30 第二轮已把它们连同其余 `text` 一起改成 `default`：内容仍不可执行，但读者至少看到的是带代码框的块；`text` 围栏现在全库为 0。
 - 570 个 `python` 围栏里仍有约 240 个不可 `ast.parse`，主因是 PDF 文本层丢缩进、标识符内被插空格；这条限制与「代码块断裂」一节记录的是同一件事，缩进保真需要回到 PDF 重新提取，不在当前轮次范围内。
+
+## 直译本缺陷清单的沉淀（`translation-proofread` skill）（2026-10-30）
+
+### 问题与目的
+
+这本书的缺陷是「同类反复出现、但每次都要重新取证」：围栏切碎、语言标错、公式裁错、正文被吞、文献并段、链接被换行劈成死链。修复过程只留在提交历史与 `docs/VERIFICATION.md` 的各节里，新增一本书时没有任何东西告诉下一个 agent「先查什么、怎么判、查到什么程度算完」。
+
+目标：把**问题与思路**沉淀成仓库内 skill（`.agents/skills/translation-proofread/`），把**可执行的判定**继续留在 `scripts/` 与 `tests/`，两者互相引用而不复制。
+
+### 取证方法
+
+- 用 `acp_delegate` 派 4 个只读 `researcher`（`openai-codex/gpt-6.1-sol`，`thinkingLevel: high`）按缺陷类别分工：代码块与围栏、公式、正文结构、文献/链接/排版/发布契约。禁止改文件、禁止 git 写操作、禁止开 worktree。
+- 第一轮 4 个全部被子会话自己的 goal 门禁挡回（只回「请先运行 `/goal-focus`」，无正文）。重派时在任务开头写明「本任务与 goal 系统无关，不要调用 goal 工具」，4 个全部正常完成。
+- 主 agent 负责复核与归并：核对每个判据在仓库里真实存在（函数名、常量名、命中码、退出码、测试名），纠正如「`tests/test_references.py` 有 16 个测试而非 15 个」「673/342 是历史数字、当前是 570/242」这类口径漂移，再把四份材料压成 `references/` 四篇。
+
+### 产出
+
+```
+.agents/skills/translation-proofread/
+├── SKILL.md                                  五条铁律 + 体检顺序 + 门禁命令 + 脚本地图 + 已知限制
+├── references/code-fences.md                 断裂、语言标记、围栏外代码、围栏内正文、缩进、目录树
+├── references/formulas.md                    裁错、编号与锚点、文本层残片、行内公式、渲染假通过
+├── references/prose-structure.md             空项目符号、断句、误裁正文、表格残片、英文残留、图注锚点
+├── references/references-links-typography.md 文献分段、URL/断链、中英间距、发布契约、站点核验
+├── assets/checklist.md                       一本书一份的逐项卡片（含「未查」「Not Run」栏位）
+└── agents/openai.yaml                        UI 元数据
+```
+
+- 每篇 reference 按「现象 → 成因 → 机器判据 → 修复手法 → 验收」组织，末尾固定「陷阱与反例」。判据一律写成仓库里真实存在的命令与命中码，例如 `fence_language:text_unstyled`、`formula_remnant:weight_function`、`SPLIT_LINK_HOST_RE`、`TRUNCATED_URL_SUFFIXES = ("#", "-", "_")`、`OUTPUT_MARKER`。
+- `SKILL.md` 只做路由：五条铁律、体检顺序表、门禁命令、脚本地图、已知限制、陷阱速查；细节一律指向 `references/`（渐进披露）。
+- 用 skill-creator 的 `scripts/init_skill.py` 起骨架、`scripts/quick_validate.py` 校验 → `Skill is valid!`（Windows 下需 `PYTHONUTF8=1`，否则校验脚本按 GBK 读 `SKILL.md` 会报 `UnicodeDecodeError`）。
+
+### 脚本整理（让 skill 能真的指向另一本书）
+
+四个类别里唯一的硬阻塞是「所有检查都写死本书」。本轮只做最小改动：
+
+- `scripts/audit_prose.py` 新增 `resolve_book(value: str | None) -> Path` 与 CLI `--book <路径或 slug>`：缺省仍是本书，传 slug 时在 `books/` 下解析，找不到就 `SystemExit` 报错。八个探测器本身不含书籍常量，因此换书即可扫。
+- `tests/test_audit_prose.py` 新增 `BookResolverTests` 5 项：缺省是本书、slug 解析、绝对路径、未知 slug 拒绝、以及**用另一本真书 `sample-waves` 跑完整审计**（断言 `book == "sample-waves"`、`chapters == 1`、探测器集合不变），防止「换了参数其实还在扫本书」。
+- 仍绑定本书、需要在新增书籍时先适配的：`tests/test_quantum_notes.py`（图 59 / 表 18 / `$$` 222 / 锚点 223 的基线）、`tests/test_chapter_markup.py`（章节路径）、`scripts/check_math_render.py`（`BOOK`）。这一条已写进 `SKILL.md` 的铁律 3 与 `references/code-fences.md` 的执行顺序。
+
+### 本次核验
+
+- `uv run python -m unittest discover -s tests` → 156 项通过（2 跳过）；其中 `tests/test_audit_prose.py` 47 项。
+- `uv run python scripts/audit_prose.py --check` → 退出 0，`bare_urls=0 suspect_code=0 english_residue=0 formula_remnant=0 broken_links=0 code_outside_fence=0 fence_language=0 prose_in_fence=100`。
+- `--book sample-waves` → `{"chapters": 1, ...}`，全部探测器 0；`--book no-such-book` → 报错退出，证明参数真的生效。
+- `quick_validate.py .agents/skills/translation-proofread` → `Skill is valid!`；四个 reference 的相对链接逐个解析存在。
+- `uv run python scripts/validate.py --strict` → 0 问题；`check_site.py .preview --preview` 不受影响（skill 不进站点）。
+
+### 已知限制
+
+- skill 是**检查清单**，不是自动修复器：`prose_in_fence` 的 100 条、242/570 个不可解析的 python 块、目录树层级、表格图片，仍要人对着 PDF 判断。
+- 判据随修订会漂移（673/342 → 570/242、`text` 围栏 231 → 0、`tests/test_references.py` 15 → 16 个测试）。引用数字时都标了版本；后续再动代码要回来更新 `SKILL.md` 的「已知限制」与对应 reference。
+- 没有做独立前向测试（skill-creator 的 forward-testing）：本轮只做了静态校验与「换书真跑一次」。真正的有效性检验是下一次新增书籍时按 `assets/checklist.md` 走一遍。

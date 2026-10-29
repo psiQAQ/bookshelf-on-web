@@ -1,5 +1,8 @@
 **/raw/**
 .agents/skills/**
+# 仓库自有的 skill（其余是本地安装的共享 skill，不入库）
+!.agents/skills/translation-proofread/
+!.agents/skills/translation-proofread/**
 .local
 
 # Local environments, caches and generated output

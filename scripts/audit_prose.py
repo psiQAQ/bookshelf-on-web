@@ -366,12 +366,14 @@ def _parsed_statements(body: list[str]):
 
 
 def find_mislabelled_fence(path: Path):
-    """围栏语言标错：源码标成 text、REPL 会话标成 python。
+    """围栏语言标错：标成 `text` 的围栏在本站渲染不出代码框，源码/会话也用错了语言。
 
-    判据刻意保守，只报能机械判定的两种：
-    * text 围栏的内容 `ast.parse` 成功且含真实语句（赋值/调用/def/for…）→ 应为 python；
-    * text 围栏全文只有一个 TOML 段头形状的行 → 应为 toml；
-    * python 围栏里出现 `In [n]:` / `Out[n]:` / `>>>` → 是会话记录，应为 text。
+    判据刻意保守，只报能机械判定的四种：
+    * 围栏语言写 `text` → 一律报（Quarto 1.10 的 skylighting 不认识 text，输出的是
+      裸 `<pre class="text">`，既没有代码框样式也没有复制按钮，读者看起来就像正文）；
+    * `default` 围栏的内容 `ast.parse` 成功且含真实语句（赋值/调用/def/for…）→ 应为 python；
+    * `default` 围栏全文是 TOML 段头形状 → 应为 toml；
+    * python 围栏里出现 `In [n]:` / `Out[n]:` / `>>>` → 是会话记录，应为 default。
     """
     found = []
     lines = path.read_text(encoding="utf-8").split("\n")
@@ -388,7 +390,9 @@ def find_mislabelled_fence(path: Path):
         body = lines[index + 1 : end]
         nonempty = [line for line in body if line.strip()]
         reason = ""
-        if language == "text" and nonempty and not any(REPL_LINE_RE.match(line) for line in nonempty):
+        if language == "text":
+            reason = "fence_language:text_unstyled"
+        elif language == "default" and nonempty and not any(REPL_LINE_RE.match(line) for line in nonempty):
             if TOML_SECTION_RE.match(nonempty[0]) and all(
                 "=" in line or TOML_SECTION_RE.match(line) or line.strip().startswith("#")
                 for line in nonempty
@@ -399,7 +403,7 @@ def find_mislabelled_fence(path: Path):
                 if statements and any(isinstance(node, CODE_STATEMENTS) for node in statements):
                     reason = "fence_language:python"
         elif language in ("python", "py") and any(REPL_LINE_RE.match(line) for line in nonempty):
-            reason = "fence_language:text"
+            reason = "fence_language:default"
         if reason:
             found.append(
                 {

@@ -9,7 +9,7 @@ from scripts.publishing import ROOT, book_config, check_qmd, explicit_anchors, l
 # 只允许静态展示语言：Quarto 不执行非 `{python}` 围栏，所以任一语言都在这个白名单里
 # 就说明示例是死的（测试本身不执行任何章节代码）。
 STATIC_LANGUAGES = frozenset(
-    {"python", "text", "bash", "yaml", "toml", "ini", "c", "fortran"}
+    {"python", "default", "bash", "yaml", "toml", "ini", "c", "fortran"}
 )
 
 

@@ -290,23 +290,29 @@ class FenceLanguageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             return find_mislabelled_fence(write_qmd(Path(name), text))
 
-    def test_python_written_as_text_is_reported(self):
-        hits = self.scan("```text\nfor s in range(2):\n    a[s] += 1\n```\n")
+    def test_text_fence_is_always_reported(self):
+        # Quarto 1.10 的 skylighting 不认识 text，渲染成裸 <pre class="text">：没有代码框、
+        # 没有复制按钮，读者看到的就是正文。所以只要出现 text 围栏就算命中。
+        hits = self.scan("```text\nschmidt_orth_small_size\n```\n")
+        self.assertEqual([hit["reason"] for hit in hits], ["fence_language:text_unstyled"])
+
+    def test_python_written_as_default_is_reported(self):
+        hits = self.scan("```default\nfor s in range(2):\n    a[s] += 1\n```\n")
         self.assertEqual([hit["reason"] for hit in hits], ["fence_language:python"])
 
-    def test_toml_written_as_text_is_reported(self):
-        hits = self.scan('```text\n[build-system]\nrequires = ["setuptools"]\n```\n')
+    def test_toml_written_as_default_is_reported(self):
+        hits = self.scan('```default\n[build-system]\nrequires = ["setuptools"]\n```\n')
         self.assertEqual([hit["reason"] for hit in hits], ["fence_language:toml"])
 
     def test_repl_session_written_as_python_is_reported(self):
         hits = self.scan("```python\nIn [1]: np.zeros(3)\n```\n")
-        self.assertEqual([hit["reason"] for hit in hits], ["fence_language:text"])
+        self.assertEqual([hit["reason"] for hit in hits], ["fence_language:default"])
 
-    def test_bare_marks_output_and_repl_text_are_ignored(self):
-        # 变量名/文件名/数字也能 ast.parse，但不是源码；REPL 会话本来就该留在 text。
-        self.assertEqual(self.scan("```text\nschmidt_orth_small_size\n```\n"), [])
-        self.assertEqual(self.scan("```text\n20823872\n```\n"), [])
-        self.assertEqual(self.scan("```text\nIn [1]: np.zeros(3)\n```\n"), [])
+    def test_bare_marks_output_and_repl_default_are_ignored(self):
+        # 变量名/文件名/数字也能 ast.parse，但不是源码；REPL 会话本来就该留在 default。
+        self.assertEqual(self.scan("```default\nschmidt_orth_small_size\n```\n"), [])
+        self.assertEqual(self.scan("```default\n20823872\n```\n"), [])
+        self.assertEqual(self.scan("```default\nIn [1]: np.zeros(3)\n```\n"), [])
         self.assertEqual(self.scan("```python\nx = 1\n```\n"), [])
 
 

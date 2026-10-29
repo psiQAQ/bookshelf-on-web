@@ -85,23 +85,27 @@ ax.contour(X,Y ,Z )
 ```
 得到基本图形后，我们可以通过调整 Axes 对象的各种属性来改善视觉外观，包括颜色、线型和坐标轴样式等。下面概述绘图时经常调整的若干关键属性：
 
-- 标记。在 ax.scatter 和 ax.plot 图中，我们可以自定义数据点标记的可视化效果，包括形状、大小、颜色和透明度。常见的形状标记包括： -’表示圆形标记， -’表示方形标记， -’表示朝下的三角形标记， -’表示朝上的三角形标记， -’表示加号形标记， -’表示 X 形标记。
+- 标记。在 ax.scatter 和 ax.plot 图中，我们可以自定义数据点标记的可视化效果，包括形状、大小、颜色和透明度。常见的形状标记包括：
 
-标记大小可以用 markersize 关键字修改。要指定颜色，可以将’r’、’g’、’b’、’k’（黑色）、’c’（青色）等单个字母赋给 color 关键字。透明度可以用 alpha 关键字控制，它接受 0 到 1 之间的数字。
+  - `'o'` 表示圆形标记，
+  - `'s'` 表示方形标记，
+  - `'v'` 表示朝下的三角形标记，
+  - `'^'` 表示朝上的三角形标记，
+  - `'+'` 表示加号形标记，
+  - `'X'` 表示 X 形标记。
 
-- ax.plot 方法的样式。关键字 linestyle（简称 ls）的选项包括：
+  标记大小可以用 markersize 关键字修改。要指定颜色，可以将 `'r'`、`'g'`、`'b'`、`'k'`（黑色）、`'c'`（青色）等单个字母赋给 color 关键字。透明度可以用 alpha 关键字控制，它接受 0 到 1 之间的数字。
 
-```text
-- linels='-.'.
-```
-我们既能使用 marker 参数突出数据点、使用 color 参数设置颜色，也能使用 linewidth 调整线宽以改善线条外观。除这些关键字外，Matplotlib 还支持简写字符串表示法，可同时指定数据标记、线型与线条色彩。例如，简写表示法’s --r’便表示带有方形标记的红色虚线。
+- ax.plot 方法的线型。关键字 linestyle（简称 ls）的选项包括：
 
-- 表示法。除了前面提到的单字母表示法，颜色也可以通过预定义名称指定，例如
+  - 实线 `ls='-'`，
+  - 虚线 `ls='--'`，
+  - 点线 `ls=':'`，
+  - 点划线 `ls='-.'`。
 
-```text
-color='darkgreen' and color='tab:purple'.Furthermore,Matplotlibsupports
-```
-通过 RGB 分量定义颜色，可以使用十六进制代码’#RRGGBB’，也可以使用三个浮点数的元组 (r, g, b)。Matplotlib 配色方案的详细说明可参见 Matplotlib 文档 [2–4]。
+  我们既能使用 marker 参数突出数据点、使用 color 参数设置颜色，也能使用 linewidth 调整线宽以改善线条外观。除这些关键字外，Matplotlib 还支持简写字符串表示法，可同时指定数据标记、线型与线条色彩。例如，简写表示法 `'s --r'` 便表示带有方形标记的红色虚线。
+
+- 颜色表示法。除了前面提到的单字母表示法，颜色也可以通过预定义名称指定，例如 `color='darkgreen'` 和 `color='tab:purple'`。此外，Matplotlib 支持通过 RGB 分量定义颜色，可以使用十六进制代码 `'#RRGGBB'`，也可以使用三个浮点数的元组 `(r, g, b)`。Matplotlib 配色方案的详细说明可参见 Matplotlib 文档 [2–4]。
 
 - 坐标轴。可以使用 set_xlim、set_ylim、set_xticks 与 set_yticks 函数调整坐标轴。顾名思义，它们分别用于调节坐标轴的取值范围和刻度显示。可以使用 ax.set_xlabel 与 ax.set_ylabel 方法添加坐标轴标签。若要启用对数坐标，
 
@@ -129,7 +133,7 @@ ax.text(x, y, 'message')
 ```
 该命令将’message’置于图内坐标 (x, y) 处。此外，ax.annotate 方法支持在文本旁附带更丰富的指示元素，例如箭头与其他注释符号。该方法须指定文字与箭头的具体坐标。例如，下面的语句将文本’message’置于坐标 (2, 2) 处，并绘制从 (2, 2) 指向 (1, 3) 的箭头。
 
-```text
+```python
    ax.annotate('message', xy=(1, 3), xytext=(2, 2), arrowprops=dict(arrowstyle='->'))
 ```
 
@@ -181,7 +185,7 @@ df.plot.hexbin('x', 'y', 'z', ax=axs[2,2], title= 'scatter')
 
 要自定义 Pandas 图形，可以为 Pandas.plot 方法指定一系列常用参数，包括 label、style、xticks、yticks、xlim、ylim、title、alpha、kind、figsize 等。此外，可以使用 ax 关键字参数将输出导向特定的 Axes 对象，该选项有助于进一步增强与定制所生成的图形。例如，
 
-```python
+```text
 In [3]: ax = plt.subplot(111)
         df.plot.bar(ax=ax)
         ax.legend(loc='upper left' )
@@ -212,7 +216,7 @@ $ jupyter-labextension enable ipyenvents
 ```
 为验证 Mayavi 的安装，我们可以运行该库提供的内置测试：
 
-```python
+```text
 In [1]: %gui qt
 In [2]: from mayavi import mlab
         mlab.test_mesh()
@@ -421,7 +425,7 @@ Jinja 模板处理过程可以分为两个主要步骤：
 
 2. 使用关键字参数调用.render() 方法来渲染模板。
 
-```python
+```text
 In [1] import jinja2
        tpl = jinja2.Template( 'template_string {{ key }}' )
        tpl.render(key=value)

@@ -662,7 +662,7 @@ def dft_energy(molecule):
 创建 Celery 应用时，通过关键字 borker 指定消息代理，如第 (1) 行所示。它只充当调度作业的任务队列。要接收远程 Celery 工作节点的输出，必须配置数据库后端，为 Celery 应用存储结果。Celery 提供多种结果后端选项 [25]。为简单起见，我们继续使用 Redis 作为结果后端。Redis 使用 URL 中的数字标识数据库。不同数字对应不同数据库。如第 (2) 行所示，结果配置为存储在单独的数据库中。
 按照 Celery 库的要求，我们应在 Celery 应用代码中使用装饰器 @app.task 注册所有远程函数。在本地环境中，我们可以导入此应用并调用远程函数的 .delay() 方法来提交任务。
 
-```python
+```text
 In [1]: from dft_app import dft_energy
         results = [
             dft_energy.delay(' O000 ;H 0.757 0.5 0; H -0.757 0.5 0' ), dft_energy.delay(' O000 ;H 0.757 0.6 0; H -0.757 0.6 0' )]
@@ -685,7 +685,7 @@ $ celery --app=dft_app worker
 由 --app 参数指定的应用必须是 Celery 工作节点能够导入的模块。在此本地设置中，由于命令在应用程序文件所在的同一目录中执行，工作节点成功加载了 Celery 应用。远程部署工作节点时，应正确安装该应用，以确保它可以被导入。为此可以使用我们在第 1 章讨论的软件包分发技术。
 工作节点从消息代理获取任务，并将结果发送到后端数据库。我们可以通过 AsyncResult 对象访问运行状态、错误消息和结果。
 
-```python
+```text
 In [2]: print(results[0].get())
         print(results[1].status)
 Out[2]:
@@ -788,7 +788,7 @@ print(yaml.dump(resp))
 置为提供 AWS 访问凭证 [26]，Celery 工作进程需要这些凭证才能访问 SQS 和 S3。切勿将 AWS 访问凭证直接硬编码到应用程序的源代码或 Dockerfile 中，因为它们可能会被公开访问。
 现在，我们可以加载修改后的 dft_app.py，并在 AWS 云中运行 DFT 计算任务。
 
-```python
+```text
 In [3]: from dft_app import dft_energy
         results = [
             dft_energy.delay(' O000 ;H 0.757 0.5 0; H -0.757 0.5 0' ), dft_energy.delay(' O000 ;H 0.757 0.6 0; H -0.757 0.6 0' )]
@@ -966,7 +966,7 @@ ray job submit
 另一种方法是在部署 Ray 集群时预先将库或数据安装到工作节点上。这些数据准备命令可以在集群配置中指定，后续讨论会进一步说明。
 接下来设置 AWS 上的 Ray 集群。下面是 AWS 上 Ray 集群的示例配置，我们已将其保存在一个 YAML 文件中，文件名为
 
-```text
+```yaml
 cluster_name: dft-ray
 provider:
   type: aws

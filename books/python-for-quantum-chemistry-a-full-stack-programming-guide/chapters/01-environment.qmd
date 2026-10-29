@@ -36,7 +36,7 @@ python my_script.py
 使用错误的 Python 可执行文件还会引发更棘手的问题：程序可能从错误路径加载依赖包。每个可执行文件各自关联着不同版本或不同集合的第三方库，这不仅会导致导入失败，还会破坏程序与包之间的兼容性。
 若源码中用到了高版本 Python 特有的新语法，可以在程序中读取 sys.version_info 变量核验当前运行版本。例如，下面的代码便能确保脚本仅在 Python 3.10 环境下执行：
 
-```text
+```python
 assert (3, 9) < sys.version_info < (3, 11)
 ```
 本书的讨论和示例均基于 Python 3.10 标准。
@@ -52,7 +52,7 @@ assert (3, 9) < sys.version_info < (3, 11)
 这些运行时路径统一保存在名为 sys.path 的列表中。导入库时，Python 会顺着 sys.path 中的目录顺序依次搜寻目标库，一旦命中首个匹配项即刻加载，后续路径中的同名模块则会被全部忽略。
 若系统不同目录下安装了同一依赖包的多个副本，如何确认程序当下加载的具体是哪一份？最直接的办法是导入模块后打印其 __file__ 属性。例如：
 
-```python
+```text
 In [1]: import numpy
         numpy.__file__
 Out[1]:
@@ -141,7 +141,7 @@ $ pip config set global.index -url https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 在 Linux 系统上，此命令将配置写入文件 ~/.config/pip/pip.conf 或 ~/.pip/pip.conf。配置文件的内容 [1] 如下：
 
-```text
+```ini
 [global]
 index-url = https://pypi.tuna.tsinghua.edu.cn/simple
 ```
@@ -260,7 +260,7 @@ class B(module_a.A):
 父包名为 mypkg，内含一个 __init__.py 文件。导入 mypkg 时，mypkg.__path__ 属性记录包的所有目录。此时 Python 无法导入 module_a.py，因为不知道该到哪里
 寻找该模块。然而，一旦将包含 module_a.py 的目录添加到 mypkg.__path__，Python 就能成功定位并导入这个模块。如果修改后的 __path__ 写在 core_repo/mypkg/__init__.py 文件中，每次导入 mypkg 时，扩展模块便会自动注册到项目中。
 
-```python
+```text
 In [1]: import mypkg
         print(mypkg.__path__)
 Out[1]:
@@ -390,7 +390,7 @@ setup( name='pyldd', packages=find_packages(), entry_points={
 ```
 另一种方法是在包配置文件 pyproject.toml 中，通过 [project.scripts] 节指示 Python 包系统为 CLI 创建命令。例如，
 
-```text
+```toml
 [project.scripts]
 pyldd = "pyldd.cli:main"
 ```
@@ -585,7 +585,7 @@ http://localhost:8080
 -v 选项将主机上的 /data/pypi-mirror 目录挂载到容器内的 /data/packages。
 可以使用 Python 包 twine 测试本地 PyPI 服务。twine 需要一个配置文件 ~/.pypirc 来定义 PyPI 服务器，包括 URL 和登录方法。
 
-```text
+```ini
 [distutils]
 index-servers =
     local
@@ -602,7 +602,7 @@ $ twine upload -r local dist/pyldd -0.1.0.tar.gz
 文件 dist/pyldd-0.1.0.tar.gz 是 pyldd 包的源代码分发（source distribution，sdist）版本。第 1.3.4 节将进一步讨论发布 Python 包的细节。如果私有 PyPI 服务正常运行，上传的包应当能在主机的 /data/pypi-mirror 目录中找到。此 PyPI 服务也可以作为 PyPI 镜像服务器。要在此服务器上缓存更多包，可以从 pypi.org 下载 wheel 文件，然后使用 twine upload 命令将包上传到私有 PyPI 服务器。
 上述 docker run 命令可以转换成一个更易读、更易管理的 YAML 格式配置文件，名为 docker-compose.yml。docker-compose 用于定义和运行多容器 Docker 应用程序。下面是一个 docker-compose.yml 文件示例，它实现了与前面的 docker run 命令相同的结果：
 
-```text
+```yaml
 version: '3.7'
 services:
   pypi-local-mirror:
@@ -855,7 +855,7 @@ pytest 等工具便于执行测试任务并汇总结果。测试自动化是在�
 
 运行一个包的完整测试套件可能很耗时，这往往会影响代码开发效率以及计算资源的有效利用。为缩短测试等待时间，可以将测试任务配置为在出现任何错误时提前终止。在 pytest 中可以使用 pytest -x 选项快速实现。此外，还可以根据测试特点将其组织成子集。通过选择性执行测试，可以跳过资源开销大或不太关键的测试。在 pytest 中，这需要在 pyproject.toml 文件中配置 [tool.pytest.ini_options] 节，定义用于标记测试的特殊标签，例如：
 
-```text
+```toml
 [tool.pytest.ini_options]
 markers = [
     "quick": marks tests as quick, "slow: marks tests as slow, "high_mem": marks tests with high memory usage, ]
@@ -944,7 +944,7 @@ PEP 8 [28] 是 Python 社区推荐的编码风格指南。它涵盖缩进、行�
 软件包的元数据和安装选项可以在 pyproject.toml 文件、setup.cfg 文件中指定，也可以直接在 setup.py 文件中 setup() 函数的参数里指定。目前推荐使用 pyproject.toml 文件进行配置。下面以 pyldd 工具为例，展示 pyproject.toml [35] 的配置。
 pyldd 的 pyproject.toml 文件可以配置如下：
 
-```text
+```toml
 [project]
 name = "pyldd"
 version = "0.1.0"
@@ -971,7 +971,7 @@ setup(ext_modules=[
 在某些项目中，编译扩展模块可能需要 Cython。这意味着必须先安装 Cython，然后才能运行 setup.py 文件进行编译。
 构建依赖项可以在 pyproject.toml 文件中指定 [35]。例如，前置依赖 setuptools、wheel 和 cython 可以在 [build-system] 部分中如下定义：
 
-```text
+```toml
 [build-system]
 requires = ['setuptools', 'wheel', 'cython']
 ```
@@ -1034,7 +1034,7 @@ PyPI 服务器对软件包版本执行非常严格的规则。如果上传历史
 要构建 Conda 软件包，需要使用 Conda 配方文件（recipe file）meta.yaml 指定软件包的元数据。与 pyproject.toml 中记录的元数据类似，我们可以在 Conda 配方文件中定义名称、版本、描述、依赖和其他信息。conda-build 工具需要这些信息来构建 Conda 软件包。
 以 pyldd 项目为例，我们在 pyldd 仓库根目录下的 condarecipe 目录中创建了一个 meta.yaml 文件。meta.yaml 文件的最简配置如下。
 
-```text
+```yaml
 package:
   name: pyldd
   version: 0.1.0
@@ -1059,7 +1059,7 @@ $ conda-build conda-recipe
 那么，如何在 Conda 软件包中管理外部依赖呢？
 一种策略是添加其他通道，例如 conda-forge 通道。conda-forge 通道托管了大量软件包。我们可以配置 ~/.condarc 文件，除了默认通道之外加入新通道，如下所示：
 
-```text
+```yaml
 channels:
   - defaults
   - conda-forge
@@ -1079,7 +1079,7 @@ channels:
 
 将代码库托管在 GitHub 等平台上时，使用 GitHub Actions 执行 CI 工作流格外便捷。GitHub Actions 在仓库的 .github/workflows 目录下的 YAML 文件中定义。例如，假设多个开发者正在协作开发项目的不同功能，新功能通过 GitHub 拉取请求（pull request，PR）合并到主分支。为了确保新的拉取请求不会破坏既有代码库，我们可以创建一个 action，在发出拉取请求时自动运行。可以按如下方式配置 .github/workflows/pr_test.yml：
 
-```text
+```yaml
 name: Testing for PR
 on: pull_request
 jobs:
@@ -1149,16 +1149,16 @@ $ docker build -t local -gpu-runner:0.1 .
 
 4. 创建一个 docker-compose.yml 文件来管理自托管运行器。
 
-```text
+```yaml
 version: "3.7"
 services:
   runner:
     image: local-gpu-runner:latest
     volumes:
-         - /data/github-runner:/home/runner
-         - /data/modelA:/data
-       command: /home/runner/run.sh
-       runtime: nvidia
+      - /data/github-runner:/home/runner
+      - /data/modelA:/data
+    command: /home/runner/run.sh
+    runtime: nvidia
 ```
 /data/github-runner 目录是解压 actions-
 runner 软件包的文件夹。该目录包含一个脚本文件 run.sh，可以启动本地
@@ -1256,7 +1256,7 @@ Convergence checker for DFT
 这是 Python 继承机制中发生的情况。调用 HybridDFT.check_convergence 方法时，Python 按照一个称为方法解析顺序（Method Resolution Order，MRO）的特定顺序搜索方法。如果在多个类中找到该方法名，Python 会选择在 MRO 中最先出现的那个。
 可以通过类的 __mro__ 属性访问 MRO。在这个例子中，使用第一个版本的 KohnShamDFT 类时，HybridDFT 类的 MRO 为
 
-```python
+```text
 In [3]: HybridDFT.__mro__
 Out[3]:
 (<class 'HybridDFT'>,< class 'HartreeFock'>,< class 'SelfConsistentField'>, <class 'KohnShamDFT'>,< class 'object'>)
@@ -1423,7 +1423,7 @@ Wall time: 27.6 ms
 ```
 IPython 提供哪些魔法命令？我们可以使用 %lsmagic 命令列出所有可用的魔法命令。除了 IPython 内置的魔法命令，还可以使用 %load_ext 命令加载魔法命令扩展。例如，可以将 Cython 编译器的魔法命令加载到 IPython 中（更多细节见第 9 章）。以标准方式使用 Cython 通常需要复杂的配置。%cython 魔法命令使我们能够以简单的方式在 IPython shell 中编译函数。
 
-```python
+```text
 In [2]: %load_ext cython
 In [3]: %%cython
         def incremental_set():
@@ -1459,7 +1459,7 @@ else:
 ```
 这段代码应放在 IPython 启动目录中的脚本文件里。启动 IPython 或 Jupyter Notebook 时，新的单元格魔法命令 %%hello_gpt 会自动注册。在 Jupyter Notebook 中，我们可以使用这个单元格魔法命令，根据单元格块中指定的要求生成代码。
 
-```python
+```text
 In [2]: %%hello_gpt
         # This function uses chatgpt API to generate code as requested
         def query_gpt(request):

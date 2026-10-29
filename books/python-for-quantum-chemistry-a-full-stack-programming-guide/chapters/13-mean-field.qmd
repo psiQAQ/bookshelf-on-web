@@ -1268,7 +1268,7 @@ super().__init__(MM_charges, MM_coordinates) # (3)
 ```
 请注意 super() 函数在此处的作用。QMMM_MeanField 类中第 (3) 行对 super() 的调用，与普通子类中的 super() 行为类似。这个 super() 调用等价于 super(QMMM_MeanField, self)。它从 QMMM_MeanField 类开始，在方法解析顺序（Method Resolution Order，MRO）中查找第一个包含 __init__ 方法的类。QMMM_MeanField 类的 MRO 类似于
 
-```text
+```python
 (QMMM_MeanField, QMMM, mf.__class__, ...)
 ```
 后面跟着 mf.__class__ 继承的基类。第 (3) 行的 super() 最终解析到 QMMM 类，因为该类定义了 __init__ 方法。

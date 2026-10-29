@@ -304,7 +304,7 @@ optimize=True 只会调用标准的 np.einsum 实
 下，简单的 NumPy 广播有时可以比 np.einsum 表现得更好。
 例如：
 
-```python
+```text
    I n[ 1 ] :a=n p .random.rand(100, 100, 100)
            b = np.random.rand(100, 100, 100)
    In [2]: %time c = np.einsum( 'kij,ijp->ijkp',a ,b )
@@ -320,7 +320,7 @@ optimize=True 只会调用标准的 np.einsum 实
 
 - 问题规模。np.einsum_path 路径分析本身通常需要消耗约 100 毫秒的额外耗时。当问题尺寸较小时，这一固定开销便不可忽略。而面对大规模张量缩并时，判断运算属于 CPU 受限还是内存受限则极为关键（相关概念详见第 9 章）。一旦缩并属于内存受限型，即便能转换为矩阵乘法，直接运行未开启 optimize=True 的原生 np.einsum 往往速度更快。例如：
 
-```python
+```text
 I n[ 5 ] :a=n p .random.rand(100, 100)
         b = np.random.rand(100, 100)
 In [6]: %time c=np.einsum( 'ij,kl->ijkl',a ,b )
@@ -333,7 +333,7 @@ Wall time: 231 ms
 
 - 中间结果的生成开销。为了将 einsum 模式转换为矩阵乘法，tensordot 需要执行一系列张量转置与形状重排运算。如第 2 章所述，这些转置和形状重排可能导致创建 NumPy 数组的内存副本。当涉及大型张量时，创建副本会引入显著开销，有时甚至占据整个计算成本的主要部分。例如：
 
-```python
+```text
 I n[ 8 ] :a=n p .random.rand(500, 500, 500)
         b = np.random.rand(500,3 , 500)
 In [9]: %time c=np.einsum( 'jki,ipj->kp',a ,b )
@@ -378,7 +378,7 @@ scipy.fft 模块提供多种 FFT 函数，用于计算 DFT 及其逆变换，包
 
 例如，给定一个采样数据向量，我们可以执行以下 DFT 和逆 DFT 运算，
 
-```python
+```text
 In [1]: x = np.random.rand(10)
         y = scipy.fft.fft(x)
         x = scipy.fft.ifft(y)
@@ -387,7 +387,7 @@ Out[1]:
 (10,)
 ```
 
-```python
+```text
 In [2]: x = np.random.rand(10)
         y = scipy.fft.rfft(x)
         x = scipy.fft.irfft(y)
@@ -473,18 +473,18 @@ x = pyfftw.byte_align(x)
 
 - 配置 FFT 规划器。PyFFTW 中的默认规划器为 FFTW_ESTIMATE，它所创建的计算计划可能并非最优。最优 FFTW 运行时计划取决于多种因素，例如问题规模、FFT 长度、数据类型、变换类型、内存对齐以及内存访问模式。其他规划器（如 FFTW_MEASURE 和 FFTW_PATIENT [10,11]）可引导 FFTW 投入更多算力搜寻尽可能快的方法。要配置规划器，可将全局配置更改为：
 
-```text
+```python
    pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
 ```
 或设置 FFT 函数的关键字参数 planner_effort：
 
-```text
+```python
    pyfftw.interfaces.scipy_fft.fft(x, planner_effort= 'FFTW_MEASURE')
 ```
 
 - 计划缓存。FFTW_MEASURE 与 FFTW_PATIENT 在构建计划阶段会产生显著的时间开销，在大尺寸变换下其耗时甚至远超计算本身。因此这类模式更适用于反复调用同规格变换的长运行程序。为避免重复探测，应开启规划结果的缓存机制。在 PyFFTW 中可调用如下命令启用计划缓存：
 
-```text
+```python
    pyfftw.interfaces.cache.enable()
 ```
 通过高级接口配置 FFTW 时，建议使用辅助函数 pyfftw.builders.fft 创建 pyfftw.FFTW 类的实例。这个实例包含计算所需的全部 FFTW 参数。我们可以调用这个实例来执行实际变换。

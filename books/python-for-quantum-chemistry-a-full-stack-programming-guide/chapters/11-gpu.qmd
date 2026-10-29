@@ -290,7 +290,7 @@ ctypes 模块可以与原生 CUDA C++ 项目结合使用。这种组合在 GPU �
 从本质上说，编写 GPU 内核就是将数据并行化问题映射到 GPU 并行模型的任务。这里我们将简要讨论 get_j 函数的 CUDA 代码设计与优化。这个 CUDA 内核随后将集成到 Python 代码中。如果你对 GPU 架构和优化方法的细节感兴趣，官方手册 *CUDA C Programming Guide* [25] 以及 *CUDA by Example: An Introduction to General-Purpose GPU Programming* [26] 等教材都是很好的资源，全面介绍了 GPU 编程概念。
 我们的初始版本源自第 11.2 节介绍的 CPU 代码。在这个版本中，循环索引 i 和 j 被映射到 CUDA 线程。高维数组用一维数组表示，其寻址方式由多维格式转换而来。这是在 CUDA 内核中处理多维数组的常用技术。确保 Python 端数组的连续性至关重要。
 
-```text
+```c
 #include <cuda_runtime.h>
 __global__ void _kernel_v1(double *output, double *eri, double *dm, int n)
 {
@@ -309,7 +309,7 @@ __global__ void _kernel_v1(double *output, double *eri, double *dm, int n)
 这个 GPU 内核对 output 数组的元素执行归约加法操作。由于 output 数组由 CUDA 线程共享，直接向数组写入数据可能导致竞争条件（race conditions）。我们使用 CUDA 原子操作 atomicAdd 来确保归约不会发生竞争条件。虽然 atomicAdd 在硬件层面经过优化，但跨 CUDA 线程块执行归约仍然是成本很高的操作，通常应当避免。
 为了消除跨线程归约，第二个版本的 CUDA 内核交换了 ij 和 kl 的循环顺序。随后，索引 k 和 l 被映射到 CUDA 线程。通过这些修改，归约求和在每个线程内的寄存器中累积。
 
-```text
+```c
 __global__ void _kernel_v2(double *output, double *eri, double *dm, int n)
 {
     size_t kl = blockIdx.x * blockDim.x + threadIdx.x;
@@ -328,7 +328,7 @@ __global__ void _kernel_v2(double *output, double *eri, double *dm, int n)
 在该实现中，每个线程在内层循环都需要反复读取 dm 数组元素。如果不考虑 GPU 处理器中缓存的影响，这会导致总共 n 次全局内存操作。访问全局内存会带来很高的延迟。因此，在 GPU 内核中最好尽量减少或避免通过全局内存访问数据。
 为了优化全局内存访问，可以使用分块（tiling）和共享内存（shared memory）技术。共享内存是位于 CUDA 流处理器上的一块小型、低延迟内存空间。同一线程块内的线程可以访问共享内存中的数据，从而有效减少对全局内存的访问。分块技术将数据集划分成能够放入共享内存的小块。这些技术可以看作手动控制 GPU 缓存行为的一种方式。通过采用这些技术，我们可以开发一个新版本的 CUDA 内核。
 
-```text
+```c
 #define BLOCK 16
 __global__ void _kernel_v3(double *output, double *eri, double *dm, int n)
 {
@@ -568,7 +568,7 @@ def empty_mapped(shape, dtype= float, order= 'C'):
 ```
 在对应的 C 函数中，需要使用 CUDA API cudaHostGetDevicePointer 将 GPU 上的内存地址绑定到主机上的内存页。随后，绑定的地址可以传递给 GPU 内核，并作为普通的设备端地址使用。
 
-```text
+```c
 extern "C"
 void kernel_v2_mapped(double *output, double *eri_cpu, double *dm, int n)
 {

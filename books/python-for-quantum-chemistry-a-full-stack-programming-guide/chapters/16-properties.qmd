@@ -901,7 +901,7 @@ JVP 增广函数 mo_integrals_jvp 计算雅可比矩阵（Jacobian）与原始�
 在 JVP 增广函数中，作用于切空间（tangent space）的操作必须是线性变换。对切向量参数执行的非线性操作，如 jnp.sqrt(tangent) 或 jnp.sin(tangent)，虽然可以由 JAX 变换，但不允许出现在 JVP 增广函数中。这意味着不能使用有限差分法（finite difference method）近似雅可比矩阵与向量的乘积，即使在某些情况下应用有限差分法可能很简单。后文将探讨要求使用线性变换的原因。
 为 mo_integrals 定义 JVP 规则后，我们可以使用 jax.grad 函数计算 CCD 核梯度，如下所示：
 
-```python
+```text
 In [1]: mol = pyscf.M(atom= ' N0 .00 ;N3 .00 ' , unit= 'Bohr', basis='cc-pvdz')
         mf = mol.RHF().run()
         grad = jax.grad(CCD_solve, argnums=0)
@@ -949,7 +949,7 @@ jax.tree_util.tree_unflatten()
 ```
 下面的例子取自 JAX 文档，展示了叶节点、树定义以及这两个函数的用法：
 
-```python
+```text
 In [2]: from jax.tree_util import tree_flatten, tree_unflatten
      # The leaves in value_flat correspond to the ' *' markers in
   value_tree

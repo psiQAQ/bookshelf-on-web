@@ -221,7 +221,7 @@ def iter_cart_xyz(l):
 ```
 例如，d 型高斯型轨道壳层中的 6 个笛卡尔函数按以下顺序排列
 
-```python
+```text
 In [1]: for t,u ,v in iter_cart_xyz(2):
             print(f'x^{t}y^{u}z^{v}')
 Out[1]:
@@ -436,16 +436,12 @@ def get_S(i: int,j : int):
 在递归调用时，某些动态规划状态可能会被多次访问。为避免重复计算中间状态，我们可以使用 lru_cache 装饰器对这些状态进行记忆化缓存。
 根据这个动态规划函数，可以按照式 (12.18) 计算重叠积分。
 
-```text
-for i, (ix,i y, iz) in enumerate (iter_cart_xyz(li)):
-    for j,( j x,j y, jz) in enumerate (iter_cart_xyz(lj)):
+```python
+for i, (ix, iy, iz) in enumerate(iter_cart_xyz(li)):
+    for j, (jx, jy, jz) in enumerate(iter_cart_xyz(lj)):
         S[i,j] = get_S(ix,jx)[0] * get_S(iy,jy)[1] * get_S(iz,jz)[2]
 ```
-这里，指标 0、1 和 2 表示三个笛卡尔方向。为了遍历左矢和右矢壳层中的所有笛卡尔高斯型轨道，我们使用 iter_cart_xyz 函数来
-
-```text
-generatetheirCartesianpowers (ix, iy, iz)and (jx, jy, jz).
-```
+这里，指标 0、1 和 2 表示三个笛卡尔方向。为了遍历左矢和右矢壳层中的所有笛卡尔高斯型轨道，我们使用 iter_cart_xyz 函数来生成它们的笛卡尔幂 (ix, iy, iz) 和 (jx, jy, jz)。
 将上述所有部分组合起来，我们得到一个计算一对原始笛卡尔高斯型轨道之间重叠积分的函数。
 
 ```python
@@ -1118,7 +1114,7 @@ print(keys) # dict_keys([(0, 0), (1, 0), (2, 0), (3, 0), (2, 1), (4, 0), (3, 1),
 
 **图 12.2** 重叠积分中中间 DP 状态的依赖关系
 
-```text
+```python
 for j in range (lj+1):
     for i in range (li+lj+1-j):
 ```
@@ -1709,7 +1705,7 @@ class jitCGTO:
 
 - 使用 Cython 编译器指令提高 NumPy 数组索引的效率：
 
-```text
+```python
    #cython: boundscheck=False
    #cython: wraparound=False
    #cython: overflowcheck.fold=False
@@ -1875,8 +1871,8 @@ boys_fn({{ order + 1 }}, theta_r2, _boys);
 def unrolling(li,l j,l k,l l ) :
   print(c_tpl.render(name=f'run_eri_{li}{lj}{lk}{ll}', order=li+lj+lk+ll))
   n=0
-  for i, (ix,i y, iz) in enumerate (iter_cart_xyz(li)):
-    for j,( j x,j y, jz) in enumerate (iter_cart_xyz(lj)):
+  for i, (ix, iy, iz) in enumerate(iter_cart_xyz(li)):
+    for j, (jx, jy, jz) in enumerate(iter_cart_xyz(lj)):
       for k, (kx,k y, kz) in enumerate (iter_cart_xyz(lk)):
         for l, (lx,l y, lz) in enumerate (iter_cart_xyz(ll)):
           print(f'eri[{n}] = {hrr(ix,iy,iz,jx,jy,jz,kx,ky,kz,lx,ly,lz)};')

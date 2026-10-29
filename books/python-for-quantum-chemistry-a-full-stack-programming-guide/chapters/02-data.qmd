@@ -180,7 +180,7 @@ def search(a, eps=1e-9):
 然而，运用原位操作需要格外审慎，并对程序内部的数据引用关系有更透彻的理解。当用原位操作取代普通操作时，可能诱发普通操作下不会出现的隐蔽缺陷。由于 NumPy 数组之间可能共享底层数据，对某一个数组执行原位修改，往往会在无意中波及其他数组的内容。为了安全实施原位操作，必须提前确认目标数组是否与其他数组共享内存。第 2.1.8 节将结合数组视图机制，详细剖析数组间数据共享的底层细节。
 原位操作无法自动处理结果的数据类型转换。当操作涉及不同类型的数组时，若预期结果的数据类型与输出数组预留的类型不符，该限制便会导致程序报错中断。例如，在类型不兼容时可能会触发以下异常：
 
-```python
+```text
 In [1]: a = np.arange(3)
         a/ =2
 UFuncTypeError: Cannot cast ufunc 'divide' output from dtype('float64')t o
@@ -233,7 +233,7 @@ dist = np. sum((points[:,None] - points) **2, axis=-1)**.5
 
 NumPy 提供的花式索引允许我们凭借单次索引操作访问多个元素。在一维数组场景下，花式索引的运作机制直截了当，如下例所示：
 
-```python
+```text
 In [1]: a = np.arange(0,2 0,3 )
         idx = [4,1 ,3 ]
         print(a[idx])
@@ -319,7 +319,7 @@ for i in range (n):
 如果我们想获得一个数组 at，使得 at = a.T，换句话说，将 b 分配到 at.T 中，如
 
 ```text
-b-> (at.T)[np.arange(n)[:,None], lookup]
+b -> (at.T)[np.arange(n)[:, None], lookup]
 ```
 以下哪些花式索引赋值能够满足这个要求？此外，其他语句可能有什么问题？我们将这个问题留给读者。你可以运用上面描述的相同过程，分析花式索引以及过程中可能出现的任何错误。
 
@@ -334,17 +334,17 @@ at[lookup.T, np.arange(n)[:,None]] = b.T
 ```
 在各种场景中，你可能遇到 np.ix_ 方法，它用于选择高维数组的一个子块，例如
 
-```text
+```python
 a[np.ix_(idx1, idx2, idx3)]
 ```
 np.ix_ 方法可以为参数中的索引添加适当的 newaxis，将它们转换为花式索引语法。前面的 np.ix_ 索引代码等同于以下花式索引：
 
-```text
+```python
 a[idx1[:,None,None], idx2[:,None], idx3]
 ```
 花式索引和切片可以一起使用，但组合多个索引和切片可能导致更复杂的索引行为。考虑下面例子中的索引和切片组合：
 
-```python
+```text
 In [2]: a = np.ones((5,5,5,5))
         idx = np.arange(2)
         print(a[idx,idx,:,:].shape)
@@ -373,7 +373,7 @@ Out[2]:
 
 涉及多个索引和切片的代码往往容易造成误解，也难以维护。尤其是在第二种情况下，输出数组的维度可能与原数组的维度大不相同。为了简化涉及这种复杂索引的代码，一种策略是插入转置操作，将原数组转换为结构更有序的形式。这样，索引和切片就会在转置后的数组中分别聚集在一起，从而可以应用第一种情况的规则来选择元素。例如，为了清楚起见，语句
 
-```text
+```python
 a.transpose(0,3,1,2)[idx,idx]
 ```
 
@@ -394,7 +394,7 @@ a[np.isnan(a)] = 0.
 
 第二条规则意味着掩码数组选择操作无法保留数据的原始维度，即使掩码数组中的 True 值以结构化模式排列也是如此。给掩码指定的元素赋值时，必须重塑数据源的形状，使其与扁平化目标数组的形状匹配。例如，
 
-```python
+```text
 In [3]: a = np.zeros((4,4 , 4))
         mask = np.ones((4, 4), dtype= bool)
         print(a[mask].shape)
@@ -473,7 +473,7 @@ NumPy 数组本质上就是一块连续内存缓冲区外加若干描述数据�
 
 这些属性可以直接访问，例如：
 
-```python
+```text
 In [1]: import numpy as np
         a = np.random.rand(3,5,2)
         print(a.dtype, a.itemsize)
@@ -490,12 +490,12 @@ dtype('float64'), 8
 ```
 NumPy 核心库使用 strides 属性计算数组中各个元素的内存地址。在这个例子中，数组元素 a[i,j,k] 的地址可计算为
 
-```text
+```python
 20823872 + i * 80 + j * 16 + 8
 ```
 其中，20823872 是数组 a 的数据缓冲区地址。(80, 16, 8) 这些步长是如何得到的？步长等于
 
-```text
+```python
 (8 * 5 * 2, 8 * 2, 8)
 ```
 其中数字 8 来自数组的 itemsize，数字 5 和 2 来自数组的 shape。该计算可以用一个 Python 表达式表示：
@@ -553,12 +553,12 @@ def hankel_matrix(a):
 这里，我们调用类实例化方法 np.ndarray，并传入数据缓冲区来初始化一个数组实例。ndarray 可以接受 shape、dtype、buffer 和 strides 等关键字来定义新数组。这些关键字与前面讨论的数组元数据相对应。由于使用了 buffer 参数，程序生成了原数组对象的视图（view）。
 我们来看看视图如何根据原始向量表示 Hankel 矩阵。输出数组的步长为 (a.itemsize, a.itemsize)。因此，矩阵元素 H[i,j] 对应于存储在以下地址的数据
 
-```text
+```python
 a.ctypes.data + a.itemsize * i + a.itemsize * j
 ```
 简化后得到
 
-```text
+```python
 a.ctypes.data + a.itemsize * (i + j)
 ```
 这正是 a[i+j] 的地址。新数组复用了向量 a 的内存缓冲区，因此对于 n² 个元素只占用 2n 个字的内存
@@ -575,7 +575,7 @@ C 连续存储采用 C 编程语言存储多维数组的方法。它将最后一
 Fortran 编程语言中的多维数组采用不同的布局，将第一个维度中的元素连续排列在内存中。在 F 连续布局中，strides 元组的第一项等于 itemsize。strides 属性中的元素按升序排列。
 初始化新数组时，NumPy 默认采用 C 连续布局作为存储方式。然而，由于数组视图的存在，数组也可能既不是 C 连续的，也不是 F 连续的。例如，前面展示的 Hankel 矩阵就属于这种情况。要确定数组的存储布局，我们可以检查它的 flags 属性：
 
-```text
+```python
 a.flags['C_CONTIGUOUS']
 a.flags['F_CONTIGUOUS']
 ```
@@ -621,16 +621,16 @@ c = a.transpose(3,1,0,2) + b.transpose(1,3,0,2)
 ### 2.1.8 视图
 
 数组视图是一种换个角度诠释数组底层数据的机制。它直接复用原数组的数据缓冲区，但赋予其不同的属性定义，如 strides、shape 和 dtype。这种机制让各 NumPy 数组之间得以零拷贝共享数据，促使 NumPy 代码更精简高效地利用内存空间。在数组视图上施加的任何就地修改，都会实时同步反映在原数组之中。
-在处理高维数组时，常常需要修改局部子块内的若干元素。针对这类场景，我们可以单独创建一个低维数组来充当该子块的视图。直接操作低维数组视图，比在原有高维数组上逐层索引要清晰得多，这也是简化 NumPy 代码的一大有效法宝。例如考察下面这段代码，它用于修改形状为
+在处理高维数组时，常常需要修改局部子块内的若干元素。针对这类场景，我们可以单独创建一个低维数组来充当该子块的视图。直接操作低维数组视图，比在原有高维数组上逐层索引要清晰得多，这也是简化 NumPy 代码的一大有效法宝。例如考察下面这段代码，它用于修改形状为 $(2,n,2,n,2,n,2,n)$ 的八维数组：
 
-```text
-(2,n,2,n,2,n,2,n):
-for s in range (2):
-    for ip,i in enumerate (idx1):
-        for jp,j in enumerate (idx2):
-            a[s,i,s,j,s,j,s,i] += b[ip,jp]
+```python
+for s in range(2):
+    for ip, i in enumerate(idx1):
+        for jp, j in enumerate(idx2):
+            a[s, i, s, j, s, j, s, i] += b[ip, jp]
 ```
-的八维数组。在量子化学中，这个八维数组可以用来表示电子排斥积分。此代码片段可以看作对 Hartree-Fock 交换元素的调整（矩阵 b）。通过引入该八维数组的四维数组视图，我们可以将代码片段改写为更易读的形式。
+
+在量子化学中，这个八维数组可以用来表示电子排斥积分。此代码片段可以看作对 Hartree-Fock 交换元素的调整（矩阵 b）。通过引入该八维数组的四维数组视图，我们可以将代码片段改写为更易读的形式。
 
 ```python
 for s in range (2):
@@ -660,7 +660,7 @@ a_view[:,idx1[:,None],idx2] += b
 数组视图在某些 NumPy 代码中可能引入潜在的错误，更具体地说，是在原地操作以及对 ufunc 使用 out 关键字的情况下。这些操作可能意外改变另一个数组的内容。因此，确认这些操作是否作用于数组视图十分重要。
 如何判断一个数组是否为视图？我们可以使用数组的 base 属性来确定这一性质。如果 base 为 None，数组拥有数据，它不是另一个数组的视图。否则，当前数组是另一个数组对象的视图，base 属性指向原始数组或数据缓冲区。例如：
 
-```python
+```text
 In [1]: a = np.random.rand(3,5,2)
         b = a[:2]
         c = a[[0,1]]
@@ -676,7 +676,7 @@ False
 
 使用切片选择子数组时，输出是原始数组的一个视图，其形状和步长经过调整。子数组的数据缓冲区（可通过属性 .ctypes.data 访问）指向与原始数组相同的数据缓冲区，但地址有偏移。例如：
 
-```python
+```text
 In [2]: a = np.random.rand(3,5,2)
         print(a.strides, a.shape, a.ctypes.data)
 Out[2]:
@@ -708,7 +708,7 @@ np.transpose 和 np.diagonal 函数是这一类函数的两个例子。np.transp
 大多数 NumPy 函数以确定的方式运行，返回数组视图或数据的新副本。np.reshape 和 np.ravel 是例外。它们可能返回视图，也可能返回新数组，具体取决于输入数组的布局。ravel 函数可以看作 reshape 函数的一种特殊情况，它实质上执行 np.reshape(a, -1) 来展平输入数组。下面我们将重点讨论 reshape 函数的功能。
 reshape 函数在可能的情况下返回输入数组的视图，如下面的例子所示。
 
-```python
+```text
 In [1]: a = np.zeros((3,4,3))
         print(a.reshape((3,1,2,2,3)).base is a)
         print(a.reshape((6,6)).base is a)
@@ -740,7 +740,7 @@ NumPy 提供多种数据类型，涵盖整数、浮点数、复数、字符串�
 
 当在两个 NumPy 数组之间、或在数组与原生 Python 对象之间执行算术运算时，系统往往会隐式触发类型转换（type casting）。如果运算涉及不同数据类型的数组，NumPy 会自动执行向上类型转换（type upcasting），以保证输出类型具备更高的数值精度或容纳更多位宽。最终生成的结果类型可通过 np.result_type 函数加以判定：
 
-```python
+```text
 In [1]: print(np.result_type(np.int32([2]), np.float32([3])))
         print(np.result_type(np.float32([2]), np.array([3.5])))
         print(np.result_type(np.int32([2]), np.zeros(3)))
@@ -751,7 +751,7 @@ float64
 ```
 请注意，当其中一个操作数是标量时，类型转换不一定总会产生位数更多或精度更高的类型。此外，NumPy 2.* 和 NumPy 1.* 版本的类型转换行为有所不同。例如，在 NumPy 1.* 中，浮点数之间的类型转换结果为：
 
-```python
+```text
 In [2]: print(np.result_type(np.float32([2]), 3))
         print(np.result_type(np.float32([2]), np.float64(3)))
         print(np.result_type(np.float32(2), 3))
@@ -764,7 +764,7 @@ float64
 ```
 float32 数组与 float64 标量之间的运算会向下转换为 float32 类型。在这种转换中，我们可能意外损失计算精度。在 NumPy 2.* 中，这些类型转换产生的输出有所不同，如下所示：
 
-```python
+```text
 In [3]: print(np.result_type(np.float32([2]), 3))
         print(np.result_type(np.float32([2]), np.float64(3)))
         print(np.result_type(np.float32(2), 3))
@@ -790,7 +790,7 @@ numpy.ndarray
 ```
 然而，在基于 NumPy 的程序中，你可能会注意到零维数组很少出现。遇到零维数组时，例如归约函数（np.sum、np.mean、np.prod）的输出，NumPy 的 ndarray 类会自动将零维数组转换为标量变量。
 
-```python
+```text
 In [2]: print(isinstance(np.zeros(3).sum(), np.ndarray))
         print(isinstance(np.array(3) + 5, np.ndarray))
         print(isinstance(np.max(np.zeros(3)), np.ndarray))
@@ -801,7 +801,7 @@ False
 ```
 使用 NumPy ndarray 的子类时，NumPy 归约函数和 ufunc 会产生零维数组。
 
-```python
+```text
 In [3]: class Array(np.ndarray):
             pass
         print(isinstance(Array(3).sum(), np.ndarray))
@@ -814,7 +814,7 @@ True
 ```
 这一现象也存在于一些基于 NumPy 的库中，它们对归约函数和 ufunc 可能一律返回类数组对象，而不是标量变量。
 
-```python
+```text
 In [4]: print(type(jax.numpy.arange(3).sum()))
         print(type(jax.numpy.array(3) + 5))
         print(type(jax.numpy.count_nonzero(np.zeros(3))))
@@ -825,7 +825,7 @@ Out[4]:
 ```
 在许多情况下，标量和零维数组的行为相似，似乎可以互换。例如，它们遵循相同的广播规则，在 ufunc 中。此外，将它们作为参数传给 NumPy 函数时，两者都可以用作普通整数。
 
-```python
+```text
 In [5]: i3 = np.int64(3)
         a = np.zeros((i3,i 3 ) )
         a+ =i 3
@@ -845,7 +845,7 @@ array([3.,3 ., 3.])
 
 例如：
 
-```python
+```text
    I n[ 7 ] :a=n p .array(3)
            x=a
            a *=2
@@ -869,7 +869,7 @@ array([3.,3 ., 3.])
 - 通过索引语法 a[()] 获取标量值。
 - 将数组转换为特定的数据类型。
 
-```python
+```text
 In [9]: print(type(np.array(2)[()])) # Accessing the scalar value
 print(type(int(np.array(2)))) # Explicit type conversion to int
      print(type(float(np.array(2)))) # Explicit type conversion to float
@@ -887,7 +887,7 @@ Out[9]:
 
 例如
 
-```python
+```text
 In [1]: np.ones(3) / np.zeros(3)
 RuntimeWarning: divide by zero encountered in divide
 Out[1]:
@@ -906,11 +906,11 @@ array([nan, nan, nan])
 - 浮点运算溢出，如 np.exp(1e3) 和 np.log(0)，可能导致 inf。
 - 不定式（indeterminate forms）[7] 的结果为 nan，例如
 
-```python
+```text
 In [3]: np.zeros(3) / np.zeros(3)
 ```
 
-```python
+```text
 RuntimeWarning: invalid value encountered in divide
 Out[3]:
 array([nan, nan, nan])
@@ -935,7 +935,7 @@ np.seterr(all='raise')
 
 - 与 nan 的比较总是返回 false，即使 nan 与自身比较也是如此。
 
-```python
+```text
 In [5]: np.nan == np.nan
 Out[5]:
 False
@@ -951,7 +951,7 @@ np.isnan 函数。
 
 - 类型转换问题。将浮点数转换为整数时，无法保留 inf 和 nan 值。使用 ndarray.astype() 方法执行这类类型转换时，inf 和 nan 都会变成整数 − 9223372036854775808 (=− 263)，转换过程还会发出警告，表明存在这些无效值。
 
-```python
+```text
    In [6]: np.array([np.inf, np.nan]).astype( int)
    RuntimeWarning: invalid value encountered in cast
      np.array([np.inf, np.nan]).astype( int)
@@ -979,7 +979,7 @@ mp.mp.pretty = True
 ```
 在下面的代码示例中，我们将使用别名 mp 指代 mpmath。为避免舍入误差，传递给 mpmath 函数的浮点常量应加引号写成字符串字面量。
 
-```python
+```text
 In [1]: print(mp.mpf('0.0'))
         print(mp.mpf('0.1'))
         print(mp.mpf(0.1))
@@ -990,7 +990,7 @@ Out[1]:
 ```
 mpmath.mpf 对象可以放入 NumPy 数组 [9]，使 NumPy 能够执行任意精度的算术运算。要启用这一功能，我们可以将 mpf 数值列表转换为 NumPy 数组，并利用 NumPy 代码管理 mpf 对象。例如，使用运算符 * 在两个 mpf 对象数组之间进行广播时，NumPy 对每一对对应的 mpf 元素执行 mpmath 乘法。
 
-```python
+```text
 In [2]: def mparange(n):
             return np.array(mp.arange(n))
 In [3]: idx = mparange(3)
@@ -1001,7 +1001,7 @@ array([[mpf('0.0'), mpf( '0.0'), mpf( '0.0')], [mpf('0.0'), mpf( '1.0'), mpf( '2
 在这种情况下，NumPy 数组的 dtype 显示为 object。这表明元素不是 NumPy 内置数据类型，而是被当作普通 Python 对象处理。
 请注意，大多数 NumPy ufunc 与 mpf 对象不兼容。为了将 mpmath 函数整合到 ufunc 中，我们可以使用 np.vectorize 扩展 mpmath 函数，使其能够处理 mpf 对象数组。np.vectorize 函数使标量函数能够广播，生成行为类似于 NumPy 原生函数的 ufunc。借助这种矢量化增强，现在可以像操作普通 NumPy 数组一样对 mpf 数组执行算术运算。
 
-```python
+```text
 In [4:] mpexp = np.vectorize(mp.exp)
         mpsqrt = np.vectorize(mp.sqrt)
 In [5]: print(mpxp(mparange(3)))
@@ -1086,7 +1086,7 @@ class mparray(np.ndarray):
 请注意，在这个自定义数组类中，我们重写了下划线方法 __array_wrap__。这一修改使归约函数（reduction functions）将零维数组转换为标量变量。如第 2.2 节所述，NumPy 归约函数在处理 ndarray 的子类时不会自动进行这种转换。为了确保我们的 mparray 尽可能接近标准 NumPy 数组的行为，我们在 __array_wrap__ 方法中手动进行转换。有关 NumPy 子类化规则的更详细说明，建议读者查阅 NumPy 文档 [11]。
 现在，mparray 对象可以用于若干 mpmath 线性代数函数，例如 expm、svd 和 eigh。
 
-```python
+```text
 In [4]: idx = mparange(3).view(mparray)
         a = idx[:,None] * idx
         array([[0.0, 0.0, 0.0], [0.0, 1.0, 2.0], [0.0, 2.0, 4.0]], dtype= object)
@@ -1130,7 +1130,7 @@ def mpeye(n)
 
 除了标准数值数据类型之外，NumPy 还支持使用自定义类型表示带标签数据的结构化数组（structured array）。例如，下面的结构化数组使用 atom_type 表示分子中的原子信息：
 
-```python
+```text
 In [1]: atom_type = np.dtype([
             ('symbol', 'U2'), ('x', float), ('y', float), ('z', float)
         ])
@@ -1176,7 +1176,7 @@ array([0.5,0 .] )
 
 Pandas Series 本质上是一维数组，其元素带有标签。它可以由字典、列表或 NumPy 数组构造。例如，我们可以创建一个 Series 对象来表示分子中的一个原子：
 
-```python
+```text
 In [1]: an_atom = pd.Series({ 'symbol': 'O', 'x': 0.5009, 'y': 2.7238, 'z':
     0.8464})
 ```
@@ -1189,7 +1189,7 @@ Index(['symbol', 'x', 'y', 'z', 'Znuc'], dtype= 'object')
 ```
 可以从列表或 NumPy 数组构造 Series 对象：
 
-```python
+```text
 In [3]: coordinates = pd.Series(np.random.rand(2, 3))
 In [4]: an_atom = pd.Series([ 'O', 0.5009, 2.7238, 0.8464], index=['symbol', 'x', 'y', 'z'])
 ```
@@ -1197,7 +1197,7 @@ In [4]: an_atom = pd.Series([ 'O', 0.5009, 2.7238, 0.8464], index=['symbol', 'x'
 将 Series 对象作为单个实体看待时，它的作用类似于 NumPy 数组。它支持使用整数、切片、整数列表、NumPy 数组或 Pandas Index 对象进行索引。此外，Series 对象可以与
 NumPy 无缝集成。Series 对象可以作为参数传递给大多数 NumPy 通用函数（universal functions，ufuncs），这些函数随后逐元素执行操作并返回新的 Series 对象。例如：
 
-```python
+```text
 In [5]: np.sqrt(pd.Series([0,1 , 4]))
 Out[5]:
 0 0.0
@@ -1233,7 +1233,7 @@ Out[9]:
 
 Pandas DataFrame 是另一种用于存储表格数据的基本数据结构，其作用类似于二维数组。DataFrame 本质上是沿列堆叠的 Series 对象集合。例如，分子的几何结构可以存储在一个 DataFrame 表中：
 
-```python
+```text
 In [1]: mole = pd.DataFrame({
             'symbol':[ 'O', 'H', 'H'], 'x': [0.5009, 1.4049, -0.0934], 'y': [2.7238, 2.4390, 1.9786], 'z': [0.8464, 0.6938, 0.7321], })
         print(mole)
@@ -1260,7 +1260,7 @@ Pandas 提供了多种访问 DataFrame 中元素的方法。我们将在第 2.3.
 对象可以由字典、Series 列表、NumPy 数组等可迭代对象（iterable object）构造。由字典构造 DataFrame 时，如前面的例子所示，字典的键成为 DataFrame 的列标签。字典中的每一项都按照前述 Series 对象的构造规则处理，就像在构造一个 Series 对象一样。Series 的标签被用作 DataFrame 的行标签，可以通过 DataFrame.index 属性访问。
 由字典列表构造 DataFrame 时，列表中的每个字典都转换为一个 Series 对象。随后，这些 Series 对象的标签被用作 DataFrame 的列标签。DataFrame 的行标签构成一个 RangeIndex，对应各字典在列表中的位置。
 
-```python
+```text
 In [5]: mole = pd.DataFrame([
 {'symbol': 'O', 'x': 0.5009 , 'y': 2.7238, 'z': 0.8464}, {'symbol': 'H', 'x': 1.4049 , 'y': 2.4390, 'z': 0.6938}, {'symbol': 'H', 'x': -0.0934, 'y': 1.9786, 'z': 0.7321}, ])
         print(mole)
@@ -1272,13 +1272,13 @@ symbol x y z
 ```
 这种方法与由字典构造 DataFrame 有显著不同，后者的行标签来自 Series.index。为了消除关于索引和列标签的歧义，我们可以在构造 DataFrame 时显式指定 index 和 columns。
 
-```python
+```text
 In [6]: mole = pd.DataFrame( [('O', 0.5009 , 2.7238, 0.8464), ('H', 1.4049 , 2.4390, 0.6938), ('H', -0.0934, 1.9786, 0.7321)], index=range(3), columns=[ 'symbol', 'x', 'y', 'z']
         )
 ```
 由其他可迭代对象构造 DataFrame 时，从概念上可以将过程分为两步。首先，可迭代对象的每个元素都转换为一个 Series。接下来，根据可迭代对象是映射（mapping）还是类似列表的容器，构造过程归入前述两种情况之一。例如，可以由结构化数组（structured array）构造 DataFrame：
 
-```python
+```text
 In [7]: atom_type = np.dtype([
             ('symbol', 'U2'), ('x', float), ('y', float), ('z', float)])
         mole_array = np.array([
@@ -1293,7 +1293,7 @@ symbol x y z
 的列标签来自结构化数组的 dtype，因为结构化数组的每个元素都可以像字典一样操作。
 也可以由多种文件类型和字符串创建，例如 CSV、JSON 和数据库。例如，我们可以如下所示从 CSV 字符串初始化一个 DataFrame：
 
-```python
+```text
 In [8]: !cat water.csv
 Out[8]:
 symbol,x,y,z
@@ -1304,7 +1304,7 @@ In [9]: mole = pd.read_csv( 'water.csv')
 ```
 结构适合存储二维数据。在某些场景中，我们可能希望使用更多维度来存储数据。例如，假设我们有分子运动轨迹的一系列几何构型。增加一个表示时间刻度的维度，可能更便于管理这些数据。为了将额外信息纳入 DataFrame，可以使用 MultiIndex [14] 的嵌套索引（nested indexing）方法沿一个维度进行「分组」。
 
-```python
+```text
 In [10]: pd.concat({0: mole, 1: mole}, names=[ 'tick', 'Id'])
 Out[10]:
 symbol x y z
@@ -1324,7 +1324,7 @@ tick Id
 在两个 Pandas Series 对象之间进行运算时，Pandas 会对齐它们的标签。这意味着两个 Series 对象的大小可以不同。对于两个 Series 中不匹配的标签，Pandas 会将相应字段设为 NaN（not a number，非数字）。因此，即使 Series 对象的标签不完全相同，也可以进行运算。
 例如，将带有标签数据的 Series 与另一个具有 RangeIndex 标签的 Series 相加，结果如下：
 
-```python
+```text
 In [11]: s1 = pd.Series([0.1, 0.2, 0.3])
          s2 = an_atom
          s1 + s2
@@ -1351,7 +1351,7 @@ for key in {*s1.keys(), *s2.keys()}:
 这里，表达式 {*s1.keys(), *s2.keys()} 得到两个 Series 对象的键的并集。
 在两个 DataFrame 表之间执行 ufunc 时，Pandas 会同时对齐索引和列标签。如果 DataFrame 表中有不匹配的标签，与处理 Series 类似，Pandas 会在结果中包含相应的行或列，并将这些字段设为 NaN。
 
-```python
+```text
 In [12]: mole = pd.read_csv( 'water.csv')
          mole1 = pd.DataFrame([
 {'x': 1.0} , {'x': -1.0},])
@@ -1374,7 +1374,7 @@ charge_center = np. sum(mole[['x', 'y', 'z']].mul(mass, axis=0), axis=0)
 ```
 在 Pandas 对象之间进行广播时，需要谨慎对待标签对齐功能。有时，这项功能可能产生与直觉相反的结果。Pandas 对象中的数据不一定按显示顺序处理。即使两个 Pandas 对象的标签是整数索引，Pandas 仍将它们视为广播的键。例如，使用索引 [::-1] 反转 Series 中的数据时，也会改变 Series 的标签。因此，如下所示执行 ser + ser[::-1]，得到的输出与 ser * 2 相同。
 
-```python
+```text
 In [13]: ser = pd.Series([2,3 , 4])
          ser + ser[::-1]
 Out[13]:
@@ -1407,7 +1407,7 @@ dtype: int64
 在基于位置的索引（location-based indexing）机制中，Series 对应为一维数组，而 DataFrame 则视同二维数组。我们可以完全按照元素在内存中的绝对位置展开索引，方式同 NumPy 数组的常规索引别无二致。Pandas 允许直接在方括号 [] 内使用切片语法（如 [2:4]）检索数据对象，其返回结果为 Series 的子集或 DataFrame 的连续行片段。
 当传入单个整数作为索引器（indexer）时，Series 与 DataFrame 表现出的行为截然不同。对于 Series 对象，该整数直接索引指定位置的元素；而对于 DataFrame，整数索引器并不会像二维数组那样选中某一行，反而会被优先当作列标签解析。若要按物理位置选取特定行，应当使用 DataFrame 的 .iloc 属性。.iloc 支持 NumPy 花式索引（fancy indexing）的绝大多数形式，涵盖单整数、位置列表、切片以及布尔掩码数组（mask array）。
 
-```text
+```python
 mole.iloc[:2]
 mole.iloc[2,2]
 mole.iloc[1:,1:]
@@ -1428,9 +1428,9 @@ xz
 
 基于标签的索引（label-based indexing）依托 Pandas 对象的 .loc 属性达成。在该机制下，索引器不论是整数、纯文本还是字符串列表，都被统一视作字典键。提取数据宛如在原生字典中按键取值一样自然。我们可以借助成对的键来精准定位 DataFrame 表中的单一单元格，亦可把成对的索引键打包为元组传入 .loc 属性以检索指定数据项。
 
-```text
+```python
 mole.loc[:, 'x']
-mole.loc[[0,2 ],[ 'x','z']]
+mole.loc[[0, 2], ['x', 'z']]
 mole.loc[:2, 'x':'z']
 ```
 请注意，在 .loc 标签索引模式下，整数被当作标签，而不是数值。Pandas 对象中的整数标签可能不按升序排列。例如，考虑以下索引顺序反转的代码片段。索引表达式 .loc[2] 的输出将不同于索引表达式 .iloc[2] 的输出。
@@ -1491,7 +1491,7 @@ Index: []
 
 在属性索引方法中，访问 Series 或 DataFrame 的属性会转换为标签索引。如果 Series 或 DataFrame 的标签是字符串，就可以将其视为对象的一个属性。例如，
 
-```python
+```text
 In [23]: print(mole.symbol)
 Out[23]:
 0O
@@ -1513,7 +1513,7 @@ Name: symbol, dtype: object
 .iloc 与 .loc 分别专为位置寻址和标签寻址两类场景量身设计。两种模式均不支持在单次调用中混用这两套寻址规则，违规混用极易导致意料之外的错误输出。那么，若遇到需要同时对 DataFrame 的行按位置、对列按标签混合检索的需求，应当如何应对？
 一种稳妥的方案是在调用 .loc 或 .iloc 检索数据前，先将其中一种维度的索引器转换为另一种格式。把位置下标转换为显式标签十分简单：借助整数下标从 Index 对象中切出对应标签，即可拿到干净的标签列表，随后便能在 .loc 中安全使用。反向转换（即由文本标签逆向映射为物理位置下标）则可调用 Index 对象的 get_indexer 方法，该方法能直接查出指定标签在 Index 中的准确数字位置，例如
 
-```python
+```text
 In [24]: num_idx = np.array([0, 2])
          key_idx = [ 'x', 'y', 'z']
          mole.loc[mole.index[num_idx], key_idx]
@@ -1585,7 +1585,7 @@ symbol x y z
 ```
 虽然这段选择代码并没有错误，但显得相当繁琐。DataFrame 类提供了 query() 方法，可以通过字符串表达式进行选择。使用 query() 可以将上述选择代码简化为：
 
-```text
+```python
 mole.query('symbol == "H" & x>0&x<3 . 0&y>0&y<3 . 0&z>0&z<
      3.0')
 ```
@@ -1596,7 +1596,7 @@ mole.query('symbol == "H" & 0<x<3 . 0&0<y<3 . 0&0<z< 3.0')
 ```
 实际上，字符串表达式不限于选择元素。使用 DataFrame 类的 eval 方法，字符串表达式也可以用于简单的数值计算。例如，使用 eval 方法求值前面的字符串过滤条件，可以创建一个掩码数组。使用这个掩码数组选择元素，得到的输出与使用 query 方法相同：
 
-```python
+```text
 In [33]: mask = mole. eval('symbol == "H" & 0<x<3 . 0&0<y<3 . 0&0<
     z < 3.0' )
          print(mole[mask])
@@ -1607,7 +1607,7 @@ symbol x y z
 eval 方法可用于更一般的计算。例如，下面的代码片段演示了如何计算
 分子中的原子到参考点 R 的距离：
 
-```python
+```text
 In [34]: R = np.array([-1., -1., -1.])
          expr = '(x - @R[0]) **2 + (y - @R[1]) **2 + (z - @R[2]) **2'
          dist = mole. eval(expr)**.5
@@ -1627,7 +1627,7 @@ In [34]: R = np.array([-1., -1., -1.])
 
 要修改 DataFrame 的行或列标签，set_axis() 和 rename() 是两种常用方法。set_axis 方法可以接受列表或 Pandas Index 来替换行或列标签。
 
-```python
+```text
 In [35]: mole = pd.read_csv( 'water.csv')
          mole = mole.set_axis([ 'O0', 'H1', 'H2'], axis=0)
          print(mole)
@@ -1639,7 +1639,7 @@ H2 H -0.0934 1.9786 0.7321
 ```
 如果任务是只修改轴上的少数标签，rename 方法是更合适的选择。该方法需要用字典指定替换规则。
 
-```python
+```text
 In [36]: mole = mole.rename({ 'O0': 'O', 'H1': 'H0', 'H2': 'H1'}, axis=0)
          mole = mole.rename({ 'symbol': 'name'}, axis=1)
          print(mole)
@@ -1654,7 +1654,7 @@ H1 H -0.0934 1.9786 0.7321
 
 要向 DataFrame 插入少量行或列，可以向新标签赋值数据：
 
-```python
+```text
 mole = pd.read_csv( 'water.csv')
 In [37]: mole.loc[:,[ 'mass','Znuc'] ]=\
                  np.array([[15.999, 1.008, 1.008],[ 8,1 , 1]).T
@@ -1669,7 +1669,7 @@ O1 O 0.5009 2.7238 0.8464 15.999 8
 ```
 另一种方法是将新数据放在单独的表中，然后使用 pd.concat 函数将新表与原表合并。
 
-```python
+```text
 In [38]: mole = pd.read_csv( 'water.csv')
          info = pd.DataFrame([[15.999,8 ], [ 1.008,1 ], [ 1.008, 1]], columns=[ 'mass', 'Znuc'])
          pd.concat([mole, info], axis=1)
@@ -1681,7 +1681,7 @@ symbol x y z mass Znuc
 ```
 pd.concat 函数会自动对齐标签。如果两个 DataFrame 的标签不完全相同，多出的标签将放在新列（或行）中。
 
-```python
+```text
 In [39]: mole1 = pd.DataFrame([{
              'symbol': 'H', 'z': 0.5843, 'x': 0.2245, 'y': 3.6050, 'Zeff': 0.5}])
          pd.concat([mole, mole1], axis=1)
@@ -1694,7 +1694,7 @@ symbol x y z Zeff
 ```
 向表中添加新列时，我们可能希望根据另一列中的类别信息合并数据。这个过程类似于关系数据库中的连接（join）操作。DataFrame 中的 join 方法提供了将一个表合并到另一个表中的功能。例如，假设有一张表存储了各种原子的常数，如原子质量和核电荷。我们可以根据原子的类型将这些信息插入 mole 表的新列中。无需遍历 mole 中的每个原子并逐一赋予额外属性，join 方法可以用一条命令高效地从第二张表中提取属性。
 
-```python
+```text
 In [40]: mole = pd.read_csv( 'water.csv')
          atom_prop = pd.DataFrame({
                  'mass':{ 'H': 1.008, 'C': 12.01, 'O': 15.999}, 'Znuc':{ 'H':8 , 'C':1 , 'O':1 },})
@@ -1707,7 +1707,7 @@ symbol x y z mass Znuc
 ```
 在这个例子中，关键字 on=’symbol’ 指定使用 ’symbol’ 列中的元素作为键，从第二张表中选择对应元素。这个命令可以看作以下一系列操作的结果。
 
-```python
+```text
 In [41]: on = mole.loc[:,'symbol']
          df1 = atom_prop.loc[on]
          df2 = df1.reset_index(drop=True)
@@ -1715,7 +1715,7 @@ In [41]: on = mole.loc[:,'symbol']
 ```
 除了 join 方法，也可以使用 pd.merge 连接两个 DataFrame。pd.merge 函数支持用更广泛的数据合并控制选项连接两张表。不过，它的基本概念与 join 方法没有显著区别。设置合并选项时，pd.merge 函数要求为每张表指定选项，而对于 DataFrame.join，只需要设置一张表。例如，我们可以使用 pd.merge 得到与前例中的 join 命令相同的结果。
 
-```python
+```text
 In [42]: pd.merge(mole, atom_prop, left_on='symbol', right_index=True, how= 'left')
 Out[42]:
 symbol x y z mass Znuc
@@ -1766,7 +1766,7 @@ symbol x y z
 ```
 在某些场景中，我们可能希望将特定列的内容用作行和列的新标签，并根据这些新行和列重新组织表。函数 pd.pivot 和 pd.pivot_table 专门为这类重新排列而设计。例如，考虑一个水分子团簇。
 
-```python
+```text
 In [46]: import io
          cluster = pd.read_csv(io.StringIO( '''
          symbol,x,y,z,monomer,Q
@@ -1797,7 +1797,7 @@ Pandas Series 对象内部的所有元素必须保持统一的数据类型。若
 在构建 DataFrame 时，若未显式指定各列类型，Pandas 会根据输入内容自动推断每列的数据类型。这种自动类型推断通常相当可靠。然而，一旦某些字段存在数据缺失，推断就容易偏离预期。Pandas 纯粹依据当前现有数据推断存储类型，其推测出的类型并不一定符合工程师的实际业务预期。
 考察以下典型案例。Znuc 列原计划采用整数类型来记录每个原子的质子数，但其中有两行缺失该数据。在 Pandas 内部，缺失值会被赋予 NaN 标记。鉴于原生整型无法容纳 NaN，Pandas 便会自动把该列的 dtype 提升为浮点类型，以便存放这些 NaN 浮点标记。
 
-```python
+```text
 In [48]: mole = pd.DataFrame([
 {'symbol': 'O', 'x': 0.5009 , 'y': 2.7238, 'z': 0.8464, 'Znuc'
     :8 }, {'symbol': 'H', 'x': 1.4049 , 'y': 2.4390, 'z': 0.6938,}, {'symbol': 'H', 'x': -0.0934, 'y': 1.9786, 'z': 0.7321,},])
@@ -1813,7 +1813,7 @@ dtype: object
 构造 DataFrame 时，我们能否强制 Pandas 对这一列使用指定的数据类型？遗憾的是，截至 2.2 版本，Pandas 在实例化 DataFrame 时不支持为特定列指定数据类型。
 某些函数，如 pd.read_csv，提供了在创建 DataFrame 时指定列数据类型的功能。如果 DataFrame 从 CSV 文件创建，如以下例子所示，我们可以使用字典强制指定每列的数据类型。对于未显式指定数据类型的列，Pandas 会自动推断其数据类型。
 
-```python
+```text
 In [49]: pd.read_csv(io.StringIO( '''
          symbol,x,y,z,Znuc
          O, 0.5009,2.7238,0.8464,8
@@ -1845,7 +1845,7 @@ symbol x y z Znuc
 
 groupby 方法将“拆分、应用、合并”这一经典数据处理范式整合为统一流程。仍以 pd.pivot 函数的场景为例，我们完全能够借助这种“拆分-应用-合并”思路重构并复现 pd.pivot 的透视功能，具体实现如下所示：
 
-```python
+```text
 In [50]: out = []
          index = []
          for monomer in set (cluster['monomer']):
@@ -1870,7 +1870,7 @@ out = cluster.groupby( 'monomer').apply(lambda df: df.set_index( 'symbol').Q)
 ```
 在拆分步骤中，groupby 根据指定列的值对表分类。它为每个类别生成一个 DataFrame，然后将其作为参数传递给 apply 方法指定的函数。
 
-```python
+```text
 In [51]: for monomer,d f in cluster.groupby('monomer'):
              print(monomer)
              print(df)
@@ -1911,17 +1911,17 @@ Name: Q, dtype: float64
 
 GroupBy.agg 方法用于对每个组中的每一列应用聚合函数。聚合函数可以将一列归约为一个标量。例如，
 
-```text
-   cluster.groupby(cluster['monomer']).apply(lambda x: x. sum(axis=0))
+```python
+   cluster.groupby(cluster['monomer']).apply(lambda x: x.sum(axis=0))
 ```
 可以使用按列操作的 agg 方法改写为
 
-```text
-   cluster.groupby(cluster['monomer']).agg(lambda x: x. sum())
+```python
+   cluster.groupby(cluster['monomer']).agg(lambda x: x.sum())
 ```
 或者更简洁地写为
 
-```text
+```python
    cluster.groupby(cluster['monomer']).sum()
 ```
 某些聚合函数，如 max、sum、mean 和 std，经过了高度优化，并实现为 GroupBy 类的方法。
@@ -1934,7 +1934,7 @@ GroupBy.filter 方法可以根据指定的筛选规则排除某些组。
 Pandas 在其数据对象之间采用内存共享设计，这与 NumPy 数组中的视图（view）和副本（copy）概念密切相关。这一特性提出了一个重要问题：如何确定一个 Pandas 对象独占其数据还是与其他对象共享数据？遗憾的是，Pandas 中的数据共享规则不像 NumPy 中的规则那样清晰。Pandas 对不同的数据对象采用不同的数据共享机制。
 对象的内存管理与普通 NumPy 数组类似。从 Series 对象中选择元素时，只要有可能，Series 对象之间就会共享数据。换言之，Series 对象的切片与原始 Series 共享内存。其他索引方法，如位置索引或标签索引，会导致数据被复制到新的 Series 中。
 
-```python
+```text
 In [54]: an_atom = pd.Series({ 'symbol': 'O', 'x': 0.5009, 'y': 2.7238, 'z':
      0.8464})
          ser = an_atom[3::-1]
@@ -1942,7 +1942,7 @@ In [54]: an_atom = pd.Series({ 'symbol': 'O', 'x': 0.5009, 'y': 2.7238, 'z':
          print(an_atom)
 ```
 
-```python
+```text
 Out[54]:
 symbol O
 x 0.5009
@@ -1963,7 +1963,7 @@ dtype: object
 ```
 如果使用 to_numpy() 方法将 Series 转换为 NumPy 数组，得到的 NumPy 数组与原始 Series 对象共享同一个数据缓冲区。
 
-```python
+```text
 In [56]: atom_array = an_atom.to_numpy()
          atom_array[1:] = 0.
          print(an_atom)
@@ -1976,7 +1976,7 @@ dtype: object
 ```
 Pandas DataFrame 是 Series 对象的集合。如果从 DataFrame 中选择一列，本质上是在访问对相应 Series 对象的引用。这个引用充当原始 DataFrame 的视图。对这些 Series 对象所做的修改会反映在关联的 DataFrame 中。
 
-```python
+```text
 In [57]: mole = pd.read_csv( 'water.csv')
          coord_y = mole.loc[:,'y']
          mole.loc[mole.symbol=='O', 'x':'z'] = 1.0

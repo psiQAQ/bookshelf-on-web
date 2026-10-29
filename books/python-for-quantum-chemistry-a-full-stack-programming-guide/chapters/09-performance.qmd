@@ -131,7 +131,7 @@ Python 中数据类型转换的开销差异很大。算术表达式中的隐式�
 
 程序以固定页面为单位与物理主存交互。当所需页面未映射进物理内存时，便会触发缺页异常（page fault）[3,4]。此时操作系统与硬件必须介入完成高成本的页面调度与初始化，消耗数千个 CPU 周期（约数微秒）。首次访问新分配内存时往往遭遇缺页，例如读写 numpy.empty 创建的数据缓冲区。向新分配缓冲区首度填充数据，耗时远多于直接复用既有缓冲区。下方基准测试清晰展示了首次填充新数组的额外开销：
 
-```python
+```text
 In [1]: buf = np.empty((1000,1000,1000))
 In [2]: %time buf[:] = 0.0
 CPU times: user 193 ms, sys: 1.73 s, total: 1.93 s
@@ -520,7 +520,7 @@ def schmidt_orth(s):
 
 在 Jupyter notebook 中，我们可以使用%time 和%timeit 魔法命令测量单条 Python 语句的性能。%time 魔法命令基于 Python 的 time 模块，%timeit 魔法命令使用 timeit 模块。这两个魔法命令在 Jupyter notebook 中都可以用于行模式和单元模式。
 
-```python
+```text
 In [1]: from schmidt import schmidt_orth
 In [2]: s = np.eye(500)
 In [3]: %time c = schmidt_orth(s)
@@ -603,7 +603,7 @@ $ python -m line_profiler schmidt_v1.py.lprof
 ```
 在 Jupyter notebook 中，可以加载 line_profiler 模块并执行%lprun 魔法命令来分析函数。%lprun 的-f 选项指定要分析的函数。可以指定多个-f 选项，同时分析多个函数。以下以 schmidt_orth 函数为例说明如何使用行性能分析器：
 
-```python
+```text
 In [7]: %load_ext line_profiler
 In [8]: %lprun -f schmidt_orth schmidt_orth(s)
 Timer unit: 1e-09 s
@@ -845,7 +845,7 @@ LLC 是末级缓存（last level cache）的缩写。每次 LLC-loads 和 LLC-st
 
 执行之前，Python 解释器将 Python 代码编译成字节码（bytecode），即程序的一种内部表示。解释器随后读取字节码，并在基于栈的虚拟机中执行其中的指令。dis 模块可用于显示反汇编后的 Python 源代码字节码。这使我们能够逐步查看 Python 解释器执行程序时遵循的指令。例如，算术表达式 x * 2 被编译成以下字节码指令：
 
-```python
+```text
 In [1]: import dis
 In [2]: dis.dis( 'x * 2')
 2 0 LOAD_FAST 0 (x)
@@ -867,7 +867,7 @@ In [2]: dis.dis( 'x * 2')
 
 操作码的实现可以在源代码文件 ceval.c 中找到（自 Python 3.12 起移至 generated_cases.c.h）。我们可以分析源代码，粗略了解每条指令所需的计算工作量。例如，LOAD_FAST 指令的实现如下：
 
-```text
+```c
 TARGET(LOAD_FAST) {
     PyObject *value = GETLOCAL(oparg);
     if (value == NULL) {
@@ -911,7 +911,7 @@ In [2]: %%timeit
 
 使用 enumerate 同时生成索引和迭代对象，比遍历一个范围后再索引元素更高效、更简洁。
 
-```text
+```python
 # Recommended:
 for i,x in enumerate (a_list):
 # Not recommended:
@@ -939,7 +939,7 @@ for i in range (len(a_list)):
 ```
 同样，遍历多个列表时，推荐使用 zip 函数，因为它涉及的操作比先用 range 再索引的方法更少。
 
-```text
+```python
 # Recommended:
 for x,y in zip (list1, list2):
 # Not recommended:
@@ -1428,11 +1428,7 @@ def matmul_nn_tiling_simd(a, b):
 如第 8 章第 8.2.2 节所述，使用 Cython 编译 Python 代码很直接。然而，Cython 编译的纯 Python 代码只能带来有限的性能提升。
 优化 Cython 代码的策略旨在消除 Python 对象的所有痕迹。遵循这一思路，可以采用多种技术让 Cython 生成更高效的代码。
 
-- 为每个变量声明类型，包括所有函数参数和返回值。Cython 无法准确推断数据类型。没有精确的数据类型信息时，Cython 会将这些变量视为 Python 对象。Cython 的类型声明采用 C 风格语法，以 cdef 前缀表示，例如 cdef int、
-
-```text
-cdef double,orcdef class.
-```
+- 为每个变量声明类型，包括所有函数参数和返回值。Cython 无法准确推断数据类型。没有精确的数据类型信息时，Cython 会将这些变量视为 Python 对象。Cython 的类型声明采用 C 风格语法，以 cdef 前缀表示，例如 cdef int、cdef double 或 cdef class。
 
 - 使用带类型的内存视图（typed memoryview）指定 NumPy 数组的结构，包括数据类型、维数和步长。例如，在类型声明
 
@@ -1454,7 +1450,7 @@ C 连续的 [:,::1] 和 Fortran 连续的 [::1,:]。Cython 能够优
 
 生成速度慢且涉及 Python 的代码。例如，Cython 不支持遍历可迭代对象的 Python 语法。
 
-```text
+```python
 for x in array:
 ```
 即使 x 和 array 的类型都已显式声明，Cython 仍无法完全消除 Python 痕迹，并为这一迭代生成高效的 C 代码。生成的代码首先从可迭代对象（array）中提取一个元素，作为中间 Python 对象，然后使用 Python-C API 将中间变量绑定到 x。同样，enumerate 和 zip 等其他循环迭代器也是 Cython 编译不支持的语法糖。最高效的迭代方法是先使用 range 再索引，这与优化纯 Python 代码的做法完全相反。
@@ -1466,7 +1462,7 @@ for i in range (len(array)):
 
 - 使用 Cython 编译器指令禁用 Python 特有的检查 [28]。编译器指令可以在源代码中标注，也可以通过命令行指定。下面列出源代码中几个有利于数值计算的设置。
 
-```text
+```python
 #cython: boundscheck=False
 #cython: wraparound=False
 #cython: overflowcheck.fold=False
@@ -1475,7 +1471,7 @@ for i in range (len(array)):
 
 - 使用 OpenMP 线程实现并行 [29]。要在 Cython 中启用 OpenMP 并行化，需要将 range 语句替换为 cython.parallel.prange 函数，并在 .pyx 文件中加入以下编译器指令。
 
-```text
+```python
 #distutils: extra_compile_args=-fopenmp
 #distutils: extra_link_args=-fopenmp
 ```
@@ -1563,7 +1559,7 @@ def schmidt_orth(s):
 ```
 显然，注释行中的 Pythran 指令不会影响原始 Python 代码的执行。在 Pythran 中使用 OpenMP 并行化时，可以将如下 OpenMP 指令
 
-```text
+```c
 #pragma omp for schedule(static)
 ```
 作为注释行插入 Python 代码。这是 Pythran 相对于 Cython 的一个优势，因为它的输入就是标准 Python 代码。使用者不需要像学习新语言那样记住特定细节。
@@ -1631,7 +1627,7 @@ double roots[8] __attribute__((aligned(32)));
 ```
 以及用于执行 SIMD 指令的编译器指令
 
-```text
+```c
 #pragma omp simd
 ```
 。这些特性在 Python 编译工具中不可用。
@@ -1677,7 +1673,7 @@ setup( ext_modules=[
 
 - 添加带有 distutils: 前缀的 Cython 编译器指令。使用 setup.py 或
 
-```text
+```python
 #distutils: extra_compile_args=-fopenmp -O3 -march=native
 ```
 
@@ -1705,7 +1701,7 @@ setup( ext_modules=[
 
 在以下测试中，通过使用分块数据集，第二个测试达到了 252 MB/s 的吞吐量。相比之下，未使用分块存储的第一个测试只达到了 14.4 MB/s 的吞吐量。
 
-```python
+```text
 In [1]: import h5py
 In [2]: %%time
         with h5py.File('test_plain.h5', 'w') as f:
@@ -1761,7 +1757,7 @@ Wall time: 2.49 s
 
 使用内存映射（memory mapping，memmap）存储数组时，存储布局也对 I/O 效率有关键影响。memmap 允许以行主序或列主序格式存储数据。顺序访问数据时，它的性能可能优于 HDF5。这是因为 memmap 在内存中移动数据的开销较低。然而，memmap 不具备分块存储数据的能力，访问非连续数据时性能会显著下降。为了评估 memmap 相对于 HDF5 格式的 I/O 性能，我们采用与之前针对 HDF5 开展的测试类似的方法。
 
-```python
+```text
 In [10]: %%time
          d = np.memmap( 'test_plain.mmap', mode='w+', shape=(20000,20000), dtype= float)
          d[:,:600] = 1.
@@ -1791,7 +1787,7 @@ Wall time: 1.81 s
 请注意 numpy.memmap 和 h5py 在处理数组切片时的区别。对 memmap 对象切片只会生成一个 memoryview。实际的 I/O 操作会推迟到显式访问数据时才进行。这一特性简化了编程，因为它无需显式调用文件读写命令。操作系统可以自动在内存和内存映射文件之间同步必要的数据。然而，这也意味着我们失去了灵活控制 I/O 操作发生时间的能力。除非复制 memmap 对象的片段，否则我们无法准确地为即将进行的计算任务预取所需数据。在某些应用中，这可能降低整体性能。
 例如，考虑以下对两个 memmap 对象进行矩阵乘法的测试，完成该测试需要 42 秒。如果两个数组完全位于内存中，计算时间只需 29 秒。额外的 13 秒是从 memmap 文件加载数据的开销。
 
-```python
+```text
 In [14]: %%time
          a = np.memmap( 'test_a.mmap', mode='r', shape=(40000,10000), dtype= float)
          b = np.memmap( 'test_b.mmap', mode='r', shape=(40000,10000), dtype= float)
@@ -2028,7 +2024,7 @@ class CustomHash:
 ```
 hash() 函数可以为某些可变对象生成哈希值，例如用户自定义 Python 类的实例。
 
-```python
+```text
 In [1]: class Empty:
             pass
 In [2]: print(hash(Empty()))

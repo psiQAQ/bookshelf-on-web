@@ -359,7 +359,7 @@ def pipeline(ops, tasks):
 ```
 经过这一改进，流式处理可以迅速提交所有任务，并按如下方式填充任务队列：
 
-```text
+```python
 ops[0](tasks[0]), ops[0](tasks[1]), ops[0](tasks[2]), ..., ops[1](ops[0](tasks[0])), ops[1](ops[0](tasks[1])), ...
 ```
 如果并行能力有限，例如只允许同时执行 4 个任务，那么即使所有上游依赖都已满足，较晚入队的任务仍会因资源限制而处于等待状态。因此，下游任务无法及时执行，导致上游任务产生的结果不能及时被消费。上游结果不得不在内存中保存较长时间，导致内存使用效率低下，内存管理效率降低。
@@ -420,7 +420,7 @@ def pipeline(ops, tasks):
 在 proc2 中，从 tasks 生成器访问一个元素会触发 proc1 中的 yield 语句。这一操作又会从 proc0 创建的 tasks 生成器中取出一个元素。访问 proc0 的生成器时，任务提交命令
 10.4 流水线执行器 queue.submit(fn_with_future, task) 被执行。这个命令向任务队列追加一个作业，并通过生成器将一个 Future 对象传给 proc1。随后，proc1 接收该 Future 对象并用它提交一个任务。由此产生的 Future 对象随后被传给 proc2。处理接收到的 Future 对象后，proc2 继续处理 tasks 生成器中的下一个元素，再次触发上述循环。proc0、proc1 和 proc2 将生成新任务并依次将它们加入任务队列。最终，任务队列可能填充如下：
 
-```text
+```python
 ops[0](tasks[0]), ops[1](Future(ops[0])), ops[2](Future(ops[1])), ops[0](tasks[1]), ops[1](Future(ops[0])), ops[2](Future(ops[1])), ...
 ```
 df_scheduler 可以主动消化上游任务的结果，解决 bf_scheduler 可能出现的内存使用过多问题。然而，df_scheduler 可能导致某些正在运行的任务在等待上游任务完成时陷入非活动状态。这些任务占用工作线程，却无法充分利用计算资源，造成计算能力的浪费。
@@ -447,7 +447,7 @@ def df_warmup_scheduler(queue,f n, tasks, args, max_workers=8):
 ```
 它最初像 bf_scheduler 一样提交一部分任务，然后对剩余任务切换到 df_scheduler 模式。这个调度器旨在一开始就用非阻塞任务迅速占用线程执行器中可用的工作线程。随着初始任务完成，它随后以深度优先调度器的方式逐步重新填充队列。其基本假设是，通过立即处理初始任务，后续任务所需的上游依赖很可能在它们被调度时已经得到满足。这种方法旨在尽量降低任务陷入非活动状态的可能性。得到的任务队列可能包含如下任务：
 
-```text
+```python
 ops[0](tasks[0]), ops[0](tasks[1]), ..., ops[0](tasks[7]), ops[1](Future(ops[0])), ops[2](Future(ops[1])), ops[0](tasks[8]), ops[1](Future(ops[0])), ...
 ```
 基于 df_warmup_scheduler，我们可以进一步开发一个 dynamic_scheduler，只启动那些可以立即执行的任务。后续任务会被推迟，只有在上游任务完成后才提交。任务队列不会完全被初始任务填满。为了便于在上游任务完成时启动任务，引入了 LaunchInFuture 类。这个类提供一个 submit 方法，使一个任务（以 Future 对象表示）能够在另一个任务完成时作为回调执行。
@@ -597,7 +597,7 @@ multiprocessing 模块也会遇到与 threading 模块类似的任务管理问�
 内存页的私有副本。因此，子进程创建后，可以无额外开销地访问父进程拥有的所有数据，包括函数参数。
 COW 有效解决了向子进程传递函数参数的问题。就函数参数的数据传输而言，multiprocessing.Process 方法与多线程并行一样高效。此外，COW 允许向子进程传递任何参数，包括无法用 pickle 序列化的对象。例如，向子进程传递迭代器也是完全可行的。然而，每个子进程都使用自己的迭代器，彼此不会干扰。这与多线程的情况不同，在多线程中，迭代器的状态由不同线程共享。
 
-```python
+```text
 In [1]: import time
         from multiprocessing import Process
         from threading import Thread

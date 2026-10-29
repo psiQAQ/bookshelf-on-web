@@ -1,17 +1,18 @@
-"""把「疑似代码行没进代码块」「代码块里其实是正文」「正文裸 URL」挑出来。
+"""把「疑似代码行没进代码块」「代码块里其实是正文」「正文裸 URL」「围栏语言标错」挑出来。
 
 只管机械可判定的事，不做语义判断：命中的行需要人来判断是代码、正文还是公式残片。
-口径写在 docs/VERIFICATION.md 的「疑似代码行与正文裸 URL 的机械审计」一节。
+口径写在 docs/VERIFICATION.md 的「正文整行代码与围栏语言标错的门禁」一节。
 
 用法：
     python scripts/audit_prose.py                      # 打印报告摘要
     python scripts/audit_prose.py --report reports/prose-audit.json
-    python scripts/audit_prose.py --check              # 有命中时退出 1
+    python scripts/audit_prose.py --check              # 严格项有命中时退出 1
 """
 
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 from pathlib import Path
@@ -293,7 +294,135 @@ def find_english_residue(path: Path):
 
 # 这三类一旦非空就是缺陷，`--check` 会因此失败；`prose_in_fence` 混有合法文档字符串与
 # 报错信息，只作为待人工甄别的清单，不参与 `--check`。
-STRICT_DETECTORS = ("bare_urls", "suspect_code", "english_residue", "formula_remnant", "broken_links")
+FENCE_OPEN_RE = re.compile(r"^\s*```\s*([A-Za-z0-9_+\-]*)\s*$")
+REPL_LINE_RE = re.compile(r"^\s*(?:In \[\d*\]:|Out\[\d*\]:|>>> )")
+TOML_SECTION_RE = re.compile(r"^\s*\[[\w.\-]+\]\s*$")
+# 只有这些语句出现时，才认为「能 parse 的 text 围栏」其实是源码，
+# 否则 `schmidt_orth_small_size`、`20823872` 这类裸记号会被误报。
+CODE_STATEMENTS = (
+    ast.Assign,
+    ast.AugAssign,
+    ast.AnnAssign,
+    ast.Call,
+    ast.FunctionDef,
+    ast.AsyncFunctionDef,
+    ast.ClassDef,
+    ast.For,
+    ast.While,
+    ast.If,
+    ast.With,
+    ast.AsyncWith,
+    ast.Import,
+    ast.ImportFrom,
+    ast.Return,
+    ast.Try,
+    ast.Raise,
+)
+# 正文里合法的「无中文、无公式」短行：perf stat 的事件名列表项
+CODE_OUTSIDE_FENCE_WHITELIST = (re.compile(r"^-\s-?[a-z0-9_.:]+,\s*$"),)
+
+
+def find_code_outside_fence(path: Path):
+    """正文里的整行代码：没有中文、没有行内/独立公式，却长得像源码。
+
+    口径与 `find_suspect_code` 的差别：那个探测器看「任何像代码片段的行」（会命中
+    正文里顺口提到的 `open()`），这里只看「整个行都是代码」——没有中文字符、没有
+    `$` 公式、不是标题/图片/表格/文献条目/纯行内代码项目符号。
+    """
+    found = []
+    for number, line, in_code, in_math, in_ref in iter_lines(path):
+        if in_code or in_math or in_ref:
+            continue
+        stripped = line.strip()
+        if not stripped or stripped == "```":
+            continue
+        if CJK_RE.search(stripped) or "$" in stripped:
+            continue
+        if any(pattern.match(stripped) for pattern in SKIP_LINE_RE):
+            continue
+        if any(pattern.match(stripped) for pattern in CODE_OUTSIDE_FENCE_WHITELIST):
+            continue
+        statements = _parsed_statements([stripped])
+        if not statements or not any(isinstance(node, CODE_STATEMENTS) for node in statements):
+            continue
+        found.append(
+            {
+                "file": path.name,
+                "line": number,
+                "text": stripped,
+                "url": "",
+                "reason": "code_outside_fence",
+            }
+        )
+    return found
+
+
+def _parsed_statements(body: list[str]):
+    try:
+        tree = ast.parse("\n".join(body))
+    except SyntaxError:
+        return None
+    return tree.body
+
+
+def find_mislabelled_fence(path: Path):
+    """围栏语言标错：源码标成 text、REPL 会话标成 python。
+
+    判据刻意保守，只报能机械判定的两种：
+    * text 围栏的内容 `ast.parse` 成功且含真实语句（赋值/调用/def/for…）→ 应为 python；
+    * text 围栏全文只有一个 TOML 段头形状的行 → 应为 toml；
+    * python 围栏里出现 `In [n]:` / `Out[n]:` / `>>>` → 是会话记录，应为 text。
+    """
+    found = []
+    lines = path.read_text(encoding="utf-8").split("\n")
+    index = 0
+    while index < len(lines):
+        opening = FENCE_OPEN_RE.match(lines[index])
+        if not opening:
+            index += 1
+            continue
+        language = opening.group(1)
+        end = index + 1
+        while end < len(lines) and not re.match(r"^\s*```\s*$", lines[end]):
+            end += 1
+        body = lines[index + 1 : end]
+        nonempty = [line for line in body if line.strip()]
+        reason = ""
+        if language == "text" and nonempty and not any(REPL_LINE_RE.match(line) for line in nonempty):
+            if TOML_SECTION_RE.match(nonempty[0]) and all(
+                "=" in line or TOML_SECTION_RE.match(line) or line.strip().startswith("#")
+                for line in nonempty
+            ):
+                reason = "fence_language:toml"
+            else:
+                statements = _parsed_statements(body)
+                if statements and any(isinstance(node, CODE_STATEMENTS) for node in statements):
+                    reason = "fence_language:python"
+        elif language in ("python", "py") and any(REPL_LINE_RE.match(line) for line in nonempty):
+            reason = "fence_language:text"
+        if reason:
+            found.append(
+                {
+                    "file": path.name,
+                    "line": index + 1,
+                    "text": f"```{language}",
+                    "url": "",
+                    "reason": reason,
+                }
+            )
+        index = end + 1
+    return found
+
+
+STRICT_DETECTORS = (
+    "bare_urls",
+    "suspect_code",
+    "english_residue",
+    "formula_remnant",
+    "broken_links",
+    "code_outside_fence",
+    "fence_language",
+)
 
 # `find_suspect_code` 的显式口径：只看整行没有中文的行。
 # 带中文的行里夹着代码片段时，机械判据的误报率过高（`C/C++` 会命中 `++` 运算符、
@@ -309,6 +438,8 @@ DETECTORS = (
     ("english_residue", find_english_residue),
     ("formula_remnant", find_formula_remnant),
     ("broken_links", find_broken_links),
+    ("code_outside_fence", find_code_outside_fence),
+    ("fence_language", find_mislabelled_fence),
 )
 
 
@@ -346,7 +477,7 @@ def main() -> int:
     parser.add_argument(
         "--check",
         action="store_true",
-        help="严格项（裸 URL、疑似代码行、英文残留、公式残片）有命中时退出 1",
+        help="严格项（裸 URL、疑似代码行、英文残留、公式残片、断链、正文整行代码、围栏语言标错）有命中时退出 1",
     )
     parser.add_argument("--check-all", action="store_true", help="任何探测器有命中时退出 1")
     args = parser.parse_args()

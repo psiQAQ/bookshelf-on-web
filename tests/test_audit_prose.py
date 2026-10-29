@@ -11,8 +11,10 @@ from scripts.audit_prose import (
     audit_book,
     find_bare_urls,
     find_broken_links,
+    find_code_outside_fence,
     find_english_residue,
     find_formula_remnant,
+    find_mislabelled_fence,
     find_prose_in_fence,
     find_suspect_code,
 )
@@ -257,6 +259,57 @@ class BrokenLinkTests(unittest.TestCase):
         self.assertEqual(self.scan("```text\n[cupy.dev](https://docs.cupy.dev/install.html#) installing-cupy\n```\n"), [])
 
 
+class CodeOutsideFenceTests(unittest.TestCase):
+    def scan(self, text: str):
+        with tempfile.TemporaryDirectory() as name:
+            return find_code_outside_fence(write_qmd(Path(name), text))
+
+    def test_whole_line_of_code_outside_fence_is_reported(self):
+        hits = self.scan("a[s, i, s, j, s, j, s, i] += b[ip, jp]\n")
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits[0]["reason"], "code_outside_fence")
+
+    def test_line_with_chinese_or_inline_math_is_ignored(self):
+        self.assertEqual(self.scan("调用 a[s, i] += b[j] 完成累加。\n"), [])
+        self.assertEqual(self.scan("形状为 $(2,n,2,n)$ 的数组。\n"), [])
+
+    def test_code_inside_fence_is_ignored(self):
+        self.assertEqual(self.scan("```python\nx = np.zeros(3)\n```\n"), [])
+
+    def test_structural_lines_are_ignored(self):
+        self.assertEqual(self.scan("## 2.1.8 视图\n"), [])
+        self.assertEqual(self.scan("| a | b |\n"), [])
+        self.assertEqual(self.scan("- `np.zeros(3)`\n"), [])
+
+    def test_perf_event_list_is_whitelisted(self):
+        self.assertEqual(self.scan("- -loads,\n- -stores,\n"), [])
+
+
+class FenceLanguageTests(unittest.TestCase):
+    def scan(self, text: str):
+        with tempfile.TemporaryDirectory() as name:
+            return find_mislabelled_fence(write_qmd(Path(name), text))
+
+    def test_python_written_as_text_is_reported(self):
+        hits = self.scan("```text\nfor s in range(2):\n    a[s] += 1\n```\n")
+        self.assertEqual([hit["reason"] for hit in hits], ["fence_language:python"])
+
+    def test_toml_written_as_text_is_reported(self):
+        hits = self.scan('```text\n[build-system]\nrequires = ["setuptools"]\n```\n')
+        self.assertEqual([hit["reason"] for hit in hits], ["fence_language:toml"])
+
+    def test_repl_session_written_as_python_is_reported(self):
+        hits = self.scan("```python\nIn [1]: np.zeros(3)\n```\n")
+        self.assertEqual([hit["reason"] for hit in hits], ["fence_language:text"])
+
+    def test_bare_marks_output_and_repl_text_are_ignored(self):
+        # 变量名/文件名/数字也能 ast.parse，但不是源码；REPL 会话本来就该留在 text。
+        self.assertEqual(self.scan("```text\nschmidt_orth_small_size\n```\n"), [])
+        self.assertEqual(self.scan("```text\n20823872\n```\n"), [])
+        self.assertEqual(self.scan("```text\nIn [1]: np.zeros(3)\n```\n"), [])
+        self.assertEqual(self.scan("```python\nx = 1\n```\n"), [])
+
+
 class BookReportTests(unittest.TestCase):
     def setUp(self):
         self.report = audit_book()
@@ -284,7 +337,8 @@ class BookReportTests(unittest.TestCase):
     def test_strict_detectors_are_cleared(self):
         # 存量已在 2026-10-29 清零：正文裸 URL 全部转成行内链接、疑似代码行清完、
         # 英文残留统一翻译、公式图转 LaTeX 后残留的压平副本逐条修完（见
-        # docs/VERIFICATION.md 的「公式残片与压平副本清理」一节）。这四类再出现就是缺陷。
+        # docs/VERIFICATION.md 的「公式残片与压平副本清理」一节）；2026-10-30 又清掉
+        # 「正文整行代码」与「围栏语言标错」两类。任一类再出现就是缺陷。
         self.assertEqual({key: self.report["totals"][key] for key in STRICT_DETECTORS}, {key: 0 for key in STRICT_DETECTORS})
 
     def test_prose_in_fence_does_not_grow(self):

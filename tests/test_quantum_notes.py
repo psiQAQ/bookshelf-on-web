@@ -6,6 +6,12 @@ from collections import Counter
 
 from scripts.publishing import ROOT, book_config, check_qmd, explicit_anchors, load_yaml
 
+# 只允许静态展示语言：Quarto 不执行非 `{python}` 围栏，所以任一语言都在这个白名单里
+# 就说明示例是死的（测试本身不执行任何章节代码）。
+STATIC_LANGUAGES = frozenset(
+    {"python", "text", "bash", "yaml", "toml", "ini", "c", "fortran"}
+)
+
 
 class QuantumNotesTests(unittest.TestCase):
     def setUp(self):
@@ -46,10 +52,12 @@ class QuantumNotesTests(unittest.TestCase):
             path = self.book / chapter
             text = path.read_text(encoding="utf-8")
             check_qmd(path)
-            blocks = re.findall(r"(?ms)^```(python|bash|text|yaml)\s*\n(.*?)^```\s*$", text)
+            blocks = re.findall(r"(?ms)^```([A-Za-z0-9_+\-]*)\s*\n(.*?)^```\s*$", text)
             self.assertEqual(len(re.findall(r"(?m)^```", text)), 2 * len(blocks), chapter)
             if blocks:
                 chapters_with_code += 1
+                # 只允许静态展示语言：Quarto 不会执行非 {python} 围栏，`{}` 围栏也不在这里。
+                self.assertTrue({language for language, _ in blocks} <= STATIC_LANGUAGES, chapter)
                 self.assertTrue(all(source.strip() for _, source in blocks), chapter)
         self.assertEqual(chapters_with_code, 16)
 

@@ -305,7 +305,7 @@ print(fut.result().sum())
 
 假设一个程序由一系列相互独立的操作 op0、op1、……、op_last 处理。通过适当地连接这些函数，可以构成一个类似 Unix 管道的流式处理系统。当一批任务流经该系统时（图 10.1），系统执行一系列中间操作并生成一个结果列表。这个过程本质上与下面的表达式相同：
 
-```text
+```default
 [op_last(... op2(op1(op0(task)))...) for task in tasks]
 ```
 为了并行执行这些任务，可以使用 ThreadPoolExecutor。然而，如果中间操作很多而任务数量有限，简单地用 ThreadPoolExecutor 按任务并行执行可能无法充分利用并行能力。
@@ -597,7 +597,7 @@ multiprocessing 模块也会遇到与 threading 模块类似的任务管理问�
 内存页的私有副本。因此，子进程创建后，可以无额外开销地访问父进程拥有的所有数据，包括函数参数。
 COW 有效解决了向子进程传递函数参数的问题。就函数参数的数据传输而言，multiprocessing.Process 方法与多线程并行一样高效。此外，COW 允许向子进程传递任何参数，包括无法用 pickle 序列化的对象。例如，向子进程传递迭代器也是完全可行的。然而，每个子进程都使用自己的迭代器，彼此不会干扰。这与多线程的情况不同，在多线程中，迭代器的状态由不同线程共享。
 
-```text
+```default
 In [1]: import time
         from multiprocessing import Process
         from threading import Thread
@@ -1106,7 +1106,7 @@ comm.gather。在这种模式下，Python 对象由发送方自动使用 pickle 
 - 显式指定缓冲区对象和数据类型时，可以指定一个列表。双元素列表结构 [data_buffer, data_type] 和三元素列表结构 [data_buffer, size, data_type] 都是有效格式。
 - 对于名称带有后缀 v 的集合通信操作，例如
 
-```text
+```default
 comm.Allgatherv,a four-elementlist[data, count, displ, datatype] can be
 ```
 可以提供该列表。

@@ -146,7 +146,7 @@ cupy.get_default_memory_pool().free_all_blocks()
 - PyTorch 缺少 NumPy 中的某些函数，例如 np.array_equal 和 np.append 函数。
 - 除非显式配置 torch.set_default_tensor_type 函数，否则 PyTorch 张量对象的默认数据类型为 float32，而 NumPy 的默认数据类型为 float64。例如，torch.zeros(5)、
 
-```text
+```default
 torch.rand(5),and torch.as_tensor([1., 2., 3.])allyieldfloat32tensorsby
 ```
 默认情况下都会产生 float32 张量。
@@ -356,7 +356,7 @@ __global__ void _kernel_v3(double *output, double *eri, double *dm, int n)
 ```
 这是简化的教学实现，假设相关张量和数组的维度都是 BLOCK 大小 16 的整数倍。完整版本必须包含检查边界处未对齐元素的代码。不过，使用共享内存的分块算法核心保持不变。这里，每个分块都是一个 16 × 16 矩阵。分配的共享内存缓冲区 dm_t 可容纳这个大小。为了建立二维共享内存与 CUDA 线程之间的映射，启动这个内核时，应将 CUDA 线程块配置为包含 16 × 16
 
-```text
+```default
 dim3 threads(16, 16);
 ```
 CUDA 线程块内的每个线程负责从全局内存读取一个元素，以填充共享内存。在修改共享内存时，确保对它的独占访问至关重要。为此，使用 __syncthreads() 函数同步线程块中的所有线程，确保它们执行到相同的位置。这种同步可防止同时以写入和读取模式访问共享内存。
@@ -393,7 +393,7 @@ func[griddim, blockdim, stream, sharedmem]( *arguments)
 ```
 内核函数与 CUDA C++ 使用的内核启动语法相同：
 
-```text
+```default
 func<<<griddim, blockdim, sharedmem, stream>>>(*arguments)
 ```
 面向普通 Python 代码的 Numba JIT 隐藏了 GPU 并行化模型的许多细节，这通常会导致性能欠佳。可以使用 Numba JIT 获得更好的性能，但需要在 Python JIT 代码中加入更多 GPU 专用语言和特性。为了使用高级 CUDA 特性，

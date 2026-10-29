@@ -102,7 +102,7 @@ DFT 计算。
 请注意，此 AWS IAM 配置是不安全的。在实际应用中，建议仔细配置 IAM 规则，并将访问权限限制为仅访问必要的服务和资源。更多细节请参阅 AWS 在线文档。
 容器化方法需要专门为计算任务设计的 Docker 镜像。假设目标是建立第 7.1.2 节中提到的 DFT PES 工作流，可以创建以下 Dockerfile：
 
-```text
+```default
 FROM nvidia/cuda:12.0.1-runtime-ubuntu22.04
 # Install necessary dependencies
 RUN apt-get update && apt-get install -y python3 python3-pip \
@@ -148,7 +148,7 @@ FARGATE 模式集群足以探索 AWS ECS 的基本功能。然而，该集群不
 提高配置的可读性，我们将其存为 YAML 格式。boto3 涉及大量底层云 API 细节，手动编写较为繁琐。得益于 AI 编程工具的进步，我们不必再逐项深究复杂的 boto3 接口文档。配置云资源正是 AI 助手大显身手的场景。开源社区沉淀了海量云 API 代码范例，AI 模型对此训练充分，生成的代码相当准确。
 这里，我们借助 GPT-4 生成配置样板，再按需微调以满足具体计算需求。不同的 AI 助手生成的代码细节可能略有差异，但对当前任务而言影响不大。我们给 GPT 的提示词如下：
 
-```text
+```default
 Create a Python script to register an AWS ECS task definition:
 - Use GPU instances on ECS
 - Use boto3 library
@@ -600,7 +600,7 @@ def lambda_handler(event, context):
 
 给 Lambda 函数。请注意，此设置并不安全。建议配置身份验证方法以增强服务安全性 [21]。部署 API Gateway 触发器后，会生成一个 HTTP 端点。点击图 7.9 中的方框 1 即可访问该端点，其对应的 URL 如下：
 
-```text
+```default
 https://d8iah6mwib.execute-api.us-east-1.amazonaws.com/default/pes-scan
 ```
 Lambda 函数处理程序需要访问多项 AWS 服务，包括对 S3、EC2 和 ECS 的读写权限。我们可以在 AWS Lambda 控制台中配置 Lambda 函数的权限，如图 7.9 所示。有关 IAM 策略的配置方法，请参阅第 7.1.3 节。为 Lambda 函数分配必要权限后，我们就可以通过 API Gateway 端点提供势能面扫描服务。下面是使用 JSON 文档调用 HTTP API 的示例，该文档指定了分子的几何构型和势能面参数：
@@ -662,7 +662,7 @@ def dft_energy(molecule):
 创建 Celery 应用时，通过关键字 borker 指定消息代理，如第 (1) 行所示。它只充当调度作业的任务队列。要接收远程 Celery 工作节点的输出，必须配置数据库后端，为 Celery 应用存储结果。Celery 提供多种结果后端选项 [25]。为简单起见，我们继续使用 Redis 作为结果后端。Redis 使用 URL 中的数字标识数据库。不同数字对应不同数据库。如第 (2) 行所示，结果配置为存储在单独的数据库中。
 按照 Celery 库的要求，我们应在 Celery 应用代码中使用装饰器 @app.task 注册所有远程函数。在本地环境中，我们可以导入此应用并调用远程函数的 .delay() 方法来提交任务。
 
-```text
+```default
 In [1]: from dft_app import dft_energy
         results = [
             dft_energy.delay(' O000 ;H 0.757 0.5 0; H -0.757 0.5 0' ), dft_energy.delay(' O000 ;H 0.757 0.6 0; H -0.757 0.6 0' )]
@@ -670,7 +670,7 @@ In [1]: from dft_app import dft_energy
         print(results[0].status, results[1].status)
 ```
 
-```text
+```default
 Out[1]:
 [<AsyncResult: 41100ef3-2fed-4809-b8e7-a599b161b5a8>, <AsyncResult: 17271
     cc9-6aba-4bef-a8ce-544a512f8e9a>]
@@ -685,7 +685,7 @@ $ celery --app=dft_app worker
 由 --app 参数指定的应用必须是 Celery 工作节点能够导入的模块。在此本地设置中，由于命令在应用程序文件所在的同一目录中执行，工作节点成功加载了 Celery 应用。远程部署工作节点时，应正确安装该应用，以确保它可以被导入。为此可以使用我们在第 1 章讨论的软件包分发技术。
 工作节点从消息代理获取任务，并将结果发送到后端数据库。我们可以通过 AsyncResult 对象访问运行状态、错误消息和结果。
 
-```text
+```default
 In [2]: print(results[0].get())
         print(results[1].status)
 Out[2]:
@@ -713,7 +713,7 @@ def dft_energy(molecule, s3_path):
 ```
 下一步是为 Celery 工作进程配置 AWS ECS。这与我们在第 7.1.3 节讨论的过程类似。我们需要创建一个 Docker 镜像并将其上传到 AWS ECR。该 Docker 镜像的 Dockerfile 如下：
 
-```text
+```default
 FROM nvidia/cuda:12.0.1-runtime-ubuntu22.04
 RUN apt-get update && \
   apt-get install -y python3 python3-pip && \
@@ -788,7 +788,7 @@ print(yaml.dump(resp))
 置为提供 AWS 访问凭证 [26]，Celery 工作进程需要这些凭证才能访问 SQS 和 S3。切勿将 AWS 访问凭证直接硬编码到应用程序的源代码或 Dockerfile 中，因为它们可能会被公开访问。
 现在，我们可以加载修改后的 dft_app.py，并在 AWS 云中运行 DFT 计算任务。
 
-```text
+```default
 In [3]: from dft_app import dft_energy
         results = [
             dft_energy.delay(' O000 ;H 0.757 0.5 0; H -0.757 0.5 0' ), dft_energy.delay(' O000 ;H 0.757 0.6 0; H -0.757 0.6 0' )]
@@ -799,7 +799,7 @@ Out[3]:
 ```
 请注意，Celery 工作进程在完成所有计算任务后不会自动关闭。要终止 Celery 工作进程，可以通过命令行界面（CLI）使用
 
-```text
+```default
 aws ecs stop-task
 ```
 命令停止相应的 ECS 任务，也可以通过网页控制台删除已分配的资源。不要忘记这一步清理，否则 ECS 计算资源会持续产生费用。可以实现一些函数来监控任务队列的状态，并在任务完成后自动终止 Celery 工作进程。然而，实现这一功能需要协调多种 AWS 云服务，超出了 Python 编程的范围。本书不讨论这一主题。
@@ -858,7 +858,7 @@ print(client.gather(results))
 ```
 默认情况下，启动调度器时会自动在同一台机器的 8787 端口提供 bokeh 仪表板。在本地环境中，可以通过以下地址访问仪表板：
 
-```text
+```default
 http://localhost:8787/status
 ```
 我们可以使用这个仪表板监控 Dask 集群的状态。
@@ -866,7 +866,7 @@ http://localhost:8787/status
 如果使用 ECS 部署 Dask 调度器，还需要进行额外的网络配置，以确保 Dask 调度器可访问。为简单起见，我们可以启动一个 EC2 实例来托管 Dask 调度器。EC2 实例可以同时拥有公共和私有 IP 地址。在 EC2 实例中安装 dask、distributed 和 bokeh 等必要的软件包后，我们可以像在本地环境中那样启动 dask-scheduler。
 另一方面，对于 Dask 工作进程，我们仍可使用容器化服务。与 Celery 的 ECS 部署方法类似，我们可以创建一个 Docker 镜像
 
-```text
+```default
 FROM nvidia/cuda:12.0.1-runtime-ubuntu22.04
 RUN apt-get update && \
   apt-get install -y python3 python3-pip && \
@@ -957,7 +957,7 @@ $ ray job submit --working -dir . -- python3 dft_job.py
 双横线 -- 是分隔符，用于将 Ray 选项与要远程执行的作业命令分开。working-dir 是本地目录，我们可以在其中存放作业脚本和必要的输入数据。
 请注意 --working-dir 路径，它经常引起混淆。云环境不像高性能计算（HPC）环境那样具有共享文件系统。我们在本地开发的脚本文件，例如 dft_job.py，不会自动在工作节点上可用。为解决文件共享问题，命令
 
-```text
+```default
 ray job submit
 ```
 会将 working-dir 复制到工作节点上。作业命令（例如本例中的 python3 dft_job.py）在该目录内执行。因此，我们应避免在作业命令中使用本地机器特有的绝对路径。此外，还需要限制 working-dir 中存放的数据量。发送大量数据可能导致 Ray 作业提交过程中出现文件传输错误。

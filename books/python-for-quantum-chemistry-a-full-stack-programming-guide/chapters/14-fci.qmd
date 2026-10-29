@@ -648,7 +648,7 @@ def compute_hc(h1, eri, fciwfn, norb, nelec_a, nelec_b, blocksize=60):
 
 - 较大的块能减少 Python 代码中各种调度带来的开销，并显著提高矩阵乘法的效率
 
-```text
+```default
    g = v.dot(d.reshape(norb**2,-1))
 ```
 
@@ -762,12 +762,12 @@ $$
 为了提高并行效率，一种方法是使用自动线程并行化技术并行执行串行代码中的 for 循环迭代，例如 Cython prange 函数提供的 OpenMP 线程或 Numba prange 函数提供的 Numba 线程。在应用自动线程并行化之前，我们先进一步分析 compute_hc 函数，以确定合适的并行方案。
 第 14.6 节实现的代码中，外层循环很难并行化，例如循环
 
-```text
+```default
 for Kb0 in range(0, nb, blocksize)
 ```
 或者
 
-```text
+```default
 for Ka0 in range(0, na, blocksize)
 ```
 这是因为在这些循环内部调用的 np.dot 函数也可能创建线程，从而导致嵌套线程。嵌套线程可能使 CPU 资源超额使用，并大幅增加上下文切换的开销。
@@ -788,7 +788,7 @@ for I, tab in enumerate (Elt_b[Kb0:Kb1]):
 即使没有竞争条件，通过不同处理器访问连续的内存地址也可能导致不同 CPU 核心之间发生缓存伪共享争用。如第 9 章所述，这会导致很高的缓存一致性开销。
 为了并行化 d 和 g 张量的代码，我们可以重构这两个张量，以避免低效的内存访问模式。例如，通过交换轨道索引和 String 索引（将布局从 d[i,a,K,I] 改为 d[K,I,i,a]），可按如下方式构造 d 张量：
 
-```text
+```default
 for I, tab in enumerate (Elt_b[Kb0:Kb1]):
     for a,i ,J , sign in tab:
         for K in range (ma):

@@ -35,7 +35,7 @@ except subprocess.CalledProcessError as e:
 在这种进程间通信接口中，Python 与外部库的数据交互通常基于文件。该方案需要读写 Python 脚本和外部库都能访问的临时文件。如何管理这类用于数据交换的临时文件？计算结束后将临时文件留在磁盘上通常并不可取。为了确保用后及时清理，tempfile 模块提供了完善的临时文件管理功能。
 若使用临时文件作为外部程序的输入文件，可调用 tempfile.NamedTemporaryFile 类创建该文件。关闭时，这个临时文件会自动删除。执行外部程序时，应将 subprocess.check_call 函数置于 NamedTemporaryFile 上下文中，如下例所示：
 
-```text
+```default
 In [1]: with tempfile.NamedTemporaryFile(mode='w', dir='.') as f:
             print(f.name)
             f.write('hello')
@@ -51,7 +51,7 @@ False
 默认情况下，NamedTemporaryFile 创建的临时文件存放在环境变量 TMPDIR 指定的目录中。若要更改这些文件的保存位置，可调节 dir 关键字参数。NamedTemporaryFile 的默认操作模式是二进制模式，仅允许写入 bytes 或 bytearray 对象。为支持写入常规文本字符串，本例将文件操作模式显式改为了文本模式。
 对于涉及多个临时文件的场景，TemporaryDirectory 类提供了便捷的方案。该类创建一个临时目录，退出 with 上下文时会自动删除该目录。
 
-```text
+```default
 In [2]: with tempfile.TemporaryDirectory() as tmpdir:
             input_file = f '{tmpdir}/input.dat'
             print(input_file)
@@ -311,7 +311,7 @@ $ cythonize --inplace scipy/special/_comb.pyx
 ```
 这条命令会创建一个可由 Python 导入的共享库（shared library），名为
 
-```text
+```default
 _comb.cpython-310-x86_64-linux-gnu.so
 ```
 ，并将其放在源代码所在的目录中。
@@ -362,7 +362,7 @@ $ python setup.py build_ext --inplace
 ```
 我们得到 Python 模块 example_module，可以直接将其导入 Python 程序。
 
-```text
+```default
 In [1]: import example_module
         print(example_module.square(9))
 Out[1]: 81.0
@@ -370,7 +370,7 @@ Out[1]: 81.0
 关于在 Python 项目中使用 pybind11 库的更多示例，可以在其 GitHub 仓库 [8] 中找到。
 对于 C++ 项目，使用 CMake 系统编译 Python 扩展很方便。假设 pybind11 源代码位于 C++ 项目代码库中名为 pybind11 的目录内，以下 CMake 配置可以编译 Python 扩展：
 
-```text
+```default
 add_subdirectory(pybind11)
 pybind11_add_module(example_module example.cpp)
 ```
@@ -415,7 +415,7 @@ Extension( ...
 
 BLAS 和 LAPACK 等外部库在量子化学程序中经常使用。要使用外部库构建扩展，我们需要配置 libraries 和 library_dirs 条目。例如，要在程序中使用 Intel MKL（Math Kernel Library，数学核心库），根据 Intel MKL 链接顾问 [9] 的建议，GCC 编译器需要以下命令行选项：
 
-```text
+```default
 -L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 ```
 这些选项可以转换为以下配置：
@@ -562,7 +562,7 @@ def blas_ddot(x: np.ndarray, y: np.ndarray) -> float:
 ```
 第 (1) 行的 libblas.ddot_.argtypes 函数原型根据 ddot_ 的签名声明：
 
-```text
+```default
 double ddot_(int *n, double *dx, int *incx, double *dy, int *incy);
 ```
 
@@ -666,7 +666,7 @@ class c_complex(ctypes.Structure):
 ```
 我们可以使用这个自定义数据类型与需要复数作为输入或输出的 C/C++ 函数交互。例如，BLAS 函数 zdotu_ 计算两个复向量的点积，并返回一个复数。
 
-```text
+```default
 double complex zdotu_(int *n, double complex *zx, int *incx, double complex
      *zy, int *incy);
 ```
@@ -693,7 +693,7 @@ def blas_zdot(x: np.ndarray, y: np.ndarray) -> complex:
 
 在某些情况下，我们可能希望在 C/C++ 代码中调用 Python 函数。一个例子是在 C/C++ 函数中使用 numpy.load 函数从文件读取数组。为此，我们可以使用 ctypes.CFUNCTYPE 将 Python 函数转换为 C/C++ 可调用的函数指针。在 C 代码中，函数指针作为输入参数传入。
 
-```text
+```default
 void callback_example(void (*np_load)(char *filename, double *buf))
 {
         char filename = "example.npy";
@@ -877,7 +877,7 @@ ctypes_lib.cfunc(np.empty(100).ctypes.data_as(ctypes.c_void_p))
 这个问题的一个典型场景是在 C/C++ 扩展中使用 BLAS 库。不同厂商提供了多种 BLAS 实现。不同软件包可能通过扩展链接到不同的 BLAS 实现。例如，一个扩展可能使用 Intel 多线程 MKL 库构建，而另一个可能使用 OpenBLAS。
 在 Linux 上，我们可以进行一个小测试，调查这种情况下的符号解析问题。首先，创建一个名为 test_blas.c 的文件，内容如下：
 
-```text
+```default
 void dcopy_(int *, double *, int *, double *, int *);
 void test_copy(double *in, double *out, int n)
 {
@@ -913,7 +913,7 @@ $ LD_DEBUG=bindings python ffi_load_test.py
 ```
 LD_DEBUG 设置会使系统显示动态链接器执行的函数绑定详情。有关 LD_DEBUG 设置的更多细节，请参阅 ld.so 的手册。在输出中搜索关键字 dcopy_，可以找到如下信息：
 
-```text
+```default
 ...
 516985: binding file libtest_ld_mkl.so [0] to /opt/intel/lib/
     intel64/lib/libmkl_intel_lp64.so [0]: normal symbol 'dcopy_'
@@ -1049,7 +1049,7 @@ end python module fcopy
 ```
 这个签名文件用于生成中间 C 代码。然而，在继续生成代码之前，需要解决该签名中的一个问题。在 strcopy 块中，输出参数 outStr 的长度尚未定义。由于输入参数 inStr 的长度可以在运行时根据实际字符串参数确定，我们可以使用语句 len=slen(inStr)，使 outStr 的长度与 inStr 一致。修改签名文件后，我们得到一个修订后的签名文件。
 
-```text
+```default
 python module fcopy
     interface
     subroutine dcopy( len, inArray, outArray)

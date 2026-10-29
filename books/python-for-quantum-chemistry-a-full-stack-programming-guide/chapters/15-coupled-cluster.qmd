@@ -251,7 +251,7 @@ update_CCD_amplitudes 函数是 CCD 程序中最耗时的部分，主要有三�
 表示虚轨道数，用 no 表示占据
 轨道数，张量收缩
 
-```text
+```default
    einsum('abcd,cdij->abij', H['vvvv'], t2)
 ```
 的标度为 n n。由于在大多数分子 CCD 计算中 nv ≫ no，这个
@@ -870,7 +870,7 @@ if __name__ == '__main__':
 ```
 输出为
 
-```text
+```default
 E+ =1 . 0 * einsum("ii->", h1_oo)
 E+ =0 . 5 * einsum("ijij->", h2_oooo)
 E += 0.0625 * einsum("ijba,baij->", h2_oovv, T2)
@@ -1041,7 +1041,7 @@ def bra_projector(n):
 ```
 运行融入对称性规则的符号程序后，输出结果大幅精简。容易核对，哈密顿量与 Tˆ 的置换对称性已在计算中得到正确处理。
 
-```text
+```default
 E+ =1 . 0 * einsum("ii->", h1_oo)
 E+ =0 . 5 * einsum("ijij->", h2_oooo)
 E += 0.25 * einsum("jiab,abji->", h2_oovv, t2)

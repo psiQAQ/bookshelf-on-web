@@ -131,7 +131,7 @@ Python 中数据类型转换的开销差异很大。算术表达式中的隐式�
 
 程序以固定页面为单位与物理主存交互。当所需页面未映射进物理内存时，便会触发缺页异常（page fault）[3,4]。此时操作系统与硬件必须介入完成高成本的页面调度与初始化，消耗数千个 CPU 周期（约数微秒）。首次访问新分配内存时往往遭遇缺页，例如读写 numpy.empty 创建的数据缓冲区。向新分配缓冲区首度填充数据，耗时远多于直接复用既有缓冲区。下方基准测试清晰展示了首次填充新数组的额外开销：
 
-```text
+```default
 In [1]: buf = np.empty((1000,1000,1000))
 In [2]: %time buf[:] = 0.0
 CPU times: user 193 ms, sys: 1.73 s, total: 1.93 s
@@ -520,7 +520,7 @@ def schmidt_orth(s):
 
 在 Jupyter notebook 中，我们可以使用%time 和%timeit 魔法命令测量单条 Python 语句的性能。%time 魔法命令基于 Python 的 time 模块，%timeit 魔法命令使用 timeit 模块。这两个魔法命令在 Jupyter notebook 中都可以用于行模式和单元模式。
 
-```text
+```default
 In [1]: from schmidt import schmidt_orth
 In [2]: s = np.eye(500)
 In [3]: %time c = schmidt_orth(s)
@@ -530,7 +530,7 @@ In [4]: %timeit c = schmidt_orth(s)
 562 ms , 1 loop each)
 ```
 
-```text
+```default
 In [5]: %%time
         for _ in range (10):
             schmidt_orth(s)
@@ -603,7 +603,7 @@ $ python -m line_profiler schmidt_v1.py.lprof
 ```
 在 Jupyter notebook 中，可以加载 line_profiler 模块并执行%lprun 魔法命令来分析函数。%lprun 的-f 选项指定要分析的函数。可以指定多个-f 选项，同时分析多个函数。以下以 schmidt_orth 函数为例说明如何使用行性能分析器：
 
-```text
+```default
 In [7]: %load_ext line_profiler
 In [8]: %lprun -f schmidt_orth schmidt_orth(s)
 Timer unit: 1e-09 s
@@ -691,7 +691,7 @@ $p y-spy record -o profile.svg python schmidt_v2.py
 
 性能分析图便于找出耗时较多的函数。例如，对于 schmidt_orth 函数，schmidt_v2.py 文件中的两行代码分别占总计算时间的 38% 和 51%。相对于 schmidt_orth 函数占据的 92% 耗时，这两行合计占该函数执行时间的 95%。这一时间比例高于 line-profiler 报告的结果。两者的差异很大程度上可归因于
 
-```text
+```default
 line-profilertool.
 ```
 要分析 Python 中的 C/C++ 代码，必须使用 --native 选项执行 py-spy 性能分析器。与 Python 的输出类似，性能分析图可以突出显示 C 或 C++ 源代码中的特定行。
@@ -713,7 +713,7 @@ $ perf record python schmidt_v2.py
 要查看性能分析结果，可以使用 perf report 或 perf annotate 命令。perf report 命令以文本格式显示每个函数的采样计数，概览执行最频繁的函数。另一方面，perf annotate 命令可以将采样计数归属到源代码的特定行。
 以下是 perf report 的输出示例：
 
-```text
+```default
 # Samples: 42K of event 'cycles' Event count (approx.): 37014407361
                                         #
 # Overhead Command Shared Object
@@ -759,7 +759,7 @@ $ perf stat python schmidt_v2.py '
 ```
 可以得到以下统计数据：
 
-```text
+```default
 Performance counter stats for 'python schmidt_v2.py':
 11,295.77 msec task-clock # 0.998 CPUs utilized
 52 context -switches # 0.005 K/sec
@@ -772,7 +772,7 @@ Performance counter stats for 'python schmidt_v2.py':
     branches
 ```
 
-```text
+```default
       11.314251488 seconds time elapsed
       11.260627000 seconds user
        0.036014000 seconds sys
@@ -785,7 +785,7 @@ $ perf stat -d -d -e instructions ,L1-dcache-stores,L1-dcache-store-misses, LLC-
 ```
 可以得到以下输出：
 
-```text
+```default
  Performance counter stats for 'python schmidt_v2.py':
 56,793,613,373 instructions
 9,362,101,055 L1 -dcache-stores
@@ -809,7 +809,7 @@ $ perf stat -d -d -e instructions ,L1-dcache-stores,L1-dcache-store-misses, LLC-
       11.486423819 seconds time elapsed
 ```
 
-```text
+```default
    11.433589000 seconds user
     0.052007000 seconds sys
 ```
@@ -819,7 +819,7 @@ $ perf stat -d -d -e instructions ,L1-dcache-stores,L1-dcache-store-misses, LLC-
 - 分支和分支未命中。分支未命中（branch miss）发生在 CPU 错误预测分支指令的结果时。预测错误可能使 CPU 流水线停顿，导致显著的性能损失。如果分支未命中次数或未命中率较高，程序很可能运行效率低下。
 - L1 缓存的效率，包括事件
 
-```text
+```default
 - -dcache-load-misses,
 - -dcache-store-misses,
 - -icache-load-misses.
@@ -845,7 +845,7 @@ LLC 是末级缓存（last level cache）的缩写。每次 LLC-loads 和 LLC-st
 
 执行之前，Python 解释器将 Python 代码编译成字节码（bytecode），即程序的一种内部表示。解释器随后读取字节码，并在基于栈的虚拟机中执行其中的指令。dis 模块可用于显示反汇编后的 Python 源代码字节码。这使我们能够逐步查看 Python 解释器执行程序时遵循的指令。例如，算术表达式 x * 2 被编译成以下字节码指令：
 
-```text
+```default
 In [1]: import dis
 In [2]: dis.dis( 'x * 2')
 2 0 LOAD_FAST 0 (x)
@@ -882,7 +882,7 @@ TARGET(LOAD_FAST) {
 LOAD_FAST 的核心是 GETLOCAL 宏，它被展开为一个简单的数组索引操作（fastlocals[i]）。这个操作非常高效，执行只需 1 个 CPU 周期。Py_INCREF 和 PUSH 宏也是简单语句，各需约 1 个 CPU 周期。FAST_DISPATCH 宏执行 Python 解释器的基本读取求值循环，引入约 10 个 CPU 周期的开销。因此，LOAD_FAST 指令的总体成本估计为 10–20 个 CPU 周期。
 我们可以在 Jupyter notebook 中运行一个简单测试，考察各条指令的成本。例如，为估计算术指令 BINARY_MULTIPLY 的成本，我们执行基准测试：
 
-```text
+```default
 In [1]: %%timeit
         for _ in range (1000000):
             pass
@@ -891,7 +891,7 @@ In [1]: %%timeit
 ```
 然后测试实际操作：
 
-```text
+```default
 In [2]: %%timeit
         x=1 .
         for _ in range (1000000):
@@ -919,7 +919,7 @@ for i in range (len(a_list)):
 ```
 根据两种方法反汇编后的字节码可以清楚地看到，enumerate 函数只需要一条 UNPACK_SEQUENCE 指令即可同时获得 i 和 x，而使用范围索引的版本需要两次加载操作和一次索引操作。
 
-```text
+```default
 # for i, x in enumerate(a_list):
 # ...
 >> 8 FOR_ITER 4 (to 18)
@@ -1168,7 +1168,7 @@ def matmul_nn_v3(a, b):
 ```
 提高索引效率的另一种方法是使用间接索引（indirect indexing）。虽然间接索引由于缓存利用率低和数据预取效果不佳而通常不受青睐，但在某些情况下，它对高维数组的处理可能比直接索引方法更快。例如，在第 12 章将要讨论的积分计算程序中，我们会遇到一个用于计算张量元素的递归程序：
 
-```text
+```default
 l k l=l k+l l
 for lx in range (1, ll+1):
     for ly in range (ll+1-lx):
@@ -1328,12 +1328,12 @@ cc.compile()
 ```
 函数展开（function unrolling）可能产生大量代码，从而延长即时编译（JIT compilation）的预热时间。为了降低预热成本，这里使用提前编译（AOT compilation）[25]。AOT 编译会输出一个可导入的 Python 模块，在我们的 Python 3.10 环境中名为
 
-```text
+```default
 schmidt_unrolled.cpython-310-x86_64-linux-gnu.so
 ```
 然后，我们开发一个名为
 
-```text
+```default
 schmidt_orth_small_size
 ```
 的函数，专门用于小规模的 schmidt_orth。处理小型重叠矩阵时，展开后的函数比原始 Python 函数 schmidt_orth 快近 150 倍。
@@ -1373,7 +1373,7 @@ llvm.set_option('', '--debug-only=loop-vectorize')
 ```
 该选项会提供 LLVM 如何检查矢量化的细节。例如，下面的输出表明编译器找到了一个可以矢量化的候选项，但拒绝对代码进行矢量化。
 
-```text
+```default
     LV: Can 't vectorize due to memory conflicts
 ```
 检查 SIMD 矢量化的另一种方法是查看 Numba JIT 编译生成的汇编代码。我们可以利用下面的 find_instr 函数搜索特定的汇编指令或 SIMD 寄存器。例如，要识别 AVX 级别的矢量化，可以搜索 ymm 寄存器。
@@ -1432,7 +1432,7 @@ def matmul_nn_tiling_simd(a, b):
 
 - 使用带类型的内存视图（typed memoryview）指定 NumPy 数组的结构，包括数据类型、维数和步长。例如，在类型声明
 
-```text
+```default
    cdef double[:, ::1] a_view = a
 ```
 中，double[:,::1] 表示数组为 double 类型且是二
@@ -1480,7 +1480,7 @@ for i in range (len(array)):
 
 在 Cython 中使用 OpenMP 并行化时，归约（reduction）约定可能有些不同寻常，而且容易出错。Cython 在推断归约操作时不如 Numba 智能。Numba 可以根据变量的作用域自动判断是否需要归约，避免对 prange 上下文中的私有变量应用归约。相比之下，Cython 仅根据是否存在原地运算符（+=、-=、*= 等）来推断归约。例如，在下面的代码片段中，尽管 x 只是 prange 上下文中的临时变量，Cython 仍会错误地在 prange 结束时对 x 和 v 都执行归约。
 
-```text
+```default
 cdef double v = 0
 cdef double x
 for i in cython.parallel.prange(n, nogil=True):
@@ -1490,7 +1490,7 @@ for i in cython.parallel.prange(n, nogil=True):
 ```
 为帮助 Cython 准确识别归约操作，我们应当避免在 prange 上下文中对局部变量使用原地运算符。应据此修正上述代码片段。
 
-```text
+```default
 cdef double v = 0
 cdef double x
 for i in cython.parallel.prange(n, nogil=True):
@@ -1622,7 +1622,7 @@ Python JIT 和 AOT 编译器的发展，使我们无需使用编译型语言编�
 
 在 C 和 C++ 中，我们可以使用函数属性 [32] 和编译器指令与编译器交互，例如用于内存对齐的函数属性：
 
-```text
+```default
 double roots[8] __attribute__((aligned(32)));
 ```
 以及用于执行 SIMD 指令的编译器指令
@@ -1644,7 +1644,7 @@ double roots[8] __attribute__((aligned(32)));
 -O2 优化级别是 Cython 和 Pythran 的默认设置。这个级别在性能、可移植性、代码大小和编译速度之间取得了平衡。如果要为通用平台发布程序，通常建议使用 -O2 优化级别。
 -O3 标志在 -O2 级别应用的优化之外引入了几项额外优化。这些额外优化的详情可以在文档（man gcc）中找到。在量子化学应用中，以下额外选项尤其重要：
 
-```text
+```default
 - -loops-for-strides.
 ```
 
@@ -1701,7 +1701,7 @@ setup( ext_modules=[
 
 在以下测试中，通过使用分块数据集，第二个测试达到了 252 MB/s 的吞吐量。相比之下，未使用分块存储的第一个测试只达到了 14.4 MB/s 的吞吐量。
 
-```text
+```default
 In [1]: import h5py
 In [2]: %%time
         with h5py.File('test_plain.h5', 'w') as f:
@@ -1723,7 +1723,7 @@ $ sync; echo 1 > /proc/sys/vm/drop_caches
 ```
 虽然分块存储提高了访问数据子集的效率，但它引入了额外的复杂性和新的开销。在 HDF5 中，数据块被视为原子对象。访问块中的任何元素时，都需要从磁盘读取整个块。访问跨越块边界的数据可能导致一些开销。使访问模式与块的形状对齐有助于减少这种开销。例如，在下面的例子中，第一个测试需要读取 200 个块，而第二个测试需要读取 400 个块。这一差异导致性能相差 50%。
 
-```text
+```default
 In [4]: %%time
         with h5py.File('test_chunk.h5', 'r') as f:
             f['test'][200:400]
@@ -1737,7 +1737,7 @@ Wall time: 86.6 ms
 ```
 分块存储的第二个特性是，数据集的各个块随机存储在磁盘上。因此，顺序访问数据集时，读写操作实际上都涉及一定程度的随机性。在下面的例子中，读取 640 MB 连续数据时，与普通行主序存储相比，分块存储产生了 50% 的额外开销。
 
-```text
+```default
 In [6]: %%time
         with h5py.File('test_plain.h5', 'r') as f:
             a=f [ 'test'][5000:9000]
@@ -1745,7 +1745,7 @@ CPU times: user 38 ms, sys: 495 ms, total: 533 ms
 Wall time: 1.65 s
 ```
 
-```text
+```default
 In [7]: %%time
         with h5py.File('test_chunk.h5', 'r') as f:
             a=f [ 'test'][5000:9000]
@@ -1757,7 +1757,7 @@ Wall time: 2.49 s
 
 使用内存映射（memory mapping，memmap）存储数组时，存储布局也对 I/O 效率有关键影响。memmap 允许以行主序或列主序格式存储数据。顺序访问数据时，它的性能可能优于 HDF5。这是因为 memmap 在内存中移动数据的开销较低。然而，memmap 不具备分块存储数据的能力，访问非连续数据时性能会显著下降。为了评估 memmap 相对于 HDF5 格式的 I/O 性能，我们采用与之前针对 HDF5 开展的测试类似的方法。
 
-```text
+```default
 In [10]: %%time
          d = np.memmap( 'test_plain.mmap', mode='w+', shape=(20000,20000), dtype= float)
          d[:,:600] = 1.
@@ -1780,14 +1780,14 @@ In [13]: %%time
          a = d[5000:9000].copy()
 ```
 
-```text
+```default
 CPU times: user 103 ms, sys: 378 ms, total: 481 ms
 Wall time: 1.81 s
 ```
 请注意 numpy.memmap 和 h5py 在处理数组切片时的区别。对 memmap 对象切片只会生成一个 memoryview。实际的 I/O 操作会推迟到显式访问数据时才进行。这一特性简化了编程，因为它无需显式调用文件读写命令。操作系统可以自动在内存和内存映射文件之间同步必要的数据。然而，这也意味着我们失去了灵活控制 I/O 操作发生时间的能力。除非复制 memmap 对象的片段，否则我们无法准确地为即将进行的计算任务预取所需数据。在某些应用中，这可能降低整体性能。
 例如，考虑以下对两个 memmap 对象进行矩阵乘法的测试，完成该测试需要 42 秒。如果两个数组完全位于内存中，计算时间只需 29 秒。额外的 13 秒是从 memmap 文件加载数据的开销。
 
-```text
+```default
 In [14]: %%time
          a = np.memmap( 'test_a.mmap', mode='r', shape=(40000,10000), dtype= float)
          b = np.memmap( 'test_b.mmap', mode='r', shape=(40000,10000), dtype= float)
@@ -2024,7 +2024,7 @@ class CustomHash:
 ```
 hash() 函数可以为某些可变对象生成哈希值，例如用户自定义 Python 类的实例。
 
-```text
+```default
 In [1]: class Empty:
             pass
 In [2]: print(hash(Empty()))

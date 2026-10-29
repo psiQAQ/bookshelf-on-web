@@ -122,7 +122,7 @@ ax.legend(loc='upper left')
 ```
 将图例放在图的左上角。其他常见位置
 
-```text
+```default
 include'upper center','upper right','center left','center right',etc.
 ```
 
@@ -185,7 +185,7 @@ df.plot.hexbin('x', 'y', 'z', ax=axs[2,2], title= 'scatter')
 
 要自定义 Pandas 图形，可以为 Pandas.plot 方法指定一系列常用参数，包括 label、style、xticks、yticks、xlim、ylim、title、alpha、kind、figsize 等。此外，可以使用 ax 关键字参数将输出导向特定的 Axes 对象，该选项有助于进一步增强与定制所生成的图形。例如，
 
-```text
+```default
 In [3]: ax = plt.subplot(111)
         df.plot.bar(ax=ax)
         ax.legend(loc='upper left' )
@@ -216,7 +216,7 @@ $ jupyter-labextension enable ipyenvents
 ```
 为验证 Mayavi 的安装，我们可以运行该库提供的内置测试：
 
-```text
+```default
 In [1]: %gui qt
 In [2]: from mayavi import mlab
         mlab.test_mesh()
@@ -239,7 +239,7 @@ mlab.show()
 ```
 np.mgrid 函数经常用于 Mayavi 三维绘图，它能够方便地创建密集的多维空间网格。例如，第 (1) 行语句生成了一个由二维数据点组成的 100 × 100 均匀网格，这些点可直接传给 Mayavi 函数。np.mgrid 利用索引切片语法（[]）来指定网格范围，由切片 start:stop:step 规定起点与终点。step 参数若为实数，代表采样点间距；若为虚数，则代表起点与终点之间的区间划分数。对于实数 step，切片行为与 np.arange(start, stop, step) 相同；而对于虚数 step，它则完全等同于
 
-```text
+```default
 tonp.linspace(start, stop, step.imag).
 ```
 
@@ -425,7 +425,7 @@ Jinja 模板处理过程可以分为两个主要步骤：
 
 2. 使用关键字参数调用.render() 方法来渲染模板。
 
-```text
+```default
 In [1] import jinja2
        tpl = jinja2.Template( 'template_string {{ key }}' )
        tpl.render(key=value)
@@ -609,7 +609,7 @@ def render_cube(elements, coordinates, voxel, origin, data):
 要可视化电子性质，可以创建网格，计算其在网格上的值，并使用此模板渲染 Cube 文件。
 例如，我们可按下列流程构造 Cube 文件以观察 p 型原子轨道。设定 0.3 × 0.3 × 0.3 的体素微元，沿 x、y、z 轴各采样 60 个网格点。为便于演示，我们调用量子化学程序 PySCF [17,18] 快速求取 p 轨道在各个空间网格点上的波函数值。请特别留意分子坐标的单位转换：Cube 规范明确要求所有几何长度参数均以玻尔（Bohr）为单位。
 
-```text
+```default
 # NOTE: all units are in Bohr
 boundary = [[-9., 9.], [-9., 9.],
             [-9., 9.]]

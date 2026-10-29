@@ -37,7 +37,7 @@ eval 的第一个参数是代码表达式。它受到一些限制：
 exec 的代码字符串可以是任何原始 Python 代码。我们可以在代码字符串中放入赋值、创建函数和类的代码。使用 exec 对代码字符串求值，与在执行位置直接插入该代码的效果相同。
 eval 和 exec 会在 globals 与 locals 字典提供的上下文中对代码字符串求值。默认情况下，这两个字典对应当前的全局与局部命名空间。借助该机制，我们能精确控制代码字符串的运行环境。比如通过自定义局部环境，我们可以用 eval 函数模拟 Pandas DataFrame.eval 方法的行为，如下面的 simple_eval 函数所示。
 
-```text
+```default
 In [1]: def simple_eval(df, expr):
             return eval (expr,{ },{ **df})
 In [2]: mole = pd.read_csv( 'water.csv')
@@ -183,7 +183,7 @@ def remove_unreachable_statements(fn):
 Python 标准库 inspect 是代码生成任务的强大工具。虽然它不能直接修改或生成代码，但 inspect 提供了访问函数源代码、签名、参数注解、局部变量和许多其他细节的工具。
 让我们检查 remove_unreachable_statements 函数的结果
 
-```text
+```default
 In [1]: def fun1(x, y):
             a=x+2
             b=a * x
@@ -246,7 +246,7 @@ x02, x03, x12, x13, var1, var2 = sympy.symbols( 'x(0:2)(2:4) y z' )
 除了 Symbol 类，SymPy 程序中的另一个核心数据结构是符号表达式，由 sympy.Expr 类提供。符号表达式由符号、数字以及定义在符号上的数学函数组成。
 为了表示符号或表达式的集合，sympy.Matrix 类用于表示矩阵，sympy.Array 类则用于多维数组。sympy.Matrix 和 sympy.Array 类提供的某些方法，如转置、重塑和索引，与 NumPy 数组的对应操作有些相似。然而，其中大多数与 NumPy 中的方法不同。例如，sympy.Matrix 不支持用于逐元素操作的 ufunc。对两个矩阵调用 a * b 时，它执行标准矩阵乘法。
 
-```text
+```default
 In [1]: a = sympy.Matrix(sympy.symbols( 'x(:2)(:3)')).reshape(2,3)
         a.T * a
 Out[1]:
@@ -255,7 +255,7 @@ Matrix([
 ```
 符号表达式的 .subs() 方法可用于替换、求值、转换或简化符号表达式。它根据字典中定义的规则替换符号。例如，下面的例子展示如何使用 .subs() 方法按照仿射变换转换多项式表达式。
 
-```text
+```default
 In [2]: x,y , z = sympy.symbols( ' xyz ' )
         P=. 5 * x**2+. 5 * y**2
         T = sympy.Matrix([[.7,. 1,0 ., 0.], [0.,. 9,-.2, .5], [.3,0 .,. 8, 0.]])
@@ -408,7 +408,7 @@ def coulomb_energy(coords: torch.Tensor, z: torch.Tensor):
 为了启用 PyTorch 自动微分，我们将 np.linalg.norm 替换为 torch.linalg.norm。大多数 NumPy 函数在 PyTorch 中都有对应的函数。
 提供了几种方法来获取函数相对于其输入变量的导数。一种方法是使用 torch.func 模块提供的类似 JAX 的函数。例如，torch.func.grad 和 torch.func.hessian 函数分别可用于计算梯度和海森矩阵。
 
-```text
+```default
 In [1]: coords = torch.rand(2,3 )
         Z = torch.rand(2,3 )
         torch.func.grad(coulomb_energy, argnums=0)(coords,Z )
@@ -421,7 +421,7 @@ tensor([[0.0000, 2.3221], [2.3221, 0.0000]], grad_fn=<ViewBackward0>)
 argnums 参数指定要使用自动微分求导的参数的位置。请注意，自动微分的输入变量必须是 torch.Tensor 对象。
 第二种方法采用反向传播来生成各个单独变量的梯度。在这种方法中，创建输入变量时必须显式指定关键字 requires_grad= True，表示在反向传播期间应当计算这些变量的梯度。为了求出梯度，我们首先执行前向传播算出输出结果，随后在该结果上调用 .backward() 方法执行反向传播。完成这两步后，便可通过输入变量的 .grad 属性直接访问梯度。例如，
 
-```text
+```default
 In [3]: coords = torch.rand(2,3 , requires_grad=True)
         Z = torch.rand(2,3 , requires_grad=True)
         e = coulomb_energy(coords,Z )
@@ -434,7 +434,7 @@ tensor([[0.0000, 2.3221], [2.3221, 0.0000]])
 ```
 需要注意，.backward() 方法会对可微参数带来副作用。反向传播在完成微分计算后，会原地累加输入变量的梯度值。当同一变量参与了多次计算或被多个输出引用时，接连调用 .backward() 将导致梯度不断在原变量上叠加，而非直接覆盖为最新值。
 
-```text
+```default
 In [4]: x = torch.tensor(1., requires_grad=True)
         y=x **2
         y.backward()
@@ -447,7 +447,7 @@ Out[5]: tensor(5.)
 ```
 为了避免梯度累积，我们通过将 .grad 属性设为 None 或零向量来手动清除梯度。
 
-```text
+```default
 In [6]: x.grad = None
         y=x * 3
         y.backward()
@@ -539,7 +539,7 @@ def coulomb_energy(coords, z):
 如果复用上一节中 coulomb_energy 函数的实现，JAX 将为梯度返回 nan。这个问题源于 rr 矩阵对角项中的零，在处理 jnp.linalg.norm 函数的梯度时会导致非法值。这里我们不探究 PyTorch 和 JAX 处理 norm 函数的差异。读者只需注意，在梯度中遇到 nan 值时，jnp.linalg.norm 可能存在这个问题。
 现在，我们可以使用 jax.grad 函数计算梯度。
 
-```text
+```default
 In [7]: coords = jnp.array(np.random.rand(2, 3))
         Z = jnp.array(np.random.rand(2))
         jax.grad(coulomb_energy, argnums=(0, 1))(coords,Z )
@@ -549,7 +549,7 @@ Out[7]:
 ```
 jax.grad 函数用于计算标量值函数的梯度。如果函数输出数组，JAX 提供 jax.jacobian 函数来计算雅可比矩阵。
 
-```text
+```default
 In [8]: jax.jacobian(coulomb_energy, argnums=0)(coords,Z )
 out[8]:
 [[-0.03555296 -0.17780247 0.02858889]
@@ -564,7 +564,7 @@ jax.jacobian 函数默认调用 jac.jacrev 版本。对于高阶导数，可以�
 在许多实际场景中，并不需要构造显式的梯度向量（或雅可比矩阵）。通常只需要计算雅可比矩阵与某些位移的乘积。例如，在对损失函数进行梯度下降优化时，目标是评估损失函数响应参数空间微小位移时的数值变化。这个过程本质上等价于计算雅可比矩阵与位移向量的乘积。为了支持这些乘积运算，JAX 提供了 JVP（雅可比矩阵与向量的乘积）函数 jax.jvp 和 VJP（向量与雅可比矩阵的乘积）函数 jax.vjp。
 给定一个计算 f (x) 值的 Python 函数，jax.jvp 可以同时求出 f (x) 和乘积 ∂f (x) · v，而 jax.vjp 生成 f (x) 和 v · ∂f (x)。以 coulomb_energy 函数为例，我们可以使用 jax.jvp 对电荷变化引起的能量变化建模。jax.jvp 函数的输入包括函数 f (x)、计算 ∂f (x) 时所在的原始值，以及用于雅可比矩阵与向量相乘的切向量 v。原始值和切向量都是与 f (x) 的位置参数对应的元组。例如，下面的代码展示了如何调用库仑能函数的 jvp 操作。
 
-```text
+```default
 In [9]: coords = jnp.array(np.random.rand(2, 3))
         Z = jnp.array(np.random.rand(2))
         disp = jnp.array(np.random.rand(2))

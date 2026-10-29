@@ -447,7 +447,7 @@ def build_k_8fold(gtos, dm):
 为了在单个壳层四元组（shell-quartet）层面更精细地筛选电子排斥积分（ERI），可以为 contracted_ERI 或 primitive_ERI 函数开发类似的装饰器。我们不深入讨论这些装饰器的具体代码细节，因为它们的实现应该很直接。
 J/K 矩阵是密度矩阵的线性函数。这一性质使我们能够在自洽场（SCF）迭代中增量构建 J/K 矩阵。利用上一次迭代的 J/K 矩阵，以及密度矩阵相对于上一次迭代的变化，我们可以计算当前步骤的 J/K 矩阵。
 
-```text
+```default
 kmat = build_k(gtos,d m-dm_prev) + kmat_prev
 ```
 随着 SCF 迭代的进行，密度矩阵的变化逐渐减小。采用前面提到的积分筛选技术，在 SCF 接近收敛时可以省略更多积分计算。请注意，增量构建 J/K 矩阵可能导致误差累积。应适当收紧积分筛选阈值。
@@ -868,7 +868,7 @@ v[(slice(None),)*axis + (0,0)] *=2 # (1)
 在这两个转换函数中，使用 NumPy 的花式索引（fancy indexing）[[0,1],[1,2]]，将一个三元素向量重新排列为 2 × 2 数组。需要转换的索引不一定总是第一个索引。为此，我们对缺失的索引使用
 slice(None) 表示法。例如，第 (1) 行中复杂的索引代码 v[(slice(None),)*axis + (0,0)] 等价于数组索引
 
-```text
+```default
 v[:,:,0,0]when axis=2.
 ```
 如果考虑密度变量 ρ、∇ ρ 和 τ 的自旋索引，局域密度近似（local density approximation，LDA）泛函有 2 个独立变量，广义梯度近似（generalized gradient approximation，GGA）有 2 × 4 个，meta-GGA 有 2 × 5 个。这些变量决定一阶和二阶 XC 导数张量的形状。对于 LDA，其形状分别为 (2, 1) 和 (2, 1, 2, 1)。对于 GGA，其形状分别为 (2, 4) 和 (2, 4, 2, 4)。对于 meta-GGA，其形状分别为 (2, 5) 和 (2, 5, 2, 5)。
@@ -1368,7 +1368,7 @@ tmp = einsum('pij,jk->pik', cderi, dm)
 ```
 如果 cderi 和 tmp 张量按 C 顺序存储，为满足 BLAS 库中矩阵乘法对内存连续性的要求，后续收缩
 
-```text
+```default
 einsum('pik,pkl->il', tmp, cderi) requirestheindicesof thetmp tensortobe
 ```
 需要将 tmp 张量的索引从 pik 转置为 ipk。这次转置会创建另一个中间张量。

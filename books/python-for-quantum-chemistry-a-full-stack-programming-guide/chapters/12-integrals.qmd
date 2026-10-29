@@ -81,7 +81,7 @@ class CGTO:
 ```
 为表示 CGTO 类的基组数据，我们可以采用 YAML 格式的配置。例如，下面的配置表示位于 (0., 0., 0.) 的氢原子的 6-31G 基组。
 
-```text
+```default
 - angular_momentum: 0
   exponents:
   - 18.7311370
@@ -221,7 +221,7 @@ def iter_cart_xyz(l):
 ```
 例如，d 型高斯型轨道壳层中的 6 个笛卡尔函数按以下顺序排列
 
-```text
+```default
 In [1]: for t,u ,v in iter_cart_xyz(2):
             print(f'x^{t}y^{u}z^{v}')
 Out[1]:
@@ -1485,7 +1485,7 @@ $$
 
 对于第 12.1.4.2 节中的代码实现，TRR 张量的迭代范围可以优化为：
 
-```text
+```default
 l4 = lij + lkl
 for kx,k y,k z in reduced_cart_iter(lkl):
     k s u m=k x+k y+k z
@@ -1713,7 +1713,7 @@ class jitCGTO:
 ```
 在这个改写过程中，我们可以使用命令
 
-```text
+```default
 cython-a _tensors.pyx
 ```
 为.pyx 文件生成注释，并检查 Cython 化代码是否经过适当优化。这里不明确展示 Cython 化代码。根据第 12.1.5 节开发的 Python 代码和 Cython 注释，读者应该能够开发积分程序的 Cython 版本。
@@ -1728,7 +1728,7 @@ cython-a _tensors.pyx
 
 我们需要设计一个唯一的名称来表示 vrr 函数的返回值。该名称可以根据函数参数动态生成，例如
 
-```text
+```default
 asf'vrr_{n}_{ix}{iy}{iz}'.
 ```
 
@@ -1918,7 +1918,7 @@ print(driver_tpl.render(lmax=5, max_roots=5))
 ```
 C 函数的最后一个参数是指向 Boys 函数的函数指针，其签名定义如下：
 
-```text
+```default
 void ( *boys_fn)(int max_order, double x, double output[]);
 ```
 在 vrr 函数中，Boys 函数会被多次调用。为了提高效率，可以一次性计算直到给定阶数 max_order 的所有 Boys 函数值，并将其暂存在输出缓冲区中。
@@ -2475,7 +2475,7 @@ def rys_roots_weights(nroots, t):
 - 在 rys_roots_weights 函数中，我们需要使用 mpmath 库中的相应函数重新实现某些 NumPy 函数，例如求根函数和施密特正交化（Schmidt orthogonalization）。有关求根函数的算法，请参阅 Numerical Recipes 一书第 9 章中的基础理论 [14]。此外，我们为 NumPy 数组使用自定义数据类型，以便对 mpf 数据进行矢量化操作。这种方法在第 2 章第 2.2.4 节中有详细讨论。
 - 应使用 mpmath.mpf 函数将所有浮点常数替换为多精度数。例如，将 0.5 替换为
 
-```text
+```default
 mpmath.mpf('0.5').
 ```
 这些修改的结果见下面的代码示例：

@@ -400,24 +400,43 @@ uv run python scripts/check_site.py .preview --preview --report reports/preview-
 围栏语言修正（只改信息串，不动内容，每处先校验围栏首行）：
 
 - `text` → 源码/配置 62 处：`python` 38、`toml` 7、`c` 7、`yaml` 6、`ini` 2、`fortran` 2（含 `01-environment.qmd` 的 docker-compose 块，缩进同时从 7/9 空格修回 2/4）；另有 4 个 `text` 围栏因内容本就是正文而整块删除。
-- `python` → `text` 106 处：REPL 会话（`In [n]:`/`Out[n]:`/`>>>`）不是源码，标 `python` 只会让高亮与 `ast.parse` 双双出错。
+- `python` → `default` 106 处：REPL 会话（`In [n]:`/`Out[n]:`/`>>>`）不是源码，标 `python` 只会让高亮与 `ast.parse` 双双出错；
+- 余下的 231 个 `text` 围栏全部改成 `default`——理由见下节「为什么不能停在 `text`」。
 
 ### 门禁
 
 `scripts/audit_prose.py` 新增两个严格探测器，都进 `STRICT_DETECTORS`，由 CI 的 `audit_prose.py --check` 覆盖：
 
 - `find_code_outside_fence`（`code_outside_fence`）：围栏之外、没有中文字符、没有 `$` 公式、不是标题/图片/表格行/文献条目/纯行内代码项目符号的整行，若能被 `ast.parse` 且解析出真实语句（赋值、调用、`def`、`for`、`with`…）就算命中。用语法树而不是正则，是为了区分「整行是代码」与「正文里提到 `open()`」。
-- `find_mislabelled_fence`（`fence_language`）：`text` 围栏内容能 `ast.parse` 且含真实语句 → `fence_language:python`；`text` 围栏是纯 TOML 段头式（`[tool.setuptools]` + `key = value`）→ `fence_language:toml`；`python` 围栏里出现 `In [n]:`/`Out[n]:`/`>>>` → `fence_language:text`。裸记号（`schmidt_orth_small_size`）、纯数字、REPL 记录都不报，这条写进了测试。
+- `find_mislabelled_fence`（`fence_language`）：只要出现 `text` 围栏就命中 `fence_language:text_unstyled`（该语言在本站渲染不出代码框）；`default` 围栏内容能 `ast.parse` 且含真实语句 → `fence_language:python`；`default` 围栏是纯 TOML 段头式（`[tool.setuptools]` + `key = value`）→ `fence_language:toml`；`python` 围栏里出现 `In [n]:`/`Out[n]:`/`>>>` → `fence_language:default`。裸记号（`schmidt_orth_small_size`）、纯数字、REPL 记录都不报，这条写进了测试。
 
 `CODE_OUTSIDE_FENCE_WHITELIST` 只放一条合法形状：`perf stat` 的事件名列表项（`- -loads,`、`- -stores,`）。
 
-`tests/test_quantum_notes.py::test_book_examples_are_static_without_execution` 同时收紧：围栏语言限定在 `STATIC_LANGUAGES = {python, text, bash, yaml, toml, ini, c, fortran}`，出现 ```` ```{python} ```` 这类可执行围栏会被围栏数量比对抓住。
+`tests/test_quantum_notes.py::test_book_examples_are_static_without_execution` 同时收紧：围栏语言限定在 `STATIC_LANGUAGES = {python, default, bash, yaml, toml, ini, c, fortran}`，出现 ```` ```{python} ```` 这类可执行围栏会被围栏数量比对抓住。
+
+### 为什么不能停在 `text`（2026-10-30 第二轮）
+
+第一轮把 REPL 会话标回 `text`、把源码标成 `python`，判据上没错，但渲染上仍然是坏的：Quarto 1.10.19 的 skylighting 不认识 `text`，`pandoc` 只输出裸 `<pre class="text"><code>…</code></pre>`，既没有 `.sourceCode` 的代码框样式，也没有复制按钮。读者看到的是一段等宽的正文，于是报告「这些为什么没有在代码块中」——比如 `chapters/04-scientific-tools.qmd:440` 的
+
+````
+```text
+In [4]: with scipy.fft.set_backend(mkl_fft.interfaces.scipy_fft):
+            y = scipy.fft.fft(x, workers=8)
+```
+````
+
+同一页相邻的 ```` ```python ```` 围栏是带底色的代码框，它却是一段裸文字。
+
+用 `quarto render` 实测四种语言：`python` → `<pre class="sourceCode python code-with-copy">`；`default` → `<pre class="sourceCode default code-with-copy">`；`ipython`/`ipython3`/`console`/`pycon`/`text` → 只有裸 `<pre class="<lang>">`。所以无高亮、但要有代码框的块（REPL 会话、输出、目录树、文件名清单）统一用 `default`。
+
+改完后 `.preview` 里 17 章的 984 个围栏全部是 `sourceCode … code-with-copy`（`python` 570、`default` 231、`bash` 140、`yaml` 25、`toml` 7、`c` 7、`ini` 2、`fortran` 2），`<pre class="text">` 出现 0 次。
 
 ### 本次核验
 
 - 判据取证：`git show de935e0:…/chapters/*.qmd` 落到 `.local/baseline-check/` 后跑两个新探测器 → `fence_language` 命中 113 条（`01:9`、`02:60`、`03:3`、`04:5`、`05:6`、`06:9`、`07:3`、`08:6`、`09:8`、`10:1`、`12:1`、`16:2`），当前仓库 `fence_language=0`；`code_outside_fence` 在基线与当前都是 0——存量里没有这一类，它是防回归的，不是本轮修复量。
 - `uv run python -m unittest discover -s tests` → 150 项通过（2 跳过）；`tests/test_audit_prose.py` 41 项，其中 `CodeOutsideFenceTests` 5 项、`FenceLanguageTests` 4 项专门证明两条判据不空转（含反例：中文行、行内公式、围栏内代码、结构行、perf 事件名、裸记号、REPL 记录）。
 - `uv run python scripts/audit_prose.py` → `bare_urls=0 suspect_code=0 english_residue=0 formula_remnant=0 broken_links=0 code_outside_fence=0 fence_language=0 prose_in_fence=100`，`--check` 退出 0。
+- 渲染核验：`.preview/books/…/chapters/*.html` 里 `<pre class="text">` 0 次；`04-scientific-tools.html` 的 §4.4.2 截图确认 `In [4]:`/`In [5]:` 两块与相邻 `python` 块同样带代码框和复制按钮。
 - `uv run python scripts/validate.py --strict` → 0 问题；`check_math.py --check` → `allowed_commands=84 chapters=19 findings=0`。
 
 ### 已知限制

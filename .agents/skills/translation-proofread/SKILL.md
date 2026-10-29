@@ -57,6 +57,21 @@ python -m unittest discover -s tests
 
 **退出码语义别混用**：本仓库的 `--check` 都是「有命中退出 1」。AutoCorrect 的退出码 0 **不代表无建议**（读 JSON 的 `count`/`messages`）；Vale 的 1 在有效诊断时是「检查完成、有错误」，2 才是失败。`check_math_render.py` 缺少构建产物或 Edge 时打印 `Not Run` 并退出 0，**不能记为通过**。
 
+## 浏览器验收（可选，按需临时装）
+
+`scripts/verify_notes_browser.py` 不在 CI、不在 `unittest` 里，只在需要一次「读者视角」证据时跑。它比 `check_math_render.py` 多覆盖两件静态检查看不到的事：**三种视口（390/768/1440）的横向溢出与代码/公式可滚动性**、**四条真实交互**（站内搜索、明暗主题、代码复制、前后章导航）。
+
+```bash
+# 只装 headless shell（实测磁盘 282 MB、约 22 s；完整安装为 576.8 MB）
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.local/playwright-browsers" \
+  uv run --with playwright playwright install --only-shell chromium
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.local/playwright-browsers" \
+  uv run --with playwright python scripts/verify_notes_browser.py
+rm -rf .local/playwright-browsers   # 用完可删；保留只省一次下载
+```
+
+前提是已有 `.preview`（`scripts/build.py --preview`）。脚本自带短生命周期的仅回环 HTTP 服务，报告写到 `reports/notes-browser/`；`failed_requests` 或 `console_errors` 非空即不通过——**外部字体/MathJax CDN 不可达时会出现 `net::ERR_ABORTED`，那是环境问题，不是排版通过**，要如实记录而不能改写成成功。没装浏览器就不跑，记 `Not Run`。
+
 ## 脚本地图
 
 | 脚本 / 测试 | 归类 | 作用与要点 |
@@ -68,6 +83,7 @@ python -m unittest discover -s tests
 | `scripts/check_math_render.py` | 公式 | Edge `--dump-dom` 逐章统计 display/inline、`<mjx-merror`、`data-mjx-error`、`;color:red`、未被处理的 math span |
 | `scripts/formula_ocr.py` | 公式 | 把 OCR 结果整理成 `$$` 块提案并列出复核点（`normalise` / `build_proposals`）；只出提案，警告不失败 |
 | `scripts/format_references.py` | 文献 | `close_gaps` / `fit_ligatures` / `host_label` / `split_url` / `link_urls`；`--check` 有待改退出 1 |
+| `scripts/verify_notes_browser.py` | 可选 | 真浏览器冒烟：390/768/1440 三视口 × 全书页面的溢出、公式渲染、代码可滚动，加搜索/主题/复制/翻页四条交互；opt-in，不进 CI，需现装 headless shell（磁盘 282 MB、约 22 s） |
 | `scripts/validate.py` | 契约 | 注册表、资产、来源映射、审批（`review.status: approved` + 三条审批信息 + provenance 全 `verified`） |
 | `scripts/build.py` | 契约 | 构建白名单 → 检查 → 交付；报告 `reports/{build,preview-build}.json` 的 `delivered`/`file_count`/`size_bytes` |
 | `scripts/check_site.py` | 契约 | 拒绝根相对链接、越界目标、缺失锚点、未登记 slug；输出有 error 退出 1 |

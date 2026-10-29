@@ -497,3 +497,42 @@ In [4]: with scipy.fft.set_backend(mkl_fft.interfaces.scipy_fft):
 - skill 是**检查清单**，不是自动修复器：`prose_in_fence` 的 100 条、242/570 个不可解析的 python 块、目录树层级、表格图片，仍要人对着 PDF 判断。
 - 判据随修订会漂移（673/342 → 570/242、`text` 围栏 231 → 0、`tests/test_references.py` 15 → 16 个测试）。引用数字时都标了版本；后续再动代码要回来更新 `SKILL.md` 的「已知限制」与对应 reference。
 - 没有做独立前向测试（skill-creator 的 forward-testing）：本轮只做了静态校验与「换书真跑一次」。真正的有效性检验是下一次新增书籍时按 `assets/checklist.md` 走一遍。
+
+## 本地缓存清理与浏览器验收方式的调整（2026-10-31）
+
+### 问题
+
+发布完成后仓库根目录残留 1.86 GB 生成物与一次性环境：`.preview/`、`dist/`（各约 16.6 MB）、`reports/`、各 `__pycache__`，以及 `.local/` 下的 `playwright-browsers`（576.8 MB）、`pdf-assets-env`（228.1 MB）、`quarto-1.10.19-win.zip`（148.3 MB）、`notes-verify-env`（144.9 MB）、10 个 `edge-*` 浏览器 profile（约 155 MB）和大量探针 HTML/截图/日志/旧快照。
+
+### 处理
+
+- 删除上述生成物与一次性缓存，共 142 项、**释放 1.33 GB**（仓库不含 `.git`/`.venv` 的体积从约 1.86 GB 降到 556 MB）。清理脚本留在 `.local/cleanup.py`（gitignored，可重跑）。
+- 保留：`.local/tools/`（固定 Quarto 1.10.19，`scripts/build.py` 依赖）、`.local/quantum-source/`（派生章节用的教材源文本）、`.local/*.py` 修复脚本、`.local/eq-*.json`（OCR 与公式清单证据）、`.local/*.md`（流水线交接记录）、`.scratch/`、空的 `.worktrees/`。
+- 本地 HTTP 预览服务（`127.0.0.1:8000`，PID 39364）已停止。
+
+### 浏览器验收改为「按需临时装」
+
+`scripts/verify_notes_browser.py` 需要 Playwright 浏览器缓存；原先常驻 `.local/playwright-browsers`（chromium + headless shell + ffmpeg，576.8 MB）配 `.local/notes-verify-env`。现在改为一次性拉 headless shell：
+
+```sh
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.local/playwright-browsers" \
+  uv run --with playwright playwright install --only-shell chromium
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.local/playwright-browsers" \
+  uv run --with playwright python scripts/verify_notes_browser.py
+rm -rf .local/playwright-browsers
+```
+
+实测（本机，2026-10-31）：`playwright install --only-shell chromium` 用时 **22 s**，磁盘占用 **282 MB**（`chromium_headless_shell-1248` 278 MB + `ffmpeg-1013` 4 MB + `winldd-1007` 1 MB），是原来 576.8 MB 的一半。冒烟验证：`playwright.chromium.launch()` 报 `156.0.8078.4`，`evaluate()` 与 `document.documentElement.scrollWidth` 均可用（headless shell 支持布局度量），但未重跑那 51 页全量验收。脚本一行未改（`PLAYWRIGHT_BROWSERS_PATH` 仍由 `scripts/verify_notes_browser.py:29` 的 `setdefault` 指向同一目录）。命令写在脚本 docstring、`SKILL.md` 的「浏览器验收（可选，按需临时装）」与 `docs/reviews/quantum-python-verification.md` 的复现段。
+
+### 本次核验
+
+- `uv run python -m unittest discover -s tests` → 156 项通过（2 跳过）。
+- `scripts/validate.py --strict` → PASS，0 issue；`check_math.py --check` → `allowed_commands=84 chapters=19 findings=0`。
+- `audit_prose.py --check` → 七个严格项全 0（`prose_in_fence=100` 为既有基线）；`format_references.py --check` → `ligatures=0`、`header_residue=0`。
+- `.local/tools/bin/quarto.exe --version` → `1.10.19`（工具链未被误删）。
+
+### 已知限制
+
+- 清理后 `.preview/`、`dist/`、`reports/` 均不存在；需要时用 `scripts/build.py --preview` 重建，`reports/` 由各门禁脚本自动重建。
+- `scripts/verify_notes_browser.py` 现在跑不起来，直到按上面的命令临时安装浏览器；缺浏览器时按 `Not Run` 记录，不得算通过。
+- 浏览器验收的判据（3 视口溢出、4 条交互）仍只能用真浏览器覆盖；`check_math_render.py`（Edge，零依赖）只覆盖公式渲染，不覆盖布局与交互。

@@ -1,4 +1,21 @@
-"""Opt-in Chromium smoke checks against a real .preview build (Playwright 1.56.0)."""
+"""Opt-in Chromium smoke checks against a real .preview build (Playwright 1.56.0).
+
+Not part of CI or `unittest`: it needs a real browser and a built `.preview`.
+Provision the browser on demand instead of keeping a 577 MB cache around:
+
+    PLAYWRIGHT_BROWSERS_PATH="$PWD/.local/playwright-browsers" \\
+      uv run --with playwright playwright install --only-shell chromium
+    PLAYWRIGHT_BROWSERS_PATH="$PWD/.local/playwright-browsers" \\
+      uv run --with playwright python scripts/verify_notes_browser.py
+
+The `--only-shell` variant installs just the headless shell (~282 MB on disk here:
+`chromium_headless_shell-1248` 278 MB + `ffmpeg-1013` 4 MB + `winldd-1007` 1 MB,
+against 576.8 MB for the full chromium install) and takes ~22 s to provision.
+Smoke-tested: `chromium.launch()` reports `156.0.8078.4` and `evaluate()` /
+`document.documentElement.scrollWidth` both work, so layout metrics are available.
+`.local/` is gitignored, so the cache can be deleted afterwards; keeping it only
+saves the re-download.
+"""
 from __future__ import annotations
 
 from functools import partial

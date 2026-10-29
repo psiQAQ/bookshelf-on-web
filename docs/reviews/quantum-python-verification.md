@@ -73,12 +73,17 @@ uv pip install --python .local/notes-verify-env/Scripts/python.exe numpy==2.3.5 
 QUARTO_TEST_EXECUTABLE="$PWD/.local/tools/bin/quarto.cmd" .venv/Scripts/python.exe -m unittest discover -s tests -v
 .venv/Scripts/python.exe scripts/validate.py --strict
 .venv/Scripts/python.exe scripts/build.py --preview --quarto .local/tools/bin/quarto.cmd
-# 先用 PLAYWRIGHT_BROWSERS_PATH 指向 .local/playwright-browsers 并安装 chromium。
-.local/notes-verify-env/Scripts/python.exe scripts/verify_notes_browser.py
+# 浏览器验收（可选）：按需临时装 headless shell，磁盘 282 MB / 约 22 s，用完可删
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.local/playwright-browsers" \
+  uv run --with playwright playwright install --only-shell chromium
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.local/playwright-browsers" \
+  uv run --with playwright python scripts/verify_notes_browser.py
 .venv/Scripts/python.exe -m http.server 8765 --bind 127.0.0.1 --directory .preview
 ```
 
 浏览器验证脚本自带短生命周期的仅回环HTTP服务。最后一条命令为供用户阅读的持续预览服务；只服务 `.preview/`，不服务仓库根目录。
+
+> 2026-10-31 更新：原先的 `.local/notes-verify-env` 与常驻的 `.local/playwright-browsers`（576.8 MB）已清理，复现改为上面两条按需命令——`--only-shell` 只装 headless shell（实测磁盘 282 MB：`chromium_headless_shell-1248` 278 MB + `ffmpeg-1013` 4 MB + `winldd-1007` 1 MB，安装约 22 s），跑完 `rm -rf .local/playwright-browsers` 即可回收。上面的实测结果（Chromium 141.0.7390.37 / Playwright 1.56.0、51 页、三个尺寸）是当时用完整 chromium 跑出的原始记录，未改写；headless shell 版本经冒烟验证可 `launch()` 并读 `document.documentElement.scrollWidth`（`156.0.8078.4`），但未重跑那 51 页全量。
 
 ## 发布门禁与待用户决定
 
